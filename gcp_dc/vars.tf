@@ -8,14 +8,24 @@ variable "gcp_project_id" {
   type = "string"
 }
 
+variable "gcp_region" {
+  description = "GCP region"
+  default = "us-west2"
+}
 variable "gcp_zone" {
   description = "GCP zone"
-  type = "string"
+  # Default to us-west2-b because P4 Workstation GPUs available here
+  default = "us-west2-b"
 }
 
-variable "dc_subnet" {
-  description = "Subnet to deploy Domain Controller"
-  type = "string"
+variable "prefix" {
+  description = "Prefix to add to name of new resources"
+  default = ""
+}
+
+variable "dc_subnet_cidr" {
+  description = "CIDR for subnet containing the Domain Controller"
+  default = "10.0.0.0/24"
 }
 
 variable "dc_machine_type" {
