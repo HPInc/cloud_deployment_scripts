@@ -26,3 +26,23 @@ variable "disk_size_gb" {
   description = "Disk size (GB) of Domain Controller"
   default = "50" 
 }
+
+variable "admin_password" {
+  description = "Password for the Administrator of the Domain Controller"
+  type = "string"
+}
+
+variable "domain_name" {
+  description = "Domain name for the new domain"
+  type = "string"
+}
+
+variable "safe_mode_admin_password" {
+  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
+  type = "string"
+}
+
+variable "svcaccount_password" {
+  description = "Password for the Domain account svcaccount"
+  type = "string"
+}

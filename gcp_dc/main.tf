@@ -79,6 +79,16 @@ resource "google_compute_firewall" "allow-winrm" {
     source_ranges = ["0.0.0.0/0"]
 }
 
+resource "google_compute_firewall" "allow-icmp" {
+    name = "${local.prefix}fw-allow-icmp"
+    network = "${google_compute_network.vpc.self_link}"
+
+    allow = [{protocol = "icmp"}]
+
+    target_tags = ["${local.prefix}tag-icmp"]
+    source_ranges = ["0.0.0.0/0"]
+}
+
 module "dc" {
     source = "../modules/gcp/dc"
 
@@ -88,4 +98,8 @@ module "dc" {
     disk_image_project = "${var.dc_disk_image_project}"
     disk_image_family = "${var.dc_disk_image_family}"
     disk_size_gb = "${var.dc_disk_size_gb}"
+    admin_password = "${var.dc_admin_password}"
+    domain_name = "${var.domain_name}"
+    safe_mode_admin_password = "${var.safe_mode_admin_password}"
+    svcaccount_password = "${var.svcaccount_password}"
 }
