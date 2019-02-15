@@ -7,6 +7,11 @@ variable "subnet" {
   type = "string"
 }
 
+variable "private_ip" {
+  description = "Static internal IP address for the Domain Controller"
+  default = ""
+}
+
 variable "machine_type" {
   description = "Machine type for Domain Controller"
   default = "n1-standard-2"

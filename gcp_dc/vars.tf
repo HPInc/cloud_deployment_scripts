@@ -28,6 +28,11 @@ variable "dc_subnet_cidr" {
   default = "10.0.0.0/24"
 }
 
+variable "dc_private_ip" {
+  description = "Static internal IP address for the Domain Controller"
+  default = "10.0.0.100"
+}
+
 variable "dc_machine_type" {
   description = "Machine type for Domain Controller"
   default = "n1-standard-2"
