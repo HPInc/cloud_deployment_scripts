@@ -109,5 +109,6 @@ module "dc" {
     admin_password = "${var.dc_admin_password}"
     domain_name = "${var.domain_name}"
     safe_mode_admin_password = "${var.safe_mode_admin_password}"
-    svcaccount_password = "${var.svcaccount_password}"
+    service_account_name = "${var.service_account_name}"
+    service_account_password = "${var.service_account_password}"
 }

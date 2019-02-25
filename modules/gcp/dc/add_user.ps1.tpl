@@ -10,7 +10,7 @@ Write-Output "================================================================"
 do {
     Try {
         $Retry = $false
-        New-AdUser -Name "svcaccount" -AccountPassword (ConvertTo-SecureString "${svcaccount_password}" -AsPlainText -Force) -Enabled:$true 
+        New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString "${account_password}" -AsPlainText -Force) -Enabled:$true 
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
         if ($Elapsed -ge $Timeout) {

@@ -47,7 +47,12 @@ variable "safe_mode_admin_password" {
   type = "string"
 }
 
-variable "svcaccount_password" {
-  description = "Password for the Domain account svcaccount"
+variable "service_account_name" {
+  description = "Service account name to be created"
+  type = "string"
+}
+
+variable "service_account_password" {
+  description = "Service account password"
   type = "string"
 }
