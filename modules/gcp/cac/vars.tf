@@ -47,11 +47,6 @@ variable "cac_admin_user" {
   type = "string"
 }
 
-variable "cac_admin_password" {
-  description = "Password for Cloud Access Connector Administrator"
-  type = "string"
-}
-
 variable "cac_admin_ssh_pub_key_file" {
   description = "SSH public key for Cloud Access Connector Administrator"
   type = "string"

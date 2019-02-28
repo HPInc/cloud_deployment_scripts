@@ -184,7 +184,6 @@ module "cac" {
     domain_name = "${var.domain_name}"
     domain_controller_ip = "${module.dc.internal-ip}"
     cac_admin_user = "${var.cac_admin_user}"
-    cac_admin_password = "${var.cac_admin_password}"
     cac_admin_ssh_pub_key_file = "${var.cac_admin_ssh_pub_key_file}"
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
     token = "${var.token}"
