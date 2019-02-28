@@ -1,0 +1,17 @@
+gcp_credentials_file = "~/path/to/cred.json"
+gcp_project_id = "your-project-1234"
+
+prefix = "myprefix"
+
+domain_name = "example.com"
+dc_admin_password = "secure_password"
+safe_mode_admin_password = "secure_password2"
+service_account_name = "svcaccount"
+service_account_password = "secure_password3"
+
+cac_admin_user = "username at end of ssh_pub file"
+cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+cac_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
+
+token = "token from cam.teradici.com"
+registration_code = "code-from-teradici"
