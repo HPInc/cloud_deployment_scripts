@@ -58,6 +58,57 @@ variable "dc_admin_password" {
   type = "string"
 }
 
+variable "cac_subnet_cidr" {
+  description = "CIDR for subnet containing the Cloud Access Connector"
+  default = "10.0.1.0/24"
+}
+
+variable "cac_private_ip" {
+  description = "Static internal IP address for the Cloud Access Connector"
+  default = "10.0.1.100"
+}
+
+variable "cac_machine_type" {
+  description = "Machine type for Cloud Access Connector"
+  default = "n1-standard-2"
+}
+
+variable "cac_disk_image_project" {
+  description = "Disk image project for Cloud Access Connector"
+  default = "ubuntu-os-cloud"
+}
+
+variable "cac_disk_image_family" {
+  description = "Disk image family for Cloud Access Connector"
+  default = "ubuntu-1804-lts"
+}
+
+variable "cac_disk_size_gb" {
+  description = "Disk size (GB) of Cloud Access Connector"
+  default = "50" 
+}
+
+# TODO: does this have to match the tag at the end of the SSH pub key?
+variable "cac_admin_user" {
+  description = "Username of Cloud Access Connector Administrator"
+  type = "string"
+}
+
+variable "cac_admin_password" {
+  description = "Password for Cloud Access Connector Administrator"
+  type = "string"
+}
+
+variable "cac_admin_ssh_pub_key_file" {
+  description = "SSH public key for Cloud Access Connector Administrator"
+  type = "string"
+}
+
+variable "cac_admin_ssh_priv_key_file" {
+  description = "SSH private key for Cloud Access Connector Administrator"
+  type = "string"
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   type = "string"
@@ -75,5 +126,15 @@ variable "service_account_name" {
 
 variable "service_account_password" {
   description = "Service account password"
+  type = "string"
+}
+
+variable "token" {
+  description = "AUTH Token from CAM Service"
+  type = "string"
+}
+
+variable "registration_code" {
+  description = "PCoIP Registration code"
   type = "string"
 }
