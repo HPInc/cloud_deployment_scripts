@@ -1,7 +1,6 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
     host_name = "${local.prefix}domain-controller-vm"
-    private_ip = "${var.private_ip != "" ? "${var.private_ip}" : ""}"
     setup_file = "C:/Temp/setup.ps1"
     add_user_file = "C:/Temp/add_user.ps1"
 }
@@ -49,7 +48,7 @@ resource "google_compute_instance" "dc" {
 
     network_interface {
         subnetwork = "${var.subnet}"
-        network_ip = "${local.private_ip}"
+        network_ip = "${var.private_ip}"
         access_config = {}
     }
 
