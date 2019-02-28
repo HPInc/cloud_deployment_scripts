@@ -75,8 +75,8 @@ resource "null_resource" "upload-scripts" {
         password = "${var.admin_password}"
         host = "${google_compute_instance.dc.network_interface.0.access_config.0.nat_ip}"
         port = "5986"
-        https = "true"
-        insecure = "true"
+        https = true
+        insecure = true
     }
 
     provisioner "file" {
@@ -102,8 +102,8 @@ resource "null_resource" "run-setup-script" {
         password = "${var.admin_password}"
         host = "${google_compute_instance.dc.network_interface.0.access_config.0.nat_ip}"
         port = "5986"
-        https = "true"
-        insecure = "true"
+        https = true
+        insecure = true
     }
 
     provisioner "remote-exec" {
@@ -134,8 +134,8 @@ resource "null_resource" "add-user" {
         password = "${var.admin_password}"
         host = "${google_compute_instance.dc.network_interface.0.access_config.0.nat_ip}"
         port = "5986"
-        https = "true"
-        insecure = "true"
+        https = true
+        insecure = true
     }
 
     provisioner "remote-exec" {
