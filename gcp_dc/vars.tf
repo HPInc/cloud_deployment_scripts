@@ -19,7 +19,7 @@ variable "gcp_zone" {
 }
 
 variable "prefix" {
-  description = "Prefix to add to name of new resources"
+  description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default = ""
 }
 

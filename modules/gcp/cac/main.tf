@@ -1,6 +1,6 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
-    host_name = "${local.prefix}connector-vm"
+    host_name = "${local.prefix}vm-cac"
 }
 
 resource "google_compute_instance" "cac" {
