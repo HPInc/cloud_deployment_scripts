@@ -13,7 +13,3 @@ output "CAC Internal IP" {
 output "CAC Public IP" {
     value = "${module.cac.public-ip}"
 }
-
-output "CAC SSH command" {
-    value = "${module.cac.ssh}"
-}

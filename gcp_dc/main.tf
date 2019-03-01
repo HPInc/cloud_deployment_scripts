@@ -164,19 +164,12 @@ resource "google_compute_subnetwork" "cac-subnet" {
     network = "${google_compute_network.vpc.self_link}"
 }
 
-resource "google_compute_address" "cac-internal-ip" {
-    name = "${local.prefix}static-ip-internal-cac"
-    subnetwork = "${google_compute_subnetwork.cac-subnet.self_link}"
-    address_type = "INTERNAL"
-    address = "${var.cac_private_ip}"
-}
-
 module "cac" {
     source = "../modules/gcp/cac"
 
     prefix = "${var.prefix}"
     subnet = "${google_compute_subnetwork.cac-subnet.self_link}"
-    private_ip = "${var.cac_private_ip}"
+    instance_count = "${var.cac_instance_count}"
     machine_type = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
     disk_image_family = "${var.cac_disk_image_family}"

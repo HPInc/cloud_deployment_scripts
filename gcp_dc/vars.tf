@@ -63,9 +63,9 @@ variable "cac_subnet_cidr" {
   default = "10.0.1.0/24"
 }
 
-variable "cac_private_ip" {
-  description = "Static internal IP address for the Cloud Access Connector"
-  default = "10.0.1.100"
+variable "cac_instance_count" {
+  description = "Number of Cloud Access Connector instances"
+  default = 1
 }
 
 variable "cac_machine_type" {

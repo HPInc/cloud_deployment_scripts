@@ -4,8 +4,10 @@ locals {
 }
 
 resource "google_compute_instance" "cac" {
+    count = "${var.instance_count}"
+
     provider = "google"
-    name = "${local.host_name}"
+    name = "${local.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
 
     boot_disk {
@@ -18,7 +20,6 @@ resource "google_compute_instance" "cac" {
 
     network_interface {
         subnetwork = "${var.subnet}"
-        network_ip = "${var.private_ip}"
         access_config = {}
     }
 
@@ -42,17 +43,19 @@ resource "google_compute_instance" "cac" {
 }
 
 resource "null_resource" "cac-dependencies" {
+    count = "${var.instance_count}"
+
     depends_on = ["google_compute_instance.cac"]
 
     triggers {
-        instance_id = "${google_compute_instance.cac.instance_id}"
+        instance_id = "${google_compute_instance.cac.*.instance_id[count.index]}"
     }
 
     connection {
         type = "ssh"
         user = "${var.cac_admin_user}"
         private_key = "${file(var.cac_admin_ssh_priv_key_file)}"
-        host = "${google_compute_instance.cac.network_interface.0.access_config.0.nat_ip}"
+        host = "${google_compute_instance.cac.*.network_interface.0.access_config.0.nat_ip[count.index]}"
         insecure = true
     }
 
@@ -75,17 +78,19 @@ resource "null_resource" "cac-dependencies" {
 }
 
 resource "null_resource" "install-cac" {
+    count = "${var.instance_count}"
+
     depends_on = ["null_resource.cac-dependencies"]
 
     triggers {
-        instance_id = "${google_compute_instance.cac.instance_id}"
+        instance_id = "${google_compute_instance.cac.*.instance_id[count.index]}"
     }
 
     connection {
         type = "ssh"
         user = "${var.cac_admin_user}"
         private_key = "${file(var.cac_admin_ssh_priv_key_file)}"
-        host = "${google_compute_instance.cac.network_interface.0.access_config.0.nat_ip}"
+        host = "${google_compute_instance.cac.*.network_interface.0.access_config.0.nat_ip[count.index]}"
         insecure = true
     }
 

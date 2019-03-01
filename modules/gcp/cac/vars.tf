@@ -7,9 +7,9 @@ variable "subnet" {
   type = "string"
 }
 
-variable "private_ip" {
-  description = "Static internal IP address for the Cloud Access Connector"
-  default = ""
+variable "instance_count" {
+  description = "Number of Cloud Access Connectors to deploy"
+  default = 1
 }
 
 variable "machine_type" {
