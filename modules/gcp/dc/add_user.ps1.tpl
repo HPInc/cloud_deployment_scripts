@@ -1,10 +1,10 @@
 # Time values in seconds
-$Interval = 5
+$Interval = 10
 $Timeout = 600
 $Elapsed = 0
 
 Write-Output "================================================================"
-Write-Output "Adding new svcaccount user..."
+Write-Output "Creating new service account..."
 Write-Output "================================================================"
 
 do {

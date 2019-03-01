@@ -1,6 +1,8 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
-    host_name = "${local.prefix}domain-controller-vm"
+    # Windows computer names must be <= 15 characters
+    # TODO: remove the min() function when Terraform 0.12 is available
+    host_name = "${substr("${local.prefix}vm-dc", 0, min(15, length(local.prefix)+5))}"
     setup_file = "C:/Temp/setup.ps1"
     add_user_file = "C:/Temp/add_user.ps1"
 }

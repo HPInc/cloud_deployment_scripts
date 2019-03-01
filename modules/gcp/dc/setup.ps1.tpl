@@ -34,6 +34,7 @@ Write-Output "================================================================"
 Write-Output "Configuring LDAPS..."
 Write-Output "================================================================"
 $DnsName = $env:COMPUTERNAME + "." + $DomainName
+Write-Output "Using DNS Name $DnsName"
 $myCert = New-SelfSignedCertificate -DnsName $DnsName -CertStoreLocation cert:\LocalMachine\My;
 $thumbprint=($myCert.Thumbprint | Out-String).Trim();
 $certStoreLoc = 'HKLM:\Software\Microsoft\Cryptography\Services\NTDS\SystemCertificates\My\Certificates';
