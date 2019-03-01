@@ -28,6 +28,7 @@ resource "google_compute_instance" "cac" {
         "${local.prefix}tag-icmp",
         "${local.prefix}tag-http",
         "${local.prefix}tag-https",
+        "${local.prefix}tag-pcoip",
     ]
 
     metadata {

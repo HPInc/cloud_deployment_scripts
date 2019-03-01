@@ -124,6 +124,11 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "ws_subnet_cidr" {
+  description = "CIDR for subnet containing Remote Workstations"
+  default = "10.0.2.0/24"
+}
+
 variable "token" {
   description = "AUTH Token from CAM Service"
   type = "string"

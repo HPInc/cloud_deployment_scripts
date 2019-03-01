@@ -32,7 +32,7 @@ resource "google_compute_firewall" "allow-internal" {
         }
     ]
 
-    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidr}"]
+    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidr}", "${var.ws_subnet_cidr}"]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -128,6 +128,25 @@ resource "google_compute_firewall" "allow-icmp" {
     source_ranges = ["0.0.0.0/0"]
 }
 
+resource "google_compute_firewall" "allow-pcoip" {
+    name = "${local.prefix}fw-allow-pcoip"
+    network = "${google_compute_network.vpc.self_link}"
+
+    allow = [
+        {
+            protocol = "tcp"
+            ports = ["4172"]
+        },
+        {
+            protocol = "udp"
+            ports = ["4172"]
+        }
+    ]
+
+    target_tags = ["${local.prefix}tag-pcoip"]
+    source_ranges = ["0.0.0.0/0"]
+}
+
 resource "google_compute_subnetwork" "dc-subnet" {
     name = "${local.prefix}subnet-dc"
     ip_cidr_range = "${var.dc_subnet_cidr}"
@@ -184,3 +203,10 @@ module "cac" {
     service_account_password = "${var.service_account_password}"
     registration_code = "${var.registration_code}"
 }
+
+resource "google_compute_subnetwork" "ws-subnet" {
+    name = "${local.prefix}subnet-ws"
+    ip_cidr_range = "${var.ws_subnet_cidr}"
+    network = "${google_compute_network.vpc.self_link}"
+}
+
