@@ -204,9 +204,30 @@ module "cac" {
     registration_code = "${var.registration_code}"
 }
 
+resource "google_compute_target_pool" "cac-pool" {
+    name = "${local.prefix}pool-cac"
+
+    instances = ["${module.cac.instance-self-links}"]
+
+    session_affinity = "CLIENT_IP"
+}
+
+resource "google_compute_forwarding_rule" "cac-fwdrule" {
+    name = "${local.prefix}fwdrule-cac"
+
+    load_balancing_scheme = "EXTERNAL"
+    ip_protocol = "TCP"
+    port_range = "443"
+    target = "${google_compute_target_pool.cac-pool.self_link}"
+}
+
+# google_compute_forwarding_rule has no output to show IP address
+data "google_compute_forwarding_rule" "cac-fwdrule" {
+    name = "${google_compute_forwarding_rule.cac-fwdrule.name}"
+}
+
 resource "google_compute_subnetwork" "ws-subnet" {
     name = "${local.prefix}subnet-ws"
     ip_cidr_range = "${var.ws_subnet_cidr}"
     network = "${google_compute_network.vpc.self_link}"
 }
-

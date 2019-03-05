@@ -13,3 +13,7 @@ output "CAC Internal IP" {
 output "CAC Public IP" {
     value = "${module.cac.public-ip}"
 }
+
+output "CAC TCP Network Load Balancer IP" {
+    value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
+}
