@@ -14,6 +14,6 @@ output "CAC Public IP" {
     value = "${module.cac.public-ip}"
 }
 
-output "CAC SSH command" {
-    value = "${module.cac.ssh}"
+output "CAC TCP Network Load Balancer IP" {
+    value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
 }

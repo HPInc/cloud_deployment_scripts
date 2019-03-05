@@ -32,7 +32,7 @@ resource "google_compute_firewall" "allow-internal" {
         }
     ]
 
-    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidr}"]
+    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidr}", "${var.ws_subnet_cidr}"]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -128,6 +128,25 @@ resource "google_compute_firewall" "allow-icmp" {
     source_ranges = ["0.0.0.0/0"]
 }
 
+resource "google_compute_firewall" "allow-pcoip" {
+    name = "${local.prefix}fw-allow-pcoip"
+    network = "${google_compute_network.vpc.self_link}"
+
+    allow = [
+        {
+            protocol = "tcp"
+            ports = ["4172"]
+        },
+        {
+            protocol = "udp"
+            ports = ["4172"]
+        }
+    ]
+
+    target_tags = ["${local.prefix}tag-pcoip"]
+    source_ranges = ["0.0.0.0/0"]
+}
+
 resource "google_compute_subnetwork" "dc-subnet" {
     name = "${local.prefix}subnet-dc"
     ip_cidr_range = "${var.dc_subnet_cidr}"
@@ -164,19 +183,12 @@ resource "google_compute_subnetwork" "cac-subnet" {
     network = "${google_compute_network.vpc.self_link}"
 }
 
-resource "google_compute_address" "cac-internal-ip" {
-    name = "${local.prefix}static-ip-internal-cac"
-    subnetwork = "${google_compute_subnetwork.cac-subnet.self_link}"
-    address_type = "INTERNAL"
-    address = "${var.cac_private_ip}"
-}
-
 module "cac" {
     source = "../modules/gcp/cac"
 
     prefix = "${var.prefix}"
     subnet = "${google_compute_subnetwork.cac-subnet.self_link}"
-    private_ip = "${var.cac_private_ip}"
+    instance_count = "${var.cac_instance_count}"
     machine_type = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
     disk_image_family = "${var.cac_disk_image_family}"
@@ -190,4 +202,32 @@ module "cac" {
     service_account_user = "${var.service_account_name}"
     service_account_password = "${var.service_account_password}"
     registration_code = "${var.registration_code}"
+}
+
+resource "google_compute_target_pool" "cac-pool" {
+    name = "${local.prefix}pool-cac"
+
+    instances = ["${module.cac.instance-self-links}"]
+
+    session_affinity = "CLIENT_IP"
+}
+
+resource "google_compute_forwarding_rule" "cac-fwdrule" {
+    name = "${local.prefix}fwdrule-cac"
+
+    load_balancing_scheme = "EXTERNAL"
+    ip_protocol = "TCP"
+    port_range = "443"
+    target = "${google_compute_target_pool.cac-pool.self_link}"
+}
+
+# google_compute_forwarding_rule has no output to show IP address
+data "google_compute_forwarding_rule" "cac-fwdrule" {
+    name = "${google_compute_forwarding_rule.cac-fwdrule.name}"
+}
+
+resource "google_compute_subnetwork" "ws-subnet" {
+    name = "${local.prefix}subnet-ws"
+    ip_cidr_range = "${var.ws_subnet_cidr}"
+    network = "${google_compute_network.vpc.self_link}"
 }
