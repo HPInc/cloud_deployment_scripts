@@ -232,3 +232,11 @@ resource "google_compute_subnetwork" "ws-subnet" {
     ip_cidr_range = "${var.ws_subnet_cidr}"
     network = "${google_compute_network.vpc.self_link}"
 }
+
+module "win-gfx" {
+    source = "../../../modules/gcp/win-gfx"
+
+    prefix = "${var.prefix}"
+    subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
+    admin_password = "${var.dc_admin_password}"
+}

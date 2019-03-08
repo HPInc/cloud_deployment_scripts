@@ -1,0 +1,1 @@
+net user Administrator "${admin_password}" /active:yes
