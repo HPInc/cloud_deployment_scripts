@@ -138,3 +138,8 @@ variable "registration_code" {
   description = "PCoIP Registration code"
   type = "string"
 }
+
+variable "cam_url" {
+  description = "cam server url."
+  default = "https://cam.teradici.com"
+}
