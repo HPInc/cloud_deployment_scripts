@@ -198,6 +198,7 @@ module "cac" {
     cac_admin_user = "${var.cac_admin_user}"
     cac_admin_ssh_pub_key_file = "${var.cac_admin_ssh_pub_key_file}"
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
+    cam_url = "${var.cam_url}"
     token = "${var.token}"
     service_account_user = "${var.service_account_name}"
     service_account_password = "${var.service_account_password}"
