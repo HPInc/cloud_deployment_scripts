@@ -161,7 +161,7 @@ resource "google_compute_address" "dc-internal-ip" {
 }
 
 module "dc" {
-    source = "../modules/gcp/dc"
+    source = "../../../modules/gcp/dc"
 
     prefix = "${var.prefix}"
     subnet = "${google_compute_subnetwork.dc-subnet.self_link}"
@@ -184,7 +184,7 @@ resource "google_compute_subnetwork" "cac-subnet" {
 }
 
 module "cac" {
-    source = "../modules/gcp/cac"
+    source = "../../../modules/gcp/cac"
 
     prefix = "${var.prefix}"
     subnet = "${google_compute_subnetwork.cac-subnet.self_link}"
