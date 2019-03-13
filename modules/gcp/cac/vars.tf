@@ -82,6 +82,11 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "domain_group" {
+  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAM Admins,CN=Users,DC=example,DC=com')"
+  default = "Domain Admins"
+}
+
 variable "registration_code" {
   description = "PCoIP Registration code"
   type = "string"

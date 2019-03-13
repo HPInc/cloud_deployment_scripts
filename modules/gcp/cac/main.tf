@@ -103,7 +103,7 @@ resource "null_resource" "install-cac" {
             # Save command used for reference
             "echo \"-E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_user} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --reg-code ${var.registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""}\" > cmd.txt",
 
-            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_user} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --reg-code ${var.registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
+            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_user} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
 
             "sudo docker service ls",
         ]
