@@ -2,6 +2,12 @@ variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default = ""
 }
+
+variable "gcp_project_id" {
+  description = "GCP Project ID"
+  type = "string"
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Workstation"
   type = "string"
@@ -15,6 +21,11 @@ variable "machine_type" {
 variable "accelerator_type" {
   description = "Accelerator type for Workstation"
   default = "nvidia-tesla-p4-vws"
+}
+
+variable "accelerator_count" {
+  description = "Number of GPUs for Workstation"
+  default = "1"
 }
 
 variable "disk_image_project" {
@@ -34,5 +45,50 @@ variable "disk_size_gb" {
 
 variable "admin_password" {
   description = "Password for the Administrator of the Workstation"
+  type = "string"
+}
+
+variable "nvidia_driver_location" {
+  description = "URL of NVIDIA GRID driver location"
+  default = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID7.1/"
+}
+
+variable "nvidia_driver_filename" {
+  description = "Filename of NVIDIA GRID driver"
+  default = "412.16_grid_win10_server2016_64bit_international.exe"
+}
+
+variable "pcoip_agent_location" {
+  description = "URL of Teradici PCoIP Graphics Agent"
+  default = "https://downloads.teradici.com/win/stable/"
+}
+
+variable "pcoip_agent_filename" {
+  description = "Filename of Teradici PCoIP Graphics Agent"
+  default = "PCoIP_agent_release_installer_graphics.exe"
+}
+
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code from Teradici"
+  type = "string"
+}
+
+variable "domain_controller_ip" {
+  description = "IP Address of the Domain Controller"
+  type = "string"
+}
+
+variable "domain_name" {
+  description = "Name of domain to join"
+  type = "string"
+}
+
+variable "service_account_username" {
+  description = "Service account name to be created"
+  type = "string"
+}
+
+variable "service_account_password" {
+  description = "Service account password"
   type = "string"
 }

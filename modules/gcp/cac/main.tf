@@ -73,7 +73,7 @@ resource "null_resource" "cac-dependencies" {
             # wait for service account to be added
             # do this last because it takes a while for new AD user to be added in a new Domain Controller
             "sudo apt install -y ldap-utils",
-            "until ldapwhoami -H ldap://${var.domain_name} -D ${var.service_account_user}@${var.domain_name} -w ${var.service_account_password} > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_user}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done"
+            "until ldapwhoami -H ldap://${var.domain_name} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done"
         ]
     }
 }
@@ -99,11 +99,7 @@ resource "null_resource" "install-cac" {
         inline = [
             "export CAM_BASE_URI=${var.cam_url}",
 
-            # TODO: remove for security.
-            # Save command used for reference
-            "echo \"-E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_user} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --reg-code ${var.registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""}\" > cmd.txt",
-
-            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_user} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
+            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
 
             "sudo docker service ls",
         ]

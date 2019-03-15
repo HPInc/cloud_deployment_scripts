@@ -30,7 +30,7 @@ data "template_file" "add-user-script" {
     vars {
         host_name = "${local.host_name}"
         domain_name = "${var.domain_name}"
-        account_name = "${var.service_account_name}"
+        account_name = "${var.service_account_username}"
         account_password = "${var.service_account_password}"
     }
 }

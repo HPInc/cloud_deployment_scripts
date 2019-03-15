@@ -47,7 +47,7 @@ variable "safe_mode_admin_password" {
   type = "string"
 }
 
-variable "service_account_name" {
+variable "service_account_username" {
   description = "Service account name to be created"
   type = "string"
 }

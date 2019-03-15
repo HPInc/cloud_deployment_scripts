@@ -13,11 +13,13 @@ do {
         New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString "${account_password}" -AsPlainText -Force) -Enabled:$true 
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
+        $_.Exception.Message
+
         if ($Elapsed -ge $Timeout) {
-            throw $_
+            exit
         }
 
-        "$($_.Exception.Message)  Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+        "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
         $Retry = $true
         Start-Sleep -Seconds $Interval
         $Elapsed += $Interval

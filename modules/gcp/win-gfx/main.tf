@@ -14,6 +14,25 @@ data "template_file" "sysprep-script" {
     }
 }
 
+data "template_file" "setup-script" {
+    template = "${file("${path.module}/setup.ps1.tpl")}"
+
+    vars {
+        admin_password = "${var.admin_password}"
+        nvidia_driver_location = "${var.nvidia_driver_location}"
+        nvidia_driver_filename = "${var.nvidia_driver_filename}"
+        pcoip_agent_location = "${var.pcoip_agent_location}"
+        pcoip_agent_filename = "${var.pcoip_agent_filename}"
+        pcoip_registration_code = "${var.pcoip_registration_code}"
+
+        gcp_project_id = "${var.gcp_project_id}"
+        domain_name = "${var.domain_name}"
+        domain_controller_ip = "${var.domain_controller_ip}"
+        service_account_username = "${var.service_account_username}"
+        service_account_password = "${var.service_account_password}"
+    }
+}
+
 resource "google_compute_instance" "win-gfx" {
     provider = "google"
     name = "${local.host_name}"
@@ -21,7 +40,7 @@ resource "google_compute_instance" "win-gfx" {
 
     guest_accelerator {
         type = "${var.accelerator_type}"
-        count = 1
+        count = "${var.accelerator_count}"
     }
 
     scheduling {
@@ -43,10 +62,54 @@ resource "google_compute_instance" "win-gfx" {
 
     tags = [
         "${local.prefix}tag-rdp",
+        "${local.prefix}tag-winrm",
         "${local.prefix}tag-icmp",
     ]
 
     metadata {
         sysprep-specialize-script-ps1 = "${data.template_file.sysprep-script.rendered}"
+    }
+}
+
+resource "null_resource" "upload-scripts" {
+    depends_on = ["google_compute_instance.win-gfx"]
+    triggers {
+        instance_id = "${google_compute_instance.win-gfx.instance_id}"
+    }
+
+    connection {
+        type = "winrm"
+        user = "Administrator"
+        password = "${var.admin_password}"
+        host = "${google_compute_instance.win-gfx.network_interface.0.access_config.0.nat_ip}"
+        port = "5986"
+        https = true
+        insecure = true
+    }
+
+    provisioner "file" {
+        content = "${data.template_file.setup-script.rendered}"
+        destination = "${local.setup_file}"
+    }
+}
+
+resource "null_resource" "run-setup-script" {
+    depends_on = ["null_resource.upload-scripts"]
+    triggers {
+        instance_id = "${google_compute_instance.win-gfx.instance_id}"
+    }
+
+    connection {
+        type = "winrm"
+        user = "Administrator"
+        password = "${var.admin_password}"
+        host = "${google_compute_instance.win-gfx.network_interface.0.access_config.0.nat_ip}"
+        port = "5986"
+        https = true
+        insecure = true
+    }
+
+    provisioner "remote-exec" {
+        inline = ["powershell -file ${local.setup_file}"]
     }
 }

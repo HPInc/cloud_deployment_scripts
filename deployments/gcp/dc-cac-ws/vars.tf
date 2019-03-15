@@ -114,7 +114,7 @@ variable "safe_mode_admin_password" {
   type = "string"
 }
 
-variable "service_account_name" {
+variable "service_account_username" {
   description = "Service account name to be created"
   type = "string"
 }
@@ -134,7 +134,7 @@ variable "token" {
   type = "string"
 }
 
-variable "registration_code" {
+variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type = "string"
 }

@@ -72,7 +72,7 @@ variable "token" {
   type = "string"
 }
 
-variable "service_account_user" {
+variable "service_account_username" {
   description = "Active Directory Service Account username"
   type = "string"
 }
@@ -87,7 +87,7 @@ variable "domain_group" {
   default = "Domain Admins"
 }
 
-variable "registration_code" {
+variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type = "string"
 }

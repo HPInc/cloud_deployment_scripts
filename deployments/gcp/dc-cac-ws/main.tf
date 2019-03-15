@@ -173,7 +173,7 @@ module "dc" {
     admin_password = "${var.dc_admin_password}"
     domain_name = "${var.domain_name}"
     safe_mode_admin_password = "${var.safe_mode_admin_password}"
-    service_account_name = "${var.service_account_name}"
+    service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 }
 
@@ -200,9 +200,9 @@ module "cac" {
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
     cam_url = "${var.cam_url}"
     token = "${var.token}"
-    service_account_user = "${var.service_account_name}"
+    service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
-    registration_code = "${var.registration_code}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
 }
 
 resource "google_compute_target_pool" "cac-pool" {
@@ -237,6 +237,13 @@ module "win-gfx" {
     source = "../../../modules/gcp/win-gfx"
 
     prefix = "${var.prefix}"
+    gcp_project_id = "${var.gcp_project_id}"
     subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
+
     admin_password = "${var.dc_admin_password}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+    domain_controller_ip = "${module.dc.internal-ip}"
+    domain_name = "${var.domain_name}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
 }
