@@ -25,3 +25,11 @@ output "Win Gfx Internal IP" {
 output "Win Gfx Public IP" {
     value = "${module.win-gfx.public-ip}"
 }
+
+output "CentOS Gfx Internal IP" {
+    value = "${module.centos-gfx.internal-ip}"
+}
+
+output "CentOS Gfx Public IP" {
+    value = "${module.centos-gfx.public-ip}"
+}

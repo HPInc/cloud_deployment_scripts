@@ -2,7 +2,7 @@ locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
     # Windows computer names must be <= 15 characters
     # TODO: remove the min() function when Terraform 0.12 is available
-    host_name = "${substr("${local.prefix}win-gfx", 0, min(15, length(local.prefix)+7))}"
+    host_name = "${substr("${local.prefix}gwin", 0, min(15, length(local.prefix)+4))}"
     setup_file = "C:/Temp/setup.ps1"
 }
 
@@ -43,6 +43,7 @@ resource "google_compute_instance" "win-gfx" {
         count = "${var.accelerator_count}"
     }
 
+    # This is needed to prevent "Instances with guest accelerators do not support live migration" error
     scheduling {
         on_host_maintenance = "TERMINATE"
     }

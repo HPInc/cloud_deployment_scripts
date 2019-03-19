@@ -247,3 +247,20 @@ module "win-gfx" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 }
+
+module "centos-gfx" {
+    source = "../../../modules/gcp/centos-gfx"
+
+    prefix = "${var.prefix}"
+    subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
+
+    ws_admin_user = "${var.centos_admin_user}"
+    ws_admin_ssh_pub_key_file = "${var.centos_admin_ssh_pub_key_file}"
+    ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
+
+    domain_name = "${var.domain_name}"
+    domain_controller_ip = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+}

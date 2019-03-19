@@ -91,7 +91,7 @@ variable "cac_disk_size_gb" {
 # TODO: does this have to match the tag at the end of the SSH pub key?
 variable "cac_admin_user" {
   description = "Username of Cloud Access Connector Administrator"
-  type = "string"
+  default = "cam_admin"
 }
 
 variable "cac_admin_ssh_pub_key_file" {
@@ -115,12 +115,12 @@ variable "safe_mode_admin_password" {
 }
 
 variable "service_account_username" {
-  description = "Service account name to be created"
-  type = "string"
+  description = "Active Directory Service account name to be created"
+  default = "cam_admin"
 }
 
 variable "service_account_password" {
-  description = "Service account password"
+  description = "Active Directory Service account password"
   type = "string"
 }
 
@@ -142,4 +142,19 @@ variable "pcoip_registration_code" {
 variable "cam_url" {
   description = "cam server url."
   default = "https://cam.teradici.com"
+}
+
+variable "centos_admin_user" {
+  description = "Username of CentOS Workstations"
+  default = "cam_admin"
+}
+
+variable "centos_admin_ssh_pub_key_file" {
+  description = "SSH public key for CentOS Workstation Administrator"
+  type = "string"
+}
+
+variable "centos_admin_ssh_priv_key_file" {
+  description = "SSH private key for CentOS Workstation Administrator"
+  type = "string"
 }
