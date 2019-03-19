@@ -18,7 +18,6 @@ data "template_file" "setup-script" {
     template = "${file("${path.module}/setup.ps1.tpl")}"
 
     vars {
-        admin_password = "${var.admin_password}"
         nvidia_driver_location = "${var.nvidia_driver_location}"
         nvidia_driver_filename = "${var.nvidia_driver_filename}"
         pcoip_agent_location = "${var.pcoip_agent_location}"

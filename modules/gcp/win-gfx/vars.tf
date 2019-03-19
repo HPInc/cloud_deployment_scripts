@@ -3,6 +3,31 @@ variable "prefix" {
   default = ""
 }
 
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code from Teradici"
+  type = "string"
+}
+
+variable "domain_name" {
+  description = "Name of the domain to join"
+  type = "string"
+}
+
+variable "domain_controller_ip" {
+  description = "Internal IP Address of the Domain Controller"
+  type = "string"
+}
+
+variable "service_account_username" {
+  description = "Active Directory Service Account username"
+  type = "string"
+}
+
+variable "service_account_password" {
+  description = "Active Directory Service Account password"
+  type = "string"
+}
+
 variable "gcp_project_id" {
   description = "GCP Project ID"
   type = "string"
@@ -19,27 +44,27 @@ variable "machine_type" {
 }
 
 variable "accelerator_type" {
-  description = "Accelerator type for Workstation"
+  description = "Accelerator type for the Workstation"
   default = "nvidia-tesla-p4-vws"
 }
 
 variable "accelerator_count" {
-  description = "Number of GPUs for Workstation"
+  description = "Number of GPUs for the Workstation"
   default = "1"
 }
 
 variable "disk_image_project" {
-  description = "Disk image project for Workstation"
+  description = "Disk image project for the Workstation"
   default = "windows-cloud"
 }
 
 variable "disk_image_family" {
-  description = "Disk image family for Workstation"
+  description = "Disk image family for the Workstation"
   default = "windows-2016"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of Workstation"
+  description = "Disk size (GB) of the Workstation"
   default = "100"
 }
 
@@ -66,29 +91,4 @@ variable "pcoip_agent_location" {
 variable "pcoip_agent_filename" {
   description = "Filename of Teradici PCoIP Graphics Agent"
   default = "PCoIP_agent_release_installer_graphics.exe"
-}
-
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code from Teradici"
-  type = "string"
-}
-
-variable "domain_controller_ip" {
-  description = "IP Address of the Domain Controller"
-  type = "string"
-}
-
-variable "domain_name" {
-  description = "Name of domain to join"
-  type = "string"
-}
-
-variable "service_account_username" {
-  description = "Service account name to be created"
-  type = "string"
-}
-
-variable "service_account_password" {
-  description = "Service account password"
-  type = "string"
 }

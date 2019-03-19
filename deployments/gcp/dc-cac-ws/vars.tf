@@ -129,8 +129,8 @@ variable "ws_subnet_cidr" {
   default = "10.0.2.0/24"
 }
 
-variable "token" {
-  description = "AUTH Token from CAM Service"
+variable "cac_token" {
+  description = "Connector Token from CAM Service"
   type = "string"
 }
 

@@ -99,7 +99,7 @@ resource "null_resource" "install-cac" {
         inline = [
             "export CAM_BASE_URI=${var.cam_url}",
 
-            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
+            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
 
             "sudo docker service ls",
         ]

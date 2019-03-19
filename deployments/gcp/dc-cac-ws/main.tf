@@ -164,17 +164,20 @@ module "dc" {
     source = "../../../modules/gcp/dc"
 
     prefix = "${var.prefix}"
-    subnet = "${google_compute_subnetwork.dc-subnet.self_link}"
-    private_ip = "${var.dc_private_ip}"
-    machine_type = "${var.dc_machine_type}"
-    disk_image_project = "${var.dc_disk_image_project}"
-    disk_image_family = "${var.dc_disk_image_family}"
-    disk_size_gb = "${var.dc_disk_size_gb}"
-    admin_password = "${var.dc_admin_password}"
-    domain_name = "${var.domain_name}"
+
+    domain_name              = "${var.domain_name}"
+    admin_password           = "${var.dc_admin_password}"
     safe_mode_admin_password = "${var.safe_mode_admin_password}"
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
+
+    subnet     = "${google_compute_subnetwork.dc-subnet.self_link}"
+    private_ip = "${var.dc_private_ip}"
+
+    machine_type       = "${var.dc_machine_type}"
+    disk_image_project = "${var.dc_disk_image_project}"
+    disk_image_family  = "${var.dc_disk_image_family}"
+    disk_size_gb       = "${var.dc_disk_size_gb}"
 }
 
 resource "google_compute_subnetwork" "cac-subnet" {
@@ -187,22 +190,27 @@ module "cac" {
     source = "../../../modules/gcp/cac"
 
     prefix = "${var.prefix}"
-    subnet = "${google_compute_subnetwork.cac-subnet.self_link}"
-    instance_count = "${var.cac_instance_count}"
-    machine_type = "${var.cac_machine_type}"
-    disk_image_project = "${var.cac_disk_image_project}"
-    disk_image_family = "${var.cac_disk_image_family}"
-    disk_size_gb = "${var.cac_disk_size_gb}"
-    domain_name = "${var.domain_name}"
-    domain_controller_ip = "${module.dc.internal-ip}"
-    cac_admin_user = "${var.cac_admin_user}"
-    cac_admin_ssh_pub_key_file = "${var.cac_admin_ssh_pub_key_file}"
-    cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
-    cam_url = "${var.cam_url}"
-    token = "${var.token}"
+
+    cam_url                 = "${var.cam_url}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+    cac_token               = "${var.cac_token}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
-    pcoip_registration_code = "${var.pcoip_registration_code}"
+
+    subnet         = "${google_compute_subnetwork.cac-subnet.self_link}"
+    instance_count = "${var.cac_instance_count}"
+
+    machine_type       = "${var.cac_machine_type}"
+    disk_image_project = "${var.cac_disk_image_project}"
+    disk_image_family  = "${var.cac_disk_image_family}"
+    disk_size_gb       = "${var.cac_disk_size_gb}"
+
+    cac_admin_user              = "${var.cac_admin_user}"
+    cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
+    cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
 }
 
 resource "google_compute_target_pool" "cac-pool" {
@@ -237,30 +245,36 @@ module "win-gfx" {
     source = "../../../modules/gcp/win-gfx"
 
     prefix = "${var.prefix}"
-    gcp_project_id = "${var.gcp_project_id}"
-    subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
 
-    admin_password = "${var.dc_admin_password}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
-    domain_controller_ip = "${module.dc.internal-ip}"
-    domain_name = "${var.domain_name}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
+
+    gcp_project_id = "${var.gcp_project_id}"
+    subnet         = "${google_compute_subnetwork.ws-subnet.self_link}"
+
+    admin_password = "${var.dc_admin_password}"
 }
 
 module "centos-gfx" {
     source = "../../../modules/gcp/centos-gfx"
 
     prefix = "${var.prefix}"
-    subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
 
-    ws_admin_user = "${var.centos_admin_user}"
-    ws_admin_ssh_pub_key_file = "${var.centos_admin_ssh_pub_key_file}"
-    ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
 
-    domain_name = "${var.domain_name}"
-    domain_controller_ip = "${module.dc.internal-ip}"
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
-    pcoip_registration_code = "${var.pcoip_registration_code}"
+
+    subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
+
+    ws_admin_user              = "${var.centos_admin_user}"
+    ws_admin_ssh_pub_key_file  = "${var.centos_admin_ssh_pub_key_file}"
+    ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
+
 }
