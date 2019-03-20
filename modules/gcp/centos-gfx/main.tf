@@ -1,15 +1,18 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
-    # Windows computer names must be <= 15 characters
+    # Windows computer names must be <= 15 characters, minus 3 chars for "-xy"
+    # where xy is number of instances (0-99)
     # TODO: remove the min() function when Terraform 0.12 is available
-    host_name = "${substr("${local.prefix}gcent", 0, min(15, length(local.prefix)+5))}"
+    host_name = "${substr("${local.prefix}gcent", 0, min(12, length(local.prefix)+5))}"
 
     setup_dir= "/tmp"
 }
 
 resource "google_compute_instance" "centos-gfx" {
+    count = "${var.instance_count}"
+
     provider = "google"
-    name = "${local.host_name}"
+    name = "${local.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
 
     guest_accelerator {
@@ -70,14 +73,16 @@ resource "google_compute_instance" "centos-gfx" {
 }
 
 resource "null_resource" "upload-scripts" {
+    count = "${var.instance_count}"
+
     depends_on = ["google_compute_instance.centos-gfx"]
     triggers {
-        instance_id = "${google_compute_instance.centos-gfx.instance_id}"
+        instance_id = "${google_compute_instance.centos-gfx.*.instance_id[count.index]}"
     }
 
     connection {
         type = "ssh"
-        host = "${google_compute_instance.centos-gfx.network_interface.0.access_config.0.nat_ip}"
+        host = "${google_compute_instance.centos-gfx.*.network_interface.0.access_config.0.nat_ip[count.index]}"
         user = "${var.ws_admin_user}"
         private_key = "${file(var.ws_admin_ssh_priv_key_file)}"
         insecure = true

@@ -144,6 +144,16 @@ variable "cam_url" {
   default = "https://cam.teradici.com"
 }
 
+variable "win_gfx_ws_count" {
+  description = "Number of Windows Grpahics Workstations"
+  default = 0
+}
+
+variable "centos_gfx_ws_count" {
+  description = "Number of CentOS Grpahics Workstations"
+  default = 0
+}
+
 variable "centos_admin_user" {
   description = "Username of CentOS Workstations"
   default = "cam_admin"

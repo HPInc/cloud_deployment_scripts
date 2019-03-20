@@ -33,6 +33,11 @@ variable "subnet" {
   type = "string"
 }
 
+variable "instance_count" {
+  description = "Number of CentOS Graphics Workstations to deploy"
+  default = 1
+}
+
 variable "machine_type" {
   description = "Machine type for the Workstation"
   default = "n1-standard-2"

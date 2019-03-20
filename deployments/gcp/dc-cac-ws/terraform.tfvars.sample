@@ -11,6 +11,9 @@ service_account_password = "secure_password3"
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 cac_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 
+win_gfx_ws_count = "0"
+
+centos_gfx_ws_count = "0"
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 centos_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 

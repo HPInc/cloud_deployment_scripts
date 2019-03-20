@@ -1,8 +1,9 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
-    # Windows computer names must be <= 15 characters
+    # Windows computer names must be <= 15 characters, minus 3 chars for "-xy"
+    # where xy is number of instances (0-99)
     # TODO: remove the min() function when Terraform 0.12 is available
-    host_name = "${substr("${local.prefix}gwin", 0, min(15, length(local.prefix)+4))}"
+    host_name = "${substr("${local.prefix}gwin", 0, min(12, length(local.prefix)+4))}"
     setup_file = "C:/Temp/setup.ps1"
 }
 
@@ -33,8 +34,10 @@ data "template_file" "setup-script" {
 }
 
 resource "google_compute_instance" "win-gfx" {
+    count = "${var.instance_count}"
+
     provider = "google"
-    name = "${local.host_name}"
+    name = "${local.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
 
     guest_accelerator {
@@ -72,16 +75,18 @@ resource "google_compute_instance" "win-gfx" {
 }
 
 resource "null_resource" "upload-scripts" {
+    count = "${var.instance_count}"
+
     depends_on = ["google_compute_instance.win-gfx"]
     triggers {
-        instance_id = "${google_compute_instance.win-gfx.instance_id}"
+        instance_id = "${google_compute_instance.win-gfx.*.instance_id[count.index]}"
     }
 
     connection {
         type = "winrm"
         user = "Administrator"
         password = "${var.admin_password}"
-        host = "${google_compute_instance.win-gfx.network_interface.0.access_config.0.nat_ip}"
+        host = "${google_compute_instance.win-gfx.*.network_interface.0.access_config.0.nat_ip[count.index]}"
         port = "5986"
         https = true
         insecure = true
@@ -94,16 +99,18 @@ resource "null_resource" "upload-scripts" {
 }
 
 resource "null_resource" "run-setup-script" {
+    count = "${var.instance_count}"
+
     depends_on = ["null_resource.upload-scripts"]
     triggers {
-        instance_id = "${google_compute_instance.win-gfx.instance_id}"
+        instance_id = "${google_compute_instance.win-gfx.*.instance_id[count.index]}"
     }
 
     connection {
         type = "winrm"
         user = "Administrator"
         password = "${var.admin_password}"
-        host = "${google_compute_instance.win-gfx.network_interface.0.access_config.0.nat_ip}"
+        host = "${google_compute_instance.win-gfx.*.network_interface.0.access_config.0.nat_ip[count.index]}"
         port = "5986"
         https = true
         insecure = true

@@ -233,6 +233,7 @@ module "win-gfx" {
 
     gcp_project_id = "${var.gcp_project_id}"
     subnet         = "${google_compute_subnetwork.ws-subnet.self_link}"
+    instance_count = "${var.win_gfx_ws_count}"
 
     admin_password = "${var.dc_admin_password}"
 }
@@ -249,10 +250,10 @@ module "centos-gfx" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
-    subnet = "${google_compute_subnetwork.ws-subnet.self_link}"
+    subnet         = "${google_compute_subnetwork.ws-subnet.self_link}"
+    instance_count = "${var.centos_gfx_ws_count}"
 
     ws_admin_user              = "${var.centos_admin_user}"
     ws_admin_ssh_pub_key_file  = "${var.centos_admin_ssh_pub_key_file}"
     ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
-
 }
