@@ -14,6 +14,10 @@ output "CAC Public IP" {
     value = "${module.cac.public-ip}"
 }
 
+output "CAC TCP Network Load Balancer IP" {
+    value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
+}
+
 output "Win Gfx Internal IP" {
     value = "${module.win-gfx.internal-ip}"
 }

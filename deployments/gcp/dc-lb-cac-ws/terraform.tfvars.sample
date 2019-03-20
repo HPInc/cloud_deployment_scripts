@@ -1,0 +1,19 @@
+gcp_credentials_file = "/path/to/cred.json"
+gcp_project_id = "your-project-1234"
+
+prefix = "myprefix"
+
+domain_name = "example.com"
+dc_admin_password = "secure_password"
+safe_mode_admin_password = "secure_password2"
+service_account_password = "secure_password3"
+
+cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+cac_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
+
+centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+centos_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
+
+cam_url = "https://cam-staging.teradici.com"
+pcoip_registration_code = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+cac_token = "token from Cloud Access Manager for the connector"
