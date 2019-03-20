@@ -32,3 +32,6 @@ installed.
 At the end of the deployment (~20 mins), a user should be able to go to the CAM
 Admin Console and see the new connector added, and the newly created
 workstations available for selection when adding existing remote workstation.
+
+## dc-lb-cac-ws
+Same as dc-cac-ws, except the number of Connectors can be specified, and all the connectors are added to a Target Pool of a TCP Network Load Balancer. 
