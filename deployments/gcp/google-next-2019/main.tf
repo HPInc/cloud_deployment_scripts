@@ -32,7 +32,11 @@ resource "google_compute_firewall" "allow-internal" {
         }
     ]
 
-    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidrs}", "${var.ws_subnet_cidr}"]
+    source_ranges = [
+        "${var.dc_subnet_cidr}",
+        "${var.cac_subnet_cidrs}",
+        "${var.ws_subnet_cidr}"
+    ]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -196,7 +200,7 @@ module "cac-0" {
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
-    cac_token               = "${var.cac_token}"
+    cac_token               = "${var.cac_token[0]}"
 
     domain_name              = "${var.domain_name}"
     domain_controller_ip     = "${module.dc.internal-ip}"
@@ -222,7 +226,7 @@ module "cac-1" {
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
-    cac_token               = "${var.cac_token}"
+    cac_token               = "${var.cac_token[1]}"
 
     domain_name              = "${var.domain_name}"
     domain_controller_ip     = "${module.dc.internal-ip}"
@@ -248,7 +252,7 @@ module "cac-2" {
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
-    cac_token               = "${var.cac_token}"
+    cac_token               = "${var.cac_token[2]}"
 
     domain_name              = "${var.domain_name}"
     domain_controller_ip     = "${module.dc.internal-ip}"
