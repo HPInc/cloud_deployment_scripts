@@ -11,6 +11,7 @@ service_account_password = "secure_password3"
 
 # cac_regions / cac_subnet_cidrs must have length of 3
 # cac_regions = ["us-central1", "us-west2", "us-east4"]
+# cac_zones = ["us-central1-a", "us-west2-b", "us-east4-b"]
 # cac_subnet_cidrs = ["10.0.1.0/24", "10.1.1.0/24", "10.2.1.0/24"]
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50

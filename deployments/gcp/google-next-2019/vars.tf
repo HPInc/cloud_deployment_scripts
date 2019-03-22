@@ -66,6 +66,12 @@ variable "cac_regions" {
 }
 
 # Hard-coded to accept list of 3: on-prem, us-west, us-east
+variable "cac_zones" {
+  description = "Zones in which to deploy Connectors"
+  default = ["us-central1-a", "us-west2-b", "us-east4-b"]
+}
+
+# Hard-coded to accept list of 3: on-prem, us-west, us-east
 variable "cac_subnet_cidrs" {
   description = "CIDRs for subnet containing the Cloud Access Connector"
   default = ["10.0.1.0/24", "10.1.1.0/24", "10.2.1.0/24"]

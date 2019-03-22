@@ -7,6 +7,8 @@ resource "google_compute_instance" "cac" {
     count = "${var.instance_count}"
 
     provider = "google"
+    zone = "${var.zone}"
+
     name = "${local.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
 

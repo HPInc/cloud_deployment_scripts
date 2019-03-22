@@ -43,6 +43,11 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "zone" {
+  description = "Zone to deploy the Cloud Access Connector"
+  default = "us-west2-b"
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Cloud Access Connector"
   type = "string"
