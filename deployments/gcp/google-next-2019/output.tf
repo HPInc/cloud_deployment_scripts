@@ -6,16 +6,16 @@ output "Domain Controller Public IP" {
     value = "${module.dc.public-ip}"
 }
 
-output "CAC Internal IP" {
-    value = "${module.cac.internal-ip}"
+output "CAC-0 Public IP" {
+    value = "${module.cac-0.public-ip}"
 }
 
-output "CAC Public IP" {
-    value = "${module.cac.public-ip}"
+output "CAC-1 Public IP" {
+    value = "${module.cac-1.public-ip}"
 }
 
-output "CAC TCP Network Load Balancer IP" {
-    value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
+output "CAC-2 Public IP" {
+    value = "${module.cac-2.public-ip}"
 }
 
 output "Win Gfx Internal IP" {

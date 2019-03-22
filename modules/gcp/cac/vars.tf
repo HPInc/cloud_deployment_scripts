@@ -43,6 +43,11 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "zone" {
+  description = "Zone to deploy the Cloud Access Connector"
+  default = "us-west2-b"
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Cloud Access Connector"
   type = "string"
@@ -51,6 +56,11 @@ variable "subnet" {
 variable "instance_count" {
   description = "Number of Cloud Access Connectors to deploy"
   default = 1
+}
+
+variable "host_name" {
+  description = "Name to give the host"
+  default = "vm-cac"
 }
 
 variable "machine_type" {

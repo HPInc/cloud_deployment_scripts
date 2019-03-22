@@ -58,14 +58,23 @@ variable "dc_admin_password" {
   type = "string"
 }
 
-variable "cac_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Connector"
-  default = "10.0.1.0/24"
+# Hard-coded to accept list of 3: on-prem, us-west, us-east
+# These regions are chosen based on support for Nvidia P4 GPU
+variable "cac_regions" {
+  description = "Regions in which to deploy Connectors"
+  default = ["us-central1", "us-west2", "us-east4"]
 }
 
-variable "cac_instance_count" {
-  description = "Number of Cloud Access Connector instances"
-  default = 1
+# Hard-coded to accept list of 3: on-prem, us-west, us-east
+variable "cac_zones" {
+  description = "Zones in which to deploy Connectors"
+  default = ["us-central1-a", "us-west2-b", "us-east4-b"]
+}
+
+# Hard-coded to accept list of 3: on-prem, us-west, us-east
+variable "cac_subnet_cidrs" {
+  description = "CIDRs for subnet containing the Cloud Access Connector"
+  default = ["10.0.1.0/24", "10.1.1.0/24", "10.2.1.0/24"]
 }
 
 variable "cac_machine_type" {
@@ -85,7 +94,7 @@ variable "cac_disk_image_family" {
 
 variable "cac_disk_size_gb" {
   description = "Disk size (GB) of Cloud Access Connector"
-  default = 50
+  default = 50 
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -124,14 +133,18 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "ws_region" {
+  default = "us-west2"
+}
+
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
-  default = "10.0.2.0/24"
+  default = "10.1.2.0/24"
 }
 
 variable "cac_token" {
   description = "Connector Token from CAM Service"
-  type = "string"
+  type = "list"
 }
 
 variable "pcoip_registration_code" {

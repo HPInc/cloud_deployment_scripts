@@ -32,7 +32,11 @@ resource "google_compute_firewall" "allow-internal" {
         }
     ]
 
-    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidr}", "${var.ws_subnet_cidr}"]
+    source_ranges = [
+        "${var.dc_subnet_cidr}",
+        "${var.cac_subnet_cidrs}",
+        "${var.ws_subnet_cidr}"
+    ]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -180,29 +184,33 @@ module "dc" {
     disk_size_gb       = "${var.dc_disk_size_gb}"
 }
 
-resource "google_compute_subnetwork" "cac-subnet" {
-    name = "${local.prefix}subnet-cac"
-    ip_cidr_range = "${var.cac_subnet_cidr}"
+resource "google_compute_subnetwork" "cac-subnets" {
+    count = "${length(var.cac_regions)}"
+
+    name = "${local.prefix}subnet-cac-${var.cac_regions[count.index]}"
+    region = "${var.cac_regions[count.index]}"
+    ip_cidr_range = "${var.cac_subnet_cidrs[count.index]}"
     network = "${google_compute_network.vpc.self_link}"
 }
 
-module "cac" {
+module "cac-0" {
     source = "../../../modules/gcp/cac"
 
     prefix = "${var.prefix}"
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
-    cac_token               = "${var.cac_token}"
+    cac_token               = "${var.cac_token[0]}"
 
     domain_name              = "${var.domain_name}"
     domain_controller_ip     = "${module.dc.internal-ip}"
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
-    subnet         = "${google_compute_subnetwork.cac-subnet.self_link}"
-    instance_count = "${var.cac_instance_count}"
+    zone           = "${var.cac_zones[0]}"
+    subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[0]}"
 
+    host_name          = "${var.cac_regions[0]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
     disk_image_family  = "${var.cac_disk_image_family}"
@@ -213,31 +221,66 @@ module "cac" {
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
 }
 
-resource "google_compute_target_pool" "cac-pool" {
-    name = "${local.prefix}pool-cac"
+module "cac-1" {
+    source = "../../../modules/gcp/cac"
 
-    instances = ["${module.cac.instance-self-links}"]
+    prefix = "${var.prefix}"
 
-    session_affinity = "CLIENT_IP"
+    cam_url                 = "${var.cam_url}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+    cac_token               = "${var.cac_token[1]}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+
+    zone           = "${var.cac_zones[1]}"
+    subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[1]}"
+
+    host_name          = "${var.cac_regions[1]}-vm-cac"
+    machine_type       = "${var.cac_machine_type}"
+    disk_image_project = "${var.cac_disk_image_project}"
+    disk_image_family  = "${var.cac_disk_image_family}"
+    disk_size_gb       = "${var.cac_disk_size_gb}"
+
+    cac_admin_user              = "${var.cac_admin_user}"
+    cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
+    cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
 }
 
-resource "google_compute_forwarding_rule" "cac-fwdrule" {
-    name = "${local.prefix}fwdrule-cac"
+module "cac-2" {
+    source = "../../../modules/gcp/cac"
 
-    load_balancing_scheme = "EXTERNAL"
-    ip_protocol = "TCP"
-    port_range = "443"
-    target = "${google_compute_target_pool.cac-pool.self_link}"
-}
+    prefix = "${var.prefix}"
 
-# google_compute_forwarding_rule has no output to show IP address
-data "google_compute_forwarding_rule" "cac-fwdrule" {
-    name = "${google_compute_forwarding_rule.cac-fwdrule.name}"
+    cam_url                 = "${var.cam_url}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+    cac_token               = "${var.cac_token[2]}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+
+    zone           = "${var.cac_zones[2]}"
+    subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[2]}"
+
+    host_name          = "${var.cac_regions[2]}-vm-cac"
+    machine_type       = "${var.cac_machine_type}"
+    disk_image_project = "${var.cac_disk_image_project}"
+    disk_image_family  = "${var.cac_disk_image_family}"
+    disk_size_gb       = "${var.cac_disk_size_gb}"
+
+    cac_admin_user              = "${var.cac_admin_user}"
+    cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
+    cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
 }
 
 resource "google_compute_subnetwork" "ws-subnet" {
     name = "${local.prefix}subnet-ws"
     ip_cidr_range = "${var.ws_subnet_cidr}"
+    region = "${var.ws_region}"
     network = "${google_compute_network.vpc.self_link}"
 }
 

@@ -26,9 +26,14 @@ A Cloud Access Connector is created and registers itself with the CAM service
 with the given Token and PCoIP Registration code.
 
 Domain-joined Windows Graphics workstation(s) and CentOS Graphics
-workstation(s) are created with NVidia graphics driver and PCoIP Agent
-installed.
+workstation(s) are optionally created, specified by win_gfx_ws_count and
+centos_gfx_ws_count (both default to 0).  These workstations are created with
+NVidia graphics driver and PCoIP Agent installed.
 
 At the end of the deployment (~20 mins), a user should be able to go to the CAM
 Admin Console and see the new connector added, and the newly created
 workstations available for selection when adding existing remote workstation.
+
+## dc-lb-cac-ws
+Same as dc-cac-ws, except the number of Connectors can be specified, and all the
+connectors are added to a Target Pool of a TCP Network Load Balancer. 

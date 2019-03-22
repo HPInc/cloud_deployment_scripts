@@ -8,9 +8,22 @@ dc_admin_password = "secure_password"
 safe_mode_admin_password = "secure_password2"
 service_account_password = "secure_password3"
 
+# cac_machine_type = "n1-standard-2"
+# cac_disk_size_gb = 50
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 cac_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 
+win_gfx_instance_count = 1
+# win_gfx_machine_type = "n1-standard-2"
+# win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
+# win_gfx_accelerator_count = 1
+# win_gfx_disk_size_gb = 50
+
+centos_gfx_instance_count = 1
+# centos_gfx_machine_type = "n1-standard-2"
+# centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
+# centos_gfx_accelerator_count = 1
+# centos_gfx_disk_size_gb = 50
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 centos_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 

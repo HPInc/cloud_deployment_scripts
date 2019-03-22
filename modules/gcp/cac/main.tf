@@ -1,13 +1,14 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
-    host_name = "${local.prefix}vm-cac"
 }
 
 resource "google_compute_instance" "cac" {
     count = "${var.instance_count}"
 
     provider = "google"
-    name = "${local.host_name}-${count.index}"
+    zone = "${var.zone}"
+
+    name = "${local.prefix}${var.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
 
     boot_disk {
