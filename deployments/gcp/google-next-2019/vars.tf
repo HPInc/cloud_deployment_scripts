@@ -50,7 +50,7 @@ variable "dc_disk_image_family" {
 
 variable "dc_disk_size_gb" {
   description = "Disk size (GB) of Domain Controller"
-  default = "50" 
+  default = 50
 }
 
 variable "dc_admin_password" {
@@ -88,7 +88,7 @@ variable "cac_disk_image_family" {
 
 variable "cac_disk_size_gb" {
   description = "Disk size (GB) of Cloud Access Connector"
-  default = "50" 
+  default = 50 
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -151,14 +151,54 @@ variable "cam_url" {
   default = "https://cam.teradici.com"
 }
 
-variable "win_gfx_ws_count" {
+variable "win_gfx_instance_count" {
   description = "Number of Windows Grpahics Workstations"
   default = 0
 }
 
-variable "centos_gfx_ws_count" {
+variable "win_gfx_machine_type" {
+  description = "Machine type for Windows Graphics Workstations"
+  default = "n1-standard-2"
+}
+
+variable "win_gfx_accelerator_type" {
+  description = "Accelerator type for Windows Graphics Workstations"
+  default = "nvidia-tesla-p4-vws"
+}
+
+variable "win_gfx_accelerator_count" {
+  description = "Number of GPUs for Windows Graphics Workstations"
+  default = 1
+}
+
+variable "win_gfx_disk_size_gb" {
+  description = "Disk size (GB) of Windows Graphics Workstations"
+  default = 50
+}
+
+variable "centos_gfx_instance_count" {
   description = "Number of CentOS Grpahics Workstations"
   default = 0
+}
+
+variable "centos_gfx_machine_type" {
+  description = "Machine type for CentOS Graphics Workstations"
+  default = "n1-standard-2"
+}
+
+variable "centos_gfx_accelerator_type" {
+  description = "Accelerator type for CentOS Graphics Workstations"
+  default = "nvidia-tesla-p4-vws"
+}
+
+variable "centos_gfx_accelerator_count" {
+  description = "Number of GPUs for CentOS Graphics Workstations"
+  default = 1
+}
+
+variable "centos_gfx_disk_size_gb" {
+  description = "Disk size (GB) of CentOS Graphics Workstations"
+  default = 50
 }
 
 variable "centos_admin_user" {
