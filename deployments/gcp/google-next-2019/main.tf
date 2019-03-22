@@ -210,6 +210,7 @@ module "cac-0" {
     zone           = "${var.cac_zones[0]}"
     subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[0]}"
 
+    host_name          = "${var.cac_regions[0]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
     disk_image_family  = "${var.cac_disk_image_family}"
@@ -237,6 +238,7 @@ module "cac-1" {
     zone           = "${var.cac_zones[1]}"
     subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[1]}"
 
+    host_name          = "${var.cac_regions[1]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
     disk_image_family  = "${var.cac_disk_image_family}"
@@ -264,6 +266,7 @@ module "cac-2" {
     zone           = "${var.cac_zones[2]}"
     subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[2]}"
 
+    host_name          = "${var.cac_regions[2]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
     disk_image_family  = "${var.cac_disk_image_family}"

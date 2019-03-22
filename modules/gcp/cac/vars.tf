@@ -58,6 +58,11 @@ variable "instance_count" {
   default = 1
 }
 
+variable "host_name" {
+  description = "Name to give the host"
+  default = "vm-cac"
+}
+
 variable "machine_type" {
   description = "Machine type for the Cloud Access Connector"
   default = "n1-standard-2"
