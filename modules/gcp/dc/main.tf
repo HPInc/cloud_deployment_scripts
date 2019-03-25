@@ -192,9 +192,10 @@ resource "null_resource" "new-domain-admin-user" {
 resource "null_resource" "new-domain-user" {
     count = "${local.new_domain_users}"
 
+    # Waits for new-domain-admin-user because that script waits for ADWS to be up
     depends_on = [
         "null_resource.upload-domain-users-list",
-        "null_resource.wait-for-reboot",
+        "null_resource.new-domain-admin-user",
     ]
     triggers {
         instance_id = "${google_compute_instance.dc.instance_id}"

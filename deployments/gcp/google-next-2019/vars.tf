@@ -133,6 +133,12 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "domain_users_list" {
+  description = "Active Directory users to create, in CSV format"
+  type = "string"
+  default = ""
+}
+
 variable "ws_region" {
   default = "us-west2"
 }
