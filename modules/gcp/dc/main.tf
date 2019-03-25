@@ -4,7 +4,10 @@ locals {
     # TODO: remove the min() function when Terraform 0.12 is available
     host_name = "${substr("${local.prefix}vm-dc", 0, min(15, length(local.prefix)+5))}"
     setup_file = "C:/Temp/setup.ps1"
-    add_user_file = "C:/Temp/add_user.ps1"
+    new_domain_admin_user_file = "C:/Temp/new_domain_admin_user.ps1"
+    new_domain_users_file = "C:/Temp/new_domain_users.ps1"
+    domain_users_list_file = "C:/Temp/domain_users_list.csv"
+    new_domain_users = "${var.domain_users_list == "" ? 0 : 1}"
 }
 
 data "template_file" "sysprep-script" {
@@ -24,14 +27,23 @@ data "template_file" "setup-script" {
     }
 }
 
-data "template_file" "add-user-script" {
-    template = "${file("${path.module}/add_user.ps1.tpl")}"
+data "template_file" "new-domain-admin-user-script" {
+    template = "${file("${path.module}/new_domain_admin_user.ps1.tpl")}"
 
     vars {
         host_name = "${local.host_name}"
         domain_name = "${var.domain_name}"
         account_name = "${var.service_account_username}"
         account_password = "${var.service_account_password}"
+    }
+}
+
+data "template_file" "new-domain-users-script" {
+    template = "${file("${path.module}/new_domain_users.ps1.tpl")}"
+
+    vars {
+        domain_name = "${var.domain_name}"
+        csv_file = "${local.domain_users_list_file}"
     }
 }
 
@@ -87,8 +99,37 @@ resource "null_resource" "upload-scripts" {
     }
 
     provisioner "file" {
-        content = "${data.template_file.add-user-script.rendered}"
-        destination = "${local.add_user_file}"
+        content = "${data.template_file.new-domain-admin-user-script.rendered}"
+        destination = "${local.new_domain_admin_user_file}"
+    }
+
+    provisioner "file" {
+        content = "${data.template_file.new-domain-users-script.rendered}"
+        destination = "${local.new_domain_users_file}"
+    }
+}
+
+resource "null_resource" "upload-domain-users-list" {
+    count = "${local.new_domain_users}"
+
+    depends_on = ["google_compute_instance.dc"]
+    triggers {
+        instance_id = "${google_compute_instance.dc.instance_id}"
+    }
+
+    connection {
+        type = "winrm"
+        user = "Administrator"
+        password = "${var.admin_password}"
+        host = "${google_compute_instance.dc.network_interface.0.access_config.0.nat_ip}"
+        port = "5986"
+        https = true
+        insecure = true
+    }
+
+    provisioner "file" {
+        source = "domain_users_list.csv"
+        destination = "${local.domain_users_list_file}"
     }
 }
 
@@ -124,8 +165,11 @@ resource "null_resource" "wait-for-reboot" {
     }
 }
 
-resource "null_resource" "add-user" {
-    depends_on = ["null_resource.wait-for-reboot"]
+resource "null_resource" "new-domain-admin-user" {
+    depends_on = [
+        "null_resource.upload-scripts",
+        "null_resource.wait-for-reboot",
+    ]
     triggers {
         instance_id = "${google_compute_instance.dc.instance_id}"
     }
@@ -141,6 +185,36 @@ resource "null_resource" "add-user" {
     }
 
     provisioner "remote-exec" {
-        inline = ["powershell -file ${local.add_user_file}"]
+        inline = ["powershell -file ${local.new_domain_admin_user_file}"]
+    }
+}
+
+resource "null_resource" "new-domain-user" {
+    count = "${local.new_domain_users}"
+
+    depends_on = [
+        "null_resource.upload-domain-users-list",
+        "null_resource.wait-for-reboot",
+    ]
+    triggers {
+        instance_id = "${google_compute_instance.dc.instance_id}"
+    }
+
+    connection {
+        type = "winrm"
+        user = "Administrator"
+        password = "${var.admin_password}"
+        host = "${google_compute_instance.dc.network_interface.0.access_config.0.nat_ip}"
+        port = "5986"
+        https = true
+        insecure = true
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            # Wait in case csv file is newly uploaded
+            "powershell sleep 2",
+            "powershell -file ${local.new_domain_users_file}",
+        ]
     }
 }

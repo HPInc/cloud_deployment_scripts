@@ -28,6 +28,12 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "domain_users_list" {
+  description = "Active Directory users to create, in CSV format"
+  type = "string"
+  default = ""
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Domain Controller"
   type = "string"
