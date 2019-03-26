@@ -37,3 +37,10 @@ workstations available for selection when adding existing remote workstation.
 ## dc-lb-cac-ws
 Same as dc-cac-ws, except the number of Connectors can be specified, and all the
 connectors are added to a Target Pool of a TCP Network Load Balancer. 
+
+## dc-only
+A simple deployment of one Domain Controller, intended for testing Domain Controller operations.
+
+Creates one VPC, one subnet and a single Domain Controller with ports opened
+for ICMP, RDP and WinRM.  Domain Controller is configured with Acitve
+Directory, DNS, LDAP-S.  One AD Service Account is also created.
