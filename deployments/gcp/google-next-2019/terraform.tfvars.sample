@@ -36,7 +36,7 @@ centos_gfx_machine_type = "custom-2-8192"
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 centos_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 
-cam_url = "https://cam-staging.teradici.com"
+# cam_url = "https://cam.teradici.com"
 pcoip_registration_code = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
 cac_token = [
     # On-prem / us-central1
