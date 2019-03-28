@@ -13,7 +13,7 @@ def main():
     args = parser.parse_args()
 
     # Headers
-    print ("firstname,lastname,username,password")
+    print ("firstname,lastname,username,password,isadmin")
 
     for i in range(args.n):
         name = names.get_full_name().split()
