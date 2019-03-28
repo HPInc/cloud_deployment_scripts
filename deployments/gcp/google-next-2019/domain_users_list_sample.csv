@@ -1,3 +1,3 @@
-firstname,middleInitial,lastname,username,email,streetaddress,city,zipcode,state,country,department,password,telephone,jobtitle,company,ou
-Demo,,User,demouser,,,,,,,,securepassword
-Demo,,User2,demouser2,,,,,,,,securepassword
+firstname,lastname,username,password,isadmin
+Demo,User,demouser,securepassword,true
+Demo,User2,demouser2,securepassword

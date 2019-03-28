@@ -1,3 +1,9 @@
+terraform {
+    backend "gcs" {
+        bucket = "syin-terraform"
+    }
+}
+
 provider "google" {
     credentials = "${file("${var.gcp_credentials_file}")}"
     project   = "${var.gcp_project_id}"
@@ -6,7 +12,8 @@ provider "google" {
 }
 
 locals {
-    prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
+    prefix = "${var.prefix != "" ? "${var.prefix}-" : "${terraform.workspace != "default" ? "${terraform.workspace}-" : ""}"}"
+    prefix_module = "${var.prefix != "" ? "${var.prefix}" : "${terraform.workspace != "default" ? "${terraform.workspace}" : ""}"}"
 }
 
 resource "google_compute_network" "vpc" {
@@ -167,7 +174,7 @@ resource "google_compute_address" "dc-internal-ip" {
 module "dc" {
     source = "../../../modules/gcp/dc"
 
-    prefix = "${var.prefix}"
+    prefix = "${local.prefix_module}"
 
     domain_name              = "${var.domain_name}"
     admin_password           = "${var.dc_admin_password}"
@@ -197,7 +204,7 @@ resource "google_compute_subnetwork" "cac-subnets" {
 module "cac-0" {
     source = "../../../modules/gcp/cac"
 
-    prefix = "${var.prefix}"
+    prefix = "${local.prefix_module}"
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
@@ -225,7 +232,7 @@ module "cac-0" {
 module "cac-1" {
     source = "../../../modules/gcp/cac"
 
-    prefix = "${var.prefix}"
+    prefix = "${local.prefix_module}"
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
@@ -253,7 +260,7 @@ module "cac-1" {
 module "cac-2" {
     source = "../../../modules/gcp/cac"
 
-    prefix = "${var.prefix}"
+    prefix = "${local.prefix_module}"
 
     cam_url                 = "${var.cam_url}"
     pcoip_registration_code = "${var.pcoip_registration_code}"
@@ -288,7 +295,7 @@ resource "google_compute_subnetwork" "ws-subnet" {
 module "win-gfx" {
     source = "../../../modules/gcp/win-gfx"
 
-    prefix = "${var.prefix}"
+    prefix = "${local.prefix_module}"
 
     pcoip_registration_code = "${var.pcoip_registration_code}"
 
@@ -312,7 +319,7 @@ module "win-gfx" {
 module "centos-gfx" {
     source = "../../../modules/gcp/centos-gfx"
 
-    prefix = "${var.prefix}"
+    prefix = "${local.prefix_module}"
 
     pcoip_registration_code = "${var.pcoip_registration_code}"
 

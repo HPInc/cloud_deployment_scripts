@@ -18,19 +18,7 @@ foreach ($User in $ADUsers)
     $Password 	= $User.password
     $Firstname 	= $User.firstname
     $Lastname 	= $User.lastname
-    $OU 		= $User.ou #This field refers to the OU the user account is to be created in
-    $email      = $User.email
-    $streetaddress = $User.streetaddress
-    $city       = $User.city
-    $zipcode    = $User.zipcode
-    $state      = $User.state
-    $country    = $User.country
-    $telephone  = $User.telephone
-    $jobtitle   = $User.jobtitle
-    $company    = $User.company
-    $department = $User.department
-    $Password = $User.Password
-
+    $Isadmin    = $User.isadmin
 
     #Check to see if the user already exists in AD
     if (Get-ADUser -F {SamAccountName -eq $Username})
@@ -51,14 +39,13 @@ foreach ($User in $ADUsers)
             -Surname $Lastname `
             -Enabled $True `
             -DisplayName "$Lastname, $Firstname" `
-            -City $city `
-            -Company $company `
-            -State $state `
-            -StreetAddress $streetaddress `
-            -OfficePhone $telephone `
-            -EmailAddress $email `
-            -Title $jobtitle `
-            -Department $department `
             -AccountPassword (convertto-securestring $Password -AsPlainText -Force) -ChangePasswordAtLogon $False
+
+        if ($Isadmin -eq "true")
+        {
+            Add-ADGroupMember `
+                -Identity "Domain Admins" `
+                -Members $Username
+        }
     }
 }
