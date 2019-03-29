@@ -296,6 +296,7 @@ module "win-gfx" {
     source = "../../../modules/gcp/win-gfx"
 
     prefix = "${local.prefix_module}"
+    name   = "cad"
 
     pcoip_registration_code = "${var.pcoip_registration_code}"
 
@@ -320,6 +321,7 @@ module "centos-gfx" {
     source = "../../../modules/gcp/centos-gfx"
 
     prefix = "${local.prefix_module}"
+    name   = "vfx"
 
     pcoip_registration_code = "${var.pcoip_registration_code}"
 

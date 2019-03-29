@@ -3,6 +3,11 @@ variable "prefix" {
   default = ""
 }
 
+variable "name" {
+  description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
+  default = "gwin"
+}
+
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code from Teradici"
   type = "string"

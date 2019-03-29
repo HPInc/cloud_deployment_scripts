@@ -3,7 +3,7 @@ locals {
     # Windows computer names must be <= 15 characters, minus 3 chars for "-xy"
     # where xy is number of instances (0-99)
     # TODO: remove the min() function when Terraform 0.12 is available
-    host_name = "${substr("${local.prefix}gcent", 0, min(12, length(local.prefix)+5))}"
+    host_name = "${substr("${local.prefix}${var.name}", 0, min(12, length(local.prefix)+length(var.name)))}"
 
     setup_dir= "/tmp"
 }
