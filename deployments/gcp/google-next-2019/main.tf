@@ -227,6 +227,9 @@ module "cac-0" {
     cac_admin_user              = "${var.cac_admin_user}"
     cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
+
+    ssl_key  = "${var.ssl_key}"
+    ssl_cert = "${var.ssl_cert}"
 }
 
 module "cac-1" {
@@ -255,6 +258,9 @@ module "cac-1" {
     cac_admin_user              = "${var.cac_admin_user}"
     cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
+
+    ssl_key  = "${var.ssl_key}"
+    ssl_cert = "${var.ssl_cert}"
 }
 
 module "cac-2" {
@@ -283,6 +289,9 @@ module "cac-2" {
     cac_admin_user              = "${var.cac_admin_user}"
     cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
+
+    ssl_key  = "${var.ssl_key}"
+    ssl_cert = "${var.ssl_cert}"
 }
 
 resource "google_compute_subnetwork" "ws-subnet" {

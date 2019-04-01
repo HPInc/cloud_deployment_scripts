@@ -107,3 +107,13 @@ variable "ignore_disk_req" {
   description = "Ignore the check for the minimum disk space requirement when installing the Cloud Access Connector"
   default = true
 }
+
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
+  default = ""
+}

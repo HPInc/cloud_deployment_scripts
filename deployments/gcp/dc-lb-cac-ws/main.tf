@@ -211,6 +211,9 @@ module "cac" {
     cac_admin_user              = "${var.cac_admin_user}"
     cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
     cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
+
+    ssl_key  = "${var.ssl_key}"
+    ssl_cert = "${var.ssl_cert}"
 }
 
 resource "google_compute_target_pool" "cac-pool" {

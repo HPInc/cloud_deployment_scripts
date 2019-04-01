@@ -104,6 +104,16 @@ variable "cac_admin_ssh_priv_key_file" {
   type = "string"
 }
 
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
+  default = ""
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   type = "string"
