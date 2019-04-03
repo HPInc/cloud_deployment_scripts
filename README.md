@@ -9,6 +9,10 @@ The top level terraform scripts that creates entire deployments.
 The building blocks of deployments, e.g. a Domain Controller, a Cloud Access
 Connector, a Workstation, etc.
 
+## tools/
+Various scripts to help with Terraform deployments.  e.g. a Python script to
+generate random users for an Active Directory in a CSV file.
+
 # Deployments
 ## dc-cac-ws
 Creates a VPC with 3 subnets in the same region. The subnets are
@@ -19,8 +23,9 @@ Firewall rules are created to allow wide-open access within the VPC, and
 selected ports are open to the world for operation and for debug purposes.
 
 A Domain Controller is created with Active Directory, DNS and LDAP-S configured.
-2 users are set up in the new domain: Administrator and cam_admin (default). It
-is also given a static IP.
+2 Domain Admins are set up in the new domain: Administrator and cam_admin
+(default). Domain Users are also created if a domain_users_list CSV file is
+specified. The Domain Controller is given a static IP.
 
 A Cloud Access Connector is created and registers itself with the CAM service
 with the given Token and PCoIP Registration code.
@@ -44,3 +49,15 @@ A simple deployment of one Domain Controller, intended for testing Domain Contro
 Creates one VPC, one subnet and a single Domain Controller with ports opened
 for ICMP, RDP and WinRM.  Domain Controller is configured with Acitve
 Directory, DNS, LDAP-S.  One AD Service Account is also created.
+
+## google-next-2019
+Deploys the environment for the on stage and at the booth demos. Because this
+is a specific deployment for the demo, it contains some hard coded values.
+The deployment is similar to dc-cac-ws, except there will be 3 connectors in
+3 regions: On-Prem (really just US Central), US West, and US East.
+
+The following are the differences from dc-cac-ws:
+- 3 connector subnets are created, one for each of the 3 regions.
+- 3 connectors are deployed - one for each of 3 regions
+- 1 Windowns Graphics and 2 CentOS Graphics workstations are deployed in US
+  West (chosen for proximity to the Convention, which is in San Francisco)
