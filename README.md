@@ -41,7 +41,12 @@ workstations available for selection when adding existing remote workstation.
 
 ## dc-lb-cac-ws
 Same as dc-cac-ws, except the number of Connectors can be specified, and all the
-connectors are added to a Target Pool of a TCP Network Load Balancer. 
+connectors are added to a Target Pool of a TCP Network Load Balancer. Auto-
+scaling is _not_ enabled.
+
+## dc-scale-cac-ws
+Same as dc-cac-ws, except the Connectors are deployed in a regional, auto-
+scaled managed instance group behind an HTTPS Load Balancer.
 
 ## dc-only
 A simple deployment of one Domain Controller, intended for testing Domain Controller operations.
