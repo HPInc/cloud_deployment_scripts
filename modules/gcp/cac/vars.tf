@@ -43,7 +43,7 @@ variable "service_account_password" {
   type = "string"
 }
 
-variable "zone" {
+variable "gcp_zone" {
   description = "Zone to deploy the Cloud Access Connector"
   default = "us-west2-b"
 }

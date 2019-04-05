@@ -215,8 +215,8 @@ module "cac-0" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
-    zone           = "${var.cac_zones[0]}"
-    subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[0]}"
+    gcp_zone = "${var.cac_zones[0]}"
+    subnet   = "${google_compute_subnetwork.cac-subnets.*.self_link[0]}"
 
     host_name          = "${var.cac_regions[0]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"
@@ -246,8 +246,8 @@ module "cac-1" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
-    zone           = "${var.cac_zones[1]}"
-    subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[1]}"
+    gcp_zone = "${var.cac_zones[1]}"
+    subnet   = "${google_compute_subnetwork.cac-subnets.*.self_link[1]}"
 
     host_name          = "${var.cac_regions[1]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"
@@ -277,8 +277,8 @@ module "cac-2" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
-    zone           = "${var.cac_zones[2]}"
-    subnet         = "${google_compute_subnetwork.cac-subnets.*.self_link[2]}"
+    gcp_zone = "${var.cac_zones[2]}"
+    subnet   = "${google_compute_subnetwork.cac-subnets.*.self_link[2]}"
 
     host_name          = "${var.cac_regions[2]}-vm-cac"
     machine_type       = "${var.cac_machine_type}"

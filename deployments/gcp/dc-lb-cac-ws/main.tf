@@ -200,6 +200,7 @@ module "cac" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
+    gcp_zone       = "${var.gcp_zone}"
     subnet         = "${google_compute_subnetwork.cac-subnet.self_link}"
     instance_count = "${var.cac_instance_count}"
 
