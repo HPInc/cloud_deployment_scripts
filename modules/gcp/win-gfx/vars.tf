@@ -99,6 +99,6 @@ variable "pcoip_agent_location" {
 }
 
 variable "pcoip_agent_filename" {
-  description = "Filename of Teradici PCoIP Graphics Agent"
-  default = "PCoIP_agent_release_installer_graphics.exe"
+  description = "Filename of Teradici PCoIP Graphics Agent. Leave blank to download the latest."
+  default = ""
 }
