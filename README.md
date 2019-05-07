@@ -39,6 +39,8 @@ At the end of the deployment (~20 mins), a user should be able to go to the CAM
 Admin Console and see the new connector added, and the newly created
 workstations available for selection when adding existing remote workstation.
 
+![dc-cac-ws diagram](./dc-cac-ws.png)
+
 ## dc-lb-cac-ws
 Same as dc-cac-ws, except multiple Cloud Access Connectors are deployed in a
 managed instance group comprising a single backend-service.
@@ -47,6 +49,8 @@ The number of Connectors can be specified in one of two ways:
 - a fixed number of instances, or
 - (TODO) a minimum and maximum number of instances in an auto-scaled group.
 In both cases, the Connectors will be deployed behind a GCP HTTPS Load Balancer with a single Global Load Balanced IP.
+
+![dc-lb-cac-ws diagram](./dc-lb-cac-ws.png)
 
 ## dc-only
 A simple deployment of one Domain Controller, intended for testing Domain Controller operations.
