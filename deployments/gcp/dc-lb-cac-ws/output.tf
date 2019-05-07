@@ -6,16 +6,9 @@ output "Domain Controller Public IP" {
     value = "${module.dc.public-ip}"
 }
 
-output "CAC Internal IP" {
-    value = "${module.cac.internal-ip}"
-}
-
-output "CAC Public IP" {
-    value = "${module.cac.public-ip}"
-}
-
-output "CAC TCP Network Load Balancer IP" {
-    value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
+output "CAC Load Balancer IP" {
+    #value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
+    value = "${google_compute_global_forwarding_rule.cac-fwdrule.ip_address}"
 }
 
 output "Win Gfx Internal IP" {

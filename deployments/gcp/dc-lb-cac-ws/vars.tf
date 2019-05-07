@@ -63,8 +63,8 @@ variable "cac_subnet_cidr" {
   default = "10.0.1.0/24"
 }
 
-variable "cac_instance_count" {
-  description = "Number of Cloud Access Connector instances"
+variable "cac_instances" {
+  description = "Number of Cloud Access Connector instances to deploy"
   default = 1
 }
 
@@ -99,18 +99,13 @@ variable "cac_admin_ssh_pub_key_file" {
   type = "string"
 }
 
-variable "cac_admin_ssh_priv_key_file" {
-  description = "SSH private key for Cloud Access Connector Administrator"
-  type = "string"
-}
-
 variable "ssl_key" {
-  description = "SSL private key for the Connector"
+  description = "SSL private key for the Connector in PEM format"
   default = ""
 }
 
 variable "ssl_cert" {
-  description = "SSL certificate for the Connector"
+  description = "SSL certificate for the Connector in PEM format"
   default = ""
 }
 

@@ -40,13 +40,13 @@ Admin Console and see the new connector added, and the newly created
 workstations available for selection when adding existing remote workstation.
 
 ## dc-lb-cac-ws
-Same as dc-cac-ws, except the number of Connectors can be specified, and all the
-connectors are added to a Target Pool of a TCP Network Load Balancer. Auto-
-scaling is _not_ enabled.
+Same as dc-cac-ws, except multiple Cloud Access Connectors are deployed in a
+managed instance group comprising a single backend-service.
 
-## dc-scale-cac-ws
-Same as dc-cac-ws, except the Connectors are deployed in a regional, auto-
-scaled managed instance group behind an HTTPS Load Balancer.
+The number of Connectors can be specified in one of two ways:
+- a fixed number of instances, or
+- (TODO) a minimum and maximum number of instances in an auto-scaled group.
+In both cases, the Connectors will be deployed behind a GCP HTTPS Load Balancer with a single Global Load Balanced IP.
 
 ## dc-only
 A simple deployment of one Domain Controller, intended for testing Domain Controller operations.

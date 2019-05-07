@@ -43,14 +43,19 @@ variable "service_account_password" {
   type = "string"
 }
 
-variable "gcp_region" {
-  description = "GCP Region to set up the Managed Instance Group"
-  default = "us-west2"
+variable "gcp_zone" {
+  description = "GCP Zone to set up the Managed Instance Group"
+  default = "us-west2-b"
 }
 
 variable "subnet" {
   description = "Subnet to deploy the Cloud Access Connector"
   type = "string"
+}
+
+variable "cac_instances" {
+  description = "Number of Cloud Access Connector instances to deploy"
+  default = 1
 }
 
 variable "machine_type" {
@@ -83,11 +88,6 @@ variable "cac_admin_ssh_pub_key_file" {
   type = "string"
 }
 
-variable "cac_admin_ssh_priv_key_file" {
-  description = "SSH private key for the Cloud Access Connector Administrator"
-  type = "string"
-}
-
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
   default = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
@@ -98,12 +98,12 @@ variable "ignore_disk_req" {
   default = true
 }
 
-variable "ssl_key" {
-  description = "SSL private key for the Connector"
-  default = ""
-}
-
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector"
-  default = ""
+variable "cac_health_check" {
+  description = "Health check configuration for Cloud Access Connector"
+  default = {
+    path         = "/CloudAccessManager/"
+    port         = 443
+    interval_sec = 5
+    timeout_sec  = 5
+  }
 }
