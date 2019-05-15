@@ -293,3 +293,26 @@ module "centos-gfx" {
     ws_admin_ssh_pub_key_file  = "${var.centos_admin_ssh_pub_key_file}"
     ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
 }
+
+module "centos-std" {
+    source = "../../../modules/gcp/centos-std"
+
+    prefix = "${var.prefix}"
+
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+
+    subnet         = "${google_compute_subnetwork.ws-subnet.self_link}"
+    instance_count = "${var.centos_std_instance_count}"
+
+    machine_type      = "${var.centos_std_machine_type}"
+    disk_size_gb      = "${var.centos_std_disk_size_gb}"
+
+    ws_admin_user              = "${var.centos_admin_user}"
+    ws_admin_ssh_pub_key_file  = "${var.centos_admin_ssh_pub_key_file}"
+    ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
+}

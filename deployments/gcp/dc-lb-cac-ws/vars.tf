@@ -199,6 +199,21 @@ variable "centos_gfx_disk_size_gb" {
   default = 50
 }
 
+variable "centos_std_instance_count" {
+  description = "Number of CentOS Standard Workstations"
+  default = 0
+}
+
+variable "centos_std_machine_type" {
+  description = "Machine type for CentOS Standard Workstations"
+  default = "n1-standard-2"
+}
+
+variable "centos_std_disk_size_gb" {
+  description = "Disk size (GB) of CentOS Standard Workstations"
+  default = 50
+}
+
 variable "centos_admin_user" {
   description = "Username of CentOS Workstations"
   default = "cam_admin"

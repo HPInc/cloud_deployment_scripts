@@ -29,3 +29,11 @@ output "CentOS Gfx Internal IP" {
 output "CentOS Gfx Public IP" {
     value = "${module.centos-gfx.public-ip}"
 }
+
+output "CentOS Std Internal IP" {
+    value = "${module.centos-std.internal-ip}"
+}
+
+output "CentOS Std Public IP" {
+    value = "${module.centos-std.public-ip}"
+}

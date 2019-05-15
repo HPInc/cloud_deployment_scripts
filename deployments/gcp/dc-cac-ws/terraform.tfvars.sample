@@ -24,17 +24,22 @@ cac_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 # ssl_key  = "/path/to/privkey.pem"
 # ssl_cert = "/path/to/fullchain.pem"
 
-win_gfx_instance_count = 1
+# win_gfx_instance_count = 0
 # win_gfx_machine_type = "n1-standard-2"
 # win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # win_gfx_accelerator_count = 1
 # win_gfx_disk_size_gb = 50
 
-centos_gfx_instance_count = 1
+# centos_gfx_instance_count = 0
 # centos_gfx_machine_type = "n1-standard-2"
 # centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1
 # centos_gfx_disk_size_gb = 50
+
+# centos_std_instance_count = 0
+# centos_std_machine_type = "n1-standard-2"
+# centos_std_disk_size_gb = 50
+
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 centos_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 
