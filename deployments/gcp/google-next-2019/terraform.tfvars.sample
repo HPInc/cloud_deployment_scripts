@@ -2,7 +2,7 @@
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id = "your-project-1234"
 
-prefix = "myprefix"
+# prefix = "myprefix"
 
 domain_name = "example.com"
 # Note Windows password complexity requirements:

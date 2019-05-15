@@ -1,7 +1,7 @@
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id = "your-project-1234"
 
-prefix = "myprefix"
+# prefix = "myprefix"
 
 domain_name = "example.com"
 # Note Windows password complexity requirements:
@@ -38,6 +38,6 @@ ssl_cert = "/path/to/fullchain.pem"
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 centos_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
 
-cam_url = "https://cam.teradici.com"
+# cam_url = "https://cam.teradici.com"
 pcoip_registration_code = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
 cac_token = "token from Cloud Access Manager for the connector"
