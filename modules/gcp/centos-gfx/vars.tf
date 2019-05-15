@@ -63,9 +63,13 @@ variable "disk_image_project" {
   default = "centos-cloud"
 }
 
-variable "disk_image_family" {
-  description = "Disk image family for the Workstation"
-  default = "centos-7"
+#variable "disk_image_family" {
+#  description = "Disk image family for the Workstation"
+#  default = "centos-7"
+#}
+variable "disk_image" {
+  description = "Disk image to use for the Workstation"
+  default = "centos-7-v20190326"
 }
 
 variable "disk_size_gb" {
