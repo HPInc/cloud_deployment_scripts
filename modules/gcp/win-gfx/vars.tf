@@ -3,6 +3,11 @@ variable "prefix" {
   default = ""
 }
 
+variable "name" {
+  description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
+  default = "gwin"
+}
+
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code from Teradici"
   type = "string"
@@ -63,9 +68,13 @@ variable "disk_image_project" {
   default = "windows-cloud"
 }
 
-variable "disk_image_family" {
-  description = "Disk image family for the Workstation"
-  default = "windows-2016"
+#variable "disk_image_family" {
+#  description = "Disk image family for the Workstation"
+#  default = "windows-2016"
+#}
+variable "disk_image" {
+  description = "Disk image to use for the Workstation"
+  default = "windows-server-2016-dc-v20190312"
 }
 
 variable "disk_size_gb" {
@@ -94,6 +103,6 @@ variable "pcoip_agent_location" {
 }
 
 variable "pcoip_agent_filename" {
-  description = "Filename of Teradici PCoIP Graphics Agent"
-  default = "PCoIP_agent_release_installer_graphics.exe"
+  description = "Filename of Teradici PCoIP Graphics Agent. Leave blank to download the latest."
+  default = ""
 }

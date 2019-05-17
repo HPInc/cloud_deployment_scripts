@@ -2,12 +2,21 @@
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id = "your-project-1234"
 
-prefix = "myprefix"
+# prefix = "myprefix"
 
 domain_name = "example.com"
-dc_admin_password = "secure_password"
-safe_mode_admin_password = "secure_password2"
-service_account_password = "secure_password3"
+# Note Windows password complexity requirements:
+# 1. Must not contain user's account name or display name
+# 2. Must have 3 of the following categories:
+#    a. a-z
+#    b. A-Z
+#    c. 0-9,
+#    d. (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+#    3. unicode characters
+# See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+dc_admin_password = "SecuRe_pwd1"
+safe_mode_admin_password = "SecuRe_pwd2"
+service_account_password = "SecuRe_pwd3"
 domain_users_list = "domain_users_list_sample.csv"
 
 # cac_regions / cac_subnet_cidrs must have length of 3
@@ -18,6 +27,8 @@ domain_users_list = "domain_users_list_sample.csv"
 # cac_disk_size_gb = 50
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 cac_admin_ssh_priv_key_file = "~/.ssh/id_rsa"
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
 
 # ws_region = "us-west2"
 # ws_subnet_cidr = "10.1.2.0/24"
@@ -28,7 +39,7 @@ win_gfx_machine_type = "custom-2-8192"
 # win_gfx_accelerator_count = 1
 # win_gfx_disk_size_gb = 50
 
-centos_gfx_instance_count = 1
+centos_gfx_instance_count = 2
 centos_gfx_machine_type = "custom-2-8192"
 # centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1

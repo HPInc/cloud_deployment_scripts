@@ -5,7 +5,7 @@ variable "prefix" {
 
 variable "name" {
   description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
-  default = "gcent"
+  default = "scent"
 }
 
 variable "pcoip_registration_code" {
@@ -39,23 +39,13 @@ variable "subnet" {
 }
 
 variable "instance_count" {
-  description = "Number of CentOS Graphics Workstations to deploy"
+  description = "Number of CentOS Standard Workstations to deploy"
   default = 1
 }
 
 variable "machine_type" {
   description = "Machine type for the Workstation"
   default = "n1-standard-2"
-}
-
-variable "accelerator_type" {
-  description = "Accelerator type for the Workstation"
-  default = "nvidia-tesla-p4-vws"
-}
-
-variable "accelerator_count" {
-  description = "Number of GPUs for the Workstation"
-  default = "1"
 }
 
 variable "disk_image_project" {

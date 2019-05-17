@@ -1,12 +1,14 @@
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
+    cert_dir = "/home/${var.cac_admin_user}"
+    ssl = "${var.ssl_key != "" ? true : false }"
 }
 
 resource "google_compute_instance" "cac" {
     count = "${var.instance_count}"
 
     provider = "google"
-    zone = "${var.zone}"
+    zone = "${var.gcp_zone}"
 
     name = "${local.prefix}${var.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
@@ -80,7 +82,7 @@ resource "null_resource" "cac-dependencies" {
 }
 
 resource "null_resource" "install-cac" {
-    count = "${var.instance_count}"
+    count = "${local.ssl == true ? 0 : var.instance_count}"
 
     depends_on = ["null_resource.cac-dependencies"]
 
@@ -101,6 +103,44 @@ resource "null_resource" "install-cac" {
             "export CAM_BASE_URI=${var.cam_url}",
 
             "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
+
+            "sudo docker service ls",
+        ]
+    }
+}
+
+resource "null_resource" "install-cac-cert" {
+    count = "${local.ssl == true ? var.instance_count : 0}"
+
+    depends_on = ["null_resource.cac-dependencies"]
+
+    triggers {
+        instance_id = "${google_compute_instance.cac.*.instance_id[count.index]}"
+    }
+
+    connection {
+        type = "ssh"
+        user = "${var.cac_admin_user}"
+        private_key = "${file(var.cac_admin_ssh_priv_key_file)}"
+        host = "${google_compute_instance.cac.*.network_interface.0.access_config.0.nat_ip[count.index]}"
+        insecure = true
+    }
+
+    provisioner "file" {
+        source = "${var.ssl_key}"
+        destination = "${local.cert_dir}/${basename(var.ssl_key)}"
+    }
+
+    provisioner "file" {
+        source = "${var.ssl_cert}"
+        destination = "${local.cert_dir}/${basename(var.ssl_cert)}"
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "export CAM_BASE_URI=${var.cam_url}",
+
+            "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --ssl-key ${local.cert_dir}/${basename(var.ssl_key)} --ssl-cert ${local.cert_dir}/${basename(var.ssl_cert)} --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
 
             "sudo docker service ls",
         ]

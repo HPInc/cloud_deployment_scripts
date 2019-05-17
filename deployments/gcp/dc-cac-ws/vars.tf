@@ -104,6 +104,16 @@ variable "cac_admin_ssh_priv_key_file" {
   type = "string"
 }
 
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
+  default = ""
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   type = "string"
@@ -191,6 +201,21 @@ variable "centos_gfx_accelerator_count" {
 
 variable "centos_gfx_disk_size_gb" {
   description = "Disk size (GB) of CentOS Graphics Workstations"
+  default = 50
+}
+
+variable "centos_std_instance_count" {
+  description = "Number of CentOS Standard Workstations"
+  default = 0
+}
+
+variable "centos_std_machine_type" {
+  description = "Machine type for CentOS Standard Workstations"
+  default = "n1-standard-2"
+}
+
+variable "centos_std_disk_size_gb" {
+  description = "Disk size (GB) of CentOS Standard Workstations"
   default = 50
 }
 

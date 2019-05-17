@@ -186,8 +186,8 @@ resource "google_compute_subnetwork" "cac-subnet" {
     network = "${google_compute_network.vpc.self_link}"
 }
 
-module "cac" {
-    source = "../../../modules/gcp/cac"
+module "cac-bkend-service" {
+    source = "../../../modules/gcp/cac-bkend-service"
 
     prefix = "${var.prefix}"
 
@@ -200,8 +200,10 @@ module "cac" {
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
 
-    subnet         = "${google_compute_subnetwork.cac-subnet.self_link}"
-    instance_count = "${var.cac_instance_count}"
+    #gcp_region = "${var.gcp_region}"
+    gcp_zone      = "${var.gcp_zone}"
+    subnet        = "${google_compute_subnetwork.cac-subnet.self_link}"
+    cac_instances = "${var.cac_instances}"
 
     machine_type       = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
@@ -210,29 +212,31 @@ module "cac" {
 
     cac_admin_user              = "${var.cac_admin_user}"
     cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
-    cac_admin_ssh_priv_key_file = "${var.cac_admin_ssh_priv_key_file}"
 }
 
-resource "google_compute_target_pool" "cac-pool" {
-    name = "${local.prefix}pool-cac"
-
-    instances = ["${module.cac.instance-self-links}"]
-
-    session_affinity = "CLIENT_IP"
+resource "google_compute_url_map" "cac-urlmap" {
+    name = "${local.prefix}urlmap-cac"
+    default_service = "${module.cac-bkend-service.cac-bkend-service}"
 }
 
-resource "google_compute_forwarding_rule" "cac-fwdrule" {
+resource "google_compute_ssl_certificate" "ssl-cert" {
+    name = "${local.prefix}ssl-cert"
+    private_key = "${file(var.ssl_key)}"
+    certificate = "${file(var.ssl_cert)}"
+}
+
+resource "google_compute_target_https_proxy" "cac-proxy" {
+    name = "${local.prefix}proxy-cac"
+    url_map = "${google_compute_url_map.cac-urlmap.self_link}"
+    ssl_certificates = ["${google_compute_ssl_certificate.ssl-cert.self_link}"]
+}
+
+resource "google_compute_global_forwarding_rule" "cac-fwdrule" {
     name = "${local.prefix}fwdrule-cac"
 
-    load_balancing_scheme = "EXTERNAL"
-    ip_protocol = "TCP"
+    #ip_protocol = "TCP"
     port_range = "443"
-    target = "${google_compute_target_pool.cac-pool.self_link}"
-}
-
-# google_compute_forwarding_rule has no output to show IP address
-data "google_compute_forwarding_rule" "cac-fwdrule" {
-    name = "${google_compute_forwarding_rule.cac-fwdrule.name}"
+    target = "${google_compute_target_https_proxy.cac-proxy.self_link}"
 }
 
 resource "google_compute_subnetwork" "ws-subnet" {
@@ -284,6 +288,29 @@ module "centos-gfx" {
     accelerator_type  = "${var.centos_gfx_accelerator_type}"
     accelerator_count = "${var.centos_gfx_accelerator_count}"
     disk_size_gb      = "${var.centos_gfx_disk_size_gb}"
+
+    ws_admin_user              = "${var.centos_admin_user}"
+    ws_admin_ssh_pub_key_file  = "${var.centos_admin_ssh_pub_key_file}"
+    ws_admin_ssh_priv_key_file = "${var.centos_admin_ssh_priv_key_file}"
+}
+
+module "centos-std" {
+    source = "../../../modules/gcp/centos-std"
+
+    prefix = "${var.prefix}"
+
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+
+    subnet         = "${google_compute_subnetwork.ws-subnet.self_link}"
+    instance_count = "${var.centos_std_instance_count}"
+
+    machine_type      = "${var.centos_std_machine_type}"
+    disk_size_gb      = "${var.centos_std_disk_size_gb}"
 
     ws_admin_user              = "${var.centos_admin_user}"
     ws_admin_ssh_pub_key_file  = "${var.centos_admin_ssh_pub_key_file}"

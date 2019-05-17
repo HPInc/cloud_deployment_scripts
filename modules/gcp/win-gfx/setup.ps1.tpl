@@ -9,8 +9,7 @@ mkdir 'C:\Nvidia'
 $driverDirectory = "C:\Nvidia"
 $driverUrl = "${nvidia_driver_location}" + "${nvidia_driver_filename}"
 $destFile = $driverDirectory + "\" + "${nvidia_driver_filename}"
-$wc = New-Object System.Net.WebClient
-$wc.DownloadFile($driverUrl, $destFile)
+(New-Object System.Net.WebClient).DownloadFile($driverUrl, $destFile)
 "NVIDIA GRID Driver downloaded"
 
 "################################################################"
@@ -24,11 +23,15 @@ $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -P
 "################################################################"
 mkdir 'C:\Teradici'
 $agentInstallerDLDirectory = "C:\Teradici"
-$pcoipAgentInstallerUrl = "${pcoip_agent_location}" + "${pcoip_agent_filename}"
-$destFile = $agentInstallerDLDirectory + '\' + "${pcoip_agent_filename}"
-$wc = New-Object System.Net.WebClient
-$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)
-"Teradici PCoIP Agent downloaded"
+if ("${pcoip_agent_filename}") {
+    $agent_filename = "${pcoip_agent_filename}"
+} else {
+    $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-graphics-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+}
+$pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
+$destFile = $agentInstallerDLDirectory + '\' + $agent_filename
+(New-Object System.Net.WebClient).DownloadFile($pcoipAgentInstallerUrl, $destFile)
+"Teradici PCoIP Agent downloaded: $agent_filename"
 
 "################################################################"
 "Installing Teradici PCoIP Agent..."
@@ -39,9 +42,9 @@ $ret = Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot" -PassT
 "################################################################"
 "Registering PCoIP Agent..."
 "################################################################"
-cd 'C:\Program Files (x86)\Teradici\PCoIP Agent'
+cd 'C:\Program Files\Teradici\PCoIP Agent'
 & .\pcoip-register-host.ps1 -RegistrationCode "${pcoip_registration_code}"
-"PCoIP Agent Registed"
+"PCoIP Agent Registered"
 
 "################################################################"
 "Joining Domain ${domain_name}..."

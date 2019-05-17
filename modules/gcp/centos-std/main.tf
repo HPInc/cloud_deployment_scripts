@@ -8,22 +8,12 @@ locals {
     setup_dir= "/tmp"
 }
 
-resource "google_compute_instance" "centos-gfx" {
+resource "google_compute_instance" "centos-std" {
     count = "${var.instance_count}"
 
     provider = "google"
     name = "${local.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
-
-    guest_accelerator {
-        type = "${var.accelerator_type}"
-        count = "${var.accelerator_count}"
-    }
-
-    # This is needed to prevent "Instances with guest accelerators do not support live migration" error
-    scheduling {
-        on_host_maintenance = "TERMINATE"
-    }
 
     boot_disk {
         initialize_params {
@@ -58,7 +48,7 @@ resource "google_compute_instance" "centos-gfx" {
                 export IP_ADDRESS="${var.domain_controller_ip}"
                 export REGISTRATION_CODE="${var.pcoip_registration_code}"
 
-                provsion_script_file="${local.setup_dir}/provisioning-gpu-script.sh"
+                provsion_script_file="${local.setup_dir}/provisioning-std-script.sh"
 
                 until [[ -f "$provsion_script_file" ]]
                 do
@@ -66,8 +56,8 @@ resource "google_compute_instance" "centos-gfx" {
                     sleep 10
                 done
 
-                chmod +x ${local.setup_dir}/provisioning-gpu-script.sh
-                ${local.setup_dir}/provisioning-gpu-script.sh
+                chmod +x ${local.setup_dir}/provisioning-std-script.sh
+                ${local.setup_dir}/provisioning-std-script.sh
             fi
         EOF
     }
@@ -76,22 +66,22 @@ resource "google_compute_instance" "centos-gfx" {
 resource "null_resource" "upload-scripts" {
     count = "${var.instance_count}"
 
-    depends_on = ["google_compute_instance.centos-gfx"]
+    depends_on = ["google_compute_instance.centos-std"]
     triggers {
-        instance_id = "${google_compute_instance.centos-gfx.*.instance_id[count.index]}"
+        instance_id = "${google_compute_instance.centos-std.*.instance_id[count.index]}"
     }
 
     connection {
         type = "ssh"
-        host = "${google_compute_instance.centos-gfx.*.network_interface.0.access_config.0.nat_ip[count.index]}"
+        host = "${google_compute_instance.centos-std.*.network_interface.0.access_config.0.nat_ip[count.index]}"
         user = "${var.ws_admin_user}"
         private_key = "${file(var.ws_admin_ssh_priv_key_file)}"
         insecure = true
     }
 
     provisioner "file" {
-        source = "${path.module}/provisioning-gpu-script.sh"
-        destination = "${local.setup_dir}/provisioning-gpu-script.sh"
+        source = "${path.module}/provisioning-std-script.sh"
+        destination = "${local.setup_dir}/provisioning-std-script.sh"
     }
 }
 
