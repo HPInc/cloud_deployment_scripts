@@ -65,14 +65,50 @@ variable "dc_admin_password" {
   type = "string"
 }
 
-variable "cac_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Connector"
-  default = "10.0.1.0/24"
+variable "domain_name" {
+  description = "Domain name for the new domain"
+  type = "string"
 }
 
+variable "safe_mode_admin_password" {
+  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
+  type = "string"
+}
+
+variable "service_account_username" {
+  description = "Active Directory Service account name to be created"
+  default = "cam_admin"
+}
+
+variable "service_account_password" {
+  description = "Active Directory Service account password"
+  type = "string"
+}
+
+# Hard-coded to accept list of 3. These regions are chosen based on support for
+# Nvidia P4 GPU.
+variable "cac_regions" {
+  description = "Regions in which to deploy Connectors"
+  default = ["us-west2", "europe-west4", "asia-southeast1"]
+  # LA, Netherlands, Singapore
+}
+
+# Hard-coded to accept list of 3.
+variable "cac_zones" {
+  description = "Zones in which to deploy Connectors"
+  default = ["us-west2-b", "europe-west4-b", "asia-southeast1-b"]
+}
+
+# Hard-coded to accept list of 3.
+variable "cac_subnet_cidrs" {
+  description = "CIDRs for subnet containing the Cloud Access Connector"
+  default = ["10.0.1.0/24", "10.1.1.0/24", "10.2.1.0/24"]
+}
+
+# Hard-coded to accept list of 3.
 variable "cac_instances" {
-  description = "Number of Cloud Access Connector instances to deploy"
-  default = 1
+  description = "Number of Cloud Access Connector instances to deploy in each region"
+  default = [1, 1, 1]
 }
 
 variable "cac_machine_type" {
@@ -106,6 +142,16 @@ variable "cac_admin_ssh_pub_key_file" {
   type = "string"
 }
 
+variable "cac_health_check" {
+  description = "Health check configuration for Cloud Access Connector"
+  default = {
+    path         = "/CloudAccessManager/"
+    port         = 443
+    interval_sec = 5
+    timeout_sec  = 5
+  }
+}
+
 variable "ssl_key" {
   description = "SSL private key for the Connector in PEM format"
   default = ""
@@ -114,26 +160,6 @@ variable "ssl_key" {
 variable "ssl_cert" {
   description = "SSL certificate for the Connector in PEM format"
   default = ""
-}
-
-variable "domain_name" {
-  description = "Domain name for the new domain"
-  type = "string"
-}
-
-variable "safe_mode_admin_password" {
-  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
-  type = "string"
-}
-
-variable "service_account_username" {
-  description = "Active Directory Service account name to be created"
-  default = "cam_admin"
-}
-
-variable "service_account_password" {
-  description = "Active Directory Service account password"
-  type = "string"
 }
 
 variable "ws_subnet_cidr" {

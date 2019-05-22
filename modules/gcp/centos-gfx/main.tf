@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2019 Teradici Corporation
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
     # Windows computer names must be <= 15 characters, minus 3 chars for "-xy"

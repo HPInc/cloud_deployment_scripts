@@ -39,7 +39,11 @@ resource "google_compute_firewall" "allow-internal" {
         }
     ]
 
-    source_ranges = ["${var.dc_subnet_cidr}", "${var.cac_subnet_cidr}", "${var.ws_subnet_cidr}"]
+    source_ranges = [
+        "${var.dc_subnet_cidr}",
+        "${var.cac_subnet_cidrs}",
+        "${var.ws_subnet_cidr}"
+    ]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -187,14 +191,17 @@ module "dc" {
     disk_size_gb       = "${var.dc_disk_size_gb}"
 }
 
-resource "google_compute_subnetwork" "cac-subnet" {
-    name = "${local.prefix}subnet-cac"
-    ip_cidr_range = "${var.cac_subnet_cidr}"
+resource "google_compute_subnetwork" "cac-subnets" {
+    count = "${length(var.cac_regions)}"
+
+    name = "${local.prefix}subnet-cac-${var.cac_regions[count.index]}"
+    region = "${var.cac_regions[count.index]}"
+    ip_cidr_range = "${var.cac_subnet_cidrs[count.index]}"
     network = "${google_compute_network.vpc.self_link}"
 }
 
-module "cac-bkend-service" {
-    source = "../../../modules/gcp/cac-bkend-service"
+module "cac-igm-0" {
+    source = "../../../modules/gcp/cac-igm"
 
     prefix = "${var.prefix}"
 
@@ -208,9 +215,9 @@ module "cac-bkend-service" {
     service_account_password = "${var.service_account_password}"
 
     #gcp_region = "${var.gcp_region}"
-    gcp_zone      = "${var.gcp_zone}"
-    subnet        = "${google_compute_subnetwork.cac-subnet.self_link}"
-    cac_instances = "${var.cac_instances}"
+    gcp_zone      = "${var.cac_zones[0]}"
+    subnet        = "${google_compute_subnetwork.cac-subnets.*.self_link[0]}"
+    cac_instances = "${var.cac_instances[0]}"
 
     machine_type       = "${var.cac_machine_type}"
     disk_image_project = "${var.cac_disk_image_project}"
@@ -221,9 +228,101 @@ module "cac-bkend-service" {
     cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
 }
 
+module "cac-igm-1" {
+    source = "../../../modules/gcp/cac-igm"
+
+    prefix = "${var.prefix}"
+
+    cam_url                 = "${var.cam_url}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+    cac_token               = "${var.cac_token}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+
+    #gcp_region = "${var.gcp_region}"
+    gcp_zone      = "${var.cac_zones[1]}"
+    subnet        = "${google_compute_subnetwork.cac-subnets.*.self_link[1]}"
+    cac_instances = "${var.cac_instances[1]}"
+
+    machine_type       = "${var.cac_machine_type}"
+    disk_image_project = "${var.cac_disk_image_project}"
+    disk_image_family  = "${var.cac_disk_image_family}"
+    disk_size_gb       = "${var.cac_disk_size_gb}"
+
+    cac_admin_user              = "${var.cac_admin_user}"
+    cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
+}
+
+module "cac-igm-2" {
+    source = "../../../modules/gcp/cac-igm"
+
+    prefix = "${var.prefix}"
+
+    cam_url                 = "${var.cam_url}"
+    pcoip_registration_code = "${var.pcoip_registration_code}"
+    cac_token               = "${var.cac_token}"
+
+    domain_name              = "${var.domain_name}"
+    domain_controller_ip     = "${module.dc.internal-ip}"
+    service_account_username = "${var.service_account_username}"
+    service_account_password = "${var.service_account_password}"
+
+    #gcp_region = "${var.gcp_region}"
+    gcp_zone      = "${var.cac_zones[2]}"
+    subnet        = "${google_compute_subnetwork.cac-subnets.*.self_link[2]}"
+    cac_instances = "${var.cac_instances[2]}"
+
+    machine_type       = "${var.cac_machine_type}"
+    disk_image_project = "${var.cac_disk_image_project}"
+    disk_image_family  = "${var.cac_disk_image_family}"
+    disk_size_gb       = "${var.cac_disk_size_gb}"
+
+    cac_admin_user              = "${var.cac_admin_user}"
+    cac_admin_ssh_pub_key_file  = "${var.cac_admin_ssh_pub_key_file}"
+}
+
+resource "google_compute_https_health_check" "cac-hchk" {
+    name               = "${local.prefix}hchk-cac"
+    request_path       = "${var.cac_health_check["path"]}"
+    port               = "${var.cac_health_check["port"]}"
+    check_interval_sec = "${var.cac_health_check["interval_sec"]}"
+    timeout_sec        = "${var.cac_health_check["timeout_sec"]}"
+}
+
+resource "google_compute_backend_service" "cac-bkend-service" {
+    name = "${local.prefix}bkend-service-cac"
+    port_name = "https"
+    protocol = "HTTPS"
+    session_affinity = "GENERATED_COOKIE"
+    affinity_cookie_ttl_sec = 3600
+
+    backend = {
+        balancing_mode = "UTILIZATION"
+        # Wants instanceGroup instead of instanceGroupManager
+        group = "${replace(module.cac-igm-0.cac-igm, "Manager", "")}"
+    }
+
+    backend = {
+        balancing_mode = "UTILIZATION"
+        # Wants instanceGroup instead of instanceGroupManager
+        group = "${replace(module.cac-igm-1.cac-igm, "Manager", "")}"
+    }
+
+    backend = {
+        balancing_mode = "UTILIZATION"
+        # Wants instanceGroup instead of instanceGroupManager
+        group = "${replace(module.cac-igm-2.cac-igm, "Manager", "")}"
+    }
+
+    health_checks = ["${google_compute_https_health_check.cac-hchk.self_link}"]
+}
+
 resource "google_compute_url_map" "cac-urlmap" {
     name = "${local.prefix}urlmap-cac"
-    default_service = "${module.cac-bkend-service.cac-bkend-service}"
+    default_service = "${google_compute_backend_service.cac-bkend-service.self_link}"
 }
 
 resource "google_compute_ssl_certificate" "ssl-cert" {

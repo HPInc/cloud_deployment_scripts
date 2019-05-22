@@ -83,7 +83,7 @@ resource "google_compute_instance_template" "cac-template" {
 }
 
 resource "google_compute_instance_group_manager" "cac-igm" {
-    name   = "${local.prefix}igm-cac"
+    name = "${local.prefix}igm-cac"
 
     # TODO: makes more sense to use regional IGM
     #region = "${var.gcp_region}"
@@ -99,28 +99,4 @@ resource "google_compute_instance_group_manager" "cac-igm" {
 
     # Overridden by autoscaler when autoscaler is enabled
     target_size = "${var.cac_instances}"
-}
-
-resource "google_compute_https_health_check" "cac-hchk" {
-    name               = "${local.prefix}hchk-cac"
-    request_path       = "${var.cac_health_check["path"]}"
-    port               = "${var.cac_health_check["port"]}"
-    check_interval_sec = "${var.cac_health_check["interval_sec"]}"
-    timeout_sec        = "${var.cac_health_check["timeout_sec"]}"
-}
-
-resource "google_compute_backend_service" "cac-backend" {
-    name = "${local.prefix}bkend-cac"
-    port_name = "https"
-    protocol = "HTTPS"
-    session_affinity = "GENERATED_COOKIE"
-    affinity_cookie_ttl_sec = 3600
-
-    backend = {
-        balancing_mode = "UTILIZATION"
-        # Wants instanceGroup instead of instanceGroupManager
-        group = "${replace(google_compute_instance_group_manager.cac-igm.self_link, "Manager", "")}"
-    }
-
-    health_checks = ["${google_compute_https_health_check.cac-hchk.self_link}"]
 }

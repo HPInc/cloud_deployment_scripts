@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2019 Teradici Corporation
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default = ""

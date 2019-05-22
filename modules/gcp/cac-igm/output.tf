@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-output "Domain Controller Internal IP" {
-    value = "${module.dc.internal-ip}"
-}
-
-output "Domain Controller Public IP" {
-    value = "${module.dc.public-ip}"
+output "cac-igm" {
+    value = "${google_compute_instance_group_manager.cac-igm.self_link}"
 }
