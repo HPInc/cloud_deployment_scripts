@@ -18,7 +18,7 @@ With a new GCP project:
 - enable guest attributes for the project by running ```gcloud compute project-info add-metadata --metadata enable-guest-attributes=TRUE``` in the Cloud Shell.
 
 ## Cloud Access Manager Setup
-Login to Cloud Access Manager Admin Console at https://cam.teradici.com/beta-ui using a Google account or Microsoft business account.
+Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Microsoft business account.
 - create a new deployment and submit the credentials for the GCP service account created above.
 - create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
