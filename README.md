@@ -87,18 +87,6 @@ Creates one VPC, one subnet and a single Domain Controller with ports opened
 for ICMP, RDP and WinRM.  Domain Controller is configured with Acitve
 Directory, DNS, LDAP-S.  One AD Service Account is also created.
 
-## google-next-2019
-Deploys the environment for the on stage and at the booth demos. Because this
-is a specific deployment for the demo, it contains some hard coded values.
-The deployment is similar to dc-cac-ws, except there will be 3 connectors in
-3 regions: US West, US Central (called on-prem), and US East.
-
-The following are the differences from dc-cac-ws:
-- 3 connector subnets are created, one for each of the 3 regions.
-- 3 connectors are deployed - one for each of 3 regions
-- 1 Windowns Graphics and 2 CentOS Graphics workstations are deployed in US
-  West (chosen for proximity to the Convention, which is in San Francisco)
-
 # Directory structure
 ## deployments/
 The top level terraform scripts that creates entire deployments.

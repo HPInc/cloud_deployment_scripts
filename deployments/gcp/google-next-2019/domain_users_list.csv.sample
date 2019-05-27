@@ -1,3 +1,0 @@
-firstname,lastname,username,password,isadmin
-Demo,User,demouser,securepassword,true
-Demo,User2,demouser2,securepassword
