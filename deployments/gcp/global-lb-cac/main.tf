@@ -181,6 +181,7 @@ module "dc" {
     safe_mode_admin_password = "${var.safe_mode_admin_password}"
     service_account_username = "${var.service_account_username}"
     service_account_password = "${var.service_account_password}"
+    domain_users_list        = "${var.domain_users_list}"
 
     subnet     = "${google_compute_subnetwork.dc-subnet.self_link}"
     private_ip = "${var.dc_private_ip}"

@@ -85,6 +85,12 @@ variable "service_account_password" {
   type = "string"
 }
 
+variable "domain_users_list" {
+  description = "Active Directory users to create, in CSV format"
+  type = "string"
+  default = ""
+}
+
 # Hard-coded to accept list of 3. These regions are chosen based on support for
 # Nvidia P4 GPU.
 variable "cac_regions" {

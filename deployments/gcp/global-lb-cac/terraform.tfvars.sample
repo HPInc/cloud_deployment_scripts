@@ -1,3 +1,4 @@
+# Commented out lines represents defaults that can be changed
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id = "your-project-1234"
 
@@ -16,6 +17,8 @@ domain_name = "example.com"
 dc_admin_password = "SecuRe_pwd1"
 safe_mode_admin_password = "SecuRe_pwd2"
 service_account_password = "SecuRe_pwd3"
+# Optional: additional AD users to create
+# domain_users_list = "/path/to/domain_users_list.csv"
 
 # Currently this deployment support exactly 3 regions
 # cac_regions = ["us-west2", "europe-west4", "asia-southeast1"]
