@@ -47,7 +47,7 @@ resource "google_compute_instance" "centos-std" {
         # TODO: may need to find a better way to run the script.  If the script
         # is removed, subsequent reboots will loop forever.
         startup-script = <<EOF
-            if ! (rpm -q pcoip-agent-graphics)
+            if ! (rpm -q pcoip-agent-standard)
             then
                 export DOMAIN_NAME="${var.domain_name}"
                 export USERNAME="${var.service_account_username}"
