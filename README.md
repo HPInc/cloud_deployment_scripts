@@ -15,7 +15,6 @@ Although it is possible to create deployments in existing and currently in-use p
 
 With a new GCP project:
 - create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAM to manage the deployment, such as creating workstations, mointoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform scripts to create the initial deployment.
-- enable guest attributes for the project by running ```gcloud compute project-info add-metadata --metadata enable-guest-attributes=TRUE``` in the Cloud Shell.
 
 ## Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Microsoft business account.
