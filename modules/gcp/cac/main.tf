@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+terraform {
+  required_version = "< 0.12"
+}
+
 locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
     cert_dir = "/home/${var.cac_admin_user}"

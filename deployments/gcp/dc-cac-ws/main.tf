@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+terraform {
+  required_version = "< 0.12"
+}
+
 provider "google" {
     credentials = "${file("${var.gcp_credentials_file}")}"
     project   = "${var.gcp_project_id}"
