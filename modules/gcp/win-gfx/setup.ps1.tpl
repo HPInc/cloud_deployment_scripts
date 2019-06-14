@@ -7,6 +7,8 @@ if (test-path "C:\Nvidia") {
     exit
 }
 
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
 "################################################################"
 "Downloading NVIDIA GRID Driver..."
 "################################################################"
