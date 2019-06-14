@@ -87,7 +87,7 @@ resource "null_resource" "cac-dependencies" {
             # wait for service account to be added
             # do this last because it takes a while for new AD user to be added in a new Domain Controller
             "sudo apt install -y ldap-utils",
-            "until ldapwhoami -H ldap://${var.domain_name} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done"
+            "until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done"
         ]
     }
 }
