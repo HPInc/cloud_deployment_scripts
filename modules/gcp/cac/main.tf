@@ -53,6 +53,15 @@ resource "google_compute_instance" "cac" {
             sudo echo "                search: [${var.domain_name}]" >> /etc/netplan/50-cloud-init.yaml
             sudo echo "                addresses: [${var.domain_controller_ip}]" >> /etc/netplan/50-cloud-init.yaml
             sudo netplan apply
+
+            sudo echo '# System Control network settings for CAC' > /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo echo 'net.core.rmem_max=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo echo 'net.core.rmem_default=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo echo 'net.core.wmem_max=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo echo 'net.core.wmem_default=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo echo 'net.ipv4.udp_mem=120000 240000 600000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo echo 'net.core.netdev_max_backlog=2000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
+            sudo sysctl -p /etc/sysctl.d/01-pcoip-cac-network.conf
         SCRIPT
 
         ssh-keys = "${var.cac_admin_user}:${file("${var.cac_admin_ssh_pub_key_file}")}"
