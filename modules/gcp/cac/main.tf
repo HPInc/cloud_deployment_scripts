@@ -24,6 +24,8 @@ resource "google_compute_instance" "cac" {
     name = "${local.prefix}${var.host_name}-${count.index}"
     machine_type = "${var.machine_type}"
 
+    allow_stopping_for_update = true
+
     boot_disk {
         initialize_params {
             image = "projects/${var.disk_image_project}/global/images/family/${var.disk_image_family}"
