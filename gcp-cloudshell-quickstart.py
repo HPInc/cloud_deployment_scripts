@@ -5,11 +5,14 @@
 
 import base64
 import googleapiclient.discovery
+import json
 import os
 import subprocess
 import shutil
 import subprocess
 import sys
+
+import cam
 
 # Service Account ID of the service account to create
 SA_ID = 'cloud-access-manager'
@@ -73,11 +76,13 @@ def service_account_create_key(service_account, filepath):
         body = {},
     ).execute()
 
+    key_data = base64.b64decode(key['privateKeyData'])
+
     with open(filepath, 'wb') as keyfile:
-        keyfile.write(base64.b64decode(key['privateKeyData']))
+        keyfile.write(key_data)
 
     print('  Key written to ' + filepath)
-    return
+    return json.loads(key_data.decode('utf-8'))
 
 
 def iam_policy_update(service_account, roles):
@@ -117,6 +122,41 @@ def apis_enable(apis):
 
 
 if __name__ == '__main__':
+    # GCP project setup
+    print('Setting GCP project...')
+
+    sa_email = '{}@{}.iam.gserviceaccount.com'.format(SA_ID, PROJECT_ID)
+    iam_service = googleapiclient.discovery.build('iam', 'v1')
+    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
+
+    sa = service_account_create(sa_email)
+    iam_policy_update(sa, SA_ROLES)
+    sa_key = service_account_create_key(sa, KEY_PATH)
+    apis_enable(REQUIRED_APIS)
+
+    print('GCP project setup complete.')
+
+    # Cloud Access Manager setup
+    print('Setting Cloud Access Manager...')
+
+    auth_token = input("Paste the auth_token here:").strip()
+    reg_code = input("Enter PCoIP Registration Code:").strip()
+
+    mycam = cam.CloudAccessManager(auth_token)
+    deployment = mycam.deployment_create('sample_deployment', reg_code)
+    mycam.deployment_add_gcp_account(sa_key, deployment)
+    connector = mycam.connector_create('sample_connector', deployment)
+
+    print('Cloud Access Manager setup complete.')
+
+    # Terraform preparation
+    print('Preparing deployment requirements...')
+
+    # generate SSH keys
+    #subprocess.call([])
+
+    # update tfvar
+
     # Don't attempt to install unless needed, since it requires sudo
     if not shutil.which('terraform'):
         rc = subprocess.call(['sudo', 'python3', 'install-terraform.py'])
@@ -125,11 +165,5 @@ if __name__ == '__main__':
             print('Error installing Terraform.')
             sys.exit(1)
 
-    sa_email = '{}@{}.iam.gserviceaccount.com'.format(SA_ID, PROJECT_ID)
-    iam_service = googleapiclient.discovery.build('iam', 'v1')
-    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
-
-    sa = service_account_create(sa_email)
-    iam_policy_update(sa, SA_ROLES)
-    service_account_create_key(sa, KEY_PATH)
-    apis_enable(REQUIRED_APIS)
+    # Deploy with Terraform
+    print('Deploy with Terraform...')
