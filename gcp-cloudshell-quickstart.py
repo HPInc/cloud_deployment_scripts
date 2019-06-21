@@ -14,6 +14,7 @@ import sys
 
 import cam
 
+SECRETS_DIR = './secrets'
 # Service Account ID of the service account to create
 SA_ID = 'cloud-access-manager'
 SA_ROLES = [
@@ -21,13 +22,14 @@ SA_ROLES = [
     'roles/cloudkms.cryptoKeyEncrypterDecrypter'
 ]
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
-KEY_PATH = './key.json'
+KEY_PATH = SECRETS_DIR + '/' + 'gcp_service_account_key.json'
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
     'cloudresourcemanager.googleapis.com',
     'compute.googleapis.com'
 ]
+LINUX_ADMIN_USER = 'cam_admin'
 
 def service_account_find(email):
     service_accounts = iam_service.projects().serviceAccounts().list(
@@ -121,7 +123,21 @@ def apis_enable(apis):
     return
 
 
+def ssh_key_create(path):
+    print('Creating SSH key...')
+
+    # note the space after '-N' is required
+    ssh_cmd = 'ssh-keygen -f {} -t rsa -q -N '.format(path)
+    subprocess.call(ssh_cmd.split(' '))
+
+
 if __name__ == '__main__':
+    try:
+        print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
+        os.mkdir(SECRETS_DIR, 0o700)
+    except FileExistsError:
+        print('Directory {} already exist.'.format(SECRETS_DIR))
+
     # GCP project setup
     print('Setting GCP project...')
 
@@ -152,8 +168,7 @@ if __name__ == '__main__':
     # Terraform preparation
     print('Preparing deployment requirements...')
 
-    # generate SSH keys
-    #subprocess.call([])
+    ssh_key_create(SECRETS_DIR + '/' + LINUX_ADMIN_USER)
 
     # update tfvar
 
