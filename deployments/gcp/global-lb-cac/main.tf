@@ -20,6 +20,10 @@ locals {
     prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
 }
 
+data "http" "myip" {
+    url = "https://ipinfo.io/ip"
+}
+
 resource "google_compute_network" "vpc" {
     name = "${local.prefix}vpc-dc"
     auto_create_subnetworks = "false"
@@ -62,7 +66,7 @@ resource "google_compute_firewall" "allow-ssh" {
     ]
 
     target_tags = ["${local.prefix}tag-ssh"]
-    source_ranges = ["0.0.0.0/0"]
+    source_ranges = ["${chomp(data.http.myip.0.body)}", "${var.allowed_cidr}"]
 }
 
 resource "google_compute_firewall" "allow-http" {
@@ -111,7 +115,7 @@ resource "google_compute_firewall" "allow-rdp" {
     ]
 
     target_tags = ["${local.prefix}tag-rdp"]
-    source_ranges = ["0.0.0.0/0"]
+    source_ranges = ["${chomp(data.http.myip.0.body)}", "${var.allowed_cidr}"]
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -130,7 +134,7 @@ resource "google_compute_firewall" "allow-winrm" {
     ]
 
     target_tags = ["${local.prefix}tag-winrm"]
-    source_ranges = ["0.0.0.0/0"]
+    source_ranges = ["${chomp(data.http.myip.0.body)}", "${var.allowed_cidr}"]
 }
 
 resource "google_compute_firewall" "allow-icmp" {
@@ -140,7 +144,7 @@ resource "google_compute_firewall" "allow-icmp" {
     allow = [{protocol = "icmp"}]
 
     target_tags = ["${local.prefix}tag-icmp"]
-    source_ranges = ["0.0.0.0/0"]
+    source_ranges = ["${chomp(data.http.myip.0.body)}", "${var.allowed_cidr}"]
 }
 
 resource "google_compute_firewall" "allow-pcoip" {

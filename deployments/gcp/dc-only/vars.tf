@@ -19,6 +19,7 @@ variable "gcp_region" {
   description = "GCP region"
   default = "us-west2"
 }
+
 variable "gcp_zone" {
   description = "GCP zone"
   # Default to us-west2-b because P4 Workstation GPUs available here
@@ -28,6 +29,11 @@ variable "gcp_zone" {
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default = ""
+}
+
+variable "allowed_cidr" {
+  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d', 'e.f.g.0/24']"
+  default = []
 }
 
 variable "dc_subnet_cidr" {
@@ -90,4 +96,3 @@ variable "domain_users_list" {
   type = "string"
   default = ""
 }
-
