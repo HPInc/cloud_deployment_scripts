@@ -4,32 +4,40 @@
 # LICENSE file in the root directory of this source tree.
 
 import base64
+import fileinput
+import getpass
 import googleapiclient.discovery
 import json
+import logging
 import os
-import subprocess
 import shutil
 import subprocess
 import sys
 
 import cam
 
-SECRETS_DIR = './secrets'
 # Service Account ID of the service account to create
-SA_ID = 'cloud-access-manager'
-SA_ROLES = [
+SA_ID       = 'cloud-access-manager'
+SA_ROLES    = [
     'roles/editor',
     'roles/cloudkms.cryptoKeyEncrypterDecrypter'
 ]
+
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
-KEY_PATH = SECRETS_DIR + '/' + 'gcp_service_account_key.json'
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
     'cloudresourcemanager.googleapis.com',
     'compute.googleapis.com'
 ]
-LINUX_ADMIN_USER = 'cam_admin'
+
+# All paths are relative to the deployment directory, DEPLOYMENT_PATH
+DEPLOYMENT_PATH = "deployments/gcp/dc-cac-ws"
+TF_VARS_PATH    = 'terraform.tfvars'
+SECRETS_DIR     = 'secrets'
+SA_KEY_PATH     = SECRETS_DIR + '/gcp_service_account_key.json'
+SSH_KEY_PATH    = SECRETS_DIR + '/cam_admin_id_rsa'
+
 
 def service_account_find(email):
     service_accounts = iam_service.projects().serviceAccounts().list(
@@ -42,8 +50,6 @@ def service_account_find(email):
     for account in service_accounts['accounts']:
         if account['email'] == email:
             return account
-    
-    return
 
 
 def service_account_create(email):
@@ -120,8 +126,6 @@ def apis_enable(apis):
         print('  {}...'.format(api))
         subprocess.call(['gcloud', 'services', 'enable', api])
 
-    return
-
 
 def ssh_key_create(path):
     print('Creating SSH key...')
@@ -131,7 +135,48 @@ def ssh_key_create(path):
     subprocess.call(ssh_cmd.split(' '))
 
 
+# Creates a new .tfvar based on the .tfvar.sample file
+def tf_vars_create(file_path, settings):
+    # This script is meant for first time use. If a .tfvar already exist, we avoid over-writing it and exit.
+    if os.path.exists(file_path):
+        log.error('{} already exist. This script is mean for new deployments only.  Exiting...'.format(file_path))
+        sys.exit(1)
+
+    # terraform.tfvar.sample is used as a starting point - assume all uncommented lines are required varaiables.
+    shutil.copyfile(file_path + '.sample', file_path)
+
+    with fileinput.FileInput(file_path, inplace=True) as f:
+        for line in f:
+            # Comments and blank lines are unchanged
+            if line[0] in ('#', '\n'):
+                print(line, end='')
+                continue
+
+            key = line.split('=')[0].strip()
+            try:
+                print('{} = "{}"'.format(key, settings[key]))
+            except KeyError:
+                # Remove file and error out
+                os.remove(file_path)
+                log.error('Required value for {} missing. tfvars file {} not created.'.format(key, file_path))
+                sys.exit(1)
+
+
+def terraform_install():
+    # Don't attempt to install unless needed, since it requires sudo
+    if not shutil.which('terraform'):
+        rc = subprocess.call(['sudo', 'python3', 'install-terraform.py'])
+
+        if rc:
+            log.error('Error installing Terraform.')
+            sys.exit(1)
+
+
 if __name__ == '__main__':
+    log = logging.getLogger(__name__)
+
+    os.chdir(DEPLOYMENT_PATH)
+
     try:
         print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
         os.mkdir(SECRETS_DIR, 0o700)
@@ -147,7 +192,7 @@ if __name__ == '__main__':
 
     sa = service_account_create(sa_email)
     iam_policy_update(sa, SA_ROLES)
-    sa_key = service_account_create_key(sa, KEY_PATH)
+    sa_key = service_account_create_key(sa, SA_KEY_PATH)
     apis_enable(REQUIRED_APIS)
 
     print('GCP project setup complete.')
@@ -168,17 +213,32 @@ if __name__ == '__main__':
     # Terraform preparation
     print('Preparing deployment requirements...')
 
-    ssh_key_create(SECRETS_DIR + '/' + LINUX_ADMIN_USER)
+    ssh_key_create(SSH_KEY_PATH)
+
+    password = getpass.getpass("Enter password for Active Directory:").strip()
+
+    #TODO: refactor this to work with more types of deployments
+    settings = {
+        'gcp_credentials_file':           SA_KEY_PATH,
+        'gcp_project_id':                 PROJECT_ID,
+        'dc_admin_password':              password,
+        'safe_mode_admin_password':       password,
+        'service_account_password':       password,
+        'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
+        'cac_admin_ssh_priv_key_file':    SSH_KEY_PATH,
+        'win_gfx_instance_count':         0,
+        'centos_gfx_instance_count':      0,
+        'centos_std_instance_count':      0,
+        'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
+        'centos_admin_ssh_priv_key_file': SSH_KEY_PATH,
+        'pcoip_registration_code':        reg_code,
+        'cac_token':                      connector['token'],
+    }
 
     # update tfvar
+    tf_vars_create(TF_VARS_PATH, settings)
 
-    # Don't attempt to install unless needed, since it requires sudo
-    if not shutil.which('terraform'):
-        rc = subprocess.call(['sudo', 'python3', 'install-terraform.py'])
-
-        if rc:
-            print('Error installing Terraform.')
-            sys.exit(1)
+    terraform_install()
 
     # Deploy with Terraform
     print('Deploy with Terraform...')
