@@ -4,11 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import base64
+import datetime
 import fileinput
 import getpass
 import googleapiclient.discovery
 import json
-import logging
 import os
 import shutil
 import subprocess
@@ -31,12 +31,17 @@ REQUIRED_APIS = [
     'compute.googleapis.com'
 ]
 
+iso_time = datetime.datetime.now().isoformat()
+DEPLOYMENT_NAME = 'sample_deployment_' + iso_time
+CONNECTOR_NAME  = 'sample_connector_' + iso_time
+
 # All paths are relative to the deployment directory, DEPLOYMENT_PATH
-DEPLOYMENT_PATH = "deployments/gcp/dc-cac-ws"
-TF_VARS_PATH    = 'terraform.tfvars'
-SECRETS_DIR     = 'secrets'
-SA_KEY_PATH     = SECRETS_DIR + '/gcp_service_account_key.json'
-SSH_KEY_PATH    = SECRETS_DIR + '/cam_admin_id_rsa'
+DEPLOYMENT_PATH  = 'deployments/gcp/dc-cac-ws'
+TF_VARS_REF_PATH = 'terraform.tfvars.sample'
+TF_VARS_PATH     = 'terraform.tfvars'
+SECRETS_DIR      = 'secrets'
+SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
+SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 
 
 def service_account_find(email):
@@ -136,44 +141,44 @@ def ssh_key_create(path):
 
 
 # Creates a new .tfvar based on the .tfvar.sample file
-def tf_vars_create(file_path, settings):
-    # This script is meant for first time use. If a .tfvar already exist, we avoid over-writing it and exit.
-    if os.path.exists(file_path):
-        log.error('{} already exist. This script is mean for new deployments only.  Exiting...'.format(file_path))
-        sys.exit(1)
+def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
-    # terraform.tfvar.sample is used as a starting point - assume all uncommented lines are required varaiables.
-    shutil.copyfile(file_path + '.sample', file_path)
+    if os.path.exists(tfvar_file_path):
+        overwrite = input("Found an existing .tfvar file, overwrite (y/N)?").strip().lower()
+        if overwrite not in ('y', 'yes'):
+            print('{} already exist. Exiting...'.format(tfvar_file_path))
+            sys.exit(1)
 
-    with fileinput.FileInput(file_path, inplace=True) as f:
-        for line in f:
+    with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
+        for line in ref_file:
             # Comments and blank lines are unchanged
             if line[0] in ('#', '\n'):
-                print(line, end='')
+                out_file.write(line)
                 continue
 
             key = line.split('=')[0].strip()
             try:
-                print('{} = "{}"'.format(key, settings[key]))
+                out_file.write('{} = "{}"\n'.format(key, settings[key]))
             except KeyError:
                 # Remove file and error out
-                os.remove(file_path)
-                log.error('Required value for {} missing. tfvars file {} not created.'.format(key, file_path))
+                os.remove(tfvar_file_path)
+                print('Required value for {} missing. tfvars file {} not created.'.format(key, tfvar_file_path))
                 sys.exit(1)
 
 
 def terraform_install():
     # Don't attempt to install unless needed, since it requires sudo
     if not shutil.which('terraform'):
-        rc = subprocess.call(['sudo', 'python3', 'install-terraform.py'])
+        install_cmd = 'sudo python3 install-terraform.py'
+        rc = subprocess.call(install_cmd.split(' '))
 
         if rc:
-            log.error('Error installing Terraform.')
+            print('Error installing Terraform.')
             sys.exit(1)
 
 
 if __name__ == '__main__':
-    log = logging.getLogger(__name__)
+    terraform_install()
 
     os.chdir(DEPLOYMENT_PATH)
 
@@ -204,9 +209,9 @@ if __name__ == '__main__':
     reg_code = input("Enter PCoIP Registration Code:").strip()
 
     mycam = cam.CloudAccessManager(auth_token)
-    deployment = mycam.deployment_create('sample_deployment', reg_code)
+    deployment = mycam.deployment_create(DEPLOYMENT_NAME, reg_code)
     mycam.deployment_add_gcp_account(sa_key, deployment)
-    connector = mycam.connector_create('sample_connector', deployment)
+    connector = mycam.connector_create(CONNECTOR_NAME, deployment)
 
     print('Cloud Access Manager setup complete.')
 
@@ -236,9 +241,13 @@ if __name__ == '__main__':
     }
 
     # update tfvar
-    tf_vars_create(TF_VARS_PATH, settings)
-
-    terraform_install()
+    tf_vars_create(TF_VARS_REF_PATH, TF_VARS_PATH, settings)
 
     # Deploy with Terraform
     print('Deploy with Terraform...')
+
+    tf_cmd = 'terraform init'
+    subprocess.call(tf_cmd.split(' '))
+
+    tf_cmd = 'terraform apply -auto-approve'
+    subprocess.call(tf_cmd.split(' '))
