@@ -74,7 +74,7 @@ variable "dc_admin_password" {
 
 variable "domain_name" {
   description = "Domain name for the new domain"
-  type        = string
+  default     = "example.com"
 }
 
 variable "safe_mode_admin_password" {
