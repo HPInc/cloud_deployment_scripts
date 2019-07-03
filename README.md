@@ -2,6 +2,24 @@ Cloud Access Manager (CAM) enables highly-scalable and cost-effective Cloud Acce
 
 This repository contains a collection of Terraform scripts for demonstrating how to deploy Cloud Access Connectors in a user's cloud environment. __Note: These scripts are suitable for creating deployments for demonstration, evaluation, or development purposes only. These deployments have not been designed to meet reliability, availability, or security requirements of production environments.__
 
+# Quickstart on GCP
+The quickest way to create an example deployment on GCP is to use the Quickstart Python script. The goal is to automate the creation of deployment as much as possible by using auto-generated values for required parameters. For a deployment with more customization options, please skip to [Getting Started](#getting-started)
+
+## Requirements
+- the user must have owner permissions to a GCP project
+- A PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- A Cloud Access Manager API Token is needed. Log in to https://cam.teradici.com and copy the API Token
+
+## Steps
+- click on the button below to clone this repository in your GCP Cloud Shell
+- fill in the required parameters in the GCP editor
+- run ```python3 gcp-cloudshell-quickstart.py```
+
+[![Open in Cloud Shell][shell_img]][shell_link]
+
+[shell_img]: http://gstatic.com/cloudssh/images/open-btn.png
+[shell_link]: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/teradici/cloud_deployment_scripts&page=editor&open_in_editor=gcp-cloudshell-quickstart.cfg
+
 # Getting Started
 ## Requirments
 - the user must have owner permissions to a GCP project
@@ -27,7 +45,7 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 - create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
 ## Customizing terraform.tfvars
-terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default values. A complete list of available variables are described in the variable definition file ```vars.tf```.
+terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
