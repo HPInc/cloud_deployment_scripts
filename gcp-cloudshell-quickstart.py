@@ -35,13 +35,28 @@ iso_time = datetime.datetime.now().isoformat()
 DEPLOYMENT_NAME = 'sample_deployment_' + iso_time
 CONNECTOR_NAME  = 'sample_connector_' + iso_time
 
-# All paths are relative to the deployment directory, DEPLOYMENT_PATH
+CFG_FILE_PATH    = 'gcp-cloudshell-quickstart.cfg'
 DEPLOYMENT_PATH  = 'deployments/gcp/dc-cac-ws'
+# All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
 SECRETS_DIR      = 'secrets'
 SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
+
+
+def quickstart_config_read(cfg_file):
+    cfg_data = {}
+
+    with open(cfg_file, 'r') as f:
+        for line in f:
+            if line[0] in ('#', '\n'):
+                continue
+
+            key, value = map(str.strip, line.split(':'))
+            cfg_data[key] = value
+
+    return cfg_data
 
 
 def service_account_find(email):
@@ -178,6 +193,8 @@ def terraform_install():
 
 
 if __name__ == '__main__':
+    cfg_data = quickstart_config_read(CFG_FILE_PATH)
+
     terraform_install()
 
     os.chdir(DEPLOYMENT_PATH)
@@ -205,10 +222,10 @@ if __name__ == '__main__':
     # Cloud Access Manager setup
     print('Setting Cloud Access Manager...')
 
-    auth_token = input("Paste the auth_token here:").strip()
-    reg_code = input("Enter PCoIP Registration Code:").strip()
+    api_token = cfg_data.get('api_token') or input("Paste the api_token here:").strip()
+    reg_code = cfg_data.get('reg_code') or input("Enter PCoIP Registration Code:").strip()
 
-    mycam = cam.CloudAccessManager(auth_token)
+    mycam = cam.CloudAccessManager(api_token)
     deployment = mycam.deployment_create(DEPLOYMENT_NAME, reg_code)
     mycam.deployment_add_gcp_account(sa_key, deployment)
     connector = mycam.connector_create(CONNECTOR_NAME, deployment)
@@ -231,9 +248,9 @@ if __name__ == '__main__':
         'service_account_password':       password,
         'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
         'cac_admin_ssh_priv_key_file':    SSH_KEY_PATH,
-        'win_gfx_instance_count':         0,
-        'centos_gfx_instance_count':      0,
-        'centos_std_instance_count':      0,
+        'win_gfx_instance_count':         cfg_data.get('win_gfx_ws'),
+        'centos_gfx_instance_count':      cfg_data.get('centos_gfx_ws'),
+        'centos_std_instance_count':      cfg_data.get('centos_std_ws'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
         'centos_admin_ssh_priv_key_file': SSH_KEY_PATH,
         'pcoip_registration_code':        reg_code,
