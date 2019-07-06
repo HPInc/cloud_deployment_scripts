@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import requests
-from pprint import pprint
+
 
 class CloudAccessManager:
     def __init__(self, auth_token, url='https://cam.teradici.com'):
@@ -19,16 +19,14 @@ class CloudAccessManager:
         }
 
         # this is the connector token endpoint
-        new_deployment_resp = requests.post(
+        resp = requests.post(
             self.url + '/api/v1/deployments',
             headers = self.header,
             json = deployment_details,
-        ).json()
+        )
+        resp.raise_for_status()
 
-        print('Created deployment:')
-        pprint(new_deployment_resp)
-
-        return new_deployment_resp['data']
+        return resp.json()['data']
 
     def deployment_add_gcp_account(self, key, deployment):
         credentials = {
@@ -43,16 +41,12 @@ class CloudAccessManager:
             'credential':   credentials,
         }
 
-        account_resp = requests.post(
+        resp = requests.post(
             self.url + '/api/v1/auth/users/cloudServiceAccount',
             headers = self.header,
             json = account_details,
-        ).json()
-
-        print('Added GCP account:')
-        pprint(account_resp)
-
-        return
+        )
+        resp.raise_for_status()
 
     def connector_create(self, name, deployment):
         connector_details = {
@@ -61,13 +55,73 @@ class CloudAccessManager:
             'connectorName': name,
         }
 
-        new_connector_resp = requests.post(
+        resp = requests.post(
             self.url + '/api/v1/auth/tokens/connector',
             headers = self.header,
             json = connector_details,
-        ).json()
+        )
+        resp.raise_for_status()
 
-        print('Created connector:')
-        pprint(new_connector_resp)
+        return resp.json()['data']
 
-        return new_connector_resp['data']
+    def machine_add_existing(self, name, project_id, zone, deployment):
+        machine_details = {
+            'provider':    'gcp',
+            'machineName':  name,
+            'deploymentId': deployment['deploymentId'],
+            'projectId':    project_id,
+            'zone':         zone,
+            'active':       'true',
+            'managed':      'true',
+        }
+
+        resp = requests.post(
+            self.url + '/api/v1/machines',
+            headers = self.header,
+            json = machine_details,
+        )
+        resp.raise_for_status()
+
+        return resp.json()['data']
+
+    def entitlement_add(self, user, machine):
+        entitlement_details = {
+            'machineId': machine['machineId'],
+            'deploymentId': machine['deploymentId'],
+            'userGuid': user['userGuid'],
+        }
+
+        resp = requests.post(
+            self.url + '/api/v1/machines/entitlements',
+            headers = self.header,
+            json = entitlement_details,
+        )
+        resp.raise_for_status()
+
+        return resp.json()['data']
+
+    def user_get(self, name, deployment):
+        resp = requests.get(
+            self.url + '/api/v1/machines/entitlements/adusers',
+            headers = self.header,
+            params = {
+                'deploymentId': deployment['deploymentId'],
+                'name': name,
+            },
+        )
+        resp.raise_for_status()
+        resp = resp.json()
+
+        return resp['data'][0] if resp['total'] >= 1 else None
+
+    def machines_get(self, deployment):
+        resp = requests.get(
+            self.url + '/api/v1/machines',
+            headers = self.header,
+            params = {
+                'deploymentId': deployment['deploymentId'],
+            },
+        )
+        resp.raise_for_status()
+
+        return resp.json()['data']

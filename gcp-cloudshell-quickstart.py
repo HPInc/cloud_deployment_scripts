@@ -5,7 +5,6 @@
 
 import base64
 import datetime
-import fileinput
 import getpass
 import googleapiclient.discovery
 import json
@@ -13,6 +12,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 import cam
 
@@ -35,6 +35,9 @@ iso_time = datetime.datetime.now().isoformat()
 DEPLOYMENT_NAME = 'sample_deployment_' + iso_time
 CONNECTOR_NAME  = 'sample_connector_' + iso_time
 
+# User entitled to workstations
+ENTITLE_USER = 'Administrator'
+
 CFG_FILE_PATH    = 'gcp-cloudshell-quickstart.cfg'
 DEPLOYMENT_PATH  = 'deployments/gcp/dc-cac-ws'
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
@@ -44,6 +47,8 @@ SECRETS_DIR      = 'secrets'
 SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 
+# Types of workstations
+WS_TYPES = ['scent', 'gcent', 'gwin']
 
 def quickstart_config_read(cfg_file):
     cfg_data = {}
@@ -117,6 +122,7 @@ def iam_policy_update(service_account, roles):
 
     policy = crm_service.projects().getIamPolicy(
         resource = PROJECT_ID,
+        body = {},
     ).execute()
 
     print('Adding roles:')
@@ -144,7 +150,7 @@ def apis_enable(apis):
     # Using shell command, no Python Google Cloud Client library support
     for api in apis:
         print('  {}...'.format(api))
-        subprocess.call(['gcloud', 'services', 'enable', api])
+        subprocess.run(['gcloud', 'services', 'enable', api], check=True)
 
 
 def ssh_key_create(path):
@@ -152,7 +158,7 @@ def ssh_key_create(path):
 
     # note the space after '-N' is required
     ssh_cmd = 'ssh-keygen -f {} -t rsa -q -N '.format(path)
-    subprocess.call(ssh_cmd.split(' '))
+    subprocess.run(ssh_cmd.split(' '), check=True)
 
 
 # Creates a new .tfvar based on the .tfvar.sample file
@@ -185,18 +191,17 @@ def terraform_install():
     # Don't attempt to install unless needed, since it requires sudo
     if not shutil.which('terraform'):
         install_cmd = 'sudo python3 install-terraform.py'
-        rc = subprocess.call(install_cmd.split(' '))
-
-        if rc:
-            print('Error installing Terraform.')
-            sys.exit(1)
+        subprocess.run(install_cmd.split(' '), check=True)
 
 
 if __name__ == '__main__':
     cfg_data = quickstart_config_read(CFG_FILE_PATH)
 
-    terraform_install()
+    password = getpass.getpass(
+        'Enter password for Active Directory Administrator:').strip()
 
+    print('Preparing local requirements...')
+    terraform_install()
     os.chdir(DEPLOYMENT_PATH)
 
     try:
@@ -205,9 +210,11 @@ if __name__ == '__main__':
     except FileExistsError:
         print('Directory {} already exist.'.format(SECRETS_DIR))
 
-    # GCP project setup
-    print('Setting GCP project...')
+    ssh_key_create(SSH_KEY_PATH)
 
+    print('Local requirements setup complete.\n')
+
+    print('Setting GCP project...')
     sa_email = '{}@{}.iam.gserviceaccount.com'.format(SA_ID, PROJECT_ID)
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
@@ -217,28 +224,21 @@ if __name__ == '__main__':
     sa_key = service_account_create_key(sa, SA_KEY_PATH)
     apis_enable(REQUIRED_APIS)
 
-    print('GCP project setup complete.')
+    print('GCP project setup complete.\n')
 
-    # Cloud Access Manager setup
     print('Setting Cloud Access Manager...')
+    mycam = cam.CloudAccessManager(cfg_data.get('api_token'))
 
-    api_token = cfg_data.get('api_token') or input("Paste the api_token here:").strip()
-    reg_code = cfg_data.get('reg_code') or input("Enter PCoIP Registration Code:").strip()
-
-    mycam = cam.CloudAccessManager(api_token)
-    deployment = mycam.deployment_create(DEPLOYMENT_NAME, reg_code)
+    print('Creating deployment {}...'.format(DEPLOYMENT_NAME))
+    deployment = mycam.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
     mycam.deployment_add_gcp_account(sa_key, deployment)
+
+    print('Creating connector {}...'.format(CONNECTOR_NAME))
     connector = mycam.connector_create(CONNECTOR_NAME, deployment)
 
-    print('Cloud Access Manager setup complete.')
+    print('Cloud Access Manager setup complete.\n')
 
-    # Terraform preparation
-    print('Preparing deployment requirements...')
-
-    ssh_key_create(SSH_KEY_PATH)
-
-    password = getpass.getpass("Enter password for Active Directory:").strip()
-
+    print('Deploying with Terraform...')
     #TODO: refactor this to work with more types of deployments
     settings = {
         'gcp_credentials_file':           SA_KEY_PATH,
@@ -248,23 +248,66 @@ if __name__ == '__main__':
         'service_account_password':       password,
         'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
         'cac_admin_ssh_priv_key_file':    SSH_KEY_PATH,
-        'win_gfx_instance_count':         cfg_data.get('win_gfx_ws'),
-        'centos_gfx_instance_count':      cfg_data.get('centos_gfx_ws'),
-        'centos_std_instance_count':      cfg_data.get('centos_std_ws'),
+        'win_gfx_instance_count':         cfg_data.get('gwin'),
+        'centos_gfx_instance_count':      cfg_data.get('gcent'),
+        'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
         'centos_admin_ssh_priv_key_file': SSH_KEY_PATH,
-        'pcoip_registration_code':        reg_code,
+        'pcoip_registration_code':        cfg_data.get('reg_code'),
         'cac_token':                      connector['token'],
     }
 
     # update tfvar
     tf_vars_create(TF_VARS_REF_PATH, TF_VARS_PATH, settings)
 
-    # Deploy with Terraform
-    print('Deploy with Terraform...')
-
     tf_cmd = 'terraform init'
-    subprocess.call(tf_cmd.split(' '))
+    subprocess.run(tf_cmd.split(' '), check=True)
 
     tf_cmd = 'terraform apply -auto-approve'
-    subprocess.call(tf_cmd.split(' '))
+    subprocess.run(tf_cmd.split(' '), check=True)
+
+    comp_proc = subprocess.run(['terraform','output','cac-public-ip'],
+                               check=True,
+                               stdout=subprocess.PIPE)
+    cac_public_ip = comp_proc.stdout.decode().split('"')[1]
+
+    print('Terraform deployment complete.\n')
+
+    # Add existing workstations
+    for t in WS_TYPES:
+        for i in range(int(cfg_data.get(t))):
+            hostname = '{}-{}'.format(t, i)
+            print('Adding "{}" to Cloud Access Manager...'.format(hostname))
+            mycam.machine_add_existing(
+                hostname,
+                PROJECT_ID,
+                'us-west2-b',
+                deployment
+            )
+
+    # Loop until Administrator user is found in CAM
+    while True:
+        entitle_user = mycam.user_get(ENTITLE_USER, deployment)
+        if entitle_user:
+            break
+
+        print('Waiting for user "{}" to be synced. Retrying in 10 seconds...'
+              .format(ENTITLE_USER))
+        time.sleep(10)
+
+    # Add entitlements for each workstation
+    machines_list = mycam.machines_get(deployment)
+    for machine in machines_list:
+        print(
+            'Assigning workstation "{}" to user "{}"...'
+            .format(machine['machineName'], ENTITLE_USER)
+        )
+        mycam.entitlement_add(entitle_user, machine)
+
+    print('\nQuickstart deployment finished.\n')
+
+    print('Next steps:')
+    print('- Connect to a workstation:')
+    print('  From a PCoIP client, connect to the Cloud Access Connector ({}) and sign in with the "{}" user credentials.'.format(cac_public_ip, ENTITLE_USER))
+    print('- Clean up:')
+    print('  To delete this deployment, go to the {} directory and run "terraform destroy".'.format(DEPLOYMENT_PATH))
