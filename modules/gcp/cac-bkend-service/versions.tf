@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-output "cac-bkend-service" {
-  value = google_compute_backend_service.cac-backend.self_link
+terraform {
+  required_version = ">= 0.12"
 }

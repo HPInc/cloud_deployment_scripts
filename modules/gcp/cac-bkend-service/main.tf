@@ -5,52 +5,49 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-terraform {
-  required_version = "< 0.12"
-}
-
 locals {
-    prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
+  prefix = var.prefix != "" ? "${var.prefix}-" : ""
 }
 
 # This is needed so new VMs will be based on the same image in case the public
 # images gets updated
 data "google_compute_image" "cac-base-img" {
-    project = "${var.disk_image_project}"
-    family  = "${var.disk_image_family}"
+  project = var.disk_image_project
+  family  = var.disk_image_family
 }
 
 resource "google_compute_instance_template" "cac-template" {
-    name_prefix = "${local.prefix}template-cac"
+  name_prefix = "${local.prefix}template-cac"
 
-    machine_type = "${var.machine_type}"
+  machine_type = var.machine_type
 
-    disk {
-        boot = true
-        source_image = "${data.google_compute_image.cac-base-img.self_link}"
-        disk_type = "pd-ssd"
-        disk_size_gb = "${var.disk_size_gb}"
+  disk {
+    boot         = true
+    source_image = data.google_compute_image.cac-base-img.self_link
+    disk_type    = "pd-ssd"
+    disk_size_gb = var.disk_size_gb
+  }
+
+  network_interface {
+    subnetwork = var.subnet
+    access_config {
     }
+  }
 
-    network_interface {
-        subnetwork = "${var.subnet}"
-        access_config = {}
-    }
+  tags = [
+    "${local.prefix}tag-ssh",
+    "${local.prefix}tag-icmp",
+    "${local.prefix}tag-http",
+    "${local.prefix}tag-https",
+    "${local.prefix}tag-pcoip",
+  ]
 
-    tags = [
-        "${local.prefix}tag-ssh",
-        "${local.prefix}tag-icmp",
-        "${local.prefix}tag-http",
-        "${local.prefix}tag-https",
-        "${local.prefix}tag-pcoip",
-    ]
+  lifecycle {
+    create_before_destroy = true
+  }
 
-    lifecycle {
-        create_before_destroy = true
-    }
-
-    metadata {
-        startup-script = <<SCRIPT
+  metadata = {
+    startup-script = <<SCRIPT
             # Add domain controller to list of name servers and domain to list of searches
             echo "            nameservers:" >> /etc/netplan/50-cloud-init.yaml
             echo "                search: [${var.domain_name}]" >> /etc/netplan/50-cloud-init.yaml
@@ -80,51 +77,57 @@ resource "google_compute_instance_template" "cac-template" {
             export CAM_BASE_URI=${var.cam_url}
 
             sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password "${var.service_account_password}" --domain ${var.domain_name} --domain-group "${var.domain_group}" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt
-        SCRIPT
+    SCRIPT
 
-        ssh-keys = "${var.cac_admin_user}:${file("${var.cac_admin_ssh_pub_key_file}")}"
-    }
+    ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
+  }
 }
 
 resource "google_compute_instance_group_manager" "cac-igm" {
-    name   = "${local.prefix}igm-cac"
+  name = "${local.prefix}igm-cac"
 
-    # TODO: makes more sense to use regional IGM
-    #region = "${var.gcp_region}"
-    zone = "${var.gcp_zone}"
+  # TODO: makes more sense to use regional IGM
+  #region = "${var.gcp_region}"
+  zone = var.gcp_zone
 
-    base_instance_name = "${local.prefix}cac"
-    instance_template = "${google_compute_instance_template.cac-template.self_link}"
+  base_instance_name = "${local.prefix}cac"
+  instance_template = google_compute_instance_template.cac-template.self_link
 
-    named_port {
-        name = "https"
-        port = 443
-    }
+  named_port {
+    name = "https"
+    port = 443
+  }
 
-    # Overridden by autoscaler when autoscaler is enabled
-    target_size = "${var.cac_instances}"
+  # Overridden by autoscaler when autoscaler is enabled
+  target_size = var.cac_instances
 }
 
 resource "google_compute_https_health_check" "cac-hchk" {
-    name               = "${local.prefix}hchk-cac"
-    request_path       = "${var.cac_health_check["path"]}"
-    port               = "${var.cac_health_check["port"]}"
-    check_interval_sec = "${var.cac_health_check["interval_sec"]}"
-    timeout_sec        = "${var.cac_health_check["timeout_sec"]}"
+  name               = "${local.prefix}hchk-cac"
+  request_path       = var.cac_health_check["path"]
+  port               = var.cac_health_check["port"]
+  check_interval_sec = var.cac_health_check["interval_sec"]
+  timeout_sec        = var.cac_health_check["timeout_sec"]
 }
 
 resource "google_compute_backend_service" "cac-backend" {
-    name = "${local.prefix}bkend-cac"
-    port_name = "https"
-    protocol = "HTTPS"
-    session_affinity = "GENERATED_COOKIE"
-    affinity_cookie_ttl_sec = 3600
+  name = "${local.prefix}bkend-cac"
+  port_name = "https"
+  protocol = "HTTPS"
+  session_affinity = "GENERATED_COOKIE"
+  affinity_cookie_ttl_sec = 3600
 
-    backend = {
-        balancing_mode = "UTILIZATION"
-        # Wants instanceGroup instead of instanceGroupManager
-        group = "${replace(google_compute_instance_group_manager.cac-igm.self_link, "Manager", "")}"
-    }
+  backend {
+    balancing_mode = "UTILIZATION"
 
-    health_checks = ["${google_compute_https_health_check.cac-hchk.self_link}"]
+    # Wants instanceGroup instead of instanceGroupManager
+    group = replace(
+      google_compute_instance_group_manager.cac-igm.self_link,
+      "Manager",
+      "",
+    )
+  }
+
+  health_checks = [google_compute_https_health_check.cac-hchk.self_link]
 }
+
