@@ -8,7 +8,7 @@ This repository contains a collection of Terraform scripts for demonstrating how
 - A PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - an SSH private / public key pair is required for Terraform to log into Linux hosts.
 - if SSL is invovled, the SSL key and certificate files are needed in PEM format.
-- Terraform must be installed. Currently, these scripts has been tested with Terraform v0.11.13, and they do not work with the newly released Terraform v0.12.x.  Please download Terraform v0.11.13 here: https://releases.hashicorp.com/terraform/0.11.13/ 
+- Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ## GCP Setup
 Although it is possible to create deployments in existing and currently in-use projects, it is recommended to create them in new projects to reduce chances of name collisions and interfering with operations of existing resources.
