@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-output "cac-igm" {
-  value = google_compute_instance_group_manager.cac-igm.self_link
+terraform {
+  required_version = ">= 0.12"
 }
