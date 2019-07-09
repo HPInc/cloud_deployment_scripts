@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-output "domain-controller-internal-ip" {
-  value = module.dc.internal-ip
-}
-
-output "domain-controller-public-ip" {
-  value = module.dc.public-ip
+terraform {
+  required_version = ">= 0.12"
 }
