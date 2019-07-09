@@ -7,67 +7,67 @@
 
 variable "prefix" {
   description = "Prefix to add to name of new resources"
-  default = ""
+  default     = ""
 }
 
 variable "name" {
   description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
-  default = "gcent"
+  default     = "gcent"
 }
 
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
-  type = "string"
+  type        = string
 }
 
 variable "domain_name" {
   description = "Name of the domain to join"
-  type = "string"
+  type        = string
 }
 
 variable "domain_controller_ip" {
   description = "Internal IP of the Domain Controller"
-  type = "string"
+  type        = string
 }
 
 variable "service_account_username" {
   description = "Active Directory Service Account username"
-  type = "string"
+  type        = string
 }
 
 variable "service_account_password" {
   description = "Active Directory Service Account password"
-  type = "string"
+  type        = string
 }
 
 variable "subnet" {
   description = "Subnet to deploy the Workstation"
-  type = "string"
+  type        = string
 }
 
 variable "instance_count" {
   description = "Number of CentOS Graphics Workstations to deploy"
-  default = 1
+  default     = 1
 }
 
 variable "machine_type" {
   description = "Machine type for the Workstation"
-  default = "n1-standard-2"
+  default     = "n1-standard-2"
 }
 
 variable "accelerator_type" {
   description = "Accelerator type for the Workstation"
-  default = "nvidia-tesla-p4-vws"
+  default     = "nvidia-tesla-p4-vws"
 }
 
 variable "accelerator_count" {
   description = "Number of GPUs for the Workstation"
-  default = "1"
+  default     = "1"
 }
 
 variable "disk_image_project" {
   description = "Disk image project for the Workstation"
-  default = "centos-cloud"
+  default     = "centos-cloud"
 }
 
 #variable "disk_image_family" {
@@ -76,26 +76,25 @@ variable "disk_image_project" {
 #}
 variable "disk_image" {
   description = "Disk image to use for the Workstation"
-  default = "centos-7-v20190326"
+  default     = "centos-7-v20190619"
 }
 
 variable "disk_size_gb" {
   description = "Disk size (GB) of the Workstation"
-  default = "50"
+  default     = "50"
 }
 
 variable "ws_admin_user" {
   description = "Username of the Workstation Administrator"
-  type = "string"
+  type        = string
 }
 
 variable "ws_admin_ssh_pub_key_file" {
   description = "SSH public key for the Workstation Administrator"
-  type = "string"
+  type        = string
 }
 
 variable "ws_admin_ssh_priv_key_file" {
   description = "SSH private key for the Workstation Administrator"
-  type = "string"
+  type        = string
 }
-

@@ -5,62 +5,58 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-terraform {
-  required_version = "< 0.12"
-}
-
 locals {
-    prefix = "${var.prefix != "" ? "${var.prefix}-" : ""}"
-    # Windows computer names must be <= 15 characters, minus 3 chars for "-xy"
-    # where xy is number of instances (0-99)
-    # TODO: remove the min() function when Terraform 0.12 is available
-    host_name = "${substr("${local.prefix}${var.name}", 0, min(12, length(local.prefix)+length(var.name)))}"
+  prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-    setup_dir= "/tmp"
+  # Windows computer names must be <= 15 characters, minus 4 chars for "-xyz"
+  # where xyz is number of instances (0-999)
+  host_name = substr("${local.prefix}${var.name}", 0, 11)
+
+  setup_dir = "/tmp"
 }
 
 resource "google_compute_instance" "centos-gfx" {
-    count = "${var.instance_count}"
+  count = var.instance_count
 
-    provider = "google"
-    name = "${local.host_name}-${count.index}"
-    machine_type = "${var.machine_type}"
+  provider     = google
+  name         = "${local.host_name}-${count.index}"
+  machine_type = var.machine_type
 
-    guest_accelerator {
-        type = "${var.accelerator_type}"
-        count = "${var.accelerator_count}"
+  guest_accelerator {
+    type  = var.accelerator_type
+    count = var.accelerator_count
+  }
+
+  # This is needed to prevent "Instances with guest accelerators do not support live migration" error
+  scheduling {
+    on_host_maintenance = "TERMINATE"
+  }
+
+  boot_disk {
+    initialize_params {
+      #image = "projects/${var.disk_image_project}/global/images/family/${var.disk_image_family}"
+      image = "projects/${var.disk_image_project}/global/images/${var.disk_image}"
+      type  = "pd-ssd"
+      size  = var.disk_size_gb
     }
+  }
 
-    # This is needed to prevent "Instances with guest accelerators do not support live migration" error
-    scheduling {
-        on_host_maintenance = "TERMINATE"
+  network_interface {
+    subnetwork = var.subnet
+    access_config {
     }
+  }
 
-    boot_disk {
-        initialize_params {
-            #image = "projects/${var.disk_image_project}/global/images/family/${var.disk_image_family}"
-            image = "projects/${var.disk_image_project}/global/images/${var.disk_image}"
-            type = "pd-ssd"
-            size = "${var.disk_size_gb}"
-        }
-    }
+  tags = [
+    "${local.prefix}tag-ssh",
+    "${local.prefix}tag-icmp",
+  ]
 
-    network_interface {
-        subnetwork = "${var.subnet}"
-        access_config = {}
-    }
-
-    tags = [
-        "${local.prefix}tag-ssh",
-        "${local.prefix}tag-icmp",
-    ]
-
-    metadata {
-        ssh-keys = "${var.ws_admin_user}:${file("${var.ws_admin_ssh_pub_key_file}")}"
-
-        # TODO: may need to find a better way to run the script.  If the script
-        # is removed, subsequent reboots will loop forever.
-        startup-script = <<EOF
+  metadata = {
+    ssh-keys = "${var.ws_admin_user}:${file(var.ws_admin_ssh_pub_key_file)}"
+    # TODO: may need to find a better way to run the script.  If the script
+    # is removed, subsequent reboots will loop forever.
+    startup-script = <<EOF
             if ! (rpm -q pcoip-agent-graphics)
             then
                 export DOMAIN_NAME="${var.domain_name}"
@@ -80,29 +76,28 @@ resource "google_compute_instance" "centos-gfx" {
                 chmod +x ${local.setup_dir}/provisioning-gpu-script.sh
                 ${local.setup_dir}/provisioning-gpu-script.sh
             fi
-        EOF
-    }
+    EOF
+  }
 }
 
 resource "null_resource" "upload-scripts" {
-    count = "${var.instance_count}"
+  count = var.instance_count
 
-    depends_on = ["google_compute_instance.centos-gfx"]
-    triggers {
-        instance_id = "${google_compute_instance.centos-gfx.*.instance_id[count.index]}"
-    }
+  depends_on = [google_compute_instance.centos-gfx]
+  triggers = {
+    instance_id = google_compute_instance.centos-gfx[count.index].instance_id
+  }
 
-    connection {
-        type = "ssh"
-        host = "${google_compute_instance.centos-gfx.*.network_interface.0.access_config.0.nat_ip[count.index]}"
-        user = "${var.ws_admin_user}"
-        private_key = "${file(var.ws_admin_ssh_priv_key_file)}"
-        insecure = true
-    }
+  connection {
+    type        = "ssh"
+    host        = google_compute_instance.centos-gfx[count.index].network_interface[0].access_config[0].nat_ip
+    user        = var.ws_admin_user
+    private_key = file(var.ws_admin_ssh_priv_key_file)
+    insecure    = true
+  }
 
-    provisioner "file" {
-        source = "${path.module}/provisioning-gpu-script.sh"
-        destination = "${local.setup_dir}/provisioning-gpu-script.sh"
-    }
+  provisioner "file" {
+    source      = "${path.module}/provisioning-gpu-script.sh"
+    destination = "${local.setup_dir}/provisioning-gpu-script.sh"
+  }
 }
-
