@@ -25,6 +25,25 @@ resource "google_compute_network" "vpc" {
   auto_create_subnetworks = "false"
 }
 
+resource "google_compute_firewall" "allow-internal" {
+  name    = "${local.prefix}fw-allow-internal"
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = "icmp"
+  }
+  allow {
+    protocol = "tcp"
+    ports    = ["1-65535"]
+  }
+  allow {
+    protocol = "udp"
+    ports    = ["1-65535"]
+  }
+
+  source_ranges = [var.dc_subnet_cidr]
+}
+
 resource "google_compute_firewall" "allow-rdp" {
   name    = "${local.prefix}fw-allow-rdp"
   network = google_compute_network.vpc.self_link
