@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Copyright (c) 2019 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
