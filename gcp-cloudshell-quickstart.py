@@ -52,6 +52,15 @@ SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'gwin']
 
+def check_requirements():
+    if not PROJECT_ID:
+        print('The PROJECT property has not been set.')
+        print('Please run "gcloud config set project [PROJECT_ID]" to set the project.')
+        print('See: https://cloud.google.com/sdk/gcloud/reference/config/set')
+        print('')
+        sys.exit(1)
+
+
 def quickstart_config_read(cfg_file):
     cfg_data = {}
 
@@ -226,6 +235,8 @@ def terraform_install():
 
 
 if __name__ == '__main__':
+    check_requirements()
+
     cfg_data = quickstart_config_read(CFG_FILE_PATH)
 
     password = ad_password_get()
