@@ -13,7 +13,7 @@ The quickest way to create an example deployment on GCP is to use the Quickstart
 ## Steps
 - click on the button below to clone this repository in your GCP Cloud Shell
 - fill in the required parameters in the GCP editor
-- run ```python3 gcp-cloudshell-quickstart.py```
+- run ```./gcp-cloudshell-quickstart.py``` from the GCP Cloud Shell
 
 [![Open in Cloud Shell][shell_img]][shell_link]
 
