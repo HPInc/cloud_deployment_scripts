@@ -66,6 +66,35 @@ def quickstart_config_read(cfg_file):
     return cfg_data
 
 
+def ad_password_get():
+    txt = r'''
+    Please enter a password for the Active Directory Administrator.
+
+    Note Windows password complexity requirements:
+    1. Must not contain user's account name or display name
+    2. Must have 3 of the following categories:
+       - A-Z
+       - a-z
+       - 0-9
+       - special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+       - unicode characters
+
+    See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+    '''
+    print(txt)
+    while True:
+        password1 = getpass.getpass('Enter a password: ').strip()
+        password2 = getpass.getpass('Re-enter the password: ').strip()
+
+        if password1 == password2:
+            print('')
+            break
+
+        print('The passwords do not match.  Please try again.')
+
+    return password1
+
+
 def service_account_find(email):
     service_accounts = iam_service.projects().serviceAccounts().list(
         name = 'projects/{}'.format(PROJECT_ID),
@@ -199,8 +228,7 @@ def terraform_install():
 if __name__ == '__main__':
     cfg_data = quickstart_config_read(CFG_FILE_PATH)
 
-    password = getpass.getpass(
-        'Enter password for Active Directory Administrator:').strip()
+    password = ad_password_get()
 
     print('Preparing local requirements...')
     terraform_install()
