@@ -25,11 +25,6 @@ variable "domain_name" {
   type        = string
 }
 
-variable "domain_controller_ip" {
-  description = "Internal IP Address of the Domain Controller"
-  type        = string
-}
-
 variable "service_account_username" {
   description = "Active Directory Service Account username"
   type        = string

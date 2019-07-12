@@ -147,21 +147,14 @@ join_domain()
     then
         log "--> DOMAIN NAME: $DOMAIN_NAME"
         log "--> USERNAME: $USERNAME"
+        log "--> DOMAIN CONTROLLER: $IP_ADDRESS"
 
         VM_NAME=$(hostname)
-
-        # Wait for the Domain Controller to come up
-        log "--> Trying to reach the Domain Controller @ $IP_ADDRESS"
-        until ping -c1 $IP_ADDRESS > /dev/null 2>&1
-        do
-            log "Unable to reach the Domain Controller, retrying in 10 seconds..."
-            sleep 10
-        done
 
         # Wait for AD service account to be set up
         yum -y install openldap-clients
         log "--> Wait for AD account $USERNAME@$DOMAIN_NAME to be available"
-        until ldapwhoami -H ldap://$DOMAIN_NAME -D $USERNAME@$DOMAIN_NAME -w $PASSWORD > /dev/null 2>&1
+        until ldapwhoami -H ldap://$IP_ADDRESS -D $USERNAME@$DOMAIN_NAME -w $PASSWORD -o nettimeout=1 > /dev/null 2>&1
         do
             log "$USERNAME@$DOMAIN_NAME not available yet, retrying in 10 seconds..."
             sleep 10
@@ -250,11 +243,6 @@ then
 
     log "--> Set default to graphical target"
     systemctl set-default graphical.target
-
-    # Update resolv.conf for domain
-    sed -i "0,/nameserver/s//search $DOMAIN_NAME\nnameserver $IP_ADDRESS\nnameserver/" /etc/resolv.conf
-    echo 'PEERDNS=no' >> /etc/sysconfig/network-scripts/ifcfg-eth0
-    chattr +i /etc/resolv.conf
 
     join_domain
 

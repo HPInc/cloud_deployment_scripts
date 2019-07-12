@@ -5,13 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-provider "google" {
-  credentials = file(var.gcp_credentials_file)
-  project     = var.gcp_project_id
-  region      = var.gcp_region
-  zone        = var.gcp_zone
-}
-
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 }
@@ -23,6 +16,28 @@ data "http" "myip" {
 resource "google_compute_network" "vpc" {
   name                    = "${local.prefix}vpc-dc"
   auto_create_subnetworks = "false"
+}
+
+resource "google_dns_managed_zone" "private_zone" {
+  provider    = "google-beta"
+
+  name        = replace("${var.domain_name}-zone", ".", "-")
+  dns_name    = "${var.domain_name}."
+  description = "Private forwarding zone for ${var.domain_name}"
+
+  visibility  = "private"
+
+  private_visibility_config {
+    networks {
+      network_url = google_compute_network.vpc.self_link
+    }
+  }
+
+  forwarding_config {
+    target_name_servers {
+      ipv4_address = var.dc_private_ip
+    }
+  }
 }
 
 resource "google_compute_firewall" "allow-internal" {
@@ -67,11 +82,7 @@ resource "google_compute_firewall" "allow-winrm" {
 
   allow {
     protocol = "tcp"
-    ports    = ["5985"]
-  }
-  allow {
-    protocol = "tcp"
-    ports    = ["5986"]
+    ports    = ["5985-5986"]
   }
 
   target_tags   = ["${local.prefix}tag-winrm"]
@@ -88,6 +99,23 @@ resource "google_compute_firewall" "allow-icmp" {
 
   target_tags   = ["${local.prefix}tag-icmp"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+}
+
+resource "google_compute_firewall" "allow-dns" {
+  name    = "${local.prefix}fw-allow-dns"
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["53"]
+  }
+  allow {
+    protocol = "udp"
+    ports    = ["53"]
+  }
+
+  target_tags   = ["${local.prefix}tag-dns"]
+  source_ranges = ["35.199.192.0/19"]
 }
 
 resource "google_compute_subnetwork" "dc-subnet" {

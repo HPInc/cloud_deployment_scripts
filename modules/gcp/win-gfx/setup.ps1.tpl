@@ -56,8 +56,6 @@ cd 'C:\Program Files\Teradici\PCoIP Agent'
 "################################################################"
 "Joining Domain ${domain_name}..."
 "################################################################"
-$interface = (Get-DNSClientServerAddress -AddressFamily "IPv4" | Where-Object {$_.ServerAddresses.Count -gt 0} | Where-Object InterfaceAlias -notlike "*${gcp_project_id}*").InterfaceAlias
-Set-DNSClientServerAddress -InterfaceAlias $interface -ServerAddresses "${domain_controller_ip}"
 $username = "${service_account_username}" + "@" + "${domain_name}"
 $password = ConvertTo-SecureString "${service_account_password}" -AsPlainText -Force
 $cred = New-Object System.Management.Automation.PSCredential ($username, $password)

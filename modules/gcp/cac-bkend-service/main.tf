@@ -48,30 +48,20 @@ resource "google_compute_instance_template" "cac-template" {
 
   metadata = {
     startup-script = <<SCRIPT
-            # Add domain controller to list of name servers and domain to list of searches
-            echo "            nameservers:" >> /etc/netplan/50-cloud-init.yaml
-            echo "                search: [${var.domain_name}]" >> /etc/netplan/50-cloud-init.yaml
-            echo "                addresses: [${var.domain_controller_ip}]" >> /etc/netplan/50-cloud-init.yaml
-            netplan apply
-
-            # wait for domain controller DNS to be ready
-            # Cannot do this too early.  Otherwise the domain controller reboots and the domain will not be resolved again.
-            # TODO: Sometimes this loop is stuck despite another SSH session to the same machine would be able to resolve the domain name.  Eventually the domain name would resolve but it can take a while.
-            until host ${var.domain_name} > /dev/null; do echo 'Trying to resolve ${var.domain_name}. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done
-
             # TODO: installing should be only done if cac is not already installed. Add a check
             # Also check on restart behavior - do the containers restart?
 
             # download CAC (after DNS is available)
             cd /home/${var.cac_admin_user}
             curl -L ${var.cac_installer_url} -o /home/${var.cac_admin_user}/cloud-access-connector.tar.gz
-            echo `whoami` > whoami
             tar xzvf /home/${var.cac_admin_user}/cloud-access-connector.tar.gz 
 
             # wait for service account to be added
             # do this last because it takes a while for new AD user to be added in a new Domain Controller
+            # Note: using the domain controller IP instead of the domain name for the
+            #       host is more resilient
             sudo apt install -y ldap-utils
-            until ldapwhoami -H ldap://${var.domain_name} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done
+            until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1 > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; done
 
             # Install the connector
             export CAM_BASE_URI=${var.cam_url}

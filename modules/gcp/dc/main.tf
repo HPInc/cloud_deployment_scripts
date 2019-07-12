@@ -75,6 +75,7 @@ resource "google_compute_instance" "dc" {
   }
 
   tags = [
+    "${local.prefix}tag-dns",
     "${local.prefix}tag-rdp",
     "${local.prefix}tag-winrm",
     "${local.prefix}tag-icmp",

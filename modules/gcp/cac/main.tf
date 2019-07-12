@@ -46,11 +46,6 @@ resource "google_compute_instance" "cac" {
 
   metadata = {
     startup-script = <<SCRIPT
-            sudo echo "            nameservers:" >> /etc/netplan/50-cloud-init.yaml
-            sudo echo "                search: [${var.domain_name}]" >> /etc/netplan/50-cloud-init.yaml
-            sudo echo "                addresses: [${var.domain_controller_ip}]" >> /etc/netplan/50-cloud-init.yaml
-            sudo netplan apply
-
             sudo echo '# System Control network settings for CAC' > /etc/sysctl.d/01-pcoip-cac-network.conf
             sudo echo 'net.core.rmem_max=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
             sudo echo 'net.core.rmem_default=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
@@ -59,8 +54,7 @@ resource "google_compute_instance" "cac" {
             sudo echo 'net.ipv4.udp_mem=120000 240000 600000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
             sudo echo 'net.core.netdev_max_backlog=2000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
             sudo sysctl -p /etc/sysctl.d/01-pcoip-cac-network.conf
-        
-SCRIPT
+    SCRIPT
 
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
   }
@@ -85,18 +79,17 @@ resource "null_resource" "cac-dependencies" {
 
   provisioner "remote-exec" {
     inline = [
-      # wait for domain controller DNS to be ready
-      # Cannot do this too early.  Otherwise the domain controller reboots and the domain will not be resolved again.
-      "until host ${var.domain_name} > /dev/null; do echo 'Trying to resolve ${var.domain_name}. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done",
-
       # download CAC (after DNS is available)
       "curl -L ${var.cac_installer_url} -o /home/${var.cac_admin_user}/cloud-access-connector.tar.gz",
       "tar xzvf /home/${var.cac_admin_user}/cloud-access-connector.tar.gz",
 
-      # wait for service account to be added
-      # do this last because it takes a while for new AD user to be added in a new Domain Controller
+      # Wait for service account to be added
+      # do this last because it takes a while for new AD user to be added in a
+      # new Domain Controller
+      # Note: using the domain controller IP instead of the domain name for the
+      #       host is more resilient
       "sudo apt install -y ldap-utils",
-      "until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; sudo netplan apply; done",
+      "until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1 > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; done",
     ]
   }
 }

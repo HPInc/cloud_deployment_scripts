@@ -33,7 +33,6 @@ data "template_file" "setup-script" {
     pcoip_registration_code  = var.pcoip_registration_code
     gcp_project_id           = var.gcp_project_id
     domain_name              = var.domain_name
-    domain_controller_ip     = var.domain_controller_ip
     service_account_username = var.service_account_username
     service_account_password = var.service_account_password
   }
