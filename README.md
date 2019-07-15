@@ -33,11 +33,12 @@ Although it is possible to create deployments in existing and currently in-use p
 
 With a new GCP project:
 - create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAM to manage the deployment, such as creating workstations, mointoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform scripts to create the initial deployment.
-- Enable the following APIs in the GCP console or via the command ```gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com```:
+- Enable the following APIs in the GCP console or via the command ```gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com```:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
     - Cloud Resource Manager
     - Compute Engine
+    - Google Cloud DNS
 
 ## Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Microsoft business account.

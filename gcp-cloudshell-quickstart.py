@@ -30,7 +30,8 @@ REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
     'cloudresourcemanager.googleapis.com',
-    'compute.googleapis.com'
+    'compute.googleapis.com',
+    'dns.googleapis.com',
 ]
 
 iso_time = datetime.datetime.now().isoformat()
