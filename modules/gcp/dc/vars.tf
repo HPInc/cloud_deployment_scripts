@@ -61,9 +61,9 @@ variable "disk_image_project" {
   default     = "windows-cloud"
 }
 
-variable "disk_image_family" {
-  description = "Disk image family for the Domain Controller"
-  default     = "windows-2016"
+variable "disk_image" {
+  description = "Disk image to use for the Workstation"
+  default     = "windows-server-2016-dc-v20190620"
 }
 
 variable "disk_size_gb" {

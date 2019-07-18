@@ -203,8 +203,6 @@ module "dc" {
   private_ip = var.dc_private_ip
 
   machine_type       = var.dc_machine_type
-  disk_image_project = var.dc_disk_image_project
-  disk_image_family  = var.dc_disk_image_family
   disk_size_gb       = var.dc_disk_size_gb
 }
 
