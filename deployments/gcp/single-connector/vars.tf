@@ -238,8 +238,3 @@ variable "centos_admin_ssh_pub_key_file" {
   description = "SSH public key for CentOS Workstation Administrator"
   type        = string
 }
-
-variable "centos_admin_ssh_priv_key_file" {
-  description = "SSH private key for CentOS Workstation Administrator"
-  type        = string
-}

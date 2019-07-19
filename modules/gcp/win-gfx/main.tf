@@ -11,31 +11,29 @@ locals {
   # Windows computer names must be <= 15 characters, minus 4 chars for "-xyz"
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.name}", 0, 11)
-  setup_file = "C:/Temp/setup.ps1"
+
+  startup_script = "win-gfx-startup.ps1"
 }
 
-data "template_file" "sysprep-script" {
-  template = file("${path.module}/sysprep.ps1.tpl")
+resource "google_storage_bucket_object" "win-gfx-startup-script" {
+  name    = local.startup_script
+  bucket  = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      pcoip_agent_location     = var.pcoip_agent_location,
+      pcoip_agent_filename     = var.pcoip_agent_filename,
+      pcoip_registration_code  = var.pcoip_registration_code,
 
-  vars = {
-    admin_password = var.admin_password
-  }
-}
+      nvidia_driver_location   = var.nvidia_driver_location,
+      nvidia_driver_filename   = var.nvidia_driver_filename,
 
-data "template_file" "setup-script" {
-  template = file("${path.module}/setup.ps1.tpl")
-
-  vars = {
-    nvidia_driver_location   = var.nvidia_driver_location
-    nvidia_driver_filename   = var.nvidia_driver_filename
-    pcoip_agent_location     = var.pcoip_agent_location
-    pcoip_agent_filename     = var.pcoip_agent_filename
-    pcoip_registration_code  = var.pcoip_registration_code
-    gcp_project_id           = var.gcp_project_id
-    domain_name              = var.domain_name
-    service_account_username = var.service_account_username
-    service_account_password = var.service_account_password
-  }
+      domain_name              = var.domain_name,
+      admin_password           = var.admin_password,
+      service_account_username = var.service_account_username,
+      service_account_password = var.service_account_password,
+    }
+  )
 }
 
 resource "google_compute_instance" "win-gfx" {
@@ -72,58 +70,14 @@ resource "google_compute_instance" "win-gfx" {
 
   tags = [
     "${local.prefix}tag-rdp",
-    "${local.prefix}tag-winrm",
     "${local.prefix}tag-icmp",
   ]
 
   metadata = {
-    sysprep-specialize-script-ps1 = data.template_file.sysprep-script.rendered
-  }
-}
-
-resource "null_resource" "upload-scripts" {
-  count = var.instance_count
-
-  depends_on = [google_compute_instance.win-gfx]
-  triggers = {
-    instance_id = google_compute_instance.win-gfx[count.index].instance_id
+    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script.output_name}"
   }
 
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = var.admin_password
-    host     = google_compute_instance.win-gfx[count.index].network_interface[0].access_config[0].nat_ip
-    port     = "5986"
-    https    = true
-    insecure = true
-  }
-
-  provisioner "file" {
-    content     = data.template_file.setup-script.rendered
-    destination = local.setup_file
-  }
-}
-
-resource "null_resource" "run-setup-script" {
-  count = var.instance_count
-
-  depends_on = [null_resource.upload-scripts]
-  triggers = {
-    instance_id = google_compute_instance.win-gfx[count.index].instance_id
-  }
-
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = var.admin_password
-    host     = google_compute_instance.win-gfx[count.index].network_interface[0].access_config[0].nat_ip
-    port     = "5986"
-    https    = true
-    insecure = true
-  }
-
-  provisioner "remote-exec" {
-    inline = ["powershell -file ${local.setup_file}"]
+  service_account {
+    scopes = ["cloud-platform"]
   }
 }

@@ -7,6 +7,18 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
+  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+}
+
+resource "random_id" "bucket-name" {
+  byte_length = 3
+}
+
+resource "google_storage_bucket" "scripts" {
+  name          = local.bucket_name
+  location      = var.gcp_region
+  storage_class = "REGIONAL"
+  force_destroy = true
 }
 
 module "dc" {
@@ -67,10 +79,11 @@ module "win-gfx" {
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
+  admin_password           = var.dc_admin_password
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  gcp_project_id = var.gcp_project_id
+  bucket_name    = google_storage_bucket.scripts.name
   subnet         = google_compute_subnetwork.ws-subnet.self_link
   instance_count = var.win_gfx_instance_count
 
@@ -78,8 +91,6 @@ module "win-gfx" {
   accelerator_type  = var.win_gfx_accelerator_type
   accelerator_count = var.win_gfx_accelerator_count
   disk_size_gb      = var.win_gfx_disk_size_gb
-
-  admin_password = var.dc_admin_password
 }
 
 module "centos-gfx" {
@@ -94,6 +105,7 @@ module "centos-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name    = google_storage_bucket.scripts.name
   subnet         = google_compute_subnetwork.ws-subnet.self_link
   instance_count = var.centos_gfx_instance_count
 
@@ -104,7 +116,6 @@ module "centos-gfx" {
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
-  ws_admin_ssh_priv_key_file = var.centos_admin_ssh_priv_key_file
 }
 
 module "centos-std" {
@@ -119,6 +130,7 @@ module "centos-std" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name    = google_storage_bucket.scripts.name
   subnet         = google_compute_subnetwork.ws-subnet.self_link
   instance_count = var.centos_std_instance_count
 
@@ -127,5 +139,4 @@ module "centos-std" {
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
-  ws_admin_ssh_priv_key_file = var.centos_admin_ssh_priv_key_file
 }

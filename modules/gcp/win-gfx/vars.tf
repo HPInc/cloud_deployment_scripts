@@ -35,8 +35,8 @@ variable "service_account_password" {
   type        = string
 }
 
-variable "gcp_project_id" {
-  description = "GCP Project ID"
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
   type        = string
 }
 

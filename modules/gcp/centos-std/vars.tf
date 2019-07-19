@@ -40,6 +40,11 @@ variable "service_account_password" {
   type        = string
 }
 
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
+  type        = string
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Workstation"
   type        = string
@@ -81,10 +86,5 @@ variable "ws_admin_user" {
 
 variable "ws_admin_ssh_pub_key_file" {
   description = "SSH public key for the Workstation Administrator"
-  type        = string
-}
-
-variable "ws_admin_ssh_priv_key_file" {
-  description = "SSH private key for the Workstation Administrator"
   type        = string
 }
