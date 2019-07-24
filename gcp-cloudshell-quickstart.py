@@ -53,6 +53,37 @@ SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'gwin']
 
+next_steps = """
+Next steps:
+
+- Connect to a workstation:
+  1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
+  2. sign in with the "{entitle_user}" user credentials
+
+- Add additional workstations:
+  1. Log in to https://cam.teradici.com/beta-ui
+  2. Click on "Remote Workstations" in the left panel, select "Create Remote
+     workstation" from the "+" button
+  3. Select connector "sample_connector_<timestamp>"
+  4. Select workstation template and machine name
+  5. Select "us-west2-b" for Zone, "subnet-ws" for Network, then select the
+     machine type
+  6. Enter "example.com" for Domain name, "cam_admin" for Domain service
+     account, and the password you entered at the beginning of this script for
+     service account password.
+  7. Click "Create"
+
+- Clean up:
+  1. Using GCP console, delete all workstations created by Cloud Access Manager
+     web interface and manually created workstations. Resources not created by
+     the Terraform scripts must be manually removed before Terraform can
+     properly destroy resources it created.
+  2. In GCP cloudshell, go to the ~/cloud_deployment_scripts/{deployment_path} directory
+     and run "terraform destroy"
+  3. Log in to https://cam.teradici.com/beta-ui and delete the deployment named
+     "sample_deployment_<timestamp>"
+"""
+
 def check_requirements():
     if not PROJECT_ID:
         print('The PROJECT property has not been set.')
@@ -348,8 +379,8 @@ if __name__ == '__main__':
 
     print('\nQuickstart deployment finished.\n')
 
-    print('Next steps:')
-    print('- Connect to a workstation:')
-    print('  From a PCoIP client, connect to the Cloud Access Connector ({}) and sign in with the "{}" user credentials.'.format(cac_public_ip, ENTITLE_USER))
-    print('- Clean up:')
-    print('  To delete this deployment, go to the {} directory and run "terraform destroy".'.format(DEPLOYMENT_PATH))
+    print('')
+    print(next_steps.format(cac_public_ip=cac_public_ip,
+                            entitle_user=ENTITLE_USER,
+                            deployment_path=DEPLOYMENT_PATH))
+    print('')
