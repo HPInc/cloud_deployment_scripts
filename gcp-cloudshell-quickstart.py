@@ -42,7 +42,7 @@ CONNECTOR_NAME  = 'sample_connector_' + iso_time
 ENTITLE_USER = 'Administrator'
 
 CFG_FILE_PATH    = 'gcp-cloudshell-quickstart.cfg'
-DEPLOYMENT_PATH  = 'deployments/gcp/dc-cac-ws'
+DEPLOYMENT_PATH  = 'deployments/gcp/single-connector'
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'

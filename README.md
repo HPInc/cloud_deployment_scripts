@@ -70,7 +70,7 @@ Run ```terraform destroy``` to remove all resources created by Terraform.
 # Deployments
 This section descrbes a number of scenarios deployed by Terraform scripts in this repository.
 
-## dc-cac-ws
+## single-connector
 Creates a VPC with 3 subnets in the same region. The subnets are
 - subnet-dc : for the Domain Controller
 - subnet-cac: for the Connector
@@ -84,24 +84,24 @@ A Cloud Access Connector is created and registers itself with the CAM service wi
 
 Domain-joined Windows Graphics workstation(s), CentOS Graphics workstation(s), and CentOS Standard workstation(s) are optionally created, specified by ```win_gfx_instance_count```, ```centos_gfx_instance_count```, and ```centos_std_instance_count```.  These workstations are created with NVidia graphics driver (for graphics workstations) and PCoIP Agent installed.
 
-![dc-cac-ws diagram](./dc-cac-ws.png)
+![single-connector diagram](./single-connector.png)
 
-## dc-lb-cac-ws
-Same as dc-cac-ws, except multiple Cloud Access Connectors are deployed in a managed instance group comprising a single backend-service serving a GCP HTTPS Load Balancer
+## multi-connector
+Same as single-connector, except multiple Cloud Access Connectors are deployed in a managed instance group comprising a single backend-service serving a GCP HTTPS Load Balancer
 with a single Global Load Balanced IP address.
 
 The number of Connectors can be specified by the ```cac_instances``` variable.
 
-![dc-lb-cac-ws diagram](./dc-lb-cac-ws.png)
+![multi-connector diagram](./multi-connector.png)
 
-## global-lb-cac
-Similar to the dc-lb-cac-ws, except Cloud Access Connectors are deployed into managed instance groups in 3 different regions in the same VPC behind one global load balanced IP address.
+## multi-region
+Similar to the multi-connector, except Cloud Access Connectors are deployed into managed instance groups in 3 different regions in the same VPC behind one global load balanced IP address.
 
 This deployment demonstrates that the GCP HTTPS Load Balancer will connect a client to the Connectors that are geographically closest to the client.
 
 Workstations are only deployed into one region to show that connectivity is possible from Connectors in any region because of GCP's global VPC.
 
-![global-lb-cac diagram](./global-lb-cac.png)
+![multi-region diagram](./multi-region.png)
 
 ## dc-only
 A simple deployment of one Domain Controller, intended for testing Domain Controller operations.
