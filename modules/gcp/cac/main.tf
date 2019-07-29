@@ -89,7 +89,8 @@ resource "null_resource" "cac-dependencies" {
       # Note: using the domain controller IP instead of the domain name for the
       #       host is more resilient
       "sudo apt install -y ldap-utils",
-      "until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1 > /dev/null 2>&1; do echo 'Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds...'; sleep 10; done",
+      "TIMEOUT=1200",
+      "until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1; do if [ $TIMEOUT -le 0 ]; then break; else echo \"Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)\"; fi; TIMEOUT=$((TIMEOUT-10)); sleep 10; done",
     ]
   }
 }
