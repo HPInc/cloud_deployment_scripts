@@ -88,9 +88,10 @@ resource "null_resource" "cac-dependencies" {
       # new Domain Controller
       # Note: using the domain controller IP instead of the domain name for the
       #       host is more resilient
-      "sudo apt install -y ldap-utils",
-      "TIMEOUT=1200",
-      "until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1; do if [ $TIMEOUT -le 0 ]; then break; else echo \"Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)\"; fi; TIMEOUT=$((TIMEOUT-10)); sleep 10; done",
+      "echo '### Installing ldap-utils ###'",
+      "RETRIES=5; while true; do sudo apt-get -qq update; sudo apt-get -qq install ldap-utils; RC=$?; if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then break; fi; echo \"Error installing ldap-utils. $RETRIES retries remaining...\"; RETRIES=$((RETRIES-1)); sleep 5; done",
+      "echo '### Ensure AD account is available ###'",
+      "TIMEOUT=1200; until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1; do if [ $TIMEOUT -le 0 ]; then break; else echo \"Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)\"; fi; TIMEOUT=$((TIMEOUT-10)); sleep 10; done",
     ]
   }
 }
