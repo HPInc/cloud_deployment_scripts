@@ -12,6 +12,7 @@ locals {
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.name}", 0, 11)
 
+  enable_public_ip = var.enable_public_ip ? [true] : []
   startup_script = "centos-gfx-startup.sh"
 }
 
@@ -58,7 +59,10 @@ resource "google_compute_instance" "centos-gfx" {
 
   network_interface {
     subnetwork = var.subnet
-    access_config {
+
+    dynamic access_config {
+      for_each = local.enable_public_ip
+      content {}
     }
   }
 

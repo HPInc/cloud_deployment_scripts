@@ -185,6 +185,11 @@ variable "cam_url" {
   default     = "https://cam.teradici.com"
 }
 
+variable "enable_workstation_public_ip" {
+  description = "Enable public IP for Workstations"
+  default     = false
+}
+
 variable "win_gfx_instance_count" {
   description = "Number of Windows Grpahics Workstations"
   default     = 0

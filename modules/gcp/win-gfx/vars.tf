@@ -45,6 +45,11 @@ variable "subnet" {
   type        = string
 }
 
+variable "enable_public_ip" {
+  description = "Assign a public IP to the workstation"
+  default     = false
+}
+
 variable "instance_count" {
   description = "Number of Windows Graphics Workstations to deploy"
   default     = 1
@@ -107,4 +112,9 @@ variable "pcoip_agent_location" {
 variable "pcoip_agent_filename" {
   description = "Filename of Teradici PCoIP Graphics Agent. Leave blank to download the latest."
   default     = ""
+}
+
+variable "depends_on_hack" {
+  description = "Workaround for Terraform Modules not supporting depends_on"
+  default     = []
 }

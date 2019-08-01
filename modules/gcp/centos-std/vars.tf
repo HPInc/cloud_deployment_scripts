@@ -50,6 +50,11 @@ variable "subnet" {
   type        = string
 }
 
+variable "enable_public_ip" {
+  description = "Assign a public IP to the workstation"
+  default     = false
+}
+
 variable "instance_count" {
   description = "Number of CentOS Standard Workstations to deploy"
   default     = 1
@@ -87,4 +92,9 @@ variable "ws_admin_user" {
 variable "ws_admin_ssh_pub_key_file" {
   description = "SSH public key for the Workstation Administrator"
   type        = string
+}
+
+variable "depends_on_hack" {
+  description = "Workaround for Terraform Modules not supporting depends_on"
+  default     = []
 }

@@ -197,3 +197,26 @@ resource "google_compute_address" "dc-internal-ip" {
   address_type = "INTERNAL"
   address      = var.dc_private_ip
 }
+
+resource "google_compute_router" "router" {
+  name    = "${local.prefix}router"
+  region  = var.gcp_region
+  network = google_compute_network.vpc.self_link
+
+  bgp {
+    asn = 65000
+  }
+}
+
+resource "google_compute_router_nat" "nat" {
+  name                               = "${local.prefix}nat"
+  router                             = google_compute_router.router.name
+  region                             = var.gcp_region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+
+  subnetwork {
+    name                    = google_compute_subnetwork.ws-subnet.self_link
+    source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
+  }
+}

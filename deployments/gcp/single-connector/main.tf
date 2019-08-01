@@ -83,14 +83,17 @@ module "win-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  bucket_name    = google_storage_bucket.scripts.name
-  subnet         = google_compute_subnetwork.ws-subnet.self_link
-  instance_count = var.win_gfx_instance_count
+  bucket_name      = google_storage_bucket.scripts.name
+  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  enable_public_ip = var.enable_workstation_public_ip
+  instance_count   = var.win_gfx_instance_count
 
   machine_type      = var.win_gfx_machine_type
   accelerator_type  = var.win_gfx_accelerator_type
   accelerator_count = var.win_gfx_accelerator_count
   disk_size_gb      = var.win_gfx_disk_size_gb
+
+  depends_on_hack = [google_compute_router_nat.nat.id]
 }
 
 module "centos-gfx" {
@@ -105,9 +108,10 @@ module "centos-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  bucket_name    = google_storage_bucket.scripts.name
-  subnet         = google_compute_subnetwork.ws-subnet.self_link
-  instance_count = var.centos_gfx_instance_count
+  bucket_name      = google_storage_bucket.scripts.name
+  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  enable_public_ip = var.enable_workstation_public_ip
+  instance_count   = var.centos_gfx_instance_count
 
   machine_type      = var.centos_gfx_machine_type
   accelerator_type  = var.centos_gfx_accelerator_type
@@ -116,6 +120,8 @@ module "centos-gfx" {
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
+
+  depends_on_hack = [google_compute_router_nat.nat.id]
 }
 
 module "centos-std" {
@@ -130,13 +136,16 @@ module "centos-std" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  bucket_name    = google_storage_bucket.scripts.name
-  subnet         = google_compute_subnetwork.ws-subnet.self_link
-  instance_count = var.centos_std_instance_count
+  bucket_name      = google_storage_bucket.scripts.name
+  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  enable_public_ip = var.enable_workstation_public_ip
+  instance_count   = var.centos_std_instance_count
 
   machine_type = var.centos_std_machine_type
   disk_size_gb = var.centos_std_disk_size_gb
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
+
+  depends_on_hack = [google_compute_router_nat.nat.id]
 }
