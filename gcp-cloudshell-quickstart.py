@@ -61,8 +61,8 @@ Next steps:
   2. sign in with the "{entitle_user}" user credentials
   3. When connecting to a workstation immediately after this script completes,
      the workstation (especially graphics ones) may still be setting up. You may
-     see "Remote Desktop is restart..." in the client. Please wait a few minutes
-     or reconnect if it times out.
+     see "Remote Desktop is restarting..." in the client. Please wait a few
+     minutes or reconnect if it times out.
 
 - Add additional workstations:
   1. Log in to https://cam.teradici.com/beta-ui
@@ -329,7 +329,6 @@ if __name__ == '__main__':
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
-        'centos_admin_ssh_priv_key_file': SSH_KEY_PATH,
         'pcoip_registration_code':        cfg_data.get('reg_code'),
         'cac_token':                      connector['token'],
     }
