@@ -17,6 +17,8 @@ locals {
 }
 
 resource "google_storage_bucket_object" "win-gfx-startup-script" {
+  count = var.instance_count == 0 ? 0 : 1
+
   name    = local.startup_script
   bucket  = var.bucket_name
   content = templatefile(
@@ -78,7 +80,7 @@ resource "google_compute_instance" "win-gfx" {
   ]
 
   metadata = {
-    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script.output_name}"
+    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script[0].output_name}"
   }
 
   service_account {
