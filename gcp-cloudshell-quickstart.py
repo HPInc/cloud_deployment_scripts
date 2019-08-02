@@ -59,6 +59,10 @@ Next steps:
 - Connect to a workstation:
   1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
   2. sign in with the "{entitle_user}" user credentials
+  3. When connecting to a workstation immediately after this script completes,
+     the workstation (especially graphics ones) may still be setting up. You may
+     see "Remote Desktop is restart..." in the client. Please wait a few minutes
+     or reconnect if it times out.
 
 - Add additional workstations:
   1. Log in to https://cam.teradici.com/beta-ui
