@@ -1,9 +1,9 @@
-# Cloud Access Manager Quickstart
+# Cloud Access Connector Quickstart
 
 ## Introduction
-The goal of this tutorial is to create the Cloud Access Manager [single-connector](https://github.com/teradici/cloud_deployment_scripts#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
+The goal of this tutorial is to create the [single-connector](https://github.com/teradici/cloud_deployment_scripts#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
 
-This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the Cloud Access Manager deployment.
+This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the Cloud Access Connector deployment.
 
 The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the GCP infrasturcture such as Networking and Compute resources.
 
@@ -36,15 +36,19 @@ scent | Standard CentOS 7 Workstations
 gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstations GPU
 gwin | Windows Server 2016 with NVIDIA Tesla P4 Virtual Workstations GPU
 
-The workstations will be created in **us-west2-b** and have the following specs:
+### Check your Quota
+Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Cloud Access Connector (CAC) which will also be created.
+
+The deployment will be created in **us-west2-b** and have the following specs:
 
 VM | vCPUs | Memory (GB) | SSD (GB) | GPU 
 ---|---|---|---|--- 
+DC | 2 | 7.5 | 50 | 0 
+CAC | 2 | 7.5 | 50 | 0 
 scent | 2 | 7.5 | 50 | 0 
 gcent | 2 | 7.5 | 50 | 1
 gwin | 2 | 7.5 | 100 | 1
 
-Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller and Cloud Access Connector which will also be created. The Domain Controller and Cloud Access Connector have the same specs as the Standard CentOS 7 Workstation.
 You can check your quota [here](https://console.cloud.google.com/iam-admin/quotas).
 
 ### Save the changes
