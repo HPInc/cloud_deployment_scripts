@@ -8,12 +8,7 @@ For a more customizable deployment, please use the standard Terraform deployment
 - A PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - A Cloud Access Manager API Token is needed. Follow the instructions available after clicking the button below to obtain a token.
 
-## Steps
-1. click on the button below to clone this repository in your GCP Cloud Shell. An editor should automatically open, showing gcp-cloudshell-quickstart.cfg.
-1. follow the instructions in the file and fill in the required parameters
-1. run ```./gcp-cloudshell-quickstart.py``` from the GCP Cloud Shell
+## Instructions
+Click on the button below to clone this repository in your GCP Cloud Shell and launch the tutorial.
 
-[![Open in Cloud Shell][shell_img]][shell_link]
-
-[shell_img]: http://gstatic.com/cloudssh/images/open-btn.png
-[shell_link]: https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/teradici/cloud_deployment_scripts&page=editor&open_in_editor=quickstart/gcp-cloudshell-quickstart.cfg
+[![Open in Google Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/teradici/cloud_deployment_scripts&page=editor&tutorial=quickstart/tutorial.md)
