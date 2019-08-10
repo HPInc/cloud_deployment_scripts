@@ -17,7 +17,7 @@ resource "google_compute_network" "vpc" {
 resource "google_dns_managed_zone" "private_zone" {
   provider    = "google-beta"
 
-  name        = replace("${var.domain_name}-zone", ".", "-")
+  name        = replace("${local.prefix}${var.domain_name}-zone", ".", "-")
   dns_name    = "${var.domain_name}."
   description = "Private forwarding zone for ${var.domain_name}"
 
