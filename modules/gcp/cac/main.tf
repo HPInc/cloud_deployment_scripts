@@ -74,7 +74,6 @@ resource "null_resource" "cac-dependencies" {
     user = var.cac_admin_user
     private_key = file(var.cac_admin_ssh_priv_key_file)
     host = google_compute_instance.cac[count.index].network_interface[0].access_config[0].nat_ip
-    insecure = true
   }
 
   provisioner "remote-exec" {
@@ -110,7 +109,6 @@ resource "null_resource" "install-cac" {
     user = var.cac_admin_user
     private_key = file(var.cac_admin_ssh_priv_key_file)
     host = google_compute_instance.cac[count.index].network_interface[0].access_config[0].nat_ip
-    insecure = true
   }
 
   provisioner "remote-exec" {
@@ -136,7 +134,6 @@ resource "null_resource" "install-cac-cert" {
     user = var.cac_admin_user
     private_key = file(var.cac_admin_ssh_priv_key_file)
     host = google_compute_instance.cac[count.index].network_interface[0].access_config[0].nat_ip
-    insecure = true
   }
 
   provisioner "file" {
