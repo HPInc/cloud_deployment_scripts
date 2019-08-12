@@ -159,7 +159,10 @@ resource "null_resource" "run-setup-script" {
   }
 
   provisioner "remote-exec" {
-    inline = ["powershell -file ${local.setup_file}"]
+    inline = [
+      "powershell -file ${local.setup_file}",
+      "del ${replace(local.setup_file, "/", "\\")}",
+    ]
   }
 }
 
@@ -194,7 +197,10 @@ resource "null_resource" "new-domain-admin-user" {
   }
 
   provisioner "remote-exec" {
-    inline = ["powershell -file ${local.new_domain_admin_user_file}"]
+    inline = [
+      "powershell -file ${local.new_domain_admin_user_file}",
+      "del ${replace(local.new_domain_admin_user_file, "/", "\\")}",
+    ]
   }
 }
 
@@ -206,6 +212,7 @@ resource "null_resource" "new-domain-user" {
     null_resource.upload-domain-users-list,
     null_resource.new-domain-admin-user,
   ]
+
   triggers = {
     instance_id = google_compute_instance.dc.instance_id
   }
@@ -225,6 +232,8 @@ resource "null_resource" "new-domain-user" {
     inline = [
       "powershell sleep 2",
       "powershell -file ${local.new_domain_users_file}",
+      "del ${replace(local.new_domain_users_file, "/", "\\")}",
+      "del ${replace(local.domain_users_list_file, "/", "\\")}",
     ]
   }
 }
