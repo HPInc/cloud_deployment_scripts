@@ -56,6 +56,7 @@ module "cac" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name    = google_storage_bucket.scripts.name
   gcp_zone       = var.gcp_zone
   subnet         = google_compute_subnetwork.cac-subnet.self_link
   instance_count = var.cac_instance_count
@@ -67,7 +68,6 @@ module "cac" {
 
   cac_admin_user              = var.cac_admin_user
   cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
-  cac_admin_ssh_priv_key_file = var.cac_admin_ssh_priv_key_file
 
   ssl_key  = var.ssl_key
   ssl_cert = var.ssl_cert

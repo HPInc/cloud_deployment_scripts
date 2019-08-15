@@ -50,6 +50,11 @@ variable "service_account_password" {
   type        = string
 }
 
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
+  type        = string
+}
+
 variable "gcp_zone" {
   description = "GCP Zone to set up the Managed Instance Group"
   default     = "us-west2-b"
@@ -98,9 +103,4 @@ variable "cac_admin_ssh_pub_key_file" {
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
   default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
-}
-
-variable "ignore_disk_req" {
-  description = "Ignore the check for the minimum disk space requirement when installing the Cloud Access Connector"
-  default     = true
 }

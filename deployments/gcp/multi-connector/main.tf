@@ -57,6 +57,7 @@ module "cac-bkend-service" {
   service_account_password = var.service_account_password
 
   #gcp_region = "${var.gcp_region}"
+  bucket_name   = google_storage_bucket.scripts.name
   gcp_zone      = var.gcp_zone
   subnet        = google_compute_subnetwork.cac-subnet.self_link
   cac_instances = var.cac_instances

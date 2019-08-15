@@ -7,6 +7,7 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
+  startup_script    = "cac-startup.sh"
 }
 
 # This is needed so new VMs will be based on the same image in case the public
@@ -14,6 +15,30 @@ locals {
 data "google_compute_image" "cac-base-img" {
   project = var.disk_image_project
   family  = var.disk_image_family
+}
+
+resource "google_storage_bucket_object" "startup-script" {
+  bucket  = var.bucket_name
+  name    = local.startup_script
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      cam_url                  = var.cam_url,
+      cac_installer_url        = var.cac_installer_url,
+      cac_token                = var.cac_token,
+      pcoip_registration_code  = var.pcoip_registration_code,
+
+      domain_controller_ip     = var.domain_controller_ip,
+      domain_name              = var.domain_name,
+      domain_group             = var.domain_group,
+      service_account_username = var.service_account_username,
+      service_account_password = var.service_account_password,
+
+      bucket_name = var.bucket_name,
+      ssl_key     = "",
+      ssl_cert    = "",
+    }
+  )
 }
 
 resource "google_compute_instance_template" "cac-template" {
@@ -47,32 +72,12 @@ resource "google_compute_instance_template" "cac-template" {
   }
 
   metadata = {
-    startup-script = <<SCRIPT
-            # TODO: installing should be only done if cac is not already installed. Add a check
-            # Also check on restart behavior - do the containers restart?
-
-            # download CAC (after DNS is available)
-            cd /home/${var.cac_admin_user}
-            curl -L ${var.cac_installer_url} -o /home/${var.cac_admin_user}/cloud-access-connector.tar.gz
-            tar xzvf /home/${var.cac_admin_user}/cloud-access-connector.tar.gz 
-
-            # wait for service account to be added
-            # do this last because it takes a while for new AD user to be added in a new Domain Controller
-            # Note: using the domain controller IP instead of the domain name for the
-            #       host is more resilient
-            echo '### Installing ldap-utils ###'
-            RETRIES=5; while true; do sudo apt-get -qq update; sudo apt-get -qq install ldap-utils; RC=$?; if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then break; fi; echo "Error installing ldap-utils. $RETRIES retries remaining..."; RETRIES=$((RETRIES-1)); sleep 5; done
-
-            echo '### Ensure AD account is available ###'
-            TIMEOUT=1200; until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1; do if [ $TIMEOUT -le 0 ]; then break; else echo "Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"; fi; TIMEOUT=$((TIMEOUT-10)); sleep 10; done
-
-            # Install the connector
-            export CAM_BASE_URI=${var.cam_url}
-
-            sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password "${var.service_account_password}" --domain ${var.domain_name} --domain-group "${var.domain_group}" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt
-    SCRIPT
-
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.startup-script.output_name}"
+  }
+
+  service_account {
+    scopes = ["cloud-platform"]
   }
 }
 

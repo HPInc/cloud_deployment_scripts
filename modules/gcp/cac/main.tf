@@ -6,9 +6,57 @@
  */
 
 locals {
-  prefix   = var.prefix != "" ? "${var.prefix}-" : ""
-  cert_dir = "/home/${var.cac_admin_user}"
-  ssl      = var.ssl_key != "" ? true : false
+  prefix            = var.prefix != "" ? "${var.prefix}-" : ""
+  startup_script    = "cac-startup.sh"
+  ssl_key_filename  = var.ssl_key == "" ? "" : basename(var.ssl_key)
+  ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+}
+
+resource "google_storage_bucket_object" "ssl-key" {
+  count = var.instance_count == 0 ? 0 : var.ssl_key == "" ? 0 : 1
+
+  bucket = var.bucket_name
+  name   = local.ssl_key_filename
+  source = var.ssl_key
+}
+
+resource "google_storage_bucket_object" "ssl-cert" {
+  count = var.instance_count == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
+
+  bucket = var.bucket_name
+  name   = local.ssl_cert_filename
+  source = var.ssl_cert
+}
+
+resource "google_storage_bucket_object" "startup-script" {
+  count = var.instance_count == 0 ? 0 : 1
+
+  depends_on = [
+    google_storage_bucket_object.ssl-key,
+    google_storage_bucket_object.ssl-cert,
+  ]
+
+  bucket  = var.bucket_name
+  name    = local.startup_script
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      cam_url                  = var.cam_url,
+      cac_installer_url        = var.cac_installer_url,
+      cac_token                = var.cac_token,
+      pcoip_registration_code  = var.pcoip_registration_code,
+
+      domain_controller_ip     = var.domain_controller_ip,
+      domain_name              = var.domain_name,
+      domain_group             = var.domain_group,
+      service_account_username = var.service_account_username,
+      service_account_password = var.service_account_password,
+
+      bucket_name = var.bucket_name,
+      ssl_key     = local.ssl_key_filename,
+      ssl_cert    = local.ssl_cert_filename,
+    }
+  )
 }
 
 resource "google_compute_instance" "cac" {
@@ -44,112 +92,11 @@ resource "google_compute_instance" "cac" {
   ]
 
   metadata = {
-    startup-script = <<SCRIPT
-            sudo echo '# System Control network settings for CAC' > /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo echo 'net.core.rmem_max=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo echo 'net.core.rmem_default=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo echo 'net.core.wmem_max=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo echo 'net.core.wmem_default=160000000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo echo 'net.ipv4.udp_mem=120000 240000 600000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo echo 'net.core.netdev_max_backlog=2000' >> /etc/sysctl.d/01-pcoip-cac-network.conf
-            sudo sysctl -p /etc/sysctl.d/01-pcoip-cac-network.conf
-    SCRIPT
-
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
-  }
-}
-
-resource "null_resource" "cac-dependencies" {
-  count = var.instance_count
-
-  depends_on = [google_compute_instance.cac]
-
-  triggers = {
-    instance_id = google_compute_instance.cac[count.index].instance_id
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.startup-script[0].output_name}"
   }
 
-  connection {
-    type = "ssh"
-    user = var.cac_admin_user
-    private_key = file(var.cac_admin_ssh_priv_key_file)
-    host = google_compute_instance.cac[count.index].network_interface[0].access_config[0].nat_ip
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      # download CAC (after DNS is available)
-      "curl -L ${var.cac_installer_url} -o /home/${var.cac_admin_user}/cloud-access-connector.tar.gz",
-      "tar xzvf /home/${var.cac_admin_user}/cloud-access-connector.tar.gz",
-
-      # Wait for service account to be added
-      # do this last because it takes a while for new AD user to be added in a
-      # new Domain Controller
-      # Note: using the domain controller IP instead of the domain name for the
-      #       host is more resilient
-      "echo '### Installing ldap-utils ###'",
-      "RETRIES=5; while true; do sudo apt-get -qq update; sudo apt-get -qq install ldap-utils; RC=$?; if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then break; fi; echo \"Error installing ldap-utils. $RETRIES retries remaining...\"; RETRIES=$((RETRIES-1)); sleep 5; done",
-      "echo '### Ensure AD account is available ###'",
-      "TIMEOUT=1200; until ldapwhoami -H ldap://${var.domain_controller_ip} -D ${var.service_account_username}@${var.domain_name} -w ${var.service_account_password} -o nettimeout=1; do if [ $TIMEOUT -le 0 ]; then break; else echo \"Waiting for AD account ${var.service_account_username}@${var.domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)\"; fi; TIMEOUT=$((TIMEOUT-10)); sleep 10; done",
-    ]
-  }
-}
-
-resource "null_resource" "install-cac" {
-  count = local.ssl == true ? 0 : var.instance_count
-
-  depends_on = [null_resource.cac-dependencies]
-
-  triggers = {
-    instance_id = google_compute_instance.cac[count.index].instance_id
-  }
-
-  connection {
-    type = "ssh"
-    user = var.cac_admin_user
-    private_key = file(var.cac_admin_ssh_priv_key_file)
-    host = google_compute_instance.cac[count.index].network_interface[0].access_config[0].nat_ip
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "export CAM_BASE_URI=${var.cam_url}",
-      "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --insecure --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
-      "sudo docker service ls",
-    ]
-  }
-}
-
-resource "null_resource" "install-cac-cert" {
-  count = local.ssl == true ? var.instance_count : 0
-
-  depends_on = [null_resource.cac-dependencies]
-
-  triggers = {
-    instance_id = google_compute_instance.cac[count.index].instance_id
-  }
-
-  connection {
-    type = "ssh"
-    user = var.cac_admin_user
-    private_key = file(var.cac_admin_ssh_priv_key_file)
-    host = google_compute_instance.cac[count.index].network_interface[0].access_config[0].nat_ip
-  }
-
-  provisioner "file" {
-    source = var.ssl_key
-    destination = "${local.cert_dir}/${basename(var.ssl_key)}"
-  }
-
-  provisioner "file" {
-    source = var.ssl_cert
-    destination = "${local.cert_dir}/${basename(var.ssl_cert)}"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "export CAM_BASE_URI=${var.cam_url}",
-      "sudo -E /home/${var.cac_admin_user}/cloud-access-connector install -t ${var.cac_token} --accept-policies --ssl-key ${local.cert_dir}/${basename(var.ssl_key)} --ssl-cert ${local.cert_dir}/${basename(var.ssl_cert)} --sa-user ${var.service_account_username} --sa-password \"${var.service_account_password}\" --domain ${var.domain_name} --domain-group \"${var.domain_group}\" --reg-code ${var.pcoip_registration_code} ${var.ignore_disk_req ? "--ignore-disk-req" : ""} 2>&1 | tee output.txt",
-      "sudo docker service ls",
-    ]
+  service_account {
+    scopes = ["cloud-platform"]
   }
 }

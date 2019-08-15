@@ -324,7 +324,6 @@ if __name__ == '__main__':
         'safe_mode_admin_password':       password,
         'service_account_password':       password,
         'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
-        'cac_admin_ssh_priv_key_file':    SSH_KEY_PATH,
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),

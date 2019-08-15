@@ -57,6 +57,7 @@ module "cac-igm-0" {
   service_account_password = var.service_account_password
 
   #gcp_region = "${var.gcp_region}"
+  bucket_name   = google_storage_bucket.scripts.name
   gcp_zone      = var.cac_zones[0]
   subnet        = google_compute_subnetwork.cac-subnets[0].self_link
   cac_instances = var.cac_instances[0]
@@ -85,6 +86,7 @@ module "cac-igm-1" {
   service_account_password = var.service_account_password
 
   #gcp_region = "${var.gcp_region}"
+  bucket_name   = google_storage_bucket.scripts.name
   gcp_zone      = var.cac_zones[1]
   subnet        = google_compute_subnetwork.cac-subnets[1].self_link
   cac_instances = var.cac_instances[1]
@@ -113,6 +115,7 @@ module "cac-igm-2" {
   service_account_password = var.service_account_password
 
   #gcp_region = "${var.gcp_region}"
+  bucket_name   = google_storage_bucket.scripts.name
   gcp_zone      = var.cac_zones[2]
   subnet        = google_compute_subnetwork.cac-subnets[2].self_link
   cac_instances = var.cac_instances[2]

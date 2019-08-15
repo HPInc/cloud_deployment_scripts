@@ -103,11 +103,6 @@ variable "cac_admin_ssh_pub_key_file" {
   type        = string
 }
 
-variable "cac_admin_ssh_priv_key_file" {
-  description = "SSH private key for Cloud Access Connector Administrator"
-  type        = string
-}
-
 variable "ssl_key" {
   description = "SSL private key for the Connector"
   default     = ""
