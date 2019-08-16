@@ -7,6 +7,18 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
+  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+}
+
+resource "random_id" "bucket-name" {
+  byte_length = 3
+}
+
+resource "google_storage_bucket" "scripts" {
+  name          = local.bucket_name
+  location      = var.gcp_region
+  storage_class = "REGIONAL"
+  force_destroy = true
 }
 
 module "dc" {
@@ -21,8 +33,9 @@ module "dc" {
   service_account_password = var.service_account_password
   domain_users_list        = var.domain_users_list
 
-  subnet     = google_compute_subnetwork.dc-subnet.self_link
-  private_ip = var.dc_private_ip
+  bucket_name = google_storage_bucket.scripts.name
+  subnet      = google_compute_subnetwork.dc-subnet.self_link
+  private_ip  = var.dc_private_ip
 
   machine_type       = var.dc_machine_type
   disk_size_gb       = var.dc_disk_size_gb

@@ -10,6 +10,7 @@ locals {
 
   # Windows computer names must be <= 15 characters
   host_name                  = substr("${local.prefix}vm-dc", 0, 15)
+  sysprep_filename           = "sysprep.ps1"
   setup_file                 = "C:/Temp/setup.ps1"
   new_domain_admin_user_file = "C:/Temp/new_domain_admin_user.ps1"
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
@@ -17,12 +18,15 @@ locals {
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
 }
 
-data "template_file" "sysprep-script" {
-  template = file("${path.module}/sysprep.ps1.tpl")
-
-  vars = {
-    admin_password = var.admin_password
-  }
+resource "google_storage_bucket_object" "sysprep-script" {
+  bucket  = var.bucket_name
+  name    = local.sysprep_filename
+  content = templatefile(
+    "${path.module}/${local.sysprep_filename}.tmpl",
+    {
+      admin_password = var.admin_password,
+    }
+  )
 }
 
 data "template_file" "setup-script" {
@@ -82,7 +86,11 @@ resource "google_compute_instance" "dc" {
   ]
 
   metadata = {
-    sysprep-specialize-script-ps1 = data.template_file.sysprep-script.rendered
+    sysprep-specialize-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.sysprep-script.output_name}"
+  }
+
+  service_account {
+    scopes = ["cloud-platform"]
   }
 }
 

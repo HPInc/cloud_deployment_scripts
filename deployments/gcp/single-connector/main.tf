@@ -33,8 +33,9 @@ module "dc" {
   service_account_password = var.service_account_password
   domain_users_list        = var.domain_users_list
 
-  subnet     = google_compute_subnetwork.dc-subnet.self_link
-  private_ip = var.dc_private_ip
+  bucket_name = google_storage_bucket.scripts.name
+  subnet      = google_compute_subnetwork.dc-subnet.self_link
+  private_ip  = var.dc_private_ip
 
   machine_type       = var.dc_machine_type
   disk_size_gb       = var.dc_disk_size_gb

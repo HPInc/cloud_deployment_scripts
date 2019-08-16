@@ -41,6 +41,11 @@ variable "domain_users_list" {
   default     = ""
 }
 
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
+  type        = string
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Domain Controller"
   type        = string
