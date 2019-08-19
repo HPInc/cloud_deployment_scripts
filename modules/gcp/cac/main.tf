@@ -14,10 +14,9 @@ locals {
 resource "google_compute_instance" "cac" {
   count = var.instance_count
 
-  provider = google
-  zone     = var.gcp_zone
-
+  provider     = google
   name         = "${local.prefix}${var.host_name}-${count.index}"
+  zone         = var.gcp_zone
   machine_type = var.machine_type
 
   allow_stopping_for_update = true

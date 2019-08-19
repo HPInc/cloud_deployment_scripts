@@ -45,6 +45,11 @@ variable "bucket_name" {
   type        = string
 }
 
+variable "gcp_zone" {
+  description = "Zone to deploy the Cloud Access Connector"
+  default     = "us-west2-b"
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Workstation"
   type        = string

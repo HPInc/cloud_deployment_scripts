@@ -34,6 +34,7 @@ module "dc" {
   domain_users_list        = var.domain_users_list
 
   bucket_name = google_storage_bucket.scripts.name
+  gcp_zone    = var.gcp_zone
   subnet      = google_compute_subnetwork.dc-subnet.self_link
   private_ip  = var.dc_private_ip
 

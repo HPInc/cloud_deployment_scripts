@@ -1,6 +1,8 @@
 # Commented out lines represents defaults that can be changed
 gcp_credentials_file = "/path/to/cred.json"
-gcp_project_id = "your-project-1234"
+gcp_project_id       = "your-project-1234"
+# gcp_region           = "us-west2"
+# gcp_zone             = "us-west2-b"
 
 # prefix = "myprefix"
 

@@ -40,6 +40,11 @@ variable "service_account_password" {
   type        = string
 }
 
+variable "gcp_zone" {
+  description = "Zone to deploy the Cloud Access Connector"
+  default     = "us-west2-b"
+}
+
 variable "bucket_name" {
   description = "Name of bucket to retrieve startup script."
   type        = string

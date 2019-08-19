@@ -38,6 +38,7 @@ resource "google_compute_instance" "centos-gfx" {
 
   provider     = google
   name         = "${local.host_name}-${count.index}"
+  zone         = var.gcp_zone
   machine_type = var.machine_type
 
   guest_accelerator {

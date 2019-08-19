@@ -61,6 +61,7 @@ data "template_file" "new-domain-users-script" {
 resource "google_compute_instance" "dc" {
   provider     = google
   name         = local.host_name
+  zone         = var.gcp_zone
   machine_type = var.machine_type
 
   boot_disk {

@@ -44,6 +44,7 @@ resource "google_compute_instance" "win-gfx" {
 
   provider     = google
   name         = "${local.host_name}-${count.index}"
+  zone         = var.gcp_zone
   machine_type = var.machine_type
 
   guest_accelerator {

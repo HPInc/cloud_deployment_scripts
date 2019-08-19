@@ -34,6 +34,7 @@ module "dc" {
   domain_users_list        = var.domain_users_list
 
   bucket_name = google_storage_bucket.scripts.name
+  gcp_zone    = var.gcp_zone
   subnet      = google_compute_subnetwork.dc-subnet.self_link
   private_ip  = var.dc_private_ip
 
@@ -107,6 +108,7 @@ module "win-gfx" {
   service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
+  gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
   instance_count   = var.win_gfx_instance_count
@@ -132,6 +134,7 @@ module "centos-gfx" {
   service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
+  gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
   instance_count   = var.centos_gfx_instance_count
@@ -160,6 +163,7 @@ module "centos-std" {
   service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
+  gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
   instance_count   = var.centos_std_instance_count
