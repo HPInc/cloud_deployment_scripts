@@ -35,14 +35,14 @@ REQUIRED_APIS = [
 ]
 
 iso_time = datetime.datetime.now().isoformat()
-DEPLOYMENT_NAME = 'sample_deployment_' + iso_time
-CONNECTOR_NAME  = 'sample_connector_' + iso_time
+DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
+CONNECTOR_NAME  = 'quickstart_connector_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
 
 CFG_FILE_PATH    = 'gcp-cloudshell-quickstart.cfg'
-DEPLOYMENT_PATH  = '../deployments/gcp/single-connector'
+DEPLOYMENT_PATH  = 'deployments/gcp/single-connector'
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
@@ -68,7 +68,7 @@ Next steps:
   1. Log in to https://cam.teradici.com/beta-ui
   2. Click on "Remote Workstations" in the left panel, select "Create Remote
      workstation" from the "+" button
-  3. Select connector "sample_connector_<timestamp>"
+  3. Select connector "quickstart_connector_<timestamp>"
   4. Select workstation template and machine name
   5. Select "us-west2-b" for Zone, "subnet-ws" for Network, then select the
      machine type
@@ -85,7 +85,7 @@ Next steps:
   2. In GCP cloudshell, go to the ~/cloud_deployment_scripts/{deployment_path} directory
      and run "terraform destroy"
   3. Log in to https://cam.teradici.com/beta-ui and delete the deployment named
-     "sample_deployment_<timestamp>"
+     "quickstart_deployment_<timestamp>"
 """
 
 def check_requirements():
@@ -279,6 +279,7 @@ if __name__ == '__main__':
 
     print('Preparing local requirements...')
     terraform_install()
+    os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
 
     try:

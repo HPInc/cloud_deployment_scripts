@@ -69,6 +69,7 @@ gcloud config set project <project_id>
 Run the following command in Cloud Shell. You will be prompted to create a password for the Active Directory Administrator.
 
 ```bash
+cd quickstart
 ./gcp-cloudshell-quickstart.py
 ```
 
