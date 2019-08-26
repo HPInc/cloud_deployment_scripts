@@ -24,6 +24,7 @@ resource "google_storage_bucket_object" "centos-std-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      kms_cryptokey_id         = var.kms_cryptokey_id,
       pcoip_registration_code  = var.pcoip_registration_code,
       domain_controller_ip     = var.domain_controller_ip,
       domain_name              = var.domain_name,
@@ -70,6 +71,7 @@ resource "google_compute_instance" "centos-std" {
   }
 
   service_account {
+    email = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

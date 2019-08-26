@@ -24,9 +24,10 @@ resource "google_storage_bucket_object" "centos-gfx-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      kms_cryptokey_id         = var.kms_cryptokey_id,
       pcoip_registration_code  = var.pcoip_registration_code,
-      domain_name              = var.domain_name,
       domain_controller_ip     = var.domain_controller_ip,
+      domain_name              = var.domain_name,
       service_account_username = var.service_account_username,
       service_account_password = var.service_account_password,
     }
@@ -80,6 +81,7 @@ resource "google_compute_instance" "centos-gfx" {
   }
 
   service_account {
+    email = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

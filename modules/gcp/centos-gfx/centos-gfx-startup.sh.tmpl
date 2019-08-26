@@ -9,9 +9,45 @@ INST_LOG_FILE="/var/log/teradici/agent/install.log"
 NVIDIA_GRID_VERSION=7.1
 NVIDIA_DRIVER_VERSION=410.92
 
+METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
+METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
+DECRYPT_URI="https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+
 log() {
     local message="$1"
     echo "[$(date)] $${message}" | tee -a "$INST_LOG_FILE"
+}
+
+get_credentials() {
+    if [[ -z "${kms_cryptokey_id}" ]]; then
+        log "Not using encryption"
+
+        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+
+    else
+        log "Using encryption key ${kms_cryptokey_id}"
+
+        # Gets access token attribute of response json object
+        token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python -c "import sys, json; print json.load(sys.stdin)['access_token']")
+
+        # Gets data using access token and decodes it
+        data=$(echo "{ \"ciphertext\": \"${pcoip_registration_code}\" }")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        PCOIP_REGISTRATION_CODE=$(echo "$b64_data" | base64 --decode)
+
+        data=$(echo "{ \"ciphertext\": \"${service_account_password}\" }")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
+    fi
+
+    log "service account password is $SERVICE_ACCOUNT_PASSWORD"
+    log "PCOIP_REGISTRATION_CODE is $PCOIP_REGISTRATION_CODE"
+
+    # Exit if any of the required variables are missing
+    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" ]]; then
+        exit 1
+    fi
 }
 
 exit_and_restart()
@@ -135,7 +171,7 @@ install_pcoip_agent() {
 
         # Register the pcoip agent
         log "--> Register pcoip agent license ..."
-        /usr/sbin/pcoip-register-host --registration-code="${pcoip_registration_code}"
+        /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE"
         log "--> Pcoip agent is installed successfully"
     fi
 }
@@ -155,7 +191,7 @@ join_domain()
         # Wait for AD service account to be set up
         yum -y install openldap-clients
         log "--> Wait for AD account ${service_account_username}@${domain_name} to be available"
-        until ldapwhoami -H ldap://${domain_controller_ip} -D ${service_account_username}@${domain_name} -w ${service_account_password} -o nettimeout=1 > /dev/null 2>&1
+        until ldapwhoami -H ldap://${domain_controller_ip} -D ${service_account_username}@${domain_name} -w $SERVICE_ACCOUNT_PASSWORD -o nettimeout=1 > /dev/null 2>&1
         do
             log "${service_account_username}@${domain_name} not available yet, retrying in 10 seconds..."
             sleep 10
@@ -182,9 +218,9 @@ join_domain()
         log "--> Joining the domain"
         if [[ -n "$OU" ]]
         then
-            echo "${service_account_password}" | realm join --user="${service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
+            echo "$SERVICE_ACCOUNT_PASSWORD" | realm join --user="${service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
         else
-            echo "${service_account_password}" | realm join --user="${service_account_username}" "${domain_name}" >&2
+            echo "$SERVICE_ACCOUNT_PASSWORD" | realm join --user="${service_account_username}" "${domain_name}" >&2
         fi
         exitCode=$?
         if [[ $exitCode -eq 0 ]]
@@ -205,7 +241,7 @@ join_domain()
         log "--> Registering with DNS"
         DOMAIN_UPPER=$(echo "${domain_name}" | tr '[:lower:]' '[:upper:]')
         IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
-        echo "${service_account_password}" | kinit "${service_account_username}"@"$DOMAIN_UPPER"
+        echo "$SERVICE_ACCOUNT_PASSWORD" | kinit "${service_account_username}"@"$DOMAIN_UPPER"
         touch "$dns_record_file"
         echo "update add $VM_NAME.${domain_name} 600 a ${domain_controller_ip}" > "$dns_record_file"
         echo "send" >> "$dns_record_file"
@@ -234,9 +270,11 @@ fi
 
 log "$(date)"
 
+get_credentials
+
 if [[ $RE_ENTER -eq 0 ]]
 then
-    # yum -y update
+    yum -y update
 
     yum install -y wget
 

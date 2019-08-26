@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "gcp_service_account" {
+  description = "Service Account in the GCP Project"
+  type        = string
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources"
   default     = ""
@@ -81,7 +86,7 @@ variable "disk_image_project" {
 #}
 variable "disk_image" {
   description = "Disk image to use for the Workstation"
-  default     = "centos-7-v20190619"
+  default     = "centos-7-v20190813"
 }
 
 variable "disk_size_gb" {
@@ -102,4 +107,9 @@ variable "ws_admin_ssh_pub_key_file" {
 variable "depends_on_hack" {
   description = "Workaround for Terraform Modules not supporting depends_on"
   default     = []
+}
+
+variable "kms_cryptokey_id" {
+  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
+  default     = ""
 }
