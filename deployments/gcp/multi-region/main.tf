@@ -26,6 +26,8 @@ module "dc" {
 
   prefix = var.prefix
 
+  gcp_service_account      = var.gcp_service_account
+  kms_cryptokey_id         = var.kms_cryptokey_id
   domain_name              = var.domain_name
   admin_password           = var.dc_admin_password
   safe_mode_admin_password = var.safe_mode_admin_password
@@ -47,6 +49,8 @@ module "cac-igm-0" {
 
   prefix = var.prefix
 
+  gcp_service_account     = var.gcp_service_account
+  kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
   pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
@@ -76,6 +80,8 @@ module "cac-igm-1" {
 
   prefix = var.prefix
 
+  gcp_service_account     = var.gcp_service_account
+  kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
   pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
@@ -105,6 +111,8 @@ module "cac-igm-2" {
 
   prefix = var.prefix
 
+  gcp_service_account     = var.gcp_service_account
+  kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
   pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
@@ -198,6 +206,9 @@ module "win-gfx" {
 
   prefix = var.prefix
 
+  gcp_service_account = var.gcp_service_account
+  kms_cryptokey_id = var.kms_cryptokey_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -223,6 +234,9 @@ module "centos-gfx" {
   source = "../../../modules/gcp/centos-gfx"
 
   prefix = var.prefix
+
+  gcp_service_account = var.gcp_service_account
+  kms_cryptokey_id = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
 
@@ -252,6 +266,9 @@ module "centos-std" {
   source = "../../../modules/gcp/centos-std"
 
   prefix = var.prefix
+
+  gcp_service_account = var.gcp_service_account
+  kms_cryptokey_id = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
 

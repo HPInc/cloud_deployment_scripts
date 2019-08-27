@@ -15,6 +15,11 @@ variable "gcp_project_id" {
   type        = string
 }
 
+variable "gcp_service_account" {
+  description = "Service Account in the GCP Project"
+  type        = string
+}
+
 variable "gcp_region" {
   description = "GCP region"
   default     = "us-west2"
@@ -263,4 +268,9 @@ variable "centos_admin_user" {
 variable "centos_admin_ssh_pub_key_file" {
   description = "SSH public key for CentOS Workstation Administrator"
   type        = string
+}
+
+variable "kms_cryptokey_id" {
+  description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
+  default     = ""
 }

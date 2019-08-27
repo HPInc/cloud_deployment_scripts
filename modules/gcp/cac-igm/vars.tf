@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "gcp_service_account" {
+  description = "Service Account in the GCP Project"
+  type        = string
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources"
   default     = ""
@@ -103,4 +108,9 @@ variable "cac_admin_ssh_pub_key_file" {
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
   default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
+}
+
+variable "kms_cryptokey_id" {
+  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
+  default     = ""
 }
