@@ -1,6 +1,7 @@
 # Commented out lines represents defaults that can be changed
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id       = "your-project-1234"
+gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west2"
 # gcp_zone             = "us-west2-b"
 
@@ -12,6 +13,23 @@ gcp_project_id       = "your-project-1234"
 # allowed_cidr = ["a.b.c.d", "e.f.g.0/24"]
 
 # domain_name = "example.com"
+
+# Optional: additional AD users to create
+# domain_users_list = "/path/to/domain_users_list.csv"
+
+###############
+#   Secrets   #
+###############
+# The secrets below may be supplied in 2 formats:
+#   1. plain text
+#   2. KMS encrypted, base64 encoded
+# For option 1, leave "kms_cryptokey_id" commented out.
+# For option 2, set "kms_cryptokey_id" to the KMS key used to encrypt the
+# secrets. The GCP service account specified above in "gcp_service_account"
+# must be in the same project and have KMS decryptor permissions for this key.
+
+# kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
+
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
 # 2. Must have 3 of the following categories:
@@ -21,8 +39,7 @@ gcp_project_id       = "your-project-1234"
 #    d. (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
 #    3. unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
-dc_admin_password = "SecuRe_pwd1"
+
+dc_admin_password        = "SecuRe_pwd1"
 safe_mode_admin_password = "SecuRe_pwd2"
 service_account_password = "SecuRe_pwd3"
-# Optional: additional AD users to create
-# domain_users_list = "/path/to/domain_users_list.csv"

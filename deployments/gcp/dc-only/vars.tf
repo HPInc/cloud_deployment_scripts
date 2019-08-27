@@ -15,6 +15,11 @@ variable "gcp_project_id" {
   type        = string
 }
 
+variable "gcp_service_account" {
+  description = "Service Account in the GCP Project"
+  type        = string
+}
+
 variable "gcp_region" {
   description = "GCP region"
   default     = "us-west2"
@@ -85,5 +90,10 @@ variable "service_account_password" {
 variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   type        = string
+  default     = ""
+}
+
+variable "kms_cryptokey_id" {
+  description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
 }
