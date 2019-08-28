@@ -214,6 +214,7 @@ resource "google_compute_router_nat" "nat" {
   region                             = var.gcp_region
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  min_ports_per_vm                   = 2048
 
   subnetwork {
     name                    = google_compute_subnetwork.ws-subnet.self_link
