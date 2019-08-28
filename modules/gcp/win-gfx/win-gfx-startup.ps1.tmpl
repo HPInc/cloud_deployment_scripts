@@ -100,7 +100,6 @@ $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -P
 "################################################################"
 "Downloading Teradici PCoIP Agent..."
 "################################################################"
-mkdir 'C:\Teradici'
 $agentInstallerDLDirectory = "C:\Teradici"
 if ("${pcoip_agent_filename}") {
     $agent_filename = "${pcoip_agent_filename}"

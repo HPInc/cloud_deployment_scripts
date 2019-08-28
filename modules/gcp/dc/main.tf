@@ -16,6 +16,7 @@ locals {
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
+  admin_password = var.kms_cryptokey_id == "" ? var.admin_password : data.google_kms_secret.decrypted_admin_password[0].plaintext
 }
 
 resource "google_storage_bucket_object" "sysprep-script" {
@@ -24,7 +25,8 @@ resource "google_storage_bucket_object" "sysprep-script" {
   content = templatefile(
     "${path.module}/${local.sysprep_filename}.tmpl",
     {
-      admin_password = var.admin_password,
+      kms_cryptokey_id = var.kms_cryptokey_id,
+      admin_password   = var.admin_password,
     }
   )
 }
@@ -33,6 +35,7 @@ data "template_file" "setup-script" {
   template = file("${path.module}/setup.ps1.tpl")
 
   vars = {
+    kms_cryptokey_id         = var.kms_cryptokey_id
     domain_name              = var.domain_name
     safe_mode_admin_password = var.safe_mode_admin_password
   }
@@ -42,6 +45,7 @@ data "template_file" "new-domain-admin-user-script" {
   template = file("${path.module}/new_domain_admin_user.ps1.tpl")
 
   vars = {
+    kms_cryptokey_id = var.kms_cryptokey_id
     host_name        = local.host_name
     domain_name      = var.domain_name
     account_name     = var.service_account_username
@@ -56,6 +60,13 @@ data "template_file" "new-domain-users-script" {
     domain_name = var.domain_name
     csv_file    = local.domain_users_list_file
   }
+}
+
+data "google_kms_secret" "decrypted_admin_password" {
+  count = var.kms_cryptokey_id == "" ? 0 : 1
+
+  crypto_key = var.kms_cryptokey_id
+  ciphertext = var.admin_password
 }
 
 resource "google_compute_instance" "dc" {
@@ -91,6 +102,7 @@ resource "google_compute_instance" "dc" {
   }
 
   service_account {
+    email = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }
@@ -104,7 +116,7 @@ resource "null_resource" "upload-scripts" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = google_compute_instance.dc.network_interface[0].access_config[0].nat_ip
     port     = "5986"
     https    = true
@@ -138,7 +150,7 @@ resource "null_resource" "upload-domain-users-list" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = google_compute_instance.dc.network_interface[0].access_config[0].nat_ip
     port     = "5986"
     https    = true
@@ -160,7 +172,7 @@ resource "null_resource" "run-setup-script" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = google_compute_instance.dc.network_interface[0].access_config[0].nat_ip
     port     = "5986"
     https    = true
@@ -198,7 +210,7 @@ resource "null_resource" "new-domain-admin-user" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = google_compute_instance.dc.network_interface[0].access_config[0].nat_ip
     port     = "5986"
     https    = true
@@ -229,7 +241,7 @@ resource "null_resource" "new-domain-user" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = google_compute_instance.dc.network_interface[0].access_config[0].nat_ip
     port     = "5986"
     https    = true

@@ -48,10 +48,6 @@ get_credentials() {
         CAC_TOKEN=$(echo "$b64_data" | base64 --decode)
     fi
 
-    log "service account password is $SERVICE_ACCOUNT_PASSWORD"
-    log "PCOIP_REGISTRATION_CODE is $PCOIP_REGISTRATION_CODE"
-    log "CAC_TOKEN is $CAC_TOKEN"
-
     # Exit if any of the required variables are missing
     if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" || -z "$CAC_TOKEN" ]]; then
         exit 1

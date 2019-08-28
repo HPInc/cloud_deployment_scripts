@@ -248,18 +248,3 @@ variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
 }
-
-variable "dc_admin_password_enc" {
-  description = "Password for the Administrator of the Domain Controller"
-  type        = string
-}
-
-variable "service_account_password_enc" {
-  description = "Active Directory Service account password"
-  type        = string
-}
-
-variable "pcoip_registration_code_enc" {
-  description = "PCoIP Registration code"
-  type        = string
-}

@@ -26,6 +26,8 @@ module "dc" {
 
   prefix = var.prefix
 
+  gcp_service_account      = var.gcp_service_account
+  kms_cryptokey_id         = var.kms_cryptokey_id
   domain_name              = var.domain_name
   admin_password           = var.dc_admin_password
   safe_mode_admin_password = var.safe_mode_admin_password
@@ -50,13 +52,13 @@ module "cac" {
   gcp_service_account     = var.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
-  pcoip_registration_code = var.pcoip_registration_code_enc
+  pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
 
   domain_name              = var.domain_name
   domain_controller_ip     = module.dc.internal-ip
   service_account_username = var.service_account_username
-  service_account_password = var.service_account_password_enc
+  service_account_password = var.service_account_password
 
   bucket_name    = google_storage_bucket.scripts.name
   gcp_zone       = var.gcp_zone
@@ -83,12 +85,12 @@ module "win-gfx" {
   gcp_service_account = var.gcp_service_account
   kms_cryptokey_id = var.kms_cryptokey_id
 
-  pcoip_registration_code = var.pcoip_registration_code_enc
+  pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
-  admin_password           = var.dc_admin_password_enc
+  admin_password           = var.dc_admin_password
   service_account_username = var.service_account_username
-  service_account_password = var.service_account_password_enc
+  service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
   gcp_zone         = var.gcp_zone
@@ -112,12 +114,12 @@ module "centos-gfx" {
   gcp_service_account = var.gcp_service_account
   kms_cryptokey_id = var.kms_cryptokey_id
 
-  pcoip_registration_code = var.pcoip_registration_code_enc
+  pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
   domain_controller_ip     = module.dc.internal-ip
   service_account_username = var.service_account_username
-  service_account_password = var.service_account_password_enc
+  service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
   gcp_zone         = var.gcp_zone
@@ -144,12 +146,12 @@ module "centos-std" {
   gcp_service_account = var.gcp_service_account
   kms_cryptokey_id = var.kms_cryptokey_id
 
-  pcoip_registration_code = var.pcoip_registration_code_enc
+  pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
   domain_controller_ip     = module.dc.internal-ip
   service_account_username = var.service_account_username
-  service_account_password = var.service_account_password_enc
+  service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
   gcp_zone         = var.gcp_zone
