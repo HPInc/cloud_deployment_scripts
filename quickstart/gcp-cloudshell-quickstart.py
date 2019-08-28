@@ -26,6 +26,7 @@ SA_ROLES    = [
 ]
 
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
+GCP_REGION = 'us-west2'
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
@@ -270,6 +271,10 @@ def terraform_install():
         subprocess.run(install_cmd.split(' '), check=True)
 
 
+def kms_python_client_install():
+    install_cmd = 'sudo pip3 install google-cloud-kms'
+    subprocess.run(install_cmd.split(' '), check=True)
+
 if __name__ == '__main__':
     check_requirements()
 
@@ -279,6 +284,7 @@ if __name__ == '__main__':
 
     print('Preparing local requirements...')
     terraform_install()
+    kms_python_client_install()
     os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
 
@@ -316,11 +322,59 @@ if __name__ == '__main__':
 
     print('Cloud Access Manager setup complete.\n')
 
+    print('Encrypting secrets...')
+    from google.cloud import kms_v1
+    from google.cloud.kms_v1 import enums
+    from google.api_core import exceptions as google_exc
+
+    days90 = 7776000
+
+    kms_client = kms_v1.KeyManagementServiceClient()
+
+    parent = kms_client.location_path(PROJECT_ID, GCP_REGION)
+    key_ring_id = 'cloud_deployment_scripts'
+    key_ring_init = {}
+
+    try:
+        key_ring = kms_client.create_key_ring(parent, key_ring_id, key_ring_init)
+        print('Created Key Ring {}'.format(key_ring.name))
+    except google_exc.AlreadyExists:
+        print('Key Ring {} already exists. Using it...'.format(key_ring_id))
+
+    parent = kms_client.key_ring_path(PROJECT_ID, GCP_REGION, key_ring_id)
+    crypto_key_id = 'quickstart_key'
+    crypto_key_init = {
+        'purpose': enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
+        'rotation_period': {'seconds': days90},
+        'next_rotation_time': {'seconds': int(time.time()) + days90},
+    }
+
+    try:
+        crypto_key = kms_client.create_crypto_key(parent, crypto_key_id, crypto_key_init)
+        print('Created Crypto Key {}'.format(crypto_key.name))
+    except google_exc.AlreadyExists:
+        print('Crypto Key {} already exists. Using it...'.format(crypto_key_id))
+
+    key_name = kms_client.crypto_key_path_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
+
+    def kms_encode(key, text):
+        encrypted = kms_client.encrypt(key, text.encode('utf-8'))
+
+        return base64.b64encode(encrypted.ciphertext).decode('utf-8')
+
+    password = kms_encode(key_name, password)
+    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'))
+    connector['token'] = kms_encode(key_name, connector['token'])
+
+    print('Done encrypting secrets.')
+
     print('Deploying with Terraform...')
     #TODO: refactor this to work with more types of deployments
     settings = {
         'gcp_credentials_file':           SA_KEY_PATH,
         'gcp_project_id':                 PROJECT_ID,
+        'gcp_service_account':            sa_email,
+        'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
         'service_account_password':       password,

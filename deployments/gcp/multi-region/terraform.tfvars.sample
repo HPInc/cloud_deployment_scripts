@@ -56,7 +56,7 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # secrets. The GCP service account specified above in "gcp_service_account"
 # must be in the same project and have KMS decryptor permissions for this key.
 
-# kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
+kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
 
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
