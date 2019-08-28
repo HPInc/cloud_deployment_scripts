@@ -13,7 +13,7 @@ locals {
 }
 
 resource "google_storage_bucket_object" "ssl-key" {
-  count = var.instance_count == 0 ? 0 : var.ssl_key == "" ? 0 : 1
+  count = tonumber(var.instance_count) == 0 ? 0 : var.ssl_key == "" ? 0 : 1
 
   bucket = var.bucket_name
   name   = local.ssl_key_filename
@@ -21,7 +21,7 @@ resource "google_storage_bucket_object" "ssl-key" {
 }
 
 resource "google_storage_bucket_object" "ssl-cert" {
-  count = var.instance_count == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
+  count = tonumber(var.instance_count) == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
 
   bucket = var.bucket_name
   name   = local.ssl_cert_filename
@@ -29,7 +29,7 @@ resource "google_storage_bucket_object" "ssl-cert" {
 }
 
 resource "google_storage_bucket_object" "startup-script" {
-  count = var.instance_count == 0 ? 0 : 1
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   depends_on = [
     google_storage_bucket_object.ssl-key,

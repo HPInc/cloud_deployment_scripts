@@ -17,7 +17,7 @@ locals {
 }
 
 resource "google_storage_bucket_object" "win-gfx-startup-script" {
-  count = var.instance_count == 0 ? 0 : 1
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   name    = local.startup_script
   bucket  = var.bucket_name
