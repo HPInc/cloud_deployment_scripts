@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "gcp_service_account" {
+  description = "Service Account in the GCP Project"
+  type        = string
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources"
   default     = ""
@@ -117,5 +122,10 @@ variable "ssl_key" {
 
 variable "ssl_cert" {
   description = "SSL certificate for the Connector"
+  default     = ""
+}
+
+variable "kms_cryptokey_id" {
+  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
 }

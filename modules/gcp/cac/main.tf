@@ -41,6 +41,7 @@ resource "google_storage_bucket_object" "startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      kms_cryptokey_id         = var.kms_cryptokey_id,
       cam_url                  = var.cam_url,
       cac_installer_url        = var.cac_installer_url,
       cac_token                = var.cac_token,
@@ -97,6 +98,7 @@ resource "google_compute_instance" "cac" {
   }
 
   service_account {
+    email = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

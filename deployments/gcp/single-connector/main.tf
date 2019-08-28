@@ -47,14 +47,16 @@ module "cac" {
 
   prefix = var.prefix
 
+  gcp_service_account     = var.gcp_service_account
+  kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
-  pcoip_registration_code = var.pcoip_registration_code
+  pcoip_registration_code = var.pcoip_registration_code_enc
   cac_token               = var.cac_token
 
   domain_name              = var.domain_name
   domain_controller_ip     = module.dc.internal-ip
   service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
+  service_account_password = var.service_account_password_enc
 
   bucket_name    = google_storage_bucket.scripts.name
   gcp_zone       = var.gcp_zone

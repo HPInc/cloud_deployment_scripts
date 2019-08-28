@@ -9,6 +9,61 @@ INSTALL_DIR="/root"
 INSTALL_LOG="$INSTALL_DIR/cac-install.log"
 cd $INSTALL_DIR
 
+METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
+METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
+DECRYPT_URI="https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+
+log() {
+    local message="$1"
+    echo "[$(date)] $${message}" | tee -a "$INSTALL_LOG"
+}
+
+get_credentials() {
+    if [[ -z "${kms_cryptokey_id}" ]]; then
+        log "Not using encryption"
+
+        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+        CAC_TOKEN=${cac_token}
+
+    else
+        log "Using encryption key ${kms_cryptokey_id}"
+
+        apt install -y python
+
+        # Gets access token attribute of response json object
+        token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python -c "import sys, json; print json.load(sys.stdin)['access_token']")
+
+        # Gets data using access token and decodes it
+        data=$(echo "{ \"ciphertext\": \"${pcoip_registration_code}\" }")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        PCOIP_REGISTRATION_CODE=$(echo "$b64_data" | base64 --decode)
+
+        data=$(echo "{ \"ciphertext\": \"${service_account_password}\" }")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
+
+        data=$(echo "{ \"ciphertext\": \"${cac_token}\" }")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        CAC_TOKEN=$(echo "$b64_data" | base64 --decode)
+    fi
+
+    log "service account password is $SERVICE_ACCOUNT_PASSWORD"
+    log "PCOIP_REGISTRATION_CODE is $PCOIP_REGISTRATION_CODE"
+    log "CAC_TOKEN is $CAC_TOKEN"
+
+    # Exit if any of the required variables are missing
+    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" || -z "$CAC_TOKEN" ]]; then
+        exit 1
+    fi
+}
+
+if [[ -f "$INSTALL_DIR/cloud-access-connector" ]]; then
+    log "Connector already installed. Skipping startup script."
+    exit 0
+fi
+
+get_credentials
 
 # Network tuning
 PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
@@ -59,7 +114,7 @@ TIMEOUT=1200
 until ldapwhoami \
     -H ldap://${domain_controller_ip} \
     -D ${service_account_username}@${domain_name} \
-    -w ${service_account_password} \
+    -w $SERVICE_ACCOUNT_PASSWORD \
     -o nettimeout=1; do
     if [ $TIMEOUT -le 0 ]; then
         break
@@ -76,14 +131,14 @@ export CAM_BASE_URI=${cam_url}
 
 if [ -z "${ssl_key}" ]; then
     $INSTALL_DIR/cloud-access-connector install \
-        -t ${cac_token} \
+        -t $CAC_TOKEN \
         --accept-policies \
         --insecure \
         --sa-user ${service_account_username} \
-        --sa-password "${service_account_password}" \
+        --sa-password "$SERVICE_ACCOUNT_PASSWORD" \
         --domain ${domain_name} \
         --domain-group "${domain_group}" \
-        --reg-code ${pcoip_registration_code} \
+        --reg-code $PCOIP_REGISTRATION_CODE \
         --sync-interval 5 \
         2>&1 | tee $INSTALL_LOG
 else
@@ -91,15 +146,15 @@ else
     gsutil cp gs://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
     $INSTALL_DIR/cloud-access-connector install \
-        -t ${cac_token} \
+        -t $CAC_TOKEN \
         --accept-policies \
         --ssl-key $INSTALL_DIR/${ssl_key} \
         --ssl-cert $INSTALL_DIR/${ssl_cert} \
         --sa-user ${service_account_username} \
-        --sa-password "${service_account_password}" \
+        --sa-password "$SERVICE_ACCOUNT_PASSWORD" \
         --domain ${domain_name} \
         --domain-group "${domain_group}" \
-        --reg-code ${pcoip_registration_code} \
+        --reg-code $PCOIP_REGISTRATION_CODE \
         --sync-interval 5 \
         2>&1 | tee $INSTALL_LOG
 fi

@@ -54,4 +54,4 @@ centos_std_instance_count = 0
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 pcoip_registration_code = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cac_token = "token from Cloud Access Manager for the connector"
+
