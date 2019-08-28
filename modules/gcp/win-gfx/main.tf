@@ -24,6 +24,7 @@ resource "google_storage_bucket_object" "win-gfx-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      kms_cryptokey_id         = var.kms_cryptokey_id,
       pcoip_agent_location     = var.pcoip_agent_location,
       pcoip_agent_filename     = var.pcoip_agent_filename,
       pcoip_registration_code  = var.pcoip_registration_code,
@@ -85,6 +86,7 @@ resource "google_compute_instance" "win-gfx" {
   }
 
   service_account {
+    email = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

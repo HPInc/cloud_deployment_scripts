@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "gcp_service_account" {
+  description = "Service Account in the GCP Project"
+  type        = string
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default     = ""
@@ -122,4 +127,9 @@ variable "pcoip_agent_filename" {
 variable "depends_on_hack" {
   description = "Workaround for Terraform Modules not supporting depends_on"
   default     = []
+}
+
+variable "kms_cryptokey_id" {
+  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
+  default     = ""
 }

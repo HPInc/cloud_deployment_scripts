@@ -249,6 +249,11 @@ variable "kms_cryptokey_id" {
   default     = ""
 }
 
+variable "dc_admin_password_enc" {
+  description = "Password for the Administrator of the Domain Controller"
+  type        = string
+}
+
 variable "service_account_password_enc" {
   description = "Active Directory Service account password"
   type        = string
