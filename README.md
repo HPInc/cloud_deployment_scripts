@@ -32,16 +32,37 @@ With a new GCP project:
     - Cloud Resource Manager
     - Compute Engine
     - Google Cloud DNS
+- (Optional) For better security, create a Google KMS Key Ring and Crypto Key to encrypt secrets. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
 
 ## Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
 - create a new deployment and submit the credentials for the GCP service account created above.
 - create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
+## (Optional) Encrypting Secrets
+Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
+
+The Terraform scripts are designed to support both plain-text and KMS-encrypted secrets. Plain-text secrets requires no extra steps, but will be stored in plain-text in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
+
+To encrypt secrets using the KMS crypto key created above, follow the instructions here: https://cloud.google.com/kms/docs/encrypt-decrypt. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in GCP Cloud Shell:
+
+```echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64```
+
 ## Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
+
+If secrets are KMS-encrypted, fill in the ```kms_cryptokey_id``` variable with the crypto key used to encode the secrets, then paste the base64-encoded ciphertext for the following variables:
+- ```dc_admin_password```
+- ```safe_mode_admin_password```
+- ```service_account_password```
+- ```pcoip_registration_code```
+- ```cac_token```
+
+Be sure to remove any spaces in the ciphertext.
+
+If secrets are in plaine text, make sure ```kms_cryptokey_id``` is commented out, and fill in the rest of the variables as plain-text.
 
 ## Creating the deployment
 With the terraform.tfvars file customized
