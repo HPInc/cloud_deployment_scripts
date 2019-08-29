@@ -64,13 +64,29 @@ install_pcoip_agent() {
         log "--> Get Teradici pcoip agent repo"
         wget --retry-connrefused --tries=3 --waitretry=5 -O /etc/yum.repos.d/pcoip.repo https://downloads.teradici.com/rhel/pcoip.repo
 
-        log "--> Install pcoip agent ..."
+        log "--> Install PCoIP standard agent ..."
         yum -y install pcoip-agent-standard
+        if [ $? -ne 0 ]; then
+            log "--> Failed to install PCoIP agent."
+            exit 1
+        fi
+        log "--> PCoIP agent installed successfully."
 
-        # Register the pcoip agent
         log "--> Register pcoip agent license ..."
-        /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE"
-        log "--> Pcoip agent is installed successfully"
+        n=0
+        while true; do
+            /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
+            n=$[$n+1]
+
+            if [ $n -ge 10 ]; then
+                log "--> Failed to register PCoIP agent after $n tries."
+                exit 1
+            fi
+
+            log "--> Failed to register PCoIP agent. Retrying in 10s..."
+            sleep 10
+        done
+        log "--> Pcoip agent is registered successfully"
     fi
 }
 
