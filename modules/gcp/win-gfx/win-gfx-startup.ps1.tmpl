@@ -121,7 +121,31 @@ $ret = Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot" -PassT
 "Registering PCoIP Agent..."
 "################################################################"
 cd 'C:\Program Files\Teradici\PCoIP Agent'
-& .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+
+# License regisration may have intermittent failures
+$Interval = 10
+$Timeout = 600
+$Elapsed = 0
+
+do {
+    Try {
+        $Retry = $false
+        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+    }
+
+    Catch {
+        $_.Exception.Message
+        if ($Elapsed -ge $Timeout) {
+            "Failed to register PCoIP Agent."
+            exit 1
+        }
+
+        "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+        $Retry = $true
+        Start-Sleep -Seconds $Interval
+        $Elapsed += $Interval
+    }
+} while ($Retry)
 "PCoIP Agent Registered"
 
 "################################################################"
