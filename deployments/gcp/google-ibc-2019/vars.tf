@@ -42,6 +42,11 @@ variable "allowed_cidr" {
   default     = []
 }
 
+variable "vpc_name" {
+  description = "Name of VPC to create"
+  default     = "vpc-dc"
+}
+
 variable "dc_subnet_cidr" {
   description = "CIDR for subnet containing the Domain Controller"
   default     = "10.0.0.0/24"

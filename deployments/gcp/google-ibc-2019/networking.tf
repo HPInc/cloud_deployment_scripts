@@ -10,7 +10,7 @@ data "http" "myip" {
 }
 
 resource "google_compute_network" "vpc" {
-  name                    = "${local.prefix}vpc-dc"
+  name                    = "${local.prefix}${var.vpc_name}"
   auto_create_subnetworks = "false"
 }
 
