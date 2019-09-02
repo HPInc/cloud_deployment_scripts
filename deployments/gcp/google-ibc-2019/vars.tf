@@ -199,6 +199,16 @@ variable "win_gfx_disk_size_gb" {
   default     = 50
 }
 
+variable "win_gfx_disk_image_project" {
+  description = "Disk image project for the Windows Grapihcs Workstation"
+  default     = "windows-cloud"
+}
+
+variable "win_gfx_disk_image_family" {
+  description = "Disk image family for the Windows Graphics Workstation"
+  default     = "windows-2016"
+}
+
 variable "centos_gfx_instance_count" {
   description = "Number of CentOS Grpahics Workstations"
   default     = 0
@@ -224,6 +234,16 @@ variable "centos_gfx_disk_size_gb" {
   default     = 50
 }
 
+variable "centos_gfx_disk_image_project" {
+  description = "Disk image project for the CentOS Graphics Workstation"
+  default     = "centos-cloud"
+}
+
+variable "centos_gfx_disk_image_family" {
+  description = "Disk image family for the CentOS Graphics Workstation"
+  default     = "centos-7"
+}
+
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0
@@ -237,6 +257,16 @@ variable "centos_std_machine_type" {
 variable "centos_std_disk_size_gb" {
   description = "Disk size (GB) of CentOS Standard Workstations"
   default     = 50
+}
+
+variable "centos_std_disk_image_project" {
+  description = "Disk image project for the CentOS Standard Workstation"
+  default     = "centos-cloud"
+}
+
+variable "centos_std_disk_image_family" {
+  description = "Disk image family for the CentOS Standard Workstation"
+  default     = "centos-7"
 }
 
 variable "centos_admin_user" {

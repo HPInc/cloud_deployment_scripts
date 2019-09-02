@@ -14,6 +14,8 @@ locals {
 
   enable_public_ip = var.enable_public_ip ? [true] : []
   startup_script = "centos-gfx-startup.sh"
+
+  disk_image = var.disk_image == "" ? "projects/${var.disk_image_project}/global/images/family/${var.disk_image_family}" : "projects/${var.disk_image_project}/global/images/${var.disk_image}"
 }
 
 resource "google_storage_bucket_object" "centos-gfx-startup-script" {
@@ -54,8 +56,7 @@ resource "google_compute_instance" "centos-gfx" {
 
   boot_disk {
     initialize_params {
-      #image = "projects/${var.disk_image_project}/global/images/family/${var.disk_image_family}"
-      image = "projects/${var.disk_image_project}/global/images/${var.disk_image}"
+      image = local.disk_image
       type  = "pd-ssd"
       size  = var.disk_size_gb
     }
