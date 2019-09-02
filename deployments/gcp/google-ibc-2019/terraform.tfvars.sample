@@ -12,7 +12,10 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # CIDRs.
 # allowed_cidr = ["a.b.c.d", "e.f.g.0/24"]
 
-# vpc_name = "vpc-dc"
+# vpc_name        = "vpc-dc"
+# dc_subnet_cidr  = "10.0.0.0/24"
+# dc_private_ip   = "10.0.0.100
+# cac_subnet_cidr = "10.0.1.0/24"
 
 # domain_name = "example.com"
 
