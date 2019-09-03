@@ -90,12 +90,7 @@ resource "google_compute_instance" "dc" {
     }
   }
 
-  tags = [
-    "${local.prefix}tag-dns",
-    "${local.prefix}tag-rdp",
-    "${local.prefix}tag-winrm",
-    "${local.prefix}tag-icmp",
-  ]
+  tags = var.network_tags
 
   metadata = {
     sysprep-specialize-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.sysprep-script.output_name}"

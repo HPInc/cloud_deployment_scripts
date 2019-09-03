@@ -100,6 +100,11 @@ variable "disk_size_gb" {
   default     = "50"
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "cac_admin_user" {
   description = "Username of the Cloud Access Connector Administrator"
   type        = string

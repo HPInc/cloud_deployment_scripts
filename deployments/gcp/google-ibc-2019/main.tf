@@ -42,6 +42,13 @@ module "dc" {
 
   machine_type       = var.dc_machine_type
   disk_size_gb       = var.dc_disk_size_gb
+
+  network_tags = [
+    "${google_compute_firewall.allow-dns.name}",
+    "${google_compute_firewall.allow-rdp.name}",
+    "${google_compute_firewall.allow-winrm.name}",
+    "${google_compute_firewall.allow-icmp.name}",
+  ]
 }
 
 module "cac" {
@@ -69,6 +76,14 @@ module "cac" {
   disk_image_project = var.cac_disk_image_project
   disk_image_family  = var.cac_disk_image_family
   disk_size_gb       = var.cac_disk_size_gb
+
+  network_tags = [
+    "${google_compute_firewall.allow-ssh.name}",
+    "${google_compute_firewall.allow-icmp.name}",
+    "${google_compute_firewall.allow-http.name}",
+    "${google_compute_firewall.allow-https.name}",
+    "${google_compute_firewall.allow-pcoip.name}",
+  ]
 
   cac_admin_user              = var.cac_admin_user
   cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
@@ -103,6 +118,11 @@ module "win-gfx" {
   accelerator_count = var.win_gfx_accelerator_count
   disk_size_gb      = var.win_gfx_disk_size_gb
 
+  network_tags = [
+    "${google_compute_firewall.allow-icmp.name}",
+    "${google_compute_firewall.allow-rdp.name}",
+  ]
+
   disk_image_project = var.win_gfx_disk_image_project
   disk_image_family  = var.win_gfx_disk_image_family
 
@@ -134,6 +154,11 @@ module "centos-gfx" {
   accelerator_type  = var.centos_gfx_accelerator_type
   accelerator_count = var.centos_gfx_accelerator_count
   disk_size_gb      = var.centos_gfx_disk_size_gb
+
+  network_tags = [
+    "${google_compute_firewall.allow-icmp.name}",
+    "${google_compute_firewall.allow-ssh.name}",
+  ]
 
   disk_image_project = var.centos_gfx_disk_image_project
   disk_image_family  = var.centos_gfx_disk_image_family
@@ -167,6 +192,11 @@ module "centos-std" {
 
   machine_type = var.centos_std_machine_type
   disk_size_gb = var.centos_std_disk_size_gb
+
+  network_tags = [
+    "${google_compute_firewall.allow-icmp.name}",
+    "${google_compute_firewall.allow-ssh.name}",
+  ]
 
   disk_image_project = var.centos_std_disk_image_project
   disk_image_family  = var.centos_std_disk_image_family

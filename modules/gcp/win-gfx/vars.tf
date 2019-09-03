@@ -100,6 +100,11 @@ variable "disk_size_gb" {
   default     = "100"
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "admin_password" {
   description = "Password for the Administrator of the Workstation"
   type        = string

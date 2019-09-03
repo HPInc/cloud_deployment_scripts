@@ -61,10 +61,7 @@ resource "google_compute_instance" "centos-std" {
     }
   }
 
-  tags = [
-    "${local.prefix}tag-ssh",
-    "${local.prefix}tag-icmp",
-  ]
+  tags = var.network_tags
 
   metadata = {
     ssh-keys = "${var.ws_admin_user}:${file(var.ws_admin_ssh_pub_key_file)}"

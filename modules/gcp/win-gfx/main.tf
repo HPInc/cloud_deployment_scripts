@@ -77,10 +77,7 @@ resource "google_compute_instance" "win-gfx" {
     }
   }
 
-  tags = [
-    "${local.prefix}tag-rdp",
-    "${local.prefix}tag-icmp",
-  ]
+  tags = var.network_tags
 
   metadata = {
     windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script[0].output_name}"

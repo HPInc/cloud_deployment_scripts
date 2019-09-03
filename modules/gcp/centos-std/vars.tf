@@ -95,6 +95,11 @@ variable "disk_size_gb" {
   default     = "50"
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "ws_admin_user" {
   description = "Username of the Workstation Administrator"
   type        = string
