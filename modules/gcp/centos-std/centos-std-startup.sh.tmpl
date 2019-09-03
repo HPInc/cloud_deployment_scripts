@@ -153,11 +153,12 @@ join_domain()
         echo "%${domain_name}\\\\Domain\\ Admins ALL=(ALL) ALL" > /etc/sudoers.d/sudoers
 
         log "--> Registering with DNS"
-        DOMAIUPPER=$(echo "${domain_name}" | tr '[:lower:]' '[:upper:]')
+        DOMAIN_UPPER=$(echo "${domain_name}" | tr '[:lower:]' '[:upper:]')
         IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
         echo "$SERVICE_ACCOUNT_PASSWORD" | kinit "${service_account_username}"@"$DOMAIN_UPPER"
         touch "$dns_record_file"
-        echo "update add $VM_NAME.${domain_name} 600 a ${domain_controller_ip}" > "$dns_record_file"
+        echo "server ${domain_controller_ip}" > "$dns_record_file"
+        echo "update add $VM_NAME.${domain_name} 600 a $IP_ADDRESS" >> "$dns_record_file"
         echo "send" >> "$dns_record_file"
         nsupdate -g "$dns_record_file"
     fi
