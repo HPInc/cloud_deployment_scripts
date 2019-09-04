@@ -28,19 +28,3 @@ output "win-gfx-internal-ip" {
 output "win-gfx-public-ip" {
   value = module.win-gfx.public-ip
 }
-
-output "centos-gfx-internal-ip" {
-  value = module.centos-gfx.internal-ip
-}
-
-output "centos-gfx-public-ip" {
-  value = module.centos-gfx.public-ip
-}
-
-output "centos-std-internal-ip" {
-  value = module.centos-std.internal-ip
-}
-
-output "centos-std-public-ip" {
-  value = module.centos-std.public-ip
-}
