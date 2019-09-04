@@ -79,6 +79,8 @@ if [ ! -f $PCOIP_NETWORK_CONF_FILE ]; then
     sysctl -p $PCOIP_NETWORK_CONF_FILE
 fi
 
+# Bypass stub-resolv.conf due to problem resolving with DNS in Domain Controller
+ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
 # download CAC installer
 curl -L ${cac_installer_url} -o $INSTALL_DIR/cloud-access-connector.tar.gz

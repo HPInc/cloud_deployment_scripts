@@ -91,8 +91,8 @@ variable "disk_image_family" {
 }
 
 variable "disk_image" {
-  description = "Disk image to use for the Workstation"
-  default     = ""
+  description = "Disk image to use for the Workstation (overrides disk_image_family)"
+  type        = string
 }
 
 variable "disk_size_gb" {

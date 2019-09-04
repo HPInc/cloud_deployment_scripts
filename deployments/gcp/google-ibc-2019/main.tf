@@ -44,10 +44,10 @@ module "dc" {
   disk_size_gb       = var.dc_disk_size_gb
 
   network_tags = [
-    "${google_compute_firewall.allow-dns.name}",
-    "${google_compute_firewall.allow-rdp.name}",
-    "${google_compute_firewall.allow-winrm.name}",
-    "${google_compute_firewall.allow-icmp.name}",
+    "${google_compute_firewall.allow-dns-vpc-cam.name}",
+    "${google_compute_firewall.allow-rdp-vpc-cam.name}",
+    "${google_compute_firewall.allow-winrm-vpc-cam.name}",
+    "${google_compute_firewall.allow-icmp-vpc-cam.name}",
   ]
 }
 
@@ -78,11 +78,11 @@ module "cac" {
   disk_size_gb       = var.cac_disk_size_gb
 
   network_tags = [
-    "${google_compute_firewall.allow-ssh.name}",
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-http.name}",
-    "${google_compute_firewall.allow-https.name}",
-    "${google_compute_firewall.allow-pcoip.name}",
+    "${google_compute_firewall.allow-ssh-vpc-cam.name}",
+    "${google_compute_firewall.allow-icmp-vpc-cam.name}",
+    "${google_compute_firewall.allow-http-vpc-cam.name}",
+    "${google_compute_firewall.allow-https-vpc-cam.name}",
+    "${google_compute_firewall.allow-pcoip-vpc-cam.name}",
   ]
 
   cac_admin_user              = var.cac_admin_user
@@ -109,7 +109,7 @@ module "win-gfx" {
 
   bucket_name      = google_storage_bucket.scripts.name
   gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  subnet           = data.google_compute_subnetwork.subnet-ws.self_link
   enable_public_ip = var.enable_workstation_public_ip
   instance_count   = var.win_gfx_instance_count
 
@@ -119,14 +119,13 @@ module "win-gfx" {
   disk_size_gb      = var.win_gfx_disk_size_gb
 
   network_tags = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-rdp.name}",
+    "${google_compute_firewall.allow-icmp-vpc-ws.name}",
+    "${google_compute_firewall.allow-rdp-vpc-ws.name}",
   ]
 
   disk_image_project = var.win_gfx_disk_image_project
   disk_image_family  = var.win_gfx_disk_image_family
-
-  depends_on_hack = [google_compute_router_nat.nat.id]
+  disk_image         = var.win_gfx_disk_image
 }
 
 module "centos-gfx" {
@@ -146,7 +145,7 @@ module "centos-gfx" {
 
   bucket_name      = google_storage_bucket.scripts.name
   gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  subnet           = data.google_compute_subnetwork.subnet-ws.self_link
   enable_public_ip = var.enable_workstation_public_ip
   instance_count   = var.centos_gfx_instance_count
 
@@ -156,8 +155,8 @@ module "centos-gfx" {
   disk_size_gb      = var.centos_gfx_disk_size_gb
 
   network_tags = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-ssh.name}",
+    "${google_compute_firewall.allow-icmp-vpc-ws.name}",
+    "${google_compute_firewall.allow-ssh-vpc-ws.name}",
   ]
 
   disk_image_project = var.centos_gfx_disk_image_project
@@ -165,8 +164,6 @@ module "centos-gfx" {
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
-
-  depends_on_hack = [google_compute_router_nat.nat.id]
 }
 
 module "centos-std" {
@@ -186,7 +183,7 @@ module "centos-std" {
 
   bucket_name      = google_storage_bucket.scripts.name
   gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  subnet           = data.google_compute_subnetwork.subnet-ws.self_link
   enable_public_ip = var.enable_workstation_public_ip
   instance_count   = var.centos_std_instance_count
 
@@ -194,8 +191,8 @@ module "centos-std" {
   disk_size_gb = var.centos_std_disk_size_gb
 
   network_tags = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-ssh.name}",
+    "${google_compute_firewall.allow-icmp-vpc-ws.name}",
+    "${google_compute_firewall.allow-ssh-vpc-ws.name}",
   ]
 
   disk_image_project = var.centos_std_disk_image_project
@@ -203,6 +200,4 @@ module "centos-std" {
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
-
-  depends_on_hack = [google_compute_router_nat.nat.id]
 }

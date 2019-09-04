@@ -149,11 +149,6 @@ variable "domain_users_list" {
   default     = ""
 }
 
-variable "ws_subnet_cidr" {
-  description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.2.0/24"
-}
-
 variable "cac_token" {
   description = "Connector Token from CAM Service"
   type        = string
@@ -207,6 +202,11 @@ variable "win_gfx_disk_image_project" {
 variable "win_gfx_disk_image_family" {
   description = "Disk image family for the Windows Graphics Workstation"
   default     = "windows-2016"
+}
+
+variable "win_gfx_disk_image" {
+  description = "Disk image for the Windows Graphics Workstation (overrides win_gfx_disk_image_family)"
+  type        = string
 }
 
 variable "centos_gfx_instance_count" {
@@ -281,5 +281,20 @@ variable "centos_admin_ssh_pub_key_file" {
 
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
+  default     = ""
+}
+
+variable "workstation_vpc_name" {
+  description = "Name of VPC in which to deploy workstations"
+  default     = ""
+}
+
+variable "workstation_subnet_name" {
+  description = "Name of subnet in which to deploy workstations"
+  default     = ""
+}
+
+variable "workstation_subnet_region" {
+  description = "Region of subnet in which to deploy workstations"
   default     = ""
 }
