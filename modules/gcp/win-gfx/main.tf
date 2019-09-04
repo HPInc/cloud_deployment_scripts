@@ -47,7 +47,7 @@ resource "google_compute_instance" "win-gfx" {
 
   provider     = google
   name         = "${local.host_name}-${count.index}"
-  zone         = var.gcp_zone
+  zone         = var.gcp_zone_list[count.index]
   machine_type = var.machine_type
 
   guest_accelerator {
@@ -69,7 +69,7 @@ resource "google_compute_instance" "win-gfx" {
   }
 
   network_interface {
-    subnetwork = var.subnet
+    subnetwork = var.subnet_list[count.index]
 
     dynamic access_config {
       for_each = local.enable_public_ip
@@ -77,7 +77,7 @@ resource "google_compute_instance" "win-gfx" {
     }
   }
 
-  tags = var.network_tags
+  tags = var.network_tags[count.index]
 
   metadata = {
     windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script[0].output_name}"

@@ -5,19 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-data "google_compute_network" "vpc-ws" {
-  name = var.workstation_vpc_name
+data "google_compute_network" "vpc_workstations" {
+  count = local.num_ws_vpcs
+
+  name = var.workstation_vpc_names[count.index]
 }
 
-data "google_compute_subnetwork" "subnet-ws" {
-  name   = var.workstation_subnet_name
-  region = var.workstation_subnet_region
+data "google_compute_subnetwork" "subnet_workstations" {
+  count = local.num_ws_vpcs
+
+  name   = var.workstation_subnet_names[count.index]
+  region = var.workstation_subnet_regions[count.index]
 }
 
 resource "google_dns_managed_zone" "peering_zone" {
   provider    = "google-beta"
+  count       = local.num_ws_vpcs
 
-  name        = replace("${local.prefix}${var.domain_name}-peering-zone", ".", "-")
+  name        = replace("${local.prefix}${var.workstation_vpc_names[count.index]}-peering-zone", ".", "-")
   dns_name    = "${var.domain_name}."
   description = "Peering zone for ${var.domain_name}"
 
@@ -25,7 +30,7 @@ resource "google_dns_managed_zone" "peering_zone" {
 
   private_visibility_config {
     networks {
-      network_url = data.google_compute_network.vpc-ws.self_link
+      network_url = data.google_compute_network.vpc_workstations[count.index].self_link
     }
   }
 
@@ -36,9 +41,11 @@ resource "google_dns_managed_zone" "peering_zone" {
   }
 }
 
-resource "google_compute_firewall" "allow-internal-vpc-ws" {
-  name    = "${local.prefix}fw-allow-internal-vpc-ws"
-  network = data.google_compute_network.vpc-ws.self_link
+resource "google_compute_firewall" "allow-internal-vpc-workstations" {
+  count = local.num_ws_vpcs
+
+  name    = "${local.prefix}fw-allow-internal-${var.workstation_vpc_names[count.index]}"
+  network = data.google_compute_network.vpc_workstations[count.index].self_link
 
   allow {
     protocol = "icmp"
@@ -52,25 +59,29 @@ resource "google_compute_firewall" "allow-internal-vpc-ws" {
     ports    = ["1-65535"]
   }
 
-  source_ranges = [var.dc_subnet_cidr, var.cac_subnet_cidr, data.google_compute_subnetwork.subnet-ws.ip_cidr_range]
+  source_ranges = [var.dc_subnet_cidr, var.cac_subnet_cidr, data.google_compute_subnetwork.subnet_workstations[count.index].ip_cidr_range]
 }
 
-resource "google_compute_firewall" "allow-ssh-vpc-ws" {
-  name    = "${local.prefix}fw-allow-ssh-vpc-ws"
-  network = data.google_compute_network.vpc-ws.self_link
+resource "google_compute_firewall" "allow-ssh-vpc-workstations" {
+  count = local.num_ws_vpcs
+
+  name    = "${local.prefix}fw-allow-ssh-${var.workstation_vpc_names[count.index]}"
+  network = data.google_compute_network.vpc_workstations[count.index].self_link
 
   allow {
     protocol = "tcp"
     ports    = ["22"]
   }
 
-  target_tags   = ["${local.prefix}fw-allow-ssh-vpc-ws"]
+  target_tags   = ["${local.prefix}fw-allow-ssh-${var.workstation_vpc_names[count.index]}"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }
 
-resource "google_compute_firewall" "allow-rdp-vpc-ws" {
-  name    = "${local.prefix}fw-allow-rdp-vpc-ws"
-  network = data.google_compute_network.vpc-ws.self_link
+resource "google_compute_firewall" "allow-rdp-vpc-workstations" {
+  count = local.num_ws_vpcs
+
+  name    = "${local.prefix}fw-allow-rdp-${var.workstation_vpc_names[count.index]}"
+  network = data.google_compute_network.vpc_workstations[count.index].self_link
 
   allow {
     protocol = "tcp"
@@ -81,18 +92,20 @@ resource "google_compute_firewall" "allow-rdp-vpc-ws" {
     ports    = ["3389"]
   }
 
-  target_tags   = ["${local.prefix}fw-allow-rdp-vpc-ws"]
+  target_tags   = ["${local.prefix}fw-allow-rdp-${var.workstation_vpc_names[count.index]}"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }
 
-resource "google_compute_firewall" "allow-icmp-vpc-ws" {
-  name    = "${local.prefix}fw-allow-icmp-vpc-ws"
-  network = data.google_compute_network.vpc-ws.self_link
+resource "google_compute_firewall" "allow-icmp-vpc-workstations" {
+  count = local.num_ws_vpcs
+
+  name    = "${local.prefix}fw-allow-icmp-${var.workstation_vpc_names[count.index]}"
+  network = data.google_compute_network.vpc_workstations[count.index].self_link
 
   allow {
     protocol = "icmp"
   }
 
-  target_tags   = ["${local.prefix}fw-allow-icmp-vpc-ws"]
+  target_tags   = ["${local.prefix}fw-allow-icmp-${var.workstation_vpc_names[count.index]}"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }

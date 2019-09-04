@@ -45,14 +45,14 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "gcp_zone" {
-  description = "Zone to deploy the Cloud Access Connector"
-  default     = "us-west2-b"
+variable "gcp_zone_list" {
+  description = "Zones to deploy the Cloud Access Connector"
+  default     = ["us-west2-b"]
 }
 
-variable "subnet" {
-  description = "Subnet to deploy the Workstation"
-  type        = string
+variable "subnet_list" {
+  description = "Subnets to deploy the Workstations"
+  type        = list(string)
 }
 
 variable "enable_public_ip" {
@@ -102,7 +102,7 @@ variable "disk_size_gb" {
 
 variable "network_tags" {
   description = "Tags to be applied to the Workstation"
-  type        = list(string)
+  type        = list(list(string))
 }
 
 variable "admin_password" {

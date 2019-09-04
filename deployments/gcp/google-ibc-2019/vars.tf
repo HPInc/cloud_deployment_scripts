@@ -44,7 +44,7 @@ variable "allowed_cidr" {
 
 variable "vpc_name" {
   description = "Name of VPC to create"
-  default     = "vpc-dc"
+  default     = "vpc-cam"
 }
 
 variable "dc_subnet_cidr" {
@@ -214,17 +214,22 @@ variable "kms_cryptokey_id" {
   default     = ""
 }
 
-variable "workstation_vpc_name" {
-  description = "Name of VPC in which to deploy workstations"
-  default     = ""
+variable "workstation_vpc_names" {
+  description = "Names of VPC in which to deploy workstations"
+  type        = list(string)
 }
 
-variable "workstation_subnet_name" {
-  description = "Name of subnet in which to deploy workstations"
-  default     = ""
+variable "workstation_subnet_names" {
+  description = "Names of subnets in which to deploy workstations"
+  type        = list(string)
 }
 
-variable "workstation_subnet_region" {
-  description = "Region of subnet in which to deploy workstations"
-  default     = ""
+variable "workstation_subnet_regions" {
+  description = "Regions of subnet in which to deploy workstations"
+  type        = list(string)
+}
+
+variable "workstation_zones" {
+  description = "Zones in which to deploy workstations"
+  type        = list(string)
 }

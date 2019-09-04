@@ -8,6 +8,36 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+
+  num_ws_vpcs = length(var.workstation_vpc_names)
+  num_win_gfx = length(flatten([for i in var.win_gfx_instance_count: range(i)]))
+  index_count_map = zipmap(range(local.num_ws_vpcs), var.win_gfx_instance_count)
+  zone_list = flatten(
+    [for idx, cnt in local.index_count_map:
+      [for i in range(cnt):
+        var.workstation_zones[idx]
+      ]
+    ]
+  )
+  subnet_list = flatten(
+    [for idx, cnt in local.index_count_map:
+      [for i in range(cnt):
+        data.google_compute_subnetwork.subnet_workstations[idx].self_link
+      ]
+    ]
+  )
+  tags_list = chunklist(
+    flatten(
+      [for idx, cnt in local.index_count_map:
+        [for i in range(cnt):
+          [
+            google_compute_firewall.allow-icmp-vpc-workstations[idx].name,
+            google_compute_firewall.allow-rdp-vpc-workstations[idx].name,
+          ]
+        ]
+      ]
+    )
+  ,2)
 }
 
 resource "random_id" "bucket-name" {
@@ -108,20 +138,17 @@ module "win-gfx" {
   service_account_password = var.service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  gcp_zone         = var.gcp_zone
-  subnet           = data.google_compute_subnetwork.subnet-ws.self_link
+  gcp_zone_list    = local.zone_list
+  subnet_list      = local.subnet_list
   enable_public_ip = var.enable_workstation_public_ip
-  instance_count   = var.win_gfx_instance_count
+  instance_count   = local.num_win_gfx
 
   machine_type      = var.win_gfx_machine_type
   accelerator_type  = var.win_gfx_accelerator_type
   accelerator_count = var.win_gfx_accelerator_count
   disk_size_gb      = var.win_gfx_disk_size_gb
 
-  network_tags = [
-    "${google_compute_firewall.allow-icmp-vpc-ws.name}",
-    "${google_compute_firewall.allow-rdp-vpc-ws.name}",
-  ]
+  network_tags = local.tags_list
 
   disk_image_project = var.win_gfx_disk_image_project
   disk_image_family  = var.win_gfx_disk_image_family

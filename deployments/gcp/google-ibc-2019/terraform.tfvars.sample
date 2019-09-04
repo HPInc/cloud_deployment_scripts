@@ -17,10 +17,6 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # dc_private_ip   = "10.0.0.100
 # cac_subnet_cidr = "10.0.1.0/24"
 
-workstation_vpc_name      = ""
-workstation_subnet_name   = ""
-workstation_subnet_region = ""
-
 # domain_name = "example.com"
 
 # Optional: additional AD users to create
@@ -33,7 +29,12 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # ssl_key  = "/path/to/privkey.pem"
 # ssl_cert = "/path/to/fullchain.pem"
 
-win_gfx_instance_count = 0
+#workstation_vpc_name      = [""]
+#workstation_subnet_name   = [""]
+#workstation_subnet_region = [""]
+#workstation_zones         = [""]
+
+#win_gfx_instance_count = []
 # win_gfx_machine_type = "n1-standard-2"
 # win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # win_gfx_accelerator_count = 1

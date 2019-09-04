@@ -48,7 +48,7 @@ resource "google_compute_firewall" "allow-internal-vpc-cam" {
     ports    = ["1-65535"]
   }
 
-  source_ranges = [var.dc_subnet_cidr, var.cac_subnet_cidr, data.google_compute_subnetwork.subnet-ws.ip_cidr_range]
+  source_ranges = flatten([var.dc_subnet_cidr, var.cac_subnet_cidr, data.google_compute_subnetwork.subnet_workstations[*].ip_cidr_range])
 }
 
 resource "google_compute_firewall" "allow-ssh-vpc-cam" {

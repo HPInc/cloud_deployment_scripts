@@ -9,14 +9,18 @@ data "http" "myip" {
   url = "https://ipinfo.io/ip"
 }
 
-resource "google_compute_network_peering" "peer1" {
-  name         = "peer1"
+resource "google_compute_network_peering" "peer_from_cam" {
+  count = local.num_ws_vpcs
+
+  name         = "cam-to-${var.workstation_vpc_names[count.index]}"
   network      = google_compute_network.vpc-cam.self_link
-  peer_network = data.google_compute_network.vpc-ws.self_link
+  peer_network = data.google_compute_network.vpc_workstations[count.index].self_link
 }
 
-resource "google_compute_network_peering" "peer2" {
-  name         = "peer2"
-  network      = data.google_compute_network.vpc-ws.self_link
+resource "google_compute_network_peering" "peer_to_cam" {
+  count = local.num_ws_vpcs
+
+  name         = "${var.workstation_vpc_names[count.index]}-to-cam"
+  network      = data.google_compute_network.vpc_workstations[count.index].self_link
   peer_network = google_compute_network.vpc-cam.self_link
 }
