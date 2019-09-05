@@ -1,0 +1,9 @@
+# Commented out lines represents defaults that can be changed
+gcp_credentials_file = "/path/to/cred.json"
+gcp_project_id       = "your-project-1234"
+gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
+
+# prefix = "myprefix"
+
+# vpc_name = "vpc-dc"
+workstation_vpc_names = [""]
