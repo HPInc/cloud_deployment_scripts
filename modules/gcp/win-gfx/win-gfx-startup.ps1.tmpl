@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
+$NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
@@ -17,6 +18,8 @@ $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
 $DATA.Add("admin_password", "${admin_password}")
 $DATA.Add("service_account_password", "${service_account_password}")
+
+$global:restart = $false
 
 function Get-AuthToken {
     try {
@@ -64,16 +67,203 @@ function Decrypt-Credentials {
     }
 }
 
+function Nvidia-is-Installed {
+    if (!(test-path $NVIDIA_DIR)) {
+        return $false
+    }
+
+    cd $NVIDIA_DIR
+    & .\nvidia-smi.exe
+    return $?
+    return $false
+}
+
+function Nvidia-Install {
+    "################################################################"
+    "Install NVIDIA GRID Driver"
+    "################################################################"
+
+    if (Nvidia-is-Installed) {
+        "NVIDIA driver already installed."
+        return
+    }
+
+    mkdir 'C:\Nvidia'
+    $driverDirectory = "C:\Nvidia"
+    $driverUrl = "${nvidia_driver_location}" + "${nvidia_driver_filename}"
+    $destFile = $driverDirectory + "\" + "${nvidia_driver_filename}"
+    "Downloading NVIDIA GRID Driver from $driverUrl..."
+    (New-Object System.Net.WebClient).DownloadFile($driverUrl, $destFile)
+    "File Downloaded"
+
+    "Installing NVIDIA GRID Driver..."
+    $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -PassThru -Wait
+
+    if (!(Nvidia-is-Installed)) {
+        "ERROR: Failed to install NVIDIA GRID driver."
+        exit 1
+    }
+
+    "NVIDIA GRID Driver installed successfully."
+    $global:restart = $true
+}
+
+function PCoIP-Agent-is-Installed {
+    Get-Service "PCoIPAgent"
+    return $?
+}
+
+function PCoIP-Agent-Install {
+    "################################################################"
+    "Install PCoIP Agent"
+    "################################################################"
+    if (PCoIP-Agent-is-Installed) {
+        "PCoIP Agent already installed."
+        return
+    }
+
+    $agentInstallerDLDirectory = "C:\Teradici"
+    if ("${pcoip_agent_filename}") {
+        $agent_filename = "${pcoip_agent_filename}"
+    } else {
+        $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-graphics-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+    }
+    $pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
+    $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
+    (New-Object System.Net.WebClient).DownloadFile($pcoipAgentInstallerUrl, $destFile)
+    "Teradici PCoIP Agent downloaded: $agent_filename"
+
+    "Installing agent..."
+    Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot _?$destFile" -PassThru -Wait
+
+    if (!(PCoIP-Agent-is-Installed)) {
+        "ERROR: Failed to install PCoIP Agent"
+        exit 1
+    }
+
+    "Teradici PCoIP Agent installed successfully"
+    $global:restart = $true
+}
+
+function PCoIP-Agent-Register {
+    "################################################################"
+    "Register PCoIP Agent"
+    "################################################################"
+    cd 'C:\Program Files\Teradici\PCoIP Agent'
+
+    "Checking for existing PCoIP License..."
+    & .\pcoip-validate-license.ps1
+    if ( $LastExitCode -eq 0 ) {
+        "Valid license found."
+        return
+    }
+
+    # License regisration may have intermittent failures
+    $Interval = 10
+    $Timeout = 600
+    $Elapsed = 0
+
+    do {
+        $Retry = $false
+        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        # the script already produces error message
+
+        if ( $LastExitCode -ne 0 ) {
+            if ($Elapsed -ge $Timeout) {
+                "Failed to register PCoIP Agent."
+                exit 1
+            }
+
+            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            $Retry = $true
+            Start-Sleep -Seconds $Interval
+            $Elapsed += $Interval
+        }
+    } while ($Retry)
+
+    "PCoIP Agent Registered Successfully"
+}
+
+function Join-Domain {
+    "################################################################"
+    "Join Domain"
+    "################################################################"
+    $obj = Get-WmiObject -Class Win32_ComputerSystem
+
+    if ($obj.PartOfDomain) {
+        if ($obj.Domain -ne "${domain_name}") {
+            "ERROR: Trying to join '${domain_name}' but computer is already joined to '$obj.Domain'"
+            exit 1
+        }
+
+        "Computer already part of the '$obj.Domain' domain."
+        return
+    } 
+
+    "Computer not part of a domain. Joining ${domain_name}..."
+
+    $username = "${service_account_username}" + "@" + "${domain_name}"
+    $password = ConvertTo-SecureString $DATA."service_account_password" -AsPlainText -Force
+    $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
+
+    # Looping in case Domain Controller is not yet available
+    $Interval = 10
+    $Timeout = 600
+    $Elapsed = 0
+
+    do {
+        Try {
+            $Retry = $false
+            # Don't do -Restart here because there is no log showing the restart
+            Add-Computer -DomainName "${domain_name}" -Credential $cred -Verbose -Force -ErrorAction Stop
+        }
+
+        # The same Error, System.InvalidOperationException, is thrown in these cases: 
+        # - when Domain Controller not reachable (retry waiting for DC to come up)
+        # - when password is incorrect (retry because user might not be added yet)
+        # - when computer is already in domain
+        Catch [System.InvalidOperationException] {
+            $_.Exception.Message
+            if (($Elapsed -ge $Timeout) -or ($_.Exception.GetType().FullName -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand")) {
+                exit 1
+            }
+
+            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            $Retry = $true
+            Start-Sleep -Seconds $Interval
+            $Elapsed += $Interval
+        }
+        Catch {
+            $_.Exception.Message
+            exit 1
+        }
+    } while ($Retry)
+
+    $obj = Get-WmiObject -Class Win32_ComputerSystem
+    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "${domain_name}") ) {
+        "ERROR: failed to join '${domain_name}'"
+        exit 1
+    }
+
+    "Successfully joined '${domain_name}'"
+    $global:restart = $true
+}
+
 Start-Transcript -path $LOG_FILE -append
 
-if (test-path "C:\Nvidia") {
-    exit
+"Script running as user '$(whoami)'"
+
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    "Running as Administrator"
+} else {
+    "Not running as Administrator"
 }
 
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "Not using encryption"
+    "This script is not using encryption for secrets."
 } else {
-    "Using ecnryption key ${kms_cryptokey_id}"
+    "Using ecnryption key ${kms_cryptokey_id} for secrets."
     Decrypt-Credentials
 }
 
@@ -81,114 +271,20 @@ net user Administrator $DATA."admin_password" /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-"################################################################"
-"Downloading NVIDIA GRID Driver..."
-"################################################################"
-mkdir 'C:\Nvidia'
-$driverDirectory = "C:\Nvidia"
-$driverUrl = "${nvidia_driver_location}" + "${nvidia_driver_filename}"
-$destFile = $driverDirectory + "\" + "${nvidia_driver_filename}"
-(New-Object System.Net.WebClient).DownloadFile($driverUrl, $destFile)
-"NVIDIA GRID Driver downloaded"
+Nvidia-Install
+
+PCoIP-Agent-Install
+
+PCoIP-Agent-Register
+
+Join-Domain
 
 "################################################################"
-"Installing NVIDIA GRID Driver..."
+"Restart Computer"
 "################################################################"
-$ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -PassThru -Wait
-"NVIDIA GRID Driver installed"
-
-"################################################################"
-"Downloading Teradici PCoIP Agent..."
-"################################################################"
-$agentInstallerDLDirectory = "C:\Teradici"
-if ("${pcoip_agent_filename}") {
-    $agent_filename = "${pcoip_agent_filename}"
+if ($global:restart) {
+    "Restart required. Restarting..."
+    Restart-Computer -Force
 } else {
-    $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-graphics-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+    "No restart required"
 }
-$pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
-$destFile = $agentInstallerDLDirectory + '\' + $agent_filename
-(New-Object System.Net.WebClient).DownloadFile($pcoipAgentInstallerUrl, $destFile)
-"Teradici PCoIP Agent downloaded: $agent_filename"
-
-"################################################################"
-"Installing Teradici PCoIP Agent..."
-"################################################################"
-$ret = Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot" -PassThru -Wait
-"Teradici PCoIP Agent installed"
-
-"################################################################"
-"Registering PCoIP Agent..."
-"################################################################"
-cd 'C:\Program Files\Teradici\PCoIP Agent'
-
-# License regisration may have intermittent failures
-$Interval = 10
-$Timeout = 600
-$Elapsed = 0
-
-do {
-    Try {
-        $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
-    }
-
-    Catch {
-        $_.Exception.Message
-        if ($Elapsed -ge $Timeout) {
-            "Failed to register PCoIP Agent."
-            exit 1
-        }
-
-        "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
-        $Retry = $true
-        Start-Sleep -Seconds $Interval
-        $Elapsed += $Interval
-    }
-} while ($Retry)
-"PCoIP Agent Registered"
-
-"################################################################"
-"Joining Domain ${domain_name}..."
-"################################################################"
-$username = "${service_account_username}" + "@" + "${domain_name}"
-$password = ConvertTo-SecureString $DATA."service_account_password" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential ($username, $password)
-
-# Looping in case Domain Controller is not yet available
-$Interval = 10
-$Timeout = 600
-$Elapsed = 0
-
-do {
-    Try {
-        $Retry = $false
-        # Don't do -Restart here because there is no log showing the restart
-        Add-Computer -DomainName "${domain_name}" -Credential $cred -Verbose -Force -ErrorAction Stop
-    }
-
-    # The same Error, System.InvalidOperationException, is thrown in these cases: 
-    # - when Domain Controller not reachable (retry waiting for DC to come up)
-    # - when password is incorrect (retry because user might not be added yet)
-    # - when computer is already in domain
-    Catch [System.InvalidOperationException] {
-        $_.Exception.Message
-        if (($Elapsed -ge $Timeout) -or ($_.Exception.GetType().FullName -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand")) {
-            exit
-        }
-
-        "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
-        $Retry = $true
-        Start-Sleep -Seconds $Interval
-        $Elapsed += $Interval
-    }
-    Catch {
-        $_.Exception.Message
-        exit
-    }
-} while ($Retry)
-
-"################################################################"
-"Restarting computer..."
-"################################################################"
-Restart-Computer -Force
