@@ -202,7 +202,7 @@ variable "win_gfx_instance_count" {
 
 variable "win_gfx_machine_type" {
   description = "Machine type for Windows Graphics Workstations"
-  default     = "n1-standard-2"
+  default     = "n1-standard-4"
 }
 
 variable "win_gfx_accelerator_type" {
