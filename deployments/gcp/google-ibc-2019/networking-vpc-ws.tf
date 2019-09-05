@@ -36,7 +36,7 @@ resource "google_dns_managed_zone" "peering_zone" {
 
   peering_config {
     target_network {
-      network_url = google_compute_network.vpc-cam.self_link
+      network_url = data.google_compute_network.vpc-cam.self_link
     }
   }
 }

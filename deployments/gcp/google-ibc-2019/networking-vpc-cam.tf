@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-resource "google_compute_network" "vpc-cam" {
-  name                    = "${local.prefix}${var.vpc_name}"
-  auto_create_subnetworks = "false"
+data "google_compute_network" "vpc-cam" {
+  name = var.vpc_name
 }
 
 resource "google_dns_managed_zone" "private_zone" {
@@ -21,7 +20,7 @@ resource "google_dns_managed_zone" "private_zone" {
 
   private_visibility_config {
     networks {
-      network_url = google_compute_network.vpc-cam.self_link
+      network_url = data.google_compute_network.vpc-cam.self_link
     }
   }
 
@@ -34,7 +33,7 @@ resource "google_dns_managed_zone" "private_zone" {
 
 resource "google_compute_firewall" "allow-internal-vpc-cam" {
   name    = "${local.prefix}fw-allow-internal-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "icmp"
@@ -53,7 +52,7 @@ resource "google_compute_firewall" "allow-internal-vpc-cam" {
 
 resource "google_compute_firewall" "allow-ssh-vpc-cam" {
   name    = "${local.prefix}fw-allow-ssh-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -66,7 +65,7 @@ resource "google_compute_firewall" "allow-ssh-vpc-cam" {
 
 resource "google_compute_firewall" "allow-http-vpc-cam" {
   name    = "${local.prefix}fw-allow-http-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -79,7 +78,7 @@ resource "google_compute_firewall" "allow-http-vpc-cam" {
 
 resource "google_compute_firewall" "allow-https-vpc-cam" {
   name    = "${local.prefix}fw-allow-https-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -92,7 +91,7 @@ resource "google_compute_firewall" "allow-https-vpc-cam" {
 
 resource "google_compute_firewall" "allow-rdp-vpc-cam" {
   name    = "${local.prefix}fw-allow-rdp-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -109,7 +108,7 @@ resource "google_compute_firewall" "allow-rdp-vpc-cam" {
 
 resource "google_compute_firewall" "allow-winrm-vpc-cam" {
   name    = "${local.prefix}fw-allow-winrm-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -122,7 +121,7 @@ resource "google_compute_firewall" "allow-winrm-vpc-cam" {
 
 resource "google_compute_firewall" "allow-icmp-vpc-cam" {
   name    = "${local.prefix}fw-allow-icmp-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "icmp"
@@ -134,7 +133,7 @@ resource "google_compute_firewall" "allow-icmp-vpc-cam" {
 
 resource "google_compute_firewall" "allow-pcoip-vpc-cam" {
   name    = "${local.prefix}fw-allow-pcoip-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -151,7 +150,7 @@ resource "google_compute_firewall" "allow-pcoip-vpc-cam" {
 
 resource "google_compute_firewall" "allow-dns-vpc-cam" {
   name    = "${local.prefix}fw-allow-dns-vpc-cam"
-  network = google_compute_network.vpc-cam.self_link
+  network = data.google_compute_network.vpc-cam.self_link
 
   allow {
     protocol = "tcp"
@@ -169,13 +168,13 @@ resource "google_compute_firewall" "allow-dns-vpc-cam" {
 resource "google_compute_subnetwork" "dc-subnet" {
   name          = "${local.prefix}subnet-dc"
   ip_cidr_range = var.dc_subnet_cidr
-  network       = google_compute_network.vpc-cam.self_link
+  network       = data.google_compute_network.vpc-cam.self_link
 }
 
 resource "google_compute_subnetwork" "cac-subnet" {
   name          = "${local.prefix}subnet-cac"
   ip_cidr_range = var.cac_subnet_cidr
-  network       = google_compute_network.vpc-cam.self_link
+  network       = data.google_compute_network.vpc-cam.self_link
 }
 
 resource "google_compute_address" "dc-internal-ip" {
