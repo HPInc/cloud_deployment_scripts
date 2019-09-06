@@ -249,6 +249,12 @@ function Join-Domain {
     $global:restart = $true
 }
 
+
+if (Test-Path $LOG_FILE) {
+    "$LOG_FILE exists. Assume this startup script has run already."
+    exit 0
+}
+
 Start-Transcript -path $LOG_FILE -append
 
 "Script running as user '$(whoami)'"
