@@ -109,7 +109,7 @@ The number of Connectors can be specified by the ```cac_instances``` variable.
 ![multi-connector diagram](./multi-connector.png)
 
 ## multi-region
-Similar to the multi-connector, except Cloud Access Connectors are deployed into managed instance groups in 3 different regions in the same VPC behind one global load balanced IP address.
+Similar to the multi-connector, except Cloud Access Connectors are deployed into managed instance groups in one or more regions in the same VPC behind one global load balanced IP address.
 
 This deployment demonstrates that the GCP HTTPS Load Balancer will connect a client to the Connectors that are geographically closest to the client.
 

@@ -8,6 +8,8 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   startup_script    = "cac-startup.sh"
+  num_cacs = length(flatten([for i in var.instance_count_list: range(i)]))
+  num_regions = length(var.gcp_zone_list)
 }
 
 # This is needed so new VMs will be based on the same image in case the public
@@ -17,7 +19,9 @@ data "google_compute_image" "cac-base-img" {
   family  = var.disk_image_family
 }
 
-resource "google_storage_bucket_object" "startup-script" {
+resource "google_storage_bucket_object" "cac-startup-script" {
+  count = local.num_cacs == 0 ? 0 : 1
+
   bucket  = var.bucket_name
   name    = local.startup_script
   content = templatefile(
@@ -43,7 +47,9 @@ resource "google_storage_bucket_object" "startup-script" {
 }
 
 resource "google_compute_instance_template" "cac-template" {
-  name_prefix = "${local.prefix}template-cac"
+  count = local.num_regions
+
+  name_prefix = "${local.prefix}template-cac-${var.gcp_zone_list[count.index]}"
 
   machine_type = var.machine_type
 
@@ -55,7 +61,7 @@ resource "google_compute_instance_template" "cac-template" {
   }
 
   network_interface {
-    subnetwork = var.subnet
+    subnetwork = var.subnet_list[count.index]
     access_config {
     }
   }
@@ -74,7 +80,7 @@ resource "google_compute_instance_template" "cac-template" {
 
   metadata = {
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
-    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.startup-script.output_name}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.cac-startup-script[0].output_name}"
   }
 
   service_account {
@@ -84,14 +90,16 @@ resource "google_compute_instance_template" "cac-template" {
 }
 
 resource "google_compute_instance_group_manager" "cac-igm" {
+  count = local.num_regions
+
   name = "${local.prefix}igm-cac"
 
   # TODO: makes more sense to use regional IGM
   #region = "${var.gcp_region}"
-  zone = var.gcp_zone
+  zone = var.gcp_zone_list[count.index]
 
   base_instance_name = "${local.prefix}cac"
-  instance_template = google_compute_instance_template.cac-template.self_link
+  instance_template = google_compute_instance_template.cac-template[count.index].self_link
 
   named_port {
     name = "https"
@@ -99,5 +107,5 @@ resource "google_compute_instance_group_manager" "cac-igm" {
   }
 
   # Overridden by autoscaler when autoscaler is enabled
-  target_size = var.cac_instances
+  target_size = var.instance_count_list[count.index]
 }

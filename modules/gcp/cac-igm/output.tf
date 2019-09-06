@@ -6,5 +6,5 @@
  */
 
 output "cac-igm" {
-  value = google_compute_instance_group_manager.cac-igm.self_link
+  value = google_compute_instance_group_manager.cac-igm[*].self_link
 }
