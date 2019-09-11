@@ -29,6 +29,7 @@ get_credentials() {
     else
         log "Using encryption key ${kms_cryptokey_id}"
 
+        apt-get -qq update
         apt install -y python
 
         # Gets access token attribute of response json object
