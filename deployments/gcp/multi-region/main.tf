@@ -44,7 +44,7 @@ module "dc" {
   disk_size_gb       = var.dc_disk_size_gb
 }
 
-module "cac-igm-0" {
+module "cac-igm" {
   source = "../../../modules/gcp/cac-igm"
 
   prefix = var.prefix
@@ -60,73 +60,11 @@ module "cac-igm-0" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  #gcp_region = "${var.gcp_region}"
-  bucket_name   = google_storage_bucket.scripts.name
-  gcp_zone      = var.cac_zones[0]
-  subnet        = google_compute_subnetwork.cac-subnets[0].self_link
-  cac_instances = var.cac_instances[0]
-
-  machine_type       = var.cac_machine_type
-  disk_image_project = var.cac_disk_image_project
-  disk_image_family  = var.cac_disk_image_family
-  disk_size_gb       = var.cac_disk_size_gb
-
-  cac_admin_user             = var.cac_admin_user
-  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
-}
-
-module "cac-igm-1" {
-  source = "../../../modules/gcp/cac-igm"
-
-  prefix = var.prefix
-
-  gcp_service_account     = var.gcp_service_account
-  kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = var.cam_url
-  pcoip_registration_code = var.pcoip_registration_code
-  cac_token               = var.cac_token
-
-  domain_name              = var.domain_name
-  domain_controller_ip     = module.dc.internal-ip
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
-
-  #gcp_region = "${var.gcp_region}"
-  bucket_name   = google_storage_bucket.scripts.name
-  gcp_zone      = var.cac_zones[1]
-  subnet        = google_compute_subnetwork.cac-subnets[1].self_link
-  cac_instances = var.cac_instances[1]
-
-  machine_type       = var.cac_machine_type
-  disk_image_project = var.cac_disk_image_project
-  disk_image_family  = var.cac_disk_image_family
-  disk_size_gb       = var.cac_disk_size_gb
-
-  cac_admin_user             = var.cac_admin_user
-  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
-}
-
-module "cac-igm-2" {
-  source = "../../../modules/gcp/cac-igm"
-
-  prefix = var.prefix
-
-  gcp_service_account     = var.gcp_service_account
-  kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = var.cam_url
-  pcoip_registration_code = var.pcoip_registration_code
-  cac_token               = var.cac_token
-
-  domain_name              = var.domain_name
-  domain_controller_ip     = module.dc.internal-ip
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
-
-  #gcp_region = "${var.gcp_region}"
-  bucket_name   = google_storage_bucket.scripts.name
-  gcp_zone      = var.cac_zones[2]
-  subnet        = google_compute_subnetwork.cac-subnets[2].self_link
-  cac_instances = var.cac_instances[2]
+  #gcp_region          = "${var.gcp_region}"
+  bucket_name         = google_storage_bucket.scripts.name
+  gcp_zone_list       = var.cac_zone_list
+  subnet_list         = google_compute_subnetwork.cac-subnets[*].self_link
+  instance_count_list = var.cac_instance_count_list
 
   machine_type       = var.cac_machine_type
   disk_image_project = var.cac_disk_image_project
@@ -152,25 +90,16 @@ resource "google_compute_backend_service" "cac-bkend-service" {
   session_affinity        = "GENERATED_COOKIE"
   affinity_cookie_ttl_sec = 3600
 
-  backend {
-    balancing_mode = "UTILIZATION"
+  dynamic backend {
+    for_each = module.cac-igm.cac-igm
+    iterator = i
 
-    # Wants instanceGroup instead of instanceGroupManager
-    group = replace(module.cac-igm-0.cac-igm, "Manager", "")
-  }
+    content {
+      balancing_mode = "UTILIZATION"
 
-  backend {
-    balancing_mode = "UTILIZATION"
-
-    # Wants instanceGroup instead of instanceGroupManager
-    group = replace(module.cac-igm-1.cac-igm, "Manager", "")
-  }
-
-  backend {
-    balancing_mode = "UTILIZATION"
-
-    # Wants instanceGroup instead of instanceGroupManager
-    group = replace(module.cac-igm-2.cac-igm, "Manager", "")
+      # Wants instanceGroup instead of instanceGroupManager
+      group = replace(i.value, "Manager", "")
+    }
   }
 
   health_checks = [google_compute_https_health_check.cac-hchk.self_link]

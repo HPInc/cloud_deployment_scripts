@@ -93,30 +93,25 @@ variable "domain_users_list" {
   default     = ""
 }
 
-# Hard-coded to accept list of 3. These regions are chosen based on support for
-# Nvidia P4 GPU.
-variable "cac_regions" {
+variable "cac_region_list" {
   description = "Regions in which to deploy Connectors"
-  default     = ["us-west2", "europe-west4", "asia-southeast1"]
-  # LA, Netherlands, Singapore
+  type        = list(string)
 }
 
 # Hard-coded to accept list of 3.
-variable "cac_zones" {
+variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
-  default     = ["us-west2-b", "europe-west4-b", "asia-southeast1-b"]
+  type        = list(string)
 }
 
-# Hard-coded to accept list of 3.
-variable "cac_subnet_cidrs" {
+variable "cac_subnet_cidr_list" {
   description = "CIDRs for subnet containing the Cloud Access Connector"
-  default     = ["10.0.1.0/24", "10.1.1.0/24", "10.2.1.0/24"]
+  type        = list(string)
 }
 
-# Hard-coded to accept list of 3.
-variable "cac_instances" {
+variable "cac_instance_count_list" {
   description = "Number of Cloud Access Connector instances to deploy in each region"
-  default     = [1, 1, 1]
+  type        = list(number)
 }
 
 variable "cac_machine_type" {

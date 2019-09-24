@@ -60,19 +60,19 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "gcp_zone" {
-  description = "GCP Zone to set up the Managed Instance Group"
-  default     = "us-west2-b"
+variable "gcp_zone_list" {
+  description = "GCP Zones to set up the Managed Instance Groups"
+  type        = list(string)
 }
 
-variable "subnet" {
-  description = "Subnet to deploy the Cloud Access Connector"
-  type        = string
+variable "subnet_list" {
+  description = "Subnets to deploy the Cloud Access Connector"
+  type        = list(string)
 }
 
-variable "cac_instances" {
-  description = "Number of Cloud Access Connector instances to deploy"
-  default     = 1
+variable "instance_count_list" {
+  description = "Number of Cloud Access Connector instances to deploy in each zone"
+  type        = list(number)
 }
 
 variable "machine_type" {
