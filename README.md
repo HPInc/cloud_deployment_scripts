@@ -42,7 +42,7 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 ## (Optional) Encrypting Secrets
 Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
-The Terraform scripts are designed to support both plain-text and KMS-encrypted secrets. Plain-text secrets requires no extra steps, but will be stored in plain-text in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
+The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
 
 To encrypt secrets using the KMS crypto key created above, follow the instructions here: https://cloud.google.com/kms/docs/encrypt-decrypt. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in GCP Cloud Shell:
 
@@ -62,7 +62,7 @@ If secrets are KMS-encrypted, fill in the ```kms_cryptokey_id``` variable with t
 
 Be sure to remove any spaces in the ciphertext.
 
-If secrets are in plaine text, make sure ```kms_cryptokey_id``` is commented out, and fill in the rest of the variables as plain-text.
+If secrets are in plaintext, make sure ```kms_cryptokey_id``` is commented out, and fill in the rest of the variables as plaintext.
 
 ## Creating the deployment
 With the terraform.tfvars file customized
@@ -82,10 +82,10 @@ Note that changes involving creating or recreating Cloud Access Connectors requi
 Run ```terraform destroy``` to remove all resources created by Terraform.
 
 # Deployments
-This section descrbes a number of scenarios deployed by Terraform scripts in this repository.
+This section descrbes the different types of deployment scenarios supported by Terraform scripts in this repository.
 
 ## single-connector
-Creates a VPC with 3 subnets in the same region. The subnets are
+This is the simplest deployment; it creates a VPC with 3 subnets in the same region. The subnets are
 - subnet-dc : for the Domain Controller
 - subnet-cac: for the Connector
 - subnet-ws : for the workstations
@@ -100,20 +100,16 @@ Domain-joined Windows Graphics workstation(s), CentOS Graphics workstation(s), a
 
 ![single-connector diagram](./single-connector.png)
 
-## multi-connector
-Same as single-connector, except multiple Cloud Access Connectors are deployed in a managed instance group comprising a single backend-service serving a GCP HTTPS Load Balancer
-with a single Global Load Balanced IP address.
-
-The number of Connectors can be specified by the ```cac_instances``` variable.
-
-![multi-connector diagram](./multi-connector.png)
-
 ## multi-region
-Similar to the multi-connector, except Cloud Access Connectors are deployed into managed instance groups in one or more regions in the same VPC behind one global load balanced IP address.
+The difference between single-connector and multi-region deployments is that instead of creating only one Cloud Access Connector, the multi-region deployment creates Cloud Access Connectors in managed instance groups, in one or more GCP regions, behind a single GCP HTTPS Load Balancer. In this setup, a client initiates a PCoIP session with the public IP of the HTTPS Load Balancer, and the Load Balancer will select one of the Cloud Access Connectors from a region closest to the client to establish the connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the HTTPS Load Balancer.
 
-This deployment demonstrates that the GCP HTTPS Load Balancer will connect a client to the Connectors that are geographically closest to the client.
+The regions and number of Cloud Access Connectors for each region are specified by the ```cac_region_list``` and ```cac_instance_count_list``` variables, respectively. At least one region and one Cloud Access Connector instance must be specified.
 
-Workstations are only deployed into one region to show that connectivity is possible from Connectors in any region because of GCP's global VPC.
+The following diagram shows a deployment when only a single region is specified by the user.
+
+![multi-connector diagram](./single-region.png)
+
+Specifying multiple regions creates a deployment with Cloud Access Connectors in multiple regions, but workstations in only one region. A user initiating a PCoIP session with the public IP of the GCP HTTPS Load Balancer will connect to one of the closest Cloud Access Connectors and use GCP's global network to connect to the workstation.
 
 ![multi-region diagram](./multi-region.png)
 
