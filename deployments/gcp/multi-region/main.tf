@@ -156,6 +156,8 @@ module "win-gfx" {
   accelerator_count = var.win_gfx_accelerator_count
   disk_size_gb      = var.win_gfx_disk_size_gb
 
+  disk_image = var.win_gfx_disk_image
+
   depends_on_hack = [google_compute_router_nat.nat.id]
 }
 
@@ -184,6 +186,8 @@ module "centos-gfx" {
   accelerator_type  = var.centos_gfx_accelerator_type
   accelerator_count = var.centos_gfx_accelerator_count
   disk_size_gb      = var.centos_gfx_disk_size_gb
+
+  disk_image = var.centos_gfx_disk_image
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
@@ -214,6 +218,8 @@ module "centos-std" {
 
   machine_type = var.centos_std_machine_type
   disk_size_gb = var.centos_std_disk_size_gb
+
+  disk_image = var.centos_std_disk_image
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file

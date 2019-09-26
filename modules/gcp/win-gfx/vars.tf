@@ -80,23 +80,14 @@ variable "accelerator_count" {
   default     = "1"
 }
 
-variable "disk_image_project" {
-  description = "Disk image project for the Workstation"
-  default     = "windows-cloud"
-}
-
-#variable "disk_image_family" {
-#  description = "Disk image family for the Workstation"
-#  default = "windows-2016"
-#}
-variable "disk_image" {
-  description = "Disk image to use for the Workstation"
-  default     = "windows-server-2016-dc-v20190620"
-}
-
 variable "disk_size_gb" {
   description = "Disk size (GB) of the Workstation"
   default     = "100"
+}
+
+variable "disk_image" {
+  description = "Disk image for the Workstation"
+  default     = "projects/windows-cloud/global/images/family/windows-2016"
 }
 
 variable "admin_password" {

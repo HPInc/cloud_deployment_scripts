@@ -44,8 +44,7 @@ resource "google_compute_instance" "centos-std" {
 
   boot_disk {
     initialize_params {
-      #image = "projects/${var.disk_image_project}/global/images/family/${var.disk_image_family}"
-      image = "projects/${var.disk_image_project}/global/images/${var.disk_image}"
+      image = var.disk_image
       type  = "pd-ssd"
       size  = var.disk_size_gb
     }
