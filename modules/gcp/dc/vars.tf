@@ -71,19 +71,14 @@ variable "machine_type" {
   default     = "n1-standard-2"
 }
 
-variable "disk_image_project" {
-  description = "Disk image project for the Domain Controller"
-  default     = "windows-cloud"
-}
-
-variable "disk_image" {
-  description = "Disk image to use for the Workstation"
-  default     = "windows-server-2016-dc-v20190620"
-}
-
 variable "disk_size_gb" {
   description = "Disk size (GB) of the Domain Controller"
   default     = "50"
+}
+
+variable "disk_image" {
+  description = "Disk image for the Domain Controller"
+  default     = "projects/windows-cloud/global/images/family/windows-2016"
 }
 
 variable "kms_cryptokey_id" {

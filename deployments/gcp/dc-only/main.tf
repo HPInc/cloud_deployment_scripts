@@ -40,6 +40,8 @@ module "dc" {
   subnet      = google_compute_subnetwork.dc-subnet.self_link
   private_ip  = var.dc_private_ip
 
-  machine_type       = var.dc_machine_type
-  disk_size_gb       = var.dc_disk_size_gb
+  machine_type = var.dc_machine_type
+  disk_size_gb = var.dc_disk_size_gb
+
+  disk_image = var.dc_disk_image
 }
