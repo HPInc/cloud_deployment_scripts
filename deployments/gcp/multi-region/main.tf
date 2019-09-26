@@ -66,10 +66,10 @@ module "cac-igm" {
   subnet_list         = google_compute_subnetwork.cac-subnets[*].self_link
   instance_count_list = var.cac_instance_count_list
 
-  machine_type       = var.cac_machine_type
-  disk_image_project = var.cac_disk_image_project
-  disk_image_family  = var.cac_disk_image_family
-  disk_size_gb       = var.cac_disk_size_gb
+  machine_type = var.cac_machine_type
+  disk_size_gb = var.cac_disk_size_gb
+
+  disk_image = var.cac_disk_image
 
   cac_admin_user             = var.cac_admin_user
   cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file

@@ -7,16 +7,32 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script    = "cac-startup.sh"
+  startup_script = "cac-startup.sh"
   num_cacs = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_zone_list)
+
+  disk_image_project = regex("^projects/([-\\w]+).+$", var.disk_image)[0]
+  disk_image_family = length(
+      regexall(
+        "^projects/${local.disk_image_project}/global/images/family/([-\\w]+)$",
+        var.disk_image
+      )
+    ) > 0 ? regex(
+        "^projects/${local.disk_image_project}/global/images/family/([-\\w]+)$",
+        var.disk_image
+      )[0] : null
+  disk_image_name = local.disk_image_family == null ? regex(
+      "^projects/${local.disk_image_project}/global/images/([-\\w]+)$",
+      var.disk_image
+    )[0] : null
 }
 
 # This is needed so new VMs will be based on the same image in case the public
 # images gets updated
 data "google_compute_image" "cac-base-img" {
-  project = var.disk_image_project
-  family  = var.disk_image_family
+  project = local.disk_image_project
+  family  = local.disk_image_family
+  name    = local.disk_image_name
 }
 
 resource "google_storage_bucket_object" "cac-startup-script" {

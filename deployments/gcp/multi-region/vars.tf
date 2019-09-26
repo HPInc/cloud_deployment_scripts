@@ -124,19 +124,14 @@ variable "cac_machine_type" {
   default     = "n1-standard-2"
 }
 
-variable "cac_disk_image_project" {
-  description = "Disk image project for Cloud Access Connector"
-  default     = "ubuntu-os-cloud"
-}
-
-variable "cac_disk_image_family" {
-  description = "Disk image family for Cloud Access Connector"
-  default     = "ubuntu-1804-lts"
-}
-
 variable "cac_disk_size_gb" {
   description = "Disk size (GB) of Cloud Access Connector"
   default     = 50
+}
+
+variable "cac_disk_image" {
+  description = "Disk image for the Cloud Access Connector"
+  default     = "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?

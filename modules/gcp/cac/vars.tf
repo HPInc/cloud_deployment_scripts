@@ -85,19 +85,14 @@ variable "machine_type" {
   default     = "n1-standard-2"
 }
 
-variable "disk_image_project" {
-  description = "Disk image project for the Cloud Access Connector"
-  default     = "ubuntu-os-cloud"
-}
-
-variable "disk_image_family" {
-  description = "Disk image family for the Cloud Access Connector"
-  default     = "ubuntu-1804-lts"
-}
-
 variable "disk_size_gb" {
   description = "Disk size (GB) of the Cloud Access Connector"
   default     = "50"
+}
+
+variable "disk_image" {
+  description = "Disk image for the Cloud Access Connector"
+  default     = "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
 }
 
 variable "cac_admin_user" {
