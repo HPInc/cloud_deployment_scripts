@@ -68,7 +68,7 @@ resource "google_compute_firewall" "allow-rdp" {
     ports    = ["3389"]
   }
 
-  target_tags   = ["${local.prefix}tag-rdp"]
+  target_tags   = ["${local.prefix}fw-allow-rdp"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }
 
@@ -81,7 +81,7 @@ resource "google_compute_firewall" "allow-winrm" {
     ports    = ["5985-5986"]
   }
 
-  target_tags   = ["${local.prefix}tag-winrm"]
+  target_tags   = ["${local.prefix}fw-allow-winrm"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }
 
@@ -93,7 +93,7 @@ resource "google_compute_firewall" "allow-icmp" {
     protocol = "icmp"
   }
 
-  target_tags   = ["${local.prefix}tag-icmp"]
+  target_tags   = ["${local.prefix}fw-allow-icmp"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }
 
@@ -110,7 +110,7 @@ resource "google_compute_firewall" "allow-dns" {
     ports    = ["53"]
   }
 
-  target_tags   = ["${local.prefix}tag-dns"]
+  target_tags   = ["${local.prefix}fw-allow-dns"]
   source_ranges = ["35.199.192.0/19"]
 }
 
@@ -126,4 +126,3 @@ resource "google_compute_address" "dc-internal-ip" {
   address_type = "INTERNAL"
   address      = var.dc_private_ip
 }
-

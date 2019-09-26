@@ -66,6 +66,11 @@ variable "private_ip" {
   default     = ""
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "machine_type" {
   description = "Machine type for the Domain Controller"
   default     = "n1-standard-2"

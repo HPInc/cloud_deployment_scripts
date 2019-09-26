@@ -65,6 +65,11 @@ variable "enable_public_ip" {
   default     = false
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "instance_count" {
   description = "Number of CentOS Graphics Workstations to deploy"
   default     = 1

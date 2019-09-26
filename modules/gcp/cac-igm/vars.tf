@@ -70,6 +70,11 @@ variable "subnet_list" {
   type        = list(string)
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "instance_count_list" {
   description = "Number of Cloud Access Connector instances to deploy in each zone"
   type        = list(number)

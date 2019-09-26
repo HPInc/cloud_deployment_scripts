@@ -70,6 +70,11 @@ variable "subnet" {
   type        = string
 }
 
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
+}
+
 variable "instance_count" {
   description = "Number of Cloud Access Connectors to deploy"
   default     = 1

@@ -82,13 +82,7 @@ resource "google_compute_instance_template" "cac-template" {
     }
   }
 
-  tags = [
-    "${local.prefix}tag-ssh",
-    "${local.prefix}tag-icmp",
-    "${local.prefix}tag-http",
-    "${local.prefix}tag-https",
-    "${local.prefix}tag-pcoip",
-  ]
+  tags = var.network_tags
 
   lifecycle {
     create_before_destroy = true

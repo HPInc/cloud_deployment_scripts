@@ -56,8 +56,13 @@ variable "subnet" {
 }
 
 variable "enable_public_ip" {
-  description = "Assign a public IP to the workstation"
+  description = "Assign a public IP to the Workstation"
   default     = false
+}
+
+variable "network_tags" {
+  description = "Tags to be applied to the Workstation"
+  type        = list(string)
 }
 
 variable "instance_count" {
