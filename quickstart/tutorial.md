@@ -43,7 +43,7 @@ The deployment will be created in **us-west2-b** and have the following specs:
 
 VM | vCPUs | Memory (GB) | SSD (GB) | GPU 
 ---|---|---|---|--- 
-DC | 2 | 7.5 | 50 | 0 
+DC | 4 | 15 | 50 | 0
 CAC | 2 | 7.5 | 50 | 0 
 scent | 2 | 7.5 | 50 | 0 
 gcent | 2 | 7.5 | 50 | 1

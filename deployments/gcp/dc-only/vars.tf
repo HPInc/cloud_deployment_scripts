@@ -59,7 +59,7 @@ variable "dc_private_ip" {
 
 variable "dc_machine_type" {
   description = "Machine type for Domain Controller"
-  default     = "n1-standard-2"
+  default     = "n1-standard-4"
 }
 
 variable "dc_disk_size_gb" {
