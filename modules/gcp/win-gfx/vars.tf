@@ -72,7 +72,7 @@ variable "instance_count" {
 
 variable "machine_type" {
   description = "Machine type for Workstation"
-  default     = "n1-standard-2"
+  default     = "n1-standard-4"
 }
 
 variable "accelerator_type" {
@@ -87,7 +87,7 @@ variable "accelerator_count" {
 
 variable "disk_size_gb" {
   description = "Disk size (GB) of the Workstation"
-  default     = "100"
+  default     = "50"
 }
 
 variable "disk_image" {

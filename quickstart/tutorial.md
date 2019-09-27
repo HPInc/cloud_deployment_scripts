@@ -47,7 +47,7 @@ DC | 4 | 15 | 50 | 0
 CAC | 2 | 7.5 | 50 | 0 
 scent | 2 | 7.5 | 50 | 0 
 gcent | 2 | 7.5 | 50 | 1
-gwin | 4 | 15 | 100 | 1
+gwin | 4 | 15 | 50 | 1
 
 You can check your quota [here](https://console.cloud.google.com/iam-admin/quotas).
 
