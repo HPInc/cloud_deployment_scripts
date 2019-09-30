@@ -101,6 +101,9 @@ Domain-joined Windows Graphics workstation(s), CentOS Graphics workstation(s), a
 ![single-connector diagram](./single-connector.png)
 
 ## multi-region
+
+### Note: Due to recent changes in how Google Load Balancer process headers, your current Zero Client or Software Client version may need to be udpated.  Plase contact the maintainer (see below) for help if you have trouble connecting through the Load Balancer. A temporary workaround is to connect to the public IP of the Cloud Access Connector directly, bypassing the Load Balancer.
+
 The difference between single-connector and multi-region deployments is that instead of creating only one Cloud Access Connector, the multi-region deployment creates Cloud Access Connectors in managed instance groups, in one or more GCP regions, behind a single GCP HTTPS Load Balancer. In this setup, a client initiates a PCoIP session with the public IP of the HTTPS Load Balancer, and the Load Balancer will select one of the Cloud Access Connectors from a region closest to the client to establish the connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the HTTPS Load Balancer.
 
 The regions and number of Cloud Access Connectors for each region are specified by the ```cac_region_list``` and ```cac_instance_count_list``` variables, respectively. At least one region and one Cloud Access Connector instance must be specified.
