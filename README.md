@@ -18,7 +18,7 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 - the user must have owner permissions to a GCP project
 - A PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - an SSH private / public key pair is required for Terraform to log into Linux hosts.
-- if SSL is invovled, the SSL key and certificate files are needed in PEM format.
+- if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ## GCP Setup

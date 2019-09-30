@@ -70,13 +70,16 @@ Next steps:
   2. Click on "Remote Workstations" in the left panel, select "Create Remote
      workstation" from the "+" button
   3. Select connector "quickstart_connector_<timestamp>"
-  4. Select workstation template and machine name
-  5. Select "us-west2-b" for Zone, "subnet-ws" for Network, then select the
-     machine type
-  6. Enter "example.com" for Domain name, "cam_admin" for Domain service
-     account, and the password you entered at the beginning of this script for
-     service account password.
-  7. Click "Create"
+  4. Fill in the form according to you preferences. Note that the following
+     values must be used for their respective fields:
+       Region:                   "us-west2"
+       Zone:                     "us-west2-b"
+       Network:                  "vpc-cas"
+       Subnetowrk:               "subnet-ws"
+       Domain name:              "example.com"
+       Domain service account:   "cam_admin"
+       Service account password: <set by you at start of script>
+  5. Click **Create**
 
 - Clean up:
   1. Using GCP console, delete all workstations created by Cloud Access Manager
