@@ -35,7 +35,7 @@ REQUIRED_APIS = [
     'dns.googleapis.com',
 ]
 
-iso_time = datetime.datetime.now().isoformat()
+iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
 CONNECTOR_NAME  = 'quickstart_connector_' + iso_time
 
