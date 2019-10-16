@@ -6,8 +6,8 @@
 #!/bin/bash
 
 INST_LOG_FILE="/var/log/teradici/agent/install.log"
-NVIDIA_GRID_VERSION=7.1
-NVIDIA_DRIVER_VERSION=410.92
+NVIDIA_GRID_VERSION=9.1
+NVIDIA_DRIVER_VERSION=430.46
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
@@ -54,27 +54,21 @@ exit_and_restart()
     exit
 }
 
-update_kernel_dkms()
+install_kernel_header()
 {
-    if ! (rpm -q dkms > /dev/null 2>&1)
-    then
+    log "Installing kernel headers and development packages"
+    yum install kernel-devel kernel-headers -y
+    exitCode=$?
+    if [[ $exitCode -ne 0 ]]; then
+        log "--> Failed to install kernel header"
+        exit 1
+    fi
 
-        log "--> Installing kernel devel header"
-        yum -y install "kernel-devel-uname-r == $(uname -r)"
-        # ln -s /usr/src/linux-headers-$(uname -r)  /lib/modules/$(uname -r)/build
-        ln -s /usr/src/kernels-"$(uname -r)"  /lib/modules/"$(uname -r)"/build
-
-        log "--> Downloading kernel dkms module"
-        rpm -Uvh --quiet https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
-        log "--> Updating kernel dkms module"
-        yum -y install epel-release
-        if (yum -y install dkms)
-        then
-            log "--> DKMS is installed successfully"
-        else
-            log "--> Failed to update DKMS"
-        fi
+    yum install gcc -y
+    exitCode=$?
+    if [[ $exitCode -ne 0 ]]; then
+        log "--> Failed to install gcc"
+        exit 1
     fi
 }
 
@@ -99,26 +93,13 @@ install_gpu_driver() {
         # -Z, --disable-nouveau
         # --sanity Perform basic sanity tests on an existing NVIDIA driver installation.
         # --uninstall Uninstall the currently installed NVIDIA driver.
-        # --dkms
-        #     nvidia-installer can optionally register the NVIDIA kernel
-        #     module sources, if installed, with DKMS, then build and
-        #     install a kernel module using the DKMS-registered sources.
-        #     This will allow the DKMS infrastructure to automatically
-        #     build a new kernel module when changing kernels.  During
-        #     installation, if DKMS is detected, nvidia-installer will
-        #     ask the user if they wish to register the module with DKMS;
-        #     the default response is 'no'.  This option will bypass the
-        #     detection of DKMS, and cause the installer to attempt a
-        #     DKMS-based installation regardless of whether DKMS is
-        #     present.
         # using dkms cause kernel rebuild and installation failure
-        #if ("$gpu_installer" -s --dkms)
-        if "$gpu_installer" -s -Z -X --dkms
+        if "$gpu_installer" -s -Z -X
         then
             log "--> GPU driver is installed successfully"
         else
             log "--> Failed to install gpu driver"
-            # exit 1
+            exit 1
         fi
     fi
 }
@@ -146,7 +127,7 @@ enable_persistence_mode() {
             log "--> Persistence mode is enabled successfully"
         else
             log "--> Failed to enable persistence mode."
-            # exit 1
+            exit 1
         fi
     fi
 }
@@ -295,18 +276,15 @@ then
     # Install GNOME and set it as the desktop
     log "--> Install Linux GUI ..."
     yum -y groupinstall "GNOME Desktop" "Graphical Administration Tools"
-    # yum -y groupinstall "Server with GUI"
 
     log "--> Set default to graphical target"
     systemctl set-default graphical.target
 
     join_domain
 
-    update_kernel_dkms
-
     exit_and_restart
 else
-    yum install -y pciutils
+    install_kernel_header
 
     install_gpu_driver
 
