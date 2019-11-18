@@ -86,9 +86,9 @@ This section descrbes the different types of deployment scenarios supported by T
 
 ## single-connector
 This is the simplest deployment; it creates a VPC with 3 subnets in the same region. The subnets are
-- subnet-dc : for the Domain Controller
-- subnet-cac: for the Connector
-- subnet-ws : for the workstations
+- ```subnet-dc```: for the Domain Controller
+- ```subnet-cac```: for the Connector
+- ```subnet-ws```: for the workstations
 
 Firewall rules are created to allow wide-open access within the VPC, and selected ports are open to the world for operation and for debug purposes.
 
@@ -96,7 +96,13 @@ A Domain Controller is created with Active Directory, DNS and LDAP-S configured.
 
 A Cloud Access Connector is created and registers itself with the CAM service with the given Token and PCoIP Registration code.
 
-Domain-joined Windows Graphics workstation(s), CentOS Graphics workstation(s), and CentOS Standard workstation(s) are optionally created, specified by ```win_gfx_instance_count```, ```centos_gfx_instance_count```, and ```centos_std_instance_count```.  These workstations are created with NVidia graphics driver (for graphics workstations) and PCoIP Agent installed.
+Domain-joined workstations are optionally created, specified by the following parameters:
+- ```win_gfx_instance_count```: Windows Graphics workstation,
+- ```win_std_instance_count```: Windows Standard workstation,
+- ```centos_gfx_instance_count```: CentOS Graphics workstation, and
+- ```centos_std_instance_count```: CentOS Standard workstation.
+
+These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics driver are also installed.
 
 ![single-connector diagram](./single-connector.png)
 

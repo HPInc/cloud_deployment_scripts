@@ -17,7 +17,7 @@ variable "prefix" {
 
 variable "name" {
   description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
-  default     = "gwin"
+  default     = "swin"
 }
 
 variable "pcoip_registration_code" {
@@ -66,23 +66,13 @@ variable "network_tags" {
 }
 
 variable "instance_count" {
-  description = "Number of Windows Graphics Workstations to deploy"
+  description = "Number of Windows Standard Workstations to deploy"
   default     = 1
 }
 
 variable "machine_type" {
   description = "Machine type for Workstation"
   default     = "n1-standard-4"
-}
-
-variable "accelerator_type" {
-  description = "Accelerator type for the Workstation"
-  default     = "nvidia-tesla-p4-vws"
-}
-
-variable "accelerator_count" {
-  description = "Number of GPUs for the Workstation"
-  default     = "1"
 }
 
 variable "disk_size_gb" {
@@ -100,18 +90,8 @@ variable "admin_password" {
   type        = string
 }
 
-variable "nvidia_driver_location" {
-  description = "URL of NVIDIA GRID driver location"
-  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID7.1/"
-}
-
-variable "nvidia_driver_filename" {
-  description = "Filename of NVIDIA GRID driver"
-  default     = "412.16_grid_win10_server2016_64bit_international.exe"
-}
-
 variable "pcoip_agent_location" {
-  description = "URL of Teradici PCoIP Graphics Agent"
+  description = "URL of Teradici PCoIP Standard Agent"
   default     = "https://downloads.teradici.com/win/stable/"
 }
 

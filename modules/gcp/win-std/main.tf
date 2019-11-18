@@ -13,10 +13,10 @@ locals {
   host_name = substr("${local.prefix}${var.name}", 0, 11)
 
   enable_public_ip = var.enable_public_ip ? [true] : []
-  startup_script = "win-gfx-startup.ps1"
+  startup_script = "win-std-startup.ps1"
 }
 
-resource "google_storage_bucket_object" "win-gfx-startup-script" {
+resource "google_storage_bucket_object" "win-std-startup-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   name    = local.startup_script
@@ -29,9 +29,6 @@ resource "google_storage_bucket_object" "win-gfx-startup-script" {
       pcoip_agent_filename     = var.pcoip_agent_filename,
       pcoip_registration_code  = var.pcoip_registration_code,
 
-      nvidia_driver_location   = var.nvidia_driver_location,
-      nvidia_driver_filename   = var.nvidia_driver_filename,
-
       domain_name              = var.domain_name,
       admin_password           = var.admin_password,
       service_account_username = var.service_account_username,
@@ -40,7 +37,7 @@ resource "google_storage_bucket_object" "win-gfx-startup-script" {
   )
 }
 
-resource "google_compute_instance" "win-gfx" {
+resource "google_compute_instance" "win-std" {
   count = var.instance_count
 
   provider     = google
@@ -48,15 +45,7 @@ resource "google_compute_instance" "win-gfx" {
   zone         = var.gcp_zone
   machine_type = var.machine_type
 
-  guest_accelerator {
-    type  = var.accelerator_type
-    count = var.accelerator_count
-  }
-
-  # This is needed to prevent "Instances with guest accelerators do not support live migration" error
-  scheduling {
-    on_host_maintenance = "TERMINATE"
-  }
+  enable_display = true
 
   boot_disk {
     initialize_params {
@@ -78,7 +67,7 @@ resource "google_compute_instance" "win-gfx" {
   tags = var.network_tags
 
   metadata = {
-    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script[0].output_name}"
+    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-std-startup-script[0].output_name}"
   }
 
   service_account {

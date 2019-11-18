@@ -204,6 +204,26 @@ variable "win_gfx_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2016-dc-v20190620"
 }
 
+variable "win_std_instance_count" {
+  description = "Number of Windows Standard Workstations"
+  default     = 0
+}
+
+variable "win_std_machine_type" {
+  description = "Machine type for Windows Standard Workstations"
+  default     = "n1-standard-4"
+}
+
+variable "win_std_disk_size_gb" {
+  description = "Disk size (GB) of Windows Standard Workstations"
+  default     = 50
+}
+
+variable "win_std_disk_image" {
+  description = "Disk image for the Windows Standard Workstation"
+  default     = "projects/windows-cloud/global/images/windows-server-2016-dc-v20190620"
+}
+
 variable "centos_gfx_instance_count" {
   description = "Number of CentOS Grpahics Workstations"
   default     = 0

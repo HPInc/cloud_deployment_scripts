@@ -127,6 +127,39 @@ module "win-gfx" {
   depends_on_hack = [google_compute_router_nat.nat.id]
 }
 
+module "win-std" {
+  source = "../../../modules/gcp/win-std"
+
+  prefix = var.prefix
+
+  gcp_service_account = var.gcp_service_account
+  kms_cryptokey_id = var.kms_cryptokey_id
+
+  pcoip_registration_code = var.pcoip_registration_code
+
+  domain_name              = var.domain_name
+  admin_password           = var.dc_admin_password
+  service_account_username = var.service_account_username
+  service_account_password = var.service_account_password
+
+  bucket_name      = google_storage_bucket.scripts.name
+  gcp_zone         = var.gcp_zone
+  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  enable_public_ip = var.enable_workstation_public_ip
+  network_tags     = [
+    "${google_compute_firewall.allow-icmp.name}",
+    "${google_compute_firewall.allow-rdp.name}",
+  ]
+
+  instance_count    = var.win_std_instance_count
+  machine_type      = var.win_std_machine_type
+  disk_size_gb      = var.win_std_disk_size_gb
+
+  disk_image = var.win_std_disk_image
+
+  depends_on_hack = [google_compute_router_nat.nat.id]
+}
+
 module "centos-gfx" {
   source = "../../../modules/gcp/centos-gfx"
 

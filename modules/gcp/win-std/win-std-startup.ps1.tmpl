@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
-$NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
@@ -67,47 +66,6 @@ function Decrypt-Credentials {
     }
 }
 
-function Nvidia-is-Installed {
-    if (!(test-path $NVIDIA_DIR)) {
-        return $false
-    }
-
-    cd $NVIDIA_DIR
-    & .\nvidia-smi.exe
-    return $?
-    return $false
-}
-
-function Nvidia-Install {
-    "################################################################"
-    "Install NVIDIA GRID Driver"
-    "################################################################"
-
-    if (Nvidia-is-Installed) {
-        "NVIDIA driver already installed."
-        return
-    }
-
-    mkdir 'C:\Nvidia'
-    $driverDirectory = "C:\Nvidia"
-    $driverUrl = "${nvidia_driver_location}" + "${nvidia_driver_filename}"
-    $destFile = $driverDirectory + "\" + "${nvidia_driver_filename}"
-    "Downloading NVIDIA GRID Driver from $driverUrl..."
-    (New-Object System.Net.WebClient).DownloadFile($driverUrl, $destFile)
-    "File Downloaded"
-
-    "Installing NVIDIA GRID Driver..."
-    $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -PassThru -Wait
-
-    if (!(Nvidia-is-Installed)) {
-        "ERROR: Failed to install NVIDIA GRID driver."
-        exit 1
-    }
-
-    "NVIDIA GRID Driver installed successfully."
-    $global:restart = $true
-}
-
 function PCoIP-Agent-is-Installed {
     Get-Service "PCoIPAgent"
     return $?
@@ -126,7 +84,7 @@ function PCoIP-Agent-Install {
     if ("${pcoip_agent_filename}") {
         $agent_filename = "${pcoip_agent_filename}"
     } else {
-        $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-graphics-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+        $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-standard-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
     }
     $pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
     $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
@@ -276,8 +234,6 @@ if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
 net user Administrator $DATA."admin_password" /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-
-Nvidia-Install
 
 PCoIP-Agent-Install
 
