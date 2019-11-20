@@ -109,7 +109,10 @@ resource "google_compute_instance_group_manager" "cac-igm" {
   zone = var.gcp_zone_list[count.index]
 
   base_instance_name = "${local.prefix}cac"
-  instance_template = google_compute_instance_template.cac-template[count.index].self_link
+
+  version {
+    instance_template = google_compute_instance_template.cac-template[count.index] .self_link
+  }
 
   named_port {
     name = "https"
