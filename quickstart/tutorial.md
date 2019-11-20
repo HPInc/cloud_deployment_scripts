@@ -32,9 +32,10 @@ Enter the number of workstations to create.
 
 Parameter | Description
 --- | ---
-scent | Standard CentOS 7 Workstations
-gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstations GPU
-gwin | Windows Server 2016 with NVIDIA Tesla P4 Virtual Workstations GPU
+scent | Standard CentOS 7 Workstation
+gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstation GPU
+swin | Windows Server 2016 Workstation
+gwin | Windows Server 2016 with NVIDIA Tesla P4 Virtual Workstation GPU
 
 ### Check your Quota
 Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Cloud Access Connector (CAC) which will also be created.
@@ -47,6 +48,7 @@ DC | 4 | 15 | 50 | 0
 CAC | 2 | 7.5 | 50 | 0 
 scent | 2 | 7.5 | 50 | 0 
 gcent | 2 | 7.5 | 50 | 1
+swin | 4 | 15 | 50 | 0
 gwin | 4 | 15 | 50 | 1
 
 You can check your quota [here](https://console.cloud.google.com/iam-admin/quotas).

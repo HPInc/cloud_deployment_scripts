@@ -52,7 +52,7 @@ SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 
 # Types of workstations
-WS_TYPES = ['scent', 'gcent', 'gwin']
+WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
 
 next_steps = """
 Next steps:
@@ -383,6 +383,7 @@ if __name__ == '__main__':
         'service_account_password':       password,
         'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
+        'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
