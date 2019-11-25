@@ -19,7 +19,7 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
-# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20191021"
+# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20191113"
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # Optional: Specify SSL certificate for Connector
 # ssl_key  = "/path/to/privkey.pem"
