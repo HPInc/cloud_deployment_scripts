@@ -90,10 +90,11 @@ function Nvidia-Install {
 
     mkdir 'C:\Nvidia'
     $driverDirectory = "C:\Nvidia"
-    $driverUrl = "${nvidia_driver_location}" + "${nvidia_driver_filename}"
-    $destFile = $driverDirectory + "\" + "${nvidia_driver_filename}"
-    "Downloading NVIDIA GRID Driver from $driverUrl..."
-    (New-Object System.Net.WebClient).DownloadFile($driverUrl, $destFile)
+    $nvidiaDriverFileName = Split-Path ${nvidia_driver_url} -Leaf
+    $nvidiaDriverLocation = Split-Path ${nvidia_driver_url} -Parent
+    $destFile = $driverDirectory + "\" + $nvidiaDriverFileName
+    "Downloading NVIDIA GRID Driver from $nvidiaDriverLocation..."
+    (New-Object System.Net.WebClient).DownloadFile("${nvidia_driver_url}", $destFile)
     "File Downloaded"
 
     "Installing NVIDIA GRID Driver..."

@@ -28,10 +28,7 @@ resource "google_storage_bucket_object" "win-gfx-startup-script" {
       pcoip_agent_location     = var.pcoip_agent_location,
       pcoip_agent_filename     = var.pcoip_agent_filename,
       pcoip_registration_code  = var.pcoip_registration_code,
-
-      nvidia_driver_location   = var.nvidia_driver_location,
-      nvidia_driver_filename   = var.nvidia_driver_filename,
-
+      nvidia_driver_url        = var.nvidia_driver_url,
       domain_name              = var.domain_name,
       admin_password           = var.admin_password,
       service_account_username = var.service_account_username,

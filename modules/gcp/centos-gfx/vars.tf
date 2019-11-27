@@ -110,6 +110,11 @@ variable "ws_admin_ssh_pub_key_file" {
   type        = string
 }
 
+variable "nvidia_driver_url" {
+  description = "URL of NVIDIA GRID driver"
+  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID9.1/NVIDIA-Linux-x86_64-430.46-grid.run"
+}
+
 variable "depends_on_hack" {
   description = "Workaround for Terraform Modules not supporting depends_on"
   default     = []

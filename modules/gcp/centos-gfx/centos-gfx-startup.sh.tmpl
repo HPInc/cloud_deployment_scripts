@@ -6,8 +6,6 @@
 #!/bin/bash
 
 INST_LOG_FILE="/var/log/teradici/agent/install.log"
-NVIDIA_GRID_VERSION=9.1
-NVIDIA_DRIVER_VERSION=430.46
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
@@ -81,9 +79,12 @@ install_gpu_driver() {
     if [[ $(lspci -d '10de:*:0300' -s '.0' | wc -l) -gt 0 ]] && ! (modprobe --resolve-alias nvidia > /dev/null 2>&1)
     then
         log "--> Start to install gpu driver ..."
-        local gpu_installer="/tmp/NVIDIA-Linux-x86_64-$${NVIDIA_DRIVER_VERSION}-grid.run"
-        log "--> Downloading gpu driver ..."
-        wget --retry-connrefused --tries=3 --waitretry=5 -O "$gpu_installer" https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID$${NVIDIA_GRID_VERSION}/NVIDIA-Linux-x86_64-$${NVIDIA_DRIVER_VERSION}-grid.run
+
+        local nvidia_driver_filename=$(basename ${nvidia_driver_url})
+        local gpu_installer="/tmp/$nvidia_driver_filename"
+
+        log "--> Downloading gpu driver $nvidia_driver_filename to $gpu_installer..."
+        wget --retry-connrefused --tries=3 --waitretry=5 -O "$gpu_installer" ${nvidia_driver_url}
         chmod u+x "$gpu_installer"
         log "--> Running gpu driver installer ..."
 

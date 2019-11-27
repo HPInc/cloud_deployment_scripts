@@ -30,6 +30,7 @@ resource "google_storage_bucket_object" "centos-gfx-startup-script" {
       domain_name              = var.domain_name,
       service_account_username = var.service_account_username,
       service_account_password = var.service_account_password,
+      nvidia_driver_url        = var.nvidia_driver_url,
     }
   )
 }
