@@ -66,7 +66,7 @@ Next steps:
      minutes or reconnect if it times out.
 
 - Add additional workstations:
-  1. Log in to https://cam.teradici.com/beta-ui
+  1. Log in to https://cam.teradici.com
   2. Click on "Remote Workstations" in the left panel, select "Create Remote
      workstation" from the "+" button
   3. Select connector "quickstart_connector_<timestamp>"
@@ -88,7 +88,7 @@ Next steps:
      properly destroy resources it created.
   2. In GCP cloudshell, go to the ~/cloud_deployment_scripts/{deployment_path} directory
      and run "terraform destroy"
-  3. Log in to https://cam.teradici.com/beta-ui and delete the deployment named
+  3. Log in to https://cam.teradici.com and delete the deployment named
      "quickstart_deployment_<timestamp>"
 """
 

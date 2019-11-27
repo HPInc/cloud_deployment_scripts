@@ -25,7 +25,7 @@ If you don't have one, visit [https://www.teradici.com/compare-plans](https://ww
 ### api_token
 Replace **`<token>`** with the Cloud Access Manager API token.
 
-Log into [https://cam.teradici.com/beta-ui](https://cam.teradici.com/beta-ui) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
+Log into [https://cam.teradici.com](https://cam.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
 ### Number of Workstations
 Enter the number of workstations to create.
@@ -87,7 +87,7 @@ The script should take approximately 25 minutes to run.
 **Note:** When connecting to a workstation immediately after this script completes, the workstation (especially graphics ones) may still be setting up. You may see "Remote Desktop is restarting..." in the client. Please wait a few minutes or reconnect if it times out.
 
 ### Add additional workstations
-1. Log in to [https://cam.teradici.com/beta-ui](https://cam.teradici.com/beta-ui)
+1. Log in to [https://cam.teradici.com](https://cam.teradici.com)
 2. Click on **Remote Workstations** in the left panel, select **Create Remote workstation** from the **+** button
 3. Select connector **`sample_connector_<timestamp>`**
 4. Fill in the form according to you preferences. Note that the following
@@ -113,5 +113,5 @@ Service account password: <set by you at start of script>
 ```bash
 terraform destroy
 ```
-  3. Log in to [https://cam.teradici.com/beta-ui](https://cam.teradici.com/beta-ui) and delete the deployment named
+  3. Log in to [https://cam.teradici.com](https://cam.teradici.com) and delete the deployment named
      **`sample_deployment_<timestamp>`**
