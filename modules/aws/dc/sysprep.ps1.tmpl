@@ -1,0 +1,35 @@
+<powershell>
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+$LOG_FILE = "C:\Teradici\provisioning.log"
+
+$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$DATA.Add("admin_password", "${admin_password}")
+
+Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+
+"Not using encryption"
+
+"Setting Administrator password ..."
+net user Administrator $DATA."admin_password" /active:yes
+
+"Enabling WinRM ..."
+Enable-PSRemoting -Force
+winrm set winrm/config/service/auth '@{Basic="true"}'
+
+# Create Certificate to support WinRM over HTTPS. hostname doesn't matter since
+# we will ignore certificate check when connecting from Terraform
+"Generating Self-signed certificate for HTTPS ..."
+$Thumbprint = (New-SelfSignedCertificate -DnsName "${hostname}" -CertStoreLocation Cert:\LocalMachine\My | Where-Object {$_.Subject -match "${hostname}"}).Thumbprint
+
+"Creating the HTTPS listener for WinRM ..."
+winrm create winrm/config/Listener?Address=*+Transport=HTTPS "@{CertificateThumbprint=`"$Thumbprint`"}"
+
+# Open Firewall
+"Adding firewall rule for TCP/5986 for WinRM over HTTPS ..."
+New-NetFirewallRule -DisplayName "WinRM HTTPS Created by Teradici Terraform" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow
+
+</powershell>
