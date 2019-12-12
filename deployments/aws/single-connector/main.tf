@@ -36,3 +36,41 @@ module "dc" {
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
 }
+
+resource "aws_key_pair" "cam_admin" {
+  key_name   = var.admin_ssh_key_name
+  public_key = file(var.admin_ssh_pub_key_file)
+}
+
+module "cac" {
+  source = "../../../modules/aws/cac"
+
+  prefix = var.prefix
+
+  cam_url                 = var.cam_url
+  pcoip_registration_code = var.pcoip_registration_code
+  cac_token               = var.cac_token
+
+  domain_name              = var.domain_name
+  domain_controller_ip     = module.dc.internal-ip
+  service_account_username = var.service_account_username
+  service_account_password = var.service_account_password
+
+  subnet = aws_subnet.cac-subnet.id
+  security_group_ids = [
+    data.aws_security_group.default.id,
+    aws_security_group.allow-ssh.id,
+    aws_security_group.allow-icmp.id,
+    aws_security_group.allow-http.id,
+    aws_security_group.allow-pcoip.id,
+  ]
+
+  instance_count = var.cac_instance_count
+  instance_type  = var.cac_instance_type
+  disk_size_gb   = var.cac_disk_size_gb
+
+  ami_owner = var.cac_ami_owner
+  ami_name  = var.cac_ami_name
+
+  admin_ssh_key_name = var.admin_ssh_key_name
+}

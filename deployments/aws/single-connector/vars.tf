@@ -96,6 +96,56 @@ variable "cac_subnet_cidr" {
   default     = "10.0.1.0/24"
 }
 
+variable "cac_instance_count" {
+  description = "Number of Cloud Access Connector instances"
+  default     = 1
+}
+
+variable "cac_instance_type" {
+  description = "Instance type for the Cloud Access Connector"
+  default     = "t2.xlarge"
+}
+
+variable "cac_disk_size_gb" {
+  description = "Disk size (GB) of the Cloud Access Connector"
+  default     = "50"
+}
+
+variable "cac_ami_owner" {
+  description = "Owner of AMI for the Cloud Access Connector"
+  default     = "099720109477"
+}
+
+variable "cac_ami_name" {
+  description = "Name of the AMI to create Cloud Access Connector from"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20191002"
+}
+
+variable "admin_ssh_key_name" {
+  description = "Name of Admin SSH Key"
+  default     = "cas_admin"
+}
+
+variable "admin_ssh_pub_key_file" {
+  description = "Admin SSH public key file"
+  type        = string
+}
+
+variable "cac_token" {
+  description = "Connector Token from CAM Service"
+  type        = string
+}
+
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code"
+  type        = string
+}
+
+variable "cam_url" {
+  description = "cam server url."
+  default     = "https://cam.teradici.com"
+}
+
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
   default     = "10.0.2.0/24"
