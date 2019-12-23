@@ -74,3 +74,36 @@ module "cac" {
 
   admin_ssh_key_name = var.admin_ssh_key_name
 }
+
+module "centos-std" {
+  source = "../../../modules/aws/centos-std"
+
+  instance_count = var.centos_std_instance_count
+
+  prefix = var.prefix
+
+  pcoip_registration_code = var.pcoip_registration_code
+
+  domain_name              = var.domain_name
+  domain_controller_ip     = module.dc.internal-ip
+  service_account_username = var.service_account_username
+  service_account_password = var.service_account_password
+
+  subnet             = aws_subnet.ws-subnet.id
+  enable_public_ip   = var.enable_workstation_public_ip
+  security_group_ids = [
+    data.aws_security_group.default.id,
+    aws_security_group.allow-icmp.id,
+    aws_security_group.allow-ssh.id,
+  ]
+
+  instance_type     = var.centos_std_instance_type
+  disk_size_gb      = var.centos_std_disk_size_gb
+
+  ami_owner = var.centos_std_ami_owner
+  ami_name  = var.centos_std_ami_name
+
+  admin_ssh_key_name = var.admin_ssh_key_name
+
+  depends_on_hack = [aws_nat_gateway.nat.id]
+}

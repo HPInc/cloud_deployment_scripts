@@ -11,6 +11,12 @@ domain_name = "example.com"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
+centos_std_instance_count = 0
+# centos_std_instance_type  = "t2.xlarge"
+# centos_std_disk_size_gb   = 50
+# centos_std_ami_owner      = "aws-marketplace"
+# centos_std_ami_name       = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+
 ###############
 #   Secrets   #
 ###############
