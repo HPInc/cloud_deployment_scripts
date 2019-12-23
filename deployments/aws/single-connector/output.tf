@@ -20,3 +20,11 @@ output "cac-internal-ip" {
 output "cac-public-ip" {
   value = module.cac.public-ip
 }
+
+output "centos-std-internal-ip" {
+  value = module.centos-std.internal-ip
+}
+
+output "centos-std-public-ip" {
+  value = module.centos-std.public-ip
+}

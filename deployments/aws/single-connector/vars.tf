@@ -150,3 +150,33 @@ variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
   default     = "10.0.2.0/24"
 }
+
+variable "enable_workstation_public_ip" {
+  description = "Enable public IP for Workstations"
+  default     = false
+}
+
+variable "centos_std_instance_count" {
+  description = "Number of CentOS Standard Workstations"
+  default     = 0
+}
+
+variable "centos_std_instance_type" {
+  description = "Instance type for the CentOS Standard Workstations"
+  default     = "t2.xlarge"
+}
+
+variable "centos_std_disk_size_gb" {
+  description = "Disk size (GB) of the CentOS Standard Workstations"
+  default     = "50"
+}
+
+variable "centos_std_ami_owner" {
+  description = "Owner of AMI for the CentOS Standard Workstations"
+  default     = "aws-marketplace"
+}
+
+variable "centos_std_ami_name" {
+  description = "Name of the CentOS AMI to create workstation from"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+}

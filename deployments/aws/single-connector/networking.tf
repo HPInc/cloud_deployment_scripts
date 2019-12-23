@@ -236,3 +236,48 @@ resource "aws_security_group" "allow-pcoip" {
     Name = "${local.prefix}secgrp-allow-pcoip"
   }
 }
+
+resource "aws_route53_resolver_endpoint" "outbound" {
+  name      = replace("${local.prefix}${var.domain_name}-endpoint", ".", "-")
+  direction = "OUTBOUND"
+
+  security_group_ids = [
+    data.aws_security_group.default.id,
+  ]
+
+  ip_address {
+    subnet_id = aws_subnet.dc-subnet.id
+  }
+
+  # TODO: Terraform errors out with "ip_address: attribute supports 2 item as a
+  # minimum, config has 1 declared" without the second ip_address block with a
+  # different subnet.
+  ip_address {
+    subnet_id = aws_subnet.cac-subnet.id
+  }
+
+  tags = {
+    Name = "${local.prefix}${var.domain_name}-endpoint"
+  }
+}
+
+resource "aws_route53_resolver_rule" "rule" {
+  domain_name = var.domain_name
+  name        = replace("${local.prefix}${var.domain_name}-forwarder", ".", "-")
+
+  rule_type            = "FORWARD"
+  resolver_endpoint_id = aws_route53_resolver_endpoint.outbound.id
+
+  target_ip {
+    ip = var.dc_private_ip
+  }
+
+  tags = {
+    Name = "${local.prefix}${var.domain_name}-rule"
+  } 
+}
+
+resource "aws_route53_resolver_rule_association" "association" {
+  resolver_rule_id = aws_route53_resolver_rule.rule.id
+  vpc_id           = aws_vpc.vpc.id
+}
