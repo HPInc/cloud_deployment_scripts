@@ -21,6 +21,14 @@ output "cac-public-ip" {
   value = module.cac.public-ip
 }
 
+output "win-std-internal-ip" {
+  value = module.win-std.internal-ip
+}
+
+output "win-std-public-ip" {
+  value = module.win-std.public-ip
+}
+
 output "centos-std-internal-ip" {
   value = module.centos-std.internal-ip
 }
