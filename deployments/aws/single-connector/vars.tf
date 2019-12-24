@@ -156,6 +156,31 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
+variable "win_std_instance_count" {
+  description = "Number of Windows Standard Workstations"
+  default     = 0
+}
+
+variable "win_std_instance_type" {
+  description = "Instance type for the Windows Standard Workstations"
+  default     = "t2.xlarge"
+}
+
+variable "win_std_disk_size_gb" {
+  description = "Disk size (GB) of the Windows Standard Workstations"
+  default     = "50"
+}
+
+variable "win_std_ami_owner" {
+  description = "Owner of AMI for the Windows Standard Workstations"
+  default     = "amazon"
+}
+
+variable "win_std_ami_name" {
+  description = "Name of the Windows AMI to create workstation from"
+  default     = "Windows_Server-2016-English-Full-Base-2019.11.13"
+}
+
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0

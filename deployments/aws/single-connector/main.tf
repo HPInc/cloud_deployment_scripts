@@ -75,6 +75,37 @@ module "cac" {
   admin_ssh_key_name = var.admin_ssh_key_name
 }
 
+module "win-std" {
+  source = "../../../modules/aws/win-std"
+
+  instance_count = var.win_std_instance_count
+
+  prefix = var.prefix
+
+  pcoip_registration_code = var.pcoip_registration_code
+
+  domain_name              = var.domain_name
+  admin_password           = var.dc_admin_password
+  service_account_username = var.service_account_username
+  service_account_password = var.service_account_password
+
+  subnet             = aws_subnet.ws-subnet.id
+  enable_public_ip   = var.enable_workstation_public_ip
+  security_group_ids = [
+    data.aws_security_group.default.id,
+    aws_security_group.allow-icmp.id,
+    aws_security_group.allow-rdp.id,
+  ]
+
+  instance_type     = var.win_std_instance_type
+  disk_size_gb      = var.win_std_disk_size_gb
+
+  ami_owner = var.win_std_ami_owner
+  ami_name  = var.win_std_ami_name
+
+  depends_on_hack = [aws_nat_gateway.nat.id]
+}
+
 module "centos-std" {
   source = "../../../modules/aws/centos-std"
 
