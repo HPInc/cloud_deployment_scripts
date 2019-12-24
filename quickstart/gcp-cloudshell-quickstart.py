@@ -33,6 +33,7 @@ REQUIRED_APIS = [
     'cloudresourcemanager.googleapis.com',
     'compute.googleapis.com',
     'dns.googleapis.com',
+    'iam.googleapis.com',
 ]
 
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
@@ -306,10 +307,10 @@ if __name__ == '__main__':
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
 
+    apis_enable(REQUIRED_APIS)
     sa = service_account_create(sa_email)
     iam_policy_update(sa, SA_ROLES)
     sa_key = service_account_create_key(sa, SA_KEY_PATH)
-    apis_enable(REQUIRED_APIS)
 
     print('GCP project setup complete.\n')
 
