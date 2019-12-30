@@ -42,7 +42,6 @@ variable "service_account_password" {
 
 variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
-  type        = string
   default     = ""
 }
 
@@ -52,7 +51,7 @@ variable "bucket_name" {
 }
 
 variable "gcp_zone" {
-  description = "Zone to deploy the Cloud Access Connector"
+  description = "Zone to deploy the Domain Controller"
   default     = "us-west2-b"
 }
 
@@ -63,11 +62,11 @@ variable "subnet" {
 
 variable "private_ip" {
   description = "Static internal IP address for the Domain Controller"
-  default     = ""
+  type        = string
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the Workstation"
+  description = "Tags to be applied to the Domain Controller"
   type        = list(string)
 }
 

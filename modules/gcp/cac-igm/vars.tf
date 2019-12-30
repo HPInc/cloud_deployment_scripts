@@ -71,7 +71,7 @@ variable "subnet_list" {
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the Workstation"
+  description = "Tags to be applied to the Cloud Access Connector"
   type        = list(string)
 }
 
