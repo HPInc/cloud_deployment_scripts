@@ -156,6 +156,33 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
+variable "win_gfx_instance_count" {
+  description = "Number of Windows Graphics Workstations"
+  default     = 0
+}
+
+# G4s are Tesla T4s
+# G3s are M60
+variable "win_gfx_instance_type" {
+  description = "Instance type for the Windows Graphics Workstations"
+  default     = "g4dn.xlarge"
+}
+
+variable "win_gfx_disk_size_gb" {
+  description = "Disk size (GB) of the Windows Graphics Workstations"
+  default     = "50"
+}
+
+variable "win_gfx_ami_owner" {
+  description = "Owner of AMI for the Windows Graphics Workstations"
+  default     = "aws-marketplace"
+}
+
+variable "win_gfx_ami_name" {
+  description = "Name of the Windows AMI to create workstation from"
+  default     = "nvOffer-grid9.2-nv-windows-server-2016-QvWS-432.08-v201911180037*"
+}
+
 variable "win_std_instance_count" {
   description = "Number of Windows Standard Workstations"
   default     = 0
