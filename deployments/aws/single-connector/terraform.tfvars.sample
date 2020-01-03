@@ -11,6 +11,12 @@ domain_name = "example.com"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
+win_gfx_instance_count = 0
+# win_gfx_instance_type  = "g4dn.xlarge"
+# win_gfx_disk_size_gb   = 50
+# win_gfx_ami_owner      = "aws-marketplace"
+# win_gfx_ami_name       = "nvOffer-grid9.2-nv-windows-server-2016-QvWS-432.08-v201911180037*"
+
 win_std_instance_count = 0
 # win_std_instance_type  = "t2.xlarge"
 # win_std_disk_size_gb   = 50
