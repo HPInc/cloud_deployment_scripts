@@ -208,6 +208,33 @@ variable "win_std_ami_name" {
   default     = "Windows_Server-2016-English-Full-Base-2019.11.13"
 }
 
+variable "centos_gfx_instance_count" {
+  description = "Number of CentOS Graphics Workstations"
+  default     = 0
+}
+
+# G4s are Tesla T4s
+# G3s are M60
+variable "centos_gfx_instance_type" {
+  description = "Instance type for the CentOS Graphics Workstations"
+  default     = "g4dn.xlarge"
+}
+
+variable "centos_gfx_disk_size_gb" {
+  description = "Disk size (GB) of the CentOS Graphics Workstations"
+  default     = "50"
+}
+
+variable "centos_gfx_ami_owner" {
+  description = "Owner of AMI for the CentOS Graphics Workstations"
+  default     = "aws-marketplace"
+}
+
+variable "centos_gfx_ami_name" {
+  description = "Name of the CentOS AMI to create workstation from"
+  default = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+}
+
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0
