@@ -37,6 +37,14 @@ output "win-std-public-ip" {
   value = module.win-std.public-ip
 }
 
+output "centos-gfx-internal-ip" {
+  value = module.centos-gfx.internal-ip
+}
+
+output "centos-gfx-public-ip" {
+  value = module.centos-gfx.public-ip
+}
+
 output "centos-std-internal-ip" {
   value = module.centos-std.internal-ip
 }
