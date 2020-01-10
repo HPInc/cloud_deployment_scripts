@@ -78,7 +78,7 @@ resource "google_compute_firewall" "allow-winrm" {
 
   allow {
     protocol = "tcp"
-    ports    = ["5985-5986"]
+    ports    = ["5986"]
   }
 
   target_tags   = ["${local.prefix}fw-allow-winrm"]
