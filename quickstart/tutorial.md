@@ -69,12 +69,10 @@ gcloud config set project <project_id>
 ### Run the script
 
 Run the following command in Cloud Shell. You will be prompted to create a password for the Active Directory Administrator.
-
 ```bash
 cd quickstart
 ./gcp-cloudshell-quickstart.py
 ```
-
 The script should take approximately 25 minutes to run.
 
 ## Next steps
@@ -88,9 +86,9 @@ The script should take approximately 25 minutes to run.
 
 ### Add additional workstations
 1. Log in to [https://cam.teradici.com](https://cam.teradici.com)
-2. Click on **Remote Workstations** in the left panel, select **Create Remote workstation** from the **+** button
-3. Select connector **`sample_connector_<timestamp>`**
-4. Fill in the form according to you preferences. Note that the following
+2. Click on **Workstations** in the left panel, select **Create new remote workstation** from the **+** button
+3. Select connector **`quickstart_connector_<timestamp>`**
+4. Fill in the form according to your preferences. Note that the following
    values must be used for their respective fields:
 ```
 Region:                   "us-west2"
@@ -108,10 +106,13 @@ Service account password: <set by you at start of script>
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, go to the **~/cloud_deployment_scripts/quickstart/** directory
-     and run 
+  2. In GCP cloudshell, change directory to **~/cloud_deployment_scripts/deployments/gcp/single-connector** using the command
+```bash
+cd ../deployments/gcp/single-connector
+```   
+  3. Remove resources deployed by Terraform using the following command. Enter "yes" when prompted to confirm.
 ```bash
 terraform destroy
 ```
-  3. Log in to [https://cam.teradici.com](https://cam.teradici.com) and delete the deployment named
-     **`sample_deployment_<timestamp>`**
+  4. Log in to [https://cam.teradici.com](https://cam.teradici.com) and delete the deployment named
+     **`quickstart_deployment_<timestamp>`**

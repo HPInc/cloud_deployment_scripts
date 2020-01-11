@@ -14,9 +14,9 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 
 # Running Terraform Scripts
 
-## Requirments
+## Requirements
 - the user must have owner permissions to a GCP project
-- A PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - an SSH private / public key pair is required for Terraform to log into Linux hosts.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
@@ -26,7 +26,7 @@ Although it is possible to create deployments in existing and currently in-use p
 
 With a new GCP project:
 - create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAM to manage the deployment, such as creating workstations, mointoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform scripts to create the initial deployment.
-- Enable the following APIs in the GCP console or via the command ```gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com```:
+- enable the following APIs in the GCP console or via the command ```gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com```:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
     - Cloud Resource Manager
@@ -82,7 +82,7 @@ Note that changes involving creating or recreating Cloud Access Connectors requi
 Run ```terraform destroy``` to remove all resources created by Terraform.
 
 # Deployments
-This section descrbes the different types of deployment scenarios supported by Terraform scripts in this repository.
+This section describes the different types of deployment scenarios supported by Terraform scripts in this repository.
 
 ## single-connector
 This is the simplest deployment; it creates a VPC with 3 subnets in the same region. The subnets are

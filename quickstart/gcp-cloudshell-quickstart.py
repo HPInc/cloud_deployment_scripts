@@ -68,10 +68,10 @@ Next steps:
 
 - Add additional workstations:
   1. Log in to https://cam.teradici.com
-  2. Click on "Remote Workstations" in the left panel, select "Create Remote
+  2. Click on "Workstations" in the left panel, select "Create new remote
      workstation" from the "+" button
   3. Select connector "quickstart_connector_<timestamp>"
-  4. Fill in the form according to you preferences. Note that the following
+  4. Fill in the form according to your preferences. Note that the following
      values must be used for their respective fields:
        Region:                   "us-west2"
        Zone:                     "us-west2-b"
@@ -87,9 +87,9 @@ Next steps:
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, go to the ~/cloud_deployment_scripts/{deployment_path} directory
-     and run "terraform destroy"
-  3. Log in to https://cam.teradici.com and delete the deployment named
+  2. In GCP cloudshell, change directory using the command "cd ~/cloud_deployment_scripts/{deployment_path}"
+  3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
+  4. Log in to https://cam.teradici.com and delete the deployment named
      "quickstart_deployment_<timestamp>"
 """
 
