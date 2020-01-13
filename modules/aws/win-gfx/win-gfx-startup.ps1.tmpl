@@ -152,7 +152,11 @@ function Join-Domain {
 
     # In some cases the DNS entry is missing after domain join, register with
     # DNS explicitly to ensure DNS entry exist.
-    ipconfig /registerdns
+    "Explicitly registering with DNS..."
+    do {
+        ipconfig /registerdns
+    } while (!$?)
+    "Successfully registered with DNS."
 
     "Successfully joined '${domain_name}'"
     $global:restart = $true
