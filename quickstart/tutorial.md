@@ -33,14 +33,14 @@ Enter the number of workstations to create.
 Parameter | Description
 --- | ---
 scent | Standard CentOS 7 Workstation
-gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstation GPU
+gcent | CentOS 7 with NVIDIA Tesla T4 Virtual Workstation GPU
 swin | Windows Server 2016 Workstation
-gwin | Windows Server 2016 with NVIDIA Tesla P4 Virtual Workstation GPU
+gwin | Windows Server 2016 with NVIDIA Tesla T4 Virtual Workstation GPU
 
 ### Check your Quota
 Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Cloud Access Connector (CAC) which will also be created.
 
-The deployment will be created in **us-west2-b** and have the following specs:
+The deployment will be created in **us-west1-b** and have the following specs:
 
 VM | vCPUs | Memory (GB) | SSD (GB) | GPU 
 ---|---|---|---|--- 
@@ -91,8 +91,8 @@ The script should take approximately 25 minutes to run.
 4. Fill in the form according to your preferences. Note that the following
    values must be used for their respective fields:
 ```
-Region:                   "us-west2"
-Zone:                     "us-west2-b"
+Region:                   "us-west1"
+Zone:                     "us-west1-b"
 Network:                  "vpc-cas"
 Subnetowrk:               "subnet-ws"
 Domain name:              "example.com"

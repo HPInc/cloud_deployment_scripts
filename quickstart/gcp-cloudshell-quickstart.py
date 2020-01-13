@@ -26,7 +26,7 @@ SA_ROLES    = [
 ]
 
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
-GCP_REGION = 'us-west2'
+GCP_REGION = 'us-west1'
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
@@ -73,8 +73,8 @@ Next steps:
   3. Select connector "quickstart_connector_<timestamp>"
   4. Fill in the form according to your preferences. Note that the following
      values must be used for their respective fields:
-       Region:                   "us-west2"
-       Zone:                     "us-west2-b"
+       Region:                   "us-west1"
+       Zone:                     "us-west1-b"
        Network:                  "vpc-cas"
        Subnetowrk:               "subnet-ws"
        Domain name:              "example.com"
@@ -416,7 +416,7 @@ if __name__ == '__main__':
             mycam.machine_add_existing(
                 hostname,
                 PROJECT_ID,
-                'us-west2-b',
+                'us-west1-b',
                 deployment
             )
 
