@@ -52,7 +52,7 @@ variable "bucket_name" {
 
 variable "gcp_zone" {
   description = "Zone to deploy the Domain Controller"
-  default     = "us-west2-b"
+  default     = "us-west1-b"
 }
 
 variable "subnet" {

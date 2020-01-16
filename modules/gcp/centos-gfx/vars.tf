@@ -47,7 +47,7 @@ variable "service_account_password" {
 
 variable "gcp_zone" {
   description = "Zone to deploy the Workstation"
-  default     = "us-west2-b"
+  default     = "us-west1-b"
 }
 
 variable "bucket_name" {
@@ -82,7 +82,7 @@ variable "machine_type" {
 
 variable "accelerator_type" {
   description = "Accelerator type for the Workstation"
-  default     = "nvidia-tesla-p4-vws"
+  default     = "nvidia-tesla-t4-vws"
 }
 
 variable "accelerator_count" {

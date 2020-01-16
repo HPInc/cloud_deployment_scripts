@@ -62,7 +62,7 @@ variable "bucket_name" {
 
 variable "gcp_zone" {
   description = "Zone to deploy the Cloud Access Connector"
-  default     = "us-west2-b"
+  default     = "us-west1-b"
 }
 
 variable "subnet" {
