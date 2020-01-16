@@ -38,7 +38,7 @@ REQUIRED_APIS = [
 
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
-CONNECTOR_NAME  = 'quickstart_connector_' + iso_time
+CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
@@ -70,7 +70,7 @@ Next steps:
   1. Log in to https://cam.teradici.com
   2. Click on "Workstations" in the left panel, select "Create new remote
      workstation" from the "+" button
-  3. Select connector "quickstart_connector_<timestamp>"
+  3. Select connector "quickstart_cac_<timestamp>"
   4. Fill in the form according to your preferences. Note that the following
      values must be used for their respective fields:
        Region:                   "us-west1"
