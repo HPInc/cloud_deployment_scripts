@@ -40,6 +40,6 @@ kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring
 #    3. unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
-dc_admin_password        = "SecuRe_pwd1"
-safe_mode_admin_password = "SecuRe_pwd2"
-service_account_password = "SecuRe_pwd3"
+dc_admin_password           = "SecuRe_pwd1"
+safe_mode_admin_password    = "SecuRe_pwd2"
+ad_service_account_password = "SecuRe_pwd3"

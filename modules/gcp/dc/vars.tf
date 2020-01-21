@@ -30,12 +30,12 @@ variable "safe_mode_admin_password" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service account to be created"
   type        = string
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
 }

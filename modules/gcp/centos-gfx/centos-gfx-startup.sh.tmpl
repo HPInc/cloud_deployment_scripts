@@ -21,7 +21,7 @@ get_credentials() {
         log "Not using encryption"
 
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+        AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 
     else
         log "Using encryption key ${kms_cryptokey_id}"
@@ -34,13 +34,13 @@ get_credentials() {
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
         PCOIP_REGISTRATION_CODE=$(echo "$b64_data" | base64 --decode)
 
-        data=$(echo "{ \"ciphertext\": \"${service_account_password}\" }")
+        data=$(echo "{ \"ciphertext\": \"${ad_service_account_password}\" }")
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
-        SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
+        AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
     fi
 
     # Exit if any of the required variables are missing
-    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" ]]; then
+    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
         exit 1
     fi
 }
@@ -178,17 +178,17 @@ join_domain()
     if [[ ! -f "$dns_record_file" ]]
     then
         log "--> DOMAIN NAME: ${domain_name}"
-        log "--> USERNAME: ${service_account_username}"
+        log "--> USERNAME: ${ad_service_account_username}"
         log "--> DOMAIN CONTROLLER: ${domain_controller_ip}"
 
         VM_NAME=$(hostname)
 
         # Wait for AD service account to be set up
         yum -y install openldap-clients
-        log "--> Wait for AD account ${service_account_username}@${domain_name} to be available"
-        until ldapwhoami -H ldap://${domain_controller_ip} -D ${service_account_username}@${domain_name} -w $SERVICE_ACCOUNT_PASSWORD -o nettimeout=1 > /dev/null 2>&1
+        log "--> Wait for AD account ${ad_service_account_username}@${domain_name} to be available"
+        until ldapwhoami -H ldap://${domain_controller_ip} -D ${ad_service_account_username}@${domain_name} -w $AD_SERVICE_ACCOUNT_PASSWORD -o nettimeout=1 > /dev/null 2>&1
         do
-            log "${service_account_username}@${domain_name} not available yet, retrying in 10 seconds..."
+            log "${ad_service_account_username}@${domain_name} not available yet, retrying in 10 seconds..."
             sleep 10
         done
 
@@ -213,9 +213,9 @@ join_domain()
         log "--> Joining the domain"
         if [[ -n "$OU" ]]
         then
-            echo "$SERVICE_ACCOUNT_PASSWORD" | realm join --user="${service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
         else
-            echo "$SERVICE_ACCOUNT_PASSWORD" | realm join --user="${service_account_username}" "${domain_name}" >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
         fi
         exitCode=$?
         if [[ $exitCode -eq 0 ]]
@@ -236,7 +236,7 @@ join_domain()
         log "--> Registering with DNS"
         DOMAIN_UPPER=$(echo "${domain_name}" | tr '[:lower:]' '[:upper:]')
         IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
-        echo "$SERVICE_ACCOUNT_PASSWORD" | kinit "${service_account_username}"@"$DOMAIN_UPPER"
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "${ad_service_account_username}"@"$DOMAIN_UPPER"
         touch "$dns_record_file"
         echo "server ${domain_controller_ip}" > "$dns_record_file"
         echo "update add $VM_NAME.${domain_name} 600 a $IP_ADDRESS" >> "$dns_record_file"
