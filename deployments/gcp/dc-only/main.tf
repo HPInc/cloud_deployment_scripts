@@ -26,14 +26,14 @@ module "dc" {
 
   prefix = var.prefix
 
-  gcp_service_account      = var.gcp_service_account
-  kms_cryptokey_id         = var.kms_cryptokey_id
-  domain_name              = var.domain_name
-  admin_password           = var.dc_admin_password
-  safe_mode_admin_password = var.safe_mode_admin_password
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
-  domain_users_list        = var.domain_users_list
+  gcp_service_account         = var.gcp_service_account
+  kms_cryptokey_id            = var.kms_cryptokey_id
+  domain_name                 = var.domain_name
+  admin_password              = var.dc_admin_password
+  safe_mode_admin_password    = var.safe_mode_admin_password
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
+  domain_users_list           = var.domain_users_list
 
   bucket_name  = google_storage_bucket.scripts.name
   gcp_zone     = var.gcp_zone

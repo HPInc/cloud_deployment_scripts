@@ -381,7 +381,7 @@ if __name__ == '__main__':
         'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
-        'service_account_password':       password,
+        'ad_service_account_password':    password,
         'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
