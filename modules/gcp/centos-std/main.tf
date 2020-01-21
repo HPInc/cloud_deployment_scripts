@@ -24,12 +24,12 @@ resource "google_storage_bucket_object" "centos-std-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
-      kms_cryptokey_id         = var.kms_cryptokey_id,
-      pcoip_registration_code  = var.pcoip_registration_code,
-      domain_controller_ip     = var.domain_controller_ip,
-      domain_name              = var.domain_name,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_name                 = var.domain_name,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
     }
   )
 }

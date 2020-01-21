@@ -48,8 +48,8 @@ data "template_file" "new-domain-admin-user-script" {
     kms_cryptokey_id = var.kms_cryptokey_id
     host_name        = local.host_name
     domain_name      = var.domain_name
-    account_name     = var.service_account_username
-    account_password = var.service_account_password
+    account_name     = var.ad_service_account_username
+    account_password = var.ad_service_account_password
   }
 }
 

@@ -31,8 +31,8 @@ resource "google_storage_bucket_object" "win-std-startup-script" {
 
       domain_name              = var.domain_name,
       admin_password           = var.admin_password,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
     }
   )
 }
