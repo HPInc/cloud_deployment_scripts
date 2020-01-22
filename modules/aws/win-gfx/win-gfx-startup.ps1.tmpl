@@ -111,6 +111,10 @@ function Join-Domain {
     $password = ConvertTo-SecureString $DATA."service_account_password" -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
+    # Read "Name" tag for hostname
+    $instance_id = Get-EC2InstanceMetadata -Category "InstanceId"
+    $host_name = Get-EC2Tag -Filter @{name="resource-id";value=$instance_id} | Select -ExpandProperty "value"
+
     # Looping in case Domain Controller is not yet available
     $Interval = 10
     $Timeout = 1200
@@ -120,7 +124,7 @@ function Join-Domain {
         Try {
             $Retry = $false
             # Don't do -Restart here because there is no log showing the restart
-            Add-Computer -DomainName "${domain_name}" -Credential $cred -Verbose -Force -ErrorAction Stop
+            Add-Computer -DomainName "${domain_name}" -NewName "$host_name" -Credential $cred -Verbose -Force -ErrorAction Stop
         }
 
         # The same Error, System.InvalidOperationException, is thrown in these cases: 
@@ -150,21 +154,28 @@ function Join-Domain {
         exit 1
     }
 
-    # In some cases the DNS entry is missing after domain join, register with
-    # DNS explicitly to ensure DNS entry exist.
-    "Explicitly registering with DNS..."
-    do {
-        ipconfig /registerdns
-    } while (!$?)
-    "Successfully registered with DNS."
-
     "Successfully joined '${domain_name}'"
     $global:restart = $true
 }
 
 
 if (Test-Path $LOG_FILE) {
+    Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+
     "$LOG_FILE exists. Assume this startup script has run already."
+
+    # TODO: Find out why DNS entry is not always added after domain join.
+    # Sometimes the DNS entry for this workstation is not added in the Domain
+    # Controller after joining the domain. Explicitly adding this machine to the DNS
+    # after a reboot. Doing this before a reboot would add a DNS entry with the old
+    # hostname.
+    "Registering with DNS..."
+    do {
+        Start-Sleep -Seconds 5
+        Register-DnsClient
+    } while (!$?)
+    "Successfully registered with DNS."
+
     exit 0
 }
 
@@ -202,3 +213,4 @@ if ($global:restart) {
 }
 
 </powershell>
+<persist>true</persist>

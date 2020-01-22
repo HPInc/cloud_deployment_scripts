@@ -38,6 +38,41 @@ data "aws_ami" "ami" {
   }
 }
 
+data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
+  statement {
+    actions = [ "sts:AssumeRole" ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "centos-std-role" {
+  name               = "centos_std_role"
+  assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "centos-std-policy-doc" {
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_role_policy" "centos-std-role-policy" {
+  name = "centos_std_role_policy"
+  role = aws_iam_role.centos-std-role.id
+  policy = data.aws_iam_policy_document.centos-std-policy-doc.json
+}
+
+resource "aws_iam_instance_profile" "centos-std-instance-profile" {
+  name = "centos_std_instance_profile"
+  role = aws_iam_role.centos-std-role.name
+}
+
 resource "aws_instance" "centos-std" {
   count = var.instance_count
 
@@ -55,6 +90,8 @@ resource "aws_instance" "centos-std" {
   vpc_security_group_ids = var.security_group_ids
 
   key_name = var.admin_ssh_key_name
+
+  iam_instance_profile = aws_iam_instance_profile.centos-std-instance-profile.name
 
   user_data = data.template_file.startup-script.rendered
 
