@@ -71,8 +71,8 @@ class CloudAccessManager:
             'deploymentId': deployment['deploymentId'],
             'projectId':    project_id,
             'zone':         zone,
-            'active':       'true',
-            'managed':      'true',
+            'active':       True,
+            'managed':      True,
         }
 
         resp = requests.post(
