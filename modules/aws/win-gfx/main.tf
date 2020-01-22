@@ -42,6 +42,41 @@ data "aws_ami" "ami" {
   }
 }
 
+data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
+  statement {
+    actions = [ "sts:AssumeRole" ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "win-gfx-role" {
+  name               = "win_gfx_role"
+  assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "win-gfx-policy-doc" {
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_role_policy" "win-gfx-role-policy" {
+  name = "win_gfx_role_policy"
+  role = aws_iam_role.win-gfx-role.id
+  policy = data.aws_iam_policy_document.win-gfx-policy-doc.json
+}
+
+resource "aws_iam_instance_profile" "win-gfx-instance-profile" {
+  name = "win_gfx_instance_profile"
+  role = aws_iam_role.win-gfx-role.name
+}
+
 resource "aws_instance" "win-gfx" {
   count = var.instance_count
 
@@ -57,6 +92,8 @@ resource "aws_instance" "win-gfx" {
   associate_public_ip_address = var.enable_public_ip
 
   vpc_security_group_ids = var.security_group_ids
+
+  iam_instance_profile = aws_iam_instance_profile.win-gfx-instance-profile.name
 
   user_data = data.template_file.startup-script.rendered
 

@@ -27,6 +27,7 @@ Content-Disposition: attachment; filename="userdata.txt"
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 INST_LOG_FILE="/var/log/teradici/agent/install.log"
+METADATA_IP="http://169.254.169.254"
 
 log() {
     local message="$1"
@@ -46,6 +47,17 @@ get_credentials() {
         log "Service Account Password = $SERVICE_ACCOUNT_PASSWORD"
         exit 1
     fi
+}
+
+# Update the hostname to match this instance's "Name" Tag
+update_hostname()
+{
+    TOKEN=`curl -X PUT "$METADATA_IP/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60"`
+    ID=`curl $METADATA_IP/latest/meta-data/instance-id -H "X-aws-ec2-metadata-token: $TOKEN"`
+    REGION=`curl $METADATA_IP/latest/dynamic/instance-identity/document/ -H "X-aws-ec2-metadata-token: $TOKEN" | jq -r .region`
+    NEW_HOSTNAME=`aws ec2 describe-tags --region $REGION --filters "Name=resource-id,Values=$ID" "Name=key,Values=Name" --output json | jq -r .Tags[0].Value`
+
+    sudo hostnamectl set-hostname $NEW_HOSTNAME.${domain_name}
 }
 
 exit_and_restart()
@@ -302,7 +314,9 @@ then
 
     yum -y update
 
-    yum install -y wget
+    yum install -y wget awscli jq
+
+    update_hostname
 
     # Install GNOME and set it as the desktop
     log "--> Install Linux GUI ..."

@@ -39,6 +39,41 @@ data "aws_ami" "ami" {
   }
 }
 
+data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
+  statement {
+    actions = [ "sts:AssumeRole" ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "centos-gfx-role" {
+  name               = "centos_gfx_role"
+  assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "centos-gfx-policy-doc" {
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_role_policy" "centos-gfx-role-policy" {
+  name = "centos_gfx_role_policy"
+  role = aws_iam_role.centos-gfx-role.id
+  policy = data.aws_iam_policy_document.centos-gfx-policy-doc.json
+}
+
+resource "aws_iam_instance_profile" "centos-gfx-instance-profile" {
+  name = "centos_gfx_instance_profile"
+  role = aws_iam_role.centos-gfx-role.name
+}
+
 resource "aws_instance" "centos-gfx" {
   count = var.instance_count
 
@@ -56,6 +91,8 @@ resource "aws_instance" "centos-gfx" {
   vpc_security_group_ids = var.security_group_ids
 
   key_name = var.admin_ssh_key_name
+
+  iam_instance_profile = aws_iam_instance_profile.centos-gfx-instance-profile.name
 
   user_data = data.template_file.startup-script.rendered
 
