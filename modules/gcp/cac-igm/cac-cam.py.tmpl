@@ -1,0 +1,97 @@
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+#!/usr/local/bin/python3
+
+import datetime
+import json
+import os
+import requests
+import sys
+
+# Declare global variables
+API_URL              = "https://cam.teradici.com/api/v1"
+CAM_CREDENTIALS_FILE = "cam-cred.json"
+
+# Set up connector name using the current time
+iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
+CONNECTOR_NAME  = 'multi_r_cac_' + iso_time
+
+
+# Use CAM service account credentials to get auth_token
+def get_auth_token(filepath):
+    with open(filepath) as cam_credentials_file:
+        cam_credentials = json.load(cam_credentials_file)
+    
+    request_body = dict(username = cam_credentials.get('username'), 
+                        password = cam_credentials.get('apiKey'), 
+                        tenantId = cam_credentials.get('tenantId'))
+
+    response = requests.post("{}/auth/signin".format(API_URL),
+        json = request_body)
+
+    if not response.status_code == 200:
+        raise Exception(response.text)
+
+    response_body = response.json()
+    auth_token    = response_body.get('data').get('token')
+
+    return auth_token
+
+
+# Use a newly created auth_token to get existing deployment
+def get_deployment_id(auth_token):
+    session = requests.Session()
+    session.headers.update({"Authorization": auth_token})
+
+    response = session.get("{}/deployments".format(API_URL))
+
+    if not response.status_code == 200:
+        raise Exception(response.text)
+
+    response_body = response.json()
+    deployment    = response_body.get('data')[0]
+    deployment_id = deployment['deploymentId']
+
+    return deployment_id
+
+
+# Use the auth_token and deployment_id to get a cac_token
+def get_cac_token(auth_token, deployment_id):
+    session = requests.Session()
+    session.headers.update({"Authorization": auth_token})
+
+    body = dict(deploymentId  = deployment_id, 
+                connectorName = CONNECTOR_NAME
+    )
+
+    response = session.post("{}/auth/tokens/connector".format(API_URL), json=body)
+
+    if not response.status_code == 200:
+        raise Exception(response.text)
+
+    response_body   = response.json()
+    connector_token = response_body.get('data').get('token')
+
+    return connector_token
+
+
+# Use helper functions to return a cac_token string using CAM credentials file
+def main():
+    auth_token         = get_auth_token(CAM_CREDENTIALS_FILE)
+    cac_deployment_id  = get_deployment_id(auth_token)
+    cac_token          = get_cac_token(auth_token, cac_deployment_id)
+
+    return cac_token
+
+
+# Entry point to this script
+if __name__ == '__main__':
+    try:
+        # Return the cac_token string as the output of this script
+        sys.stdout.write(main())
+    except:
+        # Prevent bash from interpreting any error messages
+        sys.exit(1)

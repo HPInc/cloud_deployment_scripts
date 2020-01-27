@@ -1,5 +1,5 @@
 # Commented out lines represents defaults that can be changed
-gcp_credentials_file = "/path/to/cred.json"
+gcp_credentials_file = "/path/to/gcp_cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west1"
@@ -72,7 +72,7 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # secrets. The GCP service account specified above in "gcp_service_account"
 # must be in the same project and have KMS decryptor permissions for this key.
 
-kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
+# kms_cryptokey_id   = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
 
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
@@ -88,4 +88,4 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cac_token                   = "token from Cloud Access Manager for the connector"
+cam_credentials_file        = "/path/to/cam_cred.json"
