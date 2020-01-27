@@ -15,16 +15,30 @@ locals {
   startup_script = "centos-gfx-startup.sh"
 }
 
-data "template_file" "startup-script" {
-  template = file("${path.module}/${local.startup_script}.tmpl")
+resource "aws_s3_bucket_object" "centos-gfx-startup-script" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  key     = local.startup_script
+  bucket  = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      pcoip_registration_code  = var.pcoip_registration_code,
+      domain_controller_ip     = var.domain_controller_ip,
+      domain_name              = var.domain_name,
+      service_account_username = var.service_account_username,
+      service_account_password = var.service_account_password,
+      nvidia_driver_url        = var.nvidia_driver_url,
+    }
+  )
+}
+
+data "template_file" "user-data" {
+  template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
-    pcoip_registration_code  = var.pcoip_registration_code,
-    domain_controller_ip     = var.domain_controller_ip,
-    domain_name              = var.domain_name,
-    service_account_username = var.service_account_username,
-    service_account_password = var.service_account_password,
-    nvidia_driver_url        = var.nvidia_driver_url,
+    bucket_name = var.bucket_name,
+    file_name   = local.startup_script,
   }
 }
 
@@ -51,6 +65,8 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 }
 
 resource "aws_iam_role" "centos-gfx-role" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
   name               = "centos_gfx_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
@@ -61,17 +77,27 @@ data "aws_iam_policy_document" "centos-gfx-policy-doc" {
     resources = ["*"]
     effect    = "Allow"
   }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    effect    = "Allow"
+  }
 }
 
 resource "aws_iam_role_policy" "centos-gfx-role-policy" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
   name = "centos_gfx_role_policy"
-  role = aws_iam_role.centos-gfx-role.id
+  role = aws_iam_role.centos-gfx-role[0].id
   policy = data.aws_iam_policy_document.centos-gfx-policy-doc.json
 }
 
 resource "aws_iam_instance_profile" "centos-gfx-instance-profile" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
   name = "centos_gfx_instance_profile"
-  role = aws_iam_role.centos-gfx-role.name
+  role = aws_iam_role.centos-gfx-role[0].name
 }
 
 resource "aws_instance" "centos-gfx" {
@@ -92,9 +118,9 @@ resource "aws_instance" "centos-gfx" {
 
   key_name = var.admin_ssh_key_name
 
-  iam_instance_profile = aws_iam_instance_profile.centos-gfx-instance-profile.name
+  iam_instance_profile = aws_iam_instance_profile.centos-gfx-instance-profile[0].name
 
-  user_data = data.template_file.startup-script.rendered
+  user_data = data.template_file.user-data.rendered
 
   tags = {
     Name = "${local.host_name}-${count.index}"
