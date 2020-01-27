@@ -7,6 +7,22 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
+  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+}
+
+resource "random_id" "bucket-name" {
+  byte_length = 3
+}
+
+resource "aws_s3_bucket" "scripts" {
+  bucket        = local.bucket_name
+  region        = var.aws_region
+  acl           = "private"
+  force_destroy = true
+
+  tags = {
+    Name = local.bucket_name
+  }
 }
 
 module "dc" {
@@ -151,6 +167,7 @@ module "centos-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
@@ -184,6 +201,7 @@ module "centos-std" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
