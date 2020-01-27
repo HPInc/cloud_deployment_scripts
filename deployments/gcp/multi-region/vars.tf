@@ -174,11 +174,6 @@ variable "ws_subnet_cidr" {
   default     = "10.0.2.0/24"
 }
 
-variable "cac_token" {
-  description = "Connector Token from CAM Service"
-  type        = string
-}
-
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
@@ -187,6 +182,11 @@ variable "pcoip_registration_code" {
 variable "cam_url" {
   description = "cam server url."
   default     = "https://cam.teradici.com"
+}
+
+variable "cam_credentials_file" {
+  description = "Location of CAM JSON credentials file"
+  type        = string
 }
 
 variable "enable_workstation_public_ip" {

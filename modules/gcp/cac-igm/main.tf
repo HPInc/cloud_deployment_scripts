@@ -7,8 +7,11 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script = "cac-startup.sh"
-  num_cacs = length(flatten([for i in var.instance_count_list: range(i)]))
+  startup_script       = "cac-startup.sh"
+  cam_script           = "cac-cam.py"
+  cam_credentials_file = "cam-cred.json"
+
+  num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_zone_list)
 
   disk_image_project = regex("^projects/([-\\w]+).+$", var.disk_image)[0]
@@ -35,6 +38,22 @@ data "google_compute_image" "cac-base-img" {
   name    = local.disk_image_name
 }
 
+resource "google_storage_bucket_object" "cam-credentials-file" {
+  count = local.num_cacs == 0 ? 0 : 1
+
+  bucket = var.bucket_name
+  name   = local.cam_credentials_file
+  source = var.cam_credentials_file
+}
+
+resource "google_storage_bucket_object" "cac-cam-script" {
+  count = local.num_cacs == 0 ? 0 : 1
+
+  bucket = var.bucket_name
+  name   = local.cam_script
+  source = "${path.module}/cac-cam.py"
+}
+
 resource "google_storage_bucket_object" "cac-startup-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
@@ -46,7 +65,6 @@ resource "google_storage_bucket_object" "cac-startup-script" {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
       cac_installer_url           = var.cac_installer_url,
-      cac_token                   = var.cac_token,
       pcoip_registration_code     = var.pcoip_registration_code,
 
       domain_controller_ip        = var.domain_controller_ip,
@@ -55,7 +73,10 @@ resource "google_storage_bucket_object" "cac-startup-script" {
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
 
-      bucket_name = var.bucket_name,
+      bucket_name          = var.bucket_name,
+      cam_credentials_file = local.cam_credentials_file,
+      cam_script           = local.cam_script,
+
       ssl_key     = "",
       ssl_cert    = "",
     }
