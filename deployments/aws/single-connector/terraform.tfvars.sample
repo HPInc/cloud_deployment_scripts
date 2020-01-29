@@ -11,6 +11,9 @@ domain_name = "example.com"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
+# REQUIRED: ensure the AWS account used has subscribed to the "NVIDIA Quadro
+# Virtual Workstation - WinServer 2016" image using the AWS dashboard at
+# https://aws.amazon.com/marketplace/pp/B07TV59ZQK 
 win_gfx_instance_count = 0
 # win_gfx_instance_type  = "g4dn.xlarge"
 # win_gfx_disk_size_gb   = 50
@@ -23,12 +26,18 @@ win_std_instance_count = 0
 # win_std_ami_owner      = "amazon"
 # win_std_ami_name       = "Windows_Server-2016-English-Full-Base-2019.11.13"
 
+# REQUIRED: ensure the AWS account used has subscribed to the "CentOS 7 (x86_64)
+# - with Updates HVM" image using the AWS dashboard at
+# https://aws.amazon.com/marketplace/pp/B00O7WM7QW
 centos_gfx_instance_count = 0
 # centos_gfx_instance_type  = "g4dn.xlarge"
 # centos_gfx_disk_size_gb   = 50
 # centos_gfx_ami_owner      = "aws-marketplace"
 # centos_gfx_ami_name       = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
 
+# REQUIRED: ensure the AWS account used has subscribed to the "CentOS 7 (x86_64)
+# - with Updates HVM" image using the AWS dashboard at
+# https://aws.amazon.com/marketplace/pp/B00O7WM7QW
 centos_std_instance_count = 0
 # centos_std_instance_type  = "t2.xlarge"
 # centos_std_disk_size_gb   = 50
