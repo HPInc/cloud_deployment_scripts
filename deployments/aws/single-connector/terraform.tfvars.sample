@@ -4,6 +4,10 @@ aws_credentials_file = "/path/to/aws_key"
 
 # prefix = "myprefix"
 
+# By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
+# Define allowed_cidr to open the VPC firewall to additional CIDR blocks.
+# allowed_cidr_blks = ["a.b.c.d/32", "e.f.g.0/24"]
+
 domain_name = "example.com"
 
 # Optional: additional AD users to create

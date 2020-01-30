@@ -20,6 +20,11 @@ variable "prefix" {
   default     = ""
 }
 
+variable "allowed_cidr_blks" {
+  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these CIDR blocks. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+  default     = []
+}
+
 variable "vpc_name" {
   description = "Name of VPC to create"
   default     = "vpc-cas"
