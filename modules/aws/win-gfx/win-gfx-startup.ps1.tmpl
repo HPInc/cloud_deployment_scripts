@@ -13,6 +13,26 @@ $DATA.Add("service_account_password", "${service_account_password}")
 
 $global:restart = $false
 
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
+
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
+
+    if ($?) { return $rc }
+
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
+    }
+
+    Write-Information "Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
+}
+
 function PCoIP-Agent-is-Installed {
     Get-Service "PCoIPAgent"
     return $?
@@ -31,11 +51,20 @@ function PCoIP-Agent-Install {
     if ("${pcoip_agent_filename}") {
         $agent_filename = "${pcoip_agent_filename}"
     } else {
-        $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-graphics-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+        $agent_latest = "${pcoip_agent_location}latest-graphics-agent.json"
+        $wc = New-Object System.Net.WebClient
+
+        "Checking for the latest PCoIP Agent version from $agent_latest..."
+        $string = Retry -Action {$wc.DownloadString($agent_latest)}
+
+        $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
     }
     $pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
     $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
-    (New-Object System.Net.WebClient).DownloadFile($pcoipAgentInstallerUrl, $destFile)
+    $wc = New-Object System.Net.WebClient
+
+    "Downloading PCoIP Agent from $pcoipAgentInstallerUrl..."
+    Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
     "Teradici PCoIP Agent downloaded: $agent_filename"
 
     "Installing agent..."
