@@ -1,4 +1,8 @@
 # Commented out lines represents defaults that can be changed
+
+# Path to an AWS Crentials File. Please see
+# https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
+# for details on file format.
 aws_credentials_file = "/path/to/aws_key"
 # aws_region = "us-west-1"
 

@@ -13,15 +13,20 @@
 Although it is possible to create deployments in existing and currently in-use accounts, it is recommended to create them in new accounts to reduce chances of name collisions and interfering with operations of existing resources.
 
 With a new AWS account:
-- from the AWS console, create a new IAM user with programmatic access and apply the __AdministratorAccess__ policy either by adding the user to a group with such permission, or by attaching the policy to the user directly. Download the CSV file which contains the user name, Access key ID, and Secret access key. These credentials are needed by the Terraform scripts to create the initial deployment.
+- from the AWS console, create a new IAM user with programmatic access and apply the __AdministratorAccess__ policy either by adding the user to a group with such permission, or by attaching the policy to the user directly. Copy the Access key ID and Secret access key into an AWS Credential File as shown below. These credentials are needed by the Terraform scripts to create the initial deployment. Please see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html for more details on AWS Credential Files.
+```
+[default]
+aws_access_key_id = <your_id>
+aws_secret_access_key = <your_key>
+```
 - in the AWS marketplace portal, visit the Product Overview pages of AMI images that will be used by Terraform scripts. Click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. The required subscriptions depend on which workstation is to be deployed:
     - Windows Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TV59ZQK
     - CentOS Standard or Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TV59ZQK
 
 ### Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
-- create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
-- create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
+1. create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
+1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
@@ -30,12 +35,16 @@ Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directo
 
 ### Creating the deployment
 With the terraform.tfvars file customized
-- run ```terraform init``` to initialize the deployment
-- run ```terraform apply``` to display the resources that will be created by Terraform
-- answer ```yes``` to start creating the deployment
-A typical deployment should take 15 to 30 minutes. When finished, the scripts will display a number of values of interest, such as the load balancer IP address.
+1. run ```terraform init``` to initialize the deployment
+1. run ```terraform apply``` to display the resources that will be created by Terraform
+1. answer ```yes``` to start creating the deployment
+A typical deployment should take 15 to 30 minutes. When finished, the scripts will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Connectors should register themselves with the CAM service and show up in the CAM Admin Console.
 
-At the end of the deployment, the resources may still take a few minutes to start up completely. Connectors should register themselves with the CAM service and show up in the CAM Admin Console. At that point, a user may go to the CAM Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
+### Add Workstations in Cloud Access Manager
+Go to the CAM Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
+
+### Start PCoIP Session
+Once the workstations have been added to be managed by CAM and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the Cloud Access Connector or Load Balancer, if one is configured, to start a PCoIP session.
 
 ### Changing the deployment
 Terraform is a declarative language to describe the desired state of resources. A user can modify terraform.tfvars and run ```terraform apply``` again. Terraform will try to only apply the changes needed to acheive the new state.

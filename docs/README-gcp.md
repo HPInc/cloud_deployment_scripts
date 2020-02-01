@@ -21,7 +21,7 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 Although it is possible to create deployments in existing and currently in-use projects, it is recommended to create them in new projects to reduce chances of name collisions and interfering with operations of existing resources.
 
 With a new GCP project:
-- create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAM to manage the deployment, such as creating workstations, mointoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform scripts to create the initial deployment.
+- create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAM to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform scripts to create the initial deployment.
 - enable the following APIs in the GCP console or via the command ```gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com```:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
@@ -32,8 +32,8 @@ With a new GCP project:
 
 ### Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
-- create a new deployment and submit the credentials for the GCP service account created above.
-- create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
+1. create a new deployment and submit the credentials for the GCP service account created above.
+1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
 ### (Optional) Encrypting Secrets
 Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
@@ -62,12 +62,16 @@ If secrets are in plaintext, make sure ```kms_cryptokey_id``` is commented out, 
 
 ### Creating the deployment
 With the terraform.tfvars file customized
-- run ```terraform init``` to initialize the deployment
-- run ```terraform apply``` to display the resources that will be created by Terraform
-- answer ```yes``` to start creating the deployment
-A typical deployment should take 15 to 30 minutes. When finished, the scripts will display a number of values of interest, such as the load balancer IP address.
+1. run ```terraform init``` to initialize the deployment
+1. run ```terraform apply``` to display the resources that will be created by Terraform
+1. answer ```yes``` to start creating the deployment
+A typical deployment should take 15 to 30 minutes. When finished, the scripts will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Connectors should register themselves with the CAM service and show up in the CAM Admin Console.
 
-At the end of the deployment, the resources may still take a few minutes to start up completely. Connectors should register themselves with the CAM service and show up in the CAM Admin Console. At that point, a user may go to the CAM Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
+### Add Workstations in Cloud Access Manager
+Go to the CAM Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
+
+### Start PCoIP Session
+Once the workstations have been added to be managed by CAM and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the Cloud Access Connector or Load Balancer, if one is configured, to start a PCoIP session.
 
 ### Changing the deployment
 Terraform is a declarative language to describe the desired state of resources. A user can modify terraform.tfvars and run ```terraform apply``` again. Terraform will try to only apply the changes needed to acheive the new state.
