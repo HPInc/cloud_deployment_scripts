@@ -6,10 +6,37 @@
  */
 
 locals {
-  prefix            = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script    = "cac-startup.sh"
+  prefix               = var.prefix != "" ? "${var.prefix}-" : ""
+  startup_script       = "cac-startup.sh"
+  cam_script_name      = "cac-cam.py"
+  cam_credentials_name = "cam-cred.json"
   ssl_key_filename  = var.ssl_key == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+}
+
+resource "google_storage_bucket_object" "cam-cred" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  bucket  = var.bucket_name
+  name    = local.cam_credentials_name
+  source  = var.cam_credentials_file
+}
+
+resource "google_storage_bucket_object" "cac-cam-script" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  bucket  = var.bucket_name
+  name    = local.cam_script_name
+  content = templatefile(
+    "${path.module}/${local.cam_script_name}.tmpl",
+    {
+      kms_cryptokey_id     = var.kms_cryptokey_id,
+      cam_credentials_name = local.cam_credentials_name,
+
+      ssl_key     = "",
+      ssl_cert    = "",
+    }
+  )
 }
 
 resource "google_storage_bucket_object" "ssl-key" {
@@ -44,7 +71,6 @@ resource "google_storage_bucket_object" "startup-script" {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
       cac_installer_url           = var.cac_installer_url,
-      cac_token                   = var.cac_token,
       pcoip_registration_code     = var.pcoip_registration_code,
 
       domain_controller_ip        = var.domain_controller_ip,
@@ -53,7 +79,10 @@ resource "google_storage_bucket_object" "startup-script" {
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
 
-      bucket_name = var.bucket_name,
+      bucket_name          = var.bucket_name,
+      cam_credentials_name = local.cam_credentials_name,
+      cam_script_name      = local.cam_script_name,
+      
       ssl_key     = local.ssl_key_filename,
       ssl_cert    = local.ssl_cert_filename,
     }

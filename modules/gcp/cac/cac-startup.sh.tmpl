@@ -18,13 +18,32 @@ log() {
     echo "[$(date)] $${message}" | tee -a "$INSTALL_LOG"
 }
 
+get_cac_token() {
+    echo '### Retrieve connector token before CAC install ###'
+    log "Retrieving connector token..."
+
+    # Download and install python3
+    apt-get -qq update
+    apt install -y python3
+
+    # Download the CAM python script from the bucket and run it to create a cac token
+    gsutil cp gs://${bucket_name}/${cam_script_name} $INSTALL_DIR
+
+    # Set CAC_TOKEN variable using the script's output
+    CAC_TOKEN=`python3 ${cam_script_name}`
+}
+
 get_credentials() {
+    # Download the CAM credentials JSON file from the bucket
+    gsutil cp gs://${bucket_name}/${cam_credentials_name} $INSTALL_DIR
+
     if [[ -z "${kms_cryptokey_id}" ]]; then
         log "Not using encryption"
 
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
         AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
-        CAC_TOKEN=${cac_token}
+        
+        get_cac_token
 
     else
         log "Using encryption key ${kms_cryptokey_id}"
@@ -44,13 +63,19 @@ get_credentials() {
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
         AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
 
-        data=$(echo "{ \"ciphertext\": \"${cac_token}\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
-        CAC_TOKEN=$(echo "$b64_data" | base64 --decode)
+        # Gets decrypted CAM service account credentials and outputs to plaintext json file
+        cam_cred_encrypted=$(cat ${cam_credentials_name})
+        data=$(echo "{ \"ciphertext\": \"$cam_cred_encrypted\" }")     
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")   
+        CAM_CREDENTIALS=$(echo "$b64_data" | base64 --decode)
+        echo $CAM_CREDENTIALS | tee ${cam_credentials_name}
+
+        get_cac_token    
     fi
 
     # Exit if any of the required variables are missing
     if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$AD_SERVICE_ACCOUNT_PASSWORD" || -z "$CAC_TOKEN" ]]; then
+        log "One of the following required variables is missing: PCOIP_REGISTRATION_CODE, AD_SERVICE_ACCOUNT_PASSWORD, CAC_TOKEN"
         exit 1
     fi
 }
@@ -81,7 +106,7 @@ if [ ! -f $PCOIP_NETWORK_CONF_FILE ]; then
 fi
 
 
-# download CAC installer
+# Download CAC installer
 curl -L ${cac_installer_url} -o $INSTALL_DIR/cloud-access-connector.tar.gz
 tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz
 
