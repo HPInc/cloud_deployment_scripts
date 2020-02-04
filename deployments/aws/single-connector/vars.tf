@@ -6,7 +6,7 @@
  */
 
 variable "aws_credentials_file" {
-    description = "Location of AWS credentails file"
+    description = "Location of AWS credentials file"
     type        = string
 }
 
