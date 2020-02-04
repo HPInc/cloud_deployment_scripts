@@ -161,8 +161,21 @@ function Join-Domain {
         # - when password is incorrect (retry because user might not be added yet)
         # - when computer is already in domain
         Catch [System.InvalidOperationException] {
-            $_.Exception.Message
-            if (($Elapsed -ge $Timeout) -or ($_.Exception.GetType().FullName -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand")) {
+            $PSItem
+
+            # Sometimes domain join is successful but renaming the computer fails
+            if ($PSItem.FullyQualifiedErrorId -match "FailToRenameAfterJoinDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
+                Retry -Action {Rename-Computer -NewName "$host_name" -DomainCredential $cred}
+                break
+            }
+
+            if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
+                "WARNING: Computer already joined to domain."
+                break
+            }
+
+            if ($Elapsed -ge $Timeout) {
+                "Timeout reached, exiting ..."
                 exit 1
             }
 
@@ -172,7 +185,7 @@ function Join-Domain {
             $Elapsed += $Interval
         }
         Catch {
-            $_.Exception.Message
+            $PSItem
             exit 1
         }
     } while ($Retry)
