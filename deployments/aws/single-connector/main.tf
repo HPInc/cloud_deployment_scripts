@@ -61,7 +61,7 @@ module "cac" {
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
-    aws_security_group.allow-http.id,
+    aws_security_group.allow-https.id,
     aws_security_group.allow-pcoip.id,
   ]
 
