@@ -60,8 +60,8 @@ module "cac" {
   gcp_service_account     = var.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
+  cam_credentials_file    = var.cam_credentials_file
   pcoip_registration_code = var.pcoip_registration_code
-  cac_token               = var.cac_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip

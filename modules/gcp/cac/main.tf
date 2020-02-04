@@ -6,10 +6,28 @@
  */
 
 locals {
-  prefix            = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script    = "cac-startup.sh"
+  prefix               = var.prefix != "" ? "${var.prefix}-" : ""
+  startup_script       = "cac-startup.sh"
+  cam_script           = "cac-cam.py"
+  cam_credentials_file = "cam-cred.json"
   ssl_key_filename  = var.ssl_key == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+}
+
+resource "google_storage_bucket_object" "cam-credentials-file" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  bucket  = var.bucket_name
+  name    = local.cam_credentials_file
+  source  = var.cam_credentials_file
+}
+
+resource "google_storage_bucket_object" "cac-cam-script" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  bucket  = var.bucket_name
+  name   = local.cam_script
+  source = "${path.module}/cac-cam.py"
 }
 
 resource "google_storage_bucket_object" "ssl-key" {
@@ -28,7 +46,7 @@ resource "google_storage_bucket_object" "ssl-cert" {
   source = var.ssl_cert
 }
 
-resource "google_storage_bucket_object" "startup-script" {
+resource "google_storage_bucket_object" "cac-startup-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   depends_on = [
@@ -44,7 +62,6 @@ resource "google_storage_bucket_object" "startup-script" {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
       cac_installer_url           = var.cac_installer_url,
-      cac_token                   = var.cac_token,
       pcoip_registration_code     = var.pcoip_registration_code,
 
       domain_controller_ip        = var.domain_controller_ip,
@@ -53,7 +70,10 @@ resource "google_storage_bucket_object" "startup-script" {
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
 
-      bucket_name = var.bucket_name,
+      bucket_name          = var.bucket_name,
+      cam_credentials_file = local.cam_credentials_file,
+      cam_script           = local.cam_script,
+      
       ssl_key     = local.ssl_key_filename,
       ssl_cert    = local.ssl_cert_filename,
     }
@@ -88,7 +108,7 @@ resource "google_compute_instance" "cac" {
 
   metadata = {
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
-    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.startup-script[0].output_name}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.cac-startup-script[0].output_name}"
   }
 
   service_account {
