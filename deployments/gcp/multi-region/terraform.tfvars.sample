@@ -1,4 +1,8 @@
 # Commented out lines represents defaults that can be changed
+####################
+#     General      #
+####################
+
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
@@ -17,6 +21,11 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
+
+####################
+#        CAC       #
+####################
+
 # Specify the regions, zones and number of connectors to create per region.
 # For example:
 #   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
@@ -34,6 +43,11 @@ cac_instance_count_list = []
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 ssl_key  = "/path/to/privkey.pem"
 ssl_cert = "/path/to/fullchain.pem"
+
+
+####################
+#   Workstations   #
+####################
 
 win_gfx_instance_count = 0
 # win_gfx_machine_type = "n1-standard-4"
@@ -61,19 +75,29 @@ centos_std_instance_count = 0
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
-###############
-#   Secrets   #
-###############
+
+####################
+#      GCP KMS     #
+####################
 # The secrets below may be supplied in 2 formats:
 #   1. plain text
 #   2. KMS encrypted, base64 encoded
-# For option 1, leave "kms_cryptokey_id" commented out.
-# For option 2, set "kms_cryptokey_id" to the KMS key used to encrypt the
-# secrets. The GCP service account specified above in "gcp_service_account"
-# must be in the same project and have KMS decryptor permissions for this key.
+# For option 1, comment out keyring name and cryptokey name
+# For option 2, set a name for for the keyring name and cryptokey name
+# An existing keyring and crypto key can also be used to encrypt secrets. 
+# The GCP service account specified above in "gcp_service_account" must be 
+# in the same project and have KMS decryptor permissions for this key. Run 
+# the script located under tools using command "python3 gcp_kms_encrypto_secrets" 
+# which will overwrite this tfvars file with your encrypted secrets and 
+# create an encrypted JSON for your CAM credentials file.
 
-kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
+kms_keyring_name   = "keyring-name"
+kms_cryptokey_name = "cryptokey-name"
 
+
+####################
+#      Secrets     #
+####################
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
 # 2. Must have 3 of the following categories:
@@ -88,4 +112,4 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cac_token                   = "token from Cloud Access Manager for the connector"
+cam_credentials_file        = "/path/to/cred.json"
