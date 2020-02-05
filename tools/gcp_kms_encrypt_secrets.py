@@ -5,6 +5,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import base64
 import json
 import os
@@ -300,7 +301,25 @@ def write_new_tfvars(tfvars_file, secrets, kms_cryptokey_id):
 
 
 def main():
-    encrypt_tfvars_secrets()
+    parser = argparse.ArgumentParser(description="This script encrypts or decrypts the secrets  \
+                                    inside the user-specified terraform.tfstate file by         \
+                                    prompting the user for one of the three deployment types    \
+                                    (single, multi-region, dc-only). Select the mode by setting \
+                                    a flag: -e for encryption or -d for decryption")
+
+    parser.add_argument("-e", help="run this script in encryption mode", action='store_true')
+    parser.add_argument("-d", help="run this script in decryption mode", action='store_true')
+
+    args = parser.parse_args()
+    
+    if args.e:
+        print("Encrypting tfvars secrets...")
+        encrypt_tfvars_secrets()
+    elif args.d:
+        print("Decrypting tfvars secrets...")
+        #decrypt_tfvars_secrets()
+    else:
+        print("[gcp_kms_encrypt_secrets.py] No mode selected, please set a flag. -e for encryption or -d for decryption")
 
 
 # Entry point to this script
