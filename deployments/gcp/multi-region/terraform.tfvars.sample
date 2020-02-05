@@ -25,13 +25,13 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 ####################
 #        CAC       #
 ####################
-
 # Specify the regions, zones and number of connectors to create per region.
 # For example:
 #   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
 #   cac_zone_list           = ["us-west2-b",  "europe-west4-b", "asia-southeast1-b"]
 #   cac_subnet_cidr_list    = ["10.0.1.0/24", "10.1.1.0/24",    "10.2.1.0/24"]
 #   cac_instance_count_list = [2,             3,                4]
+
 cac_region_list         = []
 cac_zone_list           = []
 cac_subnet_cidr_list    = []
@@ -48,6 +48,7 @@ ssl_cert = "/path/to/fullchain.pem"
 ####################
 #   Workstations   #
 ####################
+# Specify the number of workstations created for each type.
 
 win_gfx_instance_count = 0
 # win_gfx_machine_type = "n1-standard-4"
@@ -82,17 +83,18 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # The secrets below may be supplied in 2 formats:
 #   1. plain text
 #   2. KMS encrypted, base64 encoded
-# For option 1, comment out keyring name and cryptokey name
-# For option 2, set a name for for the keyring name and cryptokey name
-# An existing keyring and crypto key can also be used to encrypt secrets. 
-# The GCP service account specified above in "gcp_service_account" must be 
-# in the same project and have KMS decryptor permissions for this key. Run 
-# the script located under tools using command "python3 gcp_kms_encrypto_secrets" 
-# which will overwrite this tfvars file with your encrypted secrets and 
-# create an encrypted JSON for your CAM credentials file.
+# For option 1, leave both keyring name and cryptokey name commented out.
+# For option 2, run the script located under tools using command "python3
+# gcp_kms_encrypto_secrets" which will overwrite this tfvars file with
+# your encrypted secrets and create an encrypted JSON for your CAM
+# credentials file. To set a custom keyring name and cryptokey name,
+# uncomment the two variables below and enter the new names, otherwise
+# a default name will be used by the script. The GCP service account 
+# specified above in "gcp_service_account" must be in the same project 
+# and have KMS decryptor permissions for this key.
 
-kms_keyring_name   = "keyring-name"
-kms_cryptokey_name = "cryptokey-name"
+# kms_keyring_name   = "terraform-keyring"
+# kms_cryptokey_name = "terraform-cryptokey"
 
 
 ####################
