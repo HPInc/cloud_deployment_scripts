@@ -36,13 +36,24 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
 ### (Optional) Encrypting Secrets
-Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
+Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and Cloud Access Manager service account credentials. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
-The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
+The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under tools.
 
+#### Manual Encryption
 To encrypt secrets using the KMS crypto key created above, follow the instructions here: https://cloud.google.com/kms/docs/encrypt-decrypt. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in GCP Cloud Shell:
 
 ```echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64```
+
+#### Encryption Using Python Script
+Alternatively, run the kms_secrets_encryption.py Python 3 script under the tools directory to automate the KMS encryption process. 
+
+Execute the following command inside the tools directory:
+```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
+
+The script rewrites your existing terraform.tfvars secrets using ciphertext so that it is ready to be used for your Terraform deployment. In addition, any text files specified under the secrets as a path will also be encrypted so that it is ready to be used by Terraform. The script will also update the path to the encrypted text file inside of the new terraform.tfvars.
+
+The default mode is encryption; to decrypt the secrets back to plaintext, use the ```-d``` flag when executing the script. Decryption mode decrypts the ciphertext in the terraform.tfvars file back to the original plaintext. The script rewrites the ciphertext version of terraform.tfvars file with the plaintext secrets again. 
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
