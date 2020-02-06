@@ -82,7 +82,7 @@ variable "disk_size_gb" {
 
 variable "disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/family/windows-2016"
+  default     = "projects/windows-cloud/global/images/family/windows-2019"
 }
 
 variable "kms_cryptokey_id" {
