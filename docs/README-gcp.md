@@ -36,13 +36,21 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
 ### (Optional) Encrypting Secrets
-Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
+Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and Cloud Access Manager service account credentials. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
 The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
 
 To encrypt secrets using the KMS crypto key created above, follow the instructions here: https://cloud.google.com/kms/docs/encrypt-decrypt. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in GCP Cloud Shell:
 
 ```echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64```
+
+Alternatively for your convenience, run the ```gcp_kms_encrypt_secrets``` python3 script located under the tools directory to automate the encryption process. This script creates a key ring and crypto key on GCP KMS, then encrypts your secrets using this key. If no key ring name or crypto key name is specified inside terraform.tfvars, the script will use default names for both the key ring and crypto key. 
+
+The script rewrites your existing terraform.tfvars secrets using ciphertext so that it is ready to be used for Terraform deployment. In addition, the CAM credentials JSON file will also be replaced with an encrypted file ready to be used by Terraform. The path to the encrypted CAM credentials file will be updated inside of terraform.tfvars.
+
+There are two modes for the script, use the ```-e``` flag for encryption of secrets or ```-d``` flag for decryption of secrets. Decryption mode allows the script to take your terraform.tfvars file containing encrypted secrets and decrypts them back to the original plaintext. The script rewrites the ciphertext version of terraform.tfvars file with the plaintext secrets again.
+
+The script also prompts the user for a deployment type, since there are three different deployment types. Enter ```0``` for single-connector, ```1``` for multi-region or ```1``` for dc-only terraform.tfvars.
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
