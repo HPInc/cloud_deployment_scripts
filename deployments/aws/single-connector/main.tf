@@ -72,7 +72,8 @@ module "cac" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  subnet = aws_subnet.cac-subnet.id
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.cac-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
