@@ -35,6 +35,11 @@ variable "service_account_password" {
   type        = string
 }
 
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
+  type        = string
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Workstation"
   type        = string
