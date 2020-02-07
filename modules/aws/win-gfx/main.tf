@@ -16,10 +16,14 @@ locals {
   startup_script = "win-gfx-startup.ps1"
 }
 
-data "template_file" "startup-script" {
-  template = file("${path.module}/${local.startup_script}.tmpl")
+resource "aws_s3_bucket_object" "win-gfx-startup-script" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  vars = {
+  key     = local.startup_script
+  bucket  = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
       pcoip_agent_location     = var.pcoip_agent_location,
       pcoip_agent_filename     = var.pcoip_agent_filename,
       pcoip_registration_code  = var.pcoip_registration_code,
@@ -28,6 +32,16 @@ data "template_file" "startup-script" {
       admin_password           = var.admin_password,
       service_account_username = var.service_account_username,
       service_account_password = var.service_account_password,
+    }
+  )
+}
+
+data "template_file" "user-data" {
+  template = file("${path.module}/user-data.ps1.tmpl")
+
+  vars = {
+    bucket_name = var.bucket_name,
+    file_name   = local.startup_script,
   }
 }
 
@@ -54,6 +68,8 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 }
 
 resource "aws_iam_role" "win-gfx-role" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
   name               = "win_gfx_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
@@ -64,17 +80,27 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
     resources = ["*"]
     effect    = "Allow"
   }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    effect    = "Allow"
+  }
 }
 
 resource "aws_iam_role_policy" "win-gfx-role-policy" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
   name = "win_gfx_role_policy"
-  role = aws_iam_role.win-gfx-role.id
+  role = aws_iam_role.win-gfx-role[0].id
   policy = data.aws_iam_policy_document.win-gfx-policy-doc.json
 }
 
 resource "aws_iam_instance_profile" "win-gfx-instance-profile" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
   name = "win_gfx_instance_profile"
-  role = aws_iam_role.win-gfx-role.name
+  role = aws_iam_role.win-gfx-role[0].name
 }
 
 resource "aws_instance" "win-gfx" {
@@ -93,9 +119,9 @@ resource "aws_instance" "win-gfx" {
 
   vpc_security_group_ids = var.security_group_ids
 
-  iam_instance_profile = aws_iam_instance_profile.win-gfx-instance-profile.name
+  iam_instance_profile = aws_iam_instance_profile.win-gfx-instance-profile[0].name
 
-  user_data = data.template_file.startup-script.rendered
+  user_data = data.template_file.user-data.rendered
 
   tags = {
     Name = "${local.host_name}-${count.index}"

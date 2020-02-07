@@ -105,6 +105,7 @@ module "win-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
@@ -136,6 +137,7 @@ module "win-std" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
