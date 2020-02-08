@@ -15,14 +15,27 @@ locals {
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
+  startup_script             = "dc-startup.ps1"
 }
 
-data "template_file" "sysprep-script" {
-  template = file("${path.module}/sysprep.ps1.tmpl")
+resource "aws_s3_bucket_object" "dc-startup-script" {
+  key     = local.startup_script
+  bucket  = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      admin_password = var.admin_password,
+      hostname       = local.host_name,
+    }
+  )
+}
+
+data "template_file" "user-data" {
+  template = file("${path.module}/user-data.ps1.tmpl")
 
   vars = {
-    admin_password = var.admin_password,
-    hostname       = local.host_name,
+    bucket_name = var.bucket_name,
+    file_name   = local.startup_script,
   }
 }
 
@@ -66,6 +79,41 @@ data "aws_ami" "ami" {
   }
 }
 
+data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
+  statement {
+    actions = [ "sts:AssumeRole" ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "dc-role" {
+  name               = "dc_role"
+  assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "dc-policy-doc" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_role_policy" "dc-role-policy" {
+  name = "dc_role_policy"
+  role = aws_iam_role.dc-role.id
+  policy = data.aws_iam_policy_document.dc-policy-doc.json
+}
+
+resource "aws_iam_instance_profile" "dc-instance-profile" {
+  name = "dc_instance_profile"
+  role = aws_iam_role.dc-role.name
+}
+
 resource "aws_instance" "dc" {
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
@@ -81,7 +129,9 @@ resource "aws_instance" "dc" {
 
   vpc_security_group_ids = var.security_group_ids
 
-  user_data = data.template_file.sysprep-script.rendered
+  iam_instance_profile = aws_iam_instance_profile.dc-instance-profile.name
+
+  user_data = data.template_file.user-data.rendered
 
   tags = {
     Name = local.host_name
