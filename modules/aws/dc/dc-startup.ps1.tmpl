@@ -1,4 +1,3 @@
-<powershell>
 # Copyright (c) 2020 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
@@ -31,5 +30,3 @@ winrm create winrm/config/Listener?Address=*+Transport=HTTPS "@{CertificateThumb
 # Open Firewall
 "Adding firewall rule for TCP/5986 for WinRM over HTTPS ..."
 New-NetFirewallRule -DisplayName "WinRM HTTPS Created by Teradici Terraform" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow
-
-</powershell>
