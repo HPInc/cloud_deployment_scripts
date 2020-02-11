@@ -35,9 +35,10 @@ fi
 if [[ ! -f "$INST_LOG_FILE" ]]
 then
     yum -y update
-    yum -y install awscli
+    yum -y install awscli dos2unix
     aws s3 cp s3://${bucket_name}/${file_name} .
     chmod +x ${file_name}
+    dos2unix ${file_name}
 fi
 
 # run script during 1st and 2nd reboot
