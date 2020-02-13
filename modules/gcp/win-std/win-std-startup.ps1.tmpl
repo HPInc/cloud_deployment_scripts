@@ -20,6 +20,26 @@ $DATA.Add("ad_service_account_password", "${ad_service_account_password}")
 
 $global:restart = $false
 
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
+
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
+
+    if ($?) { return $rc }
+
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
+    }
+
+    Write-Information "Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
+}
+
 function Get-AuthToken {
     try {
         $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
@@ -84,11 +104,20 @@ function PCoIP-Agent-Install {
     if ("${pcoip_agent_filename}") {
         $agent_filename = "${pcoip_agent_filename}"
     } else {
-        $agent_filename = (New-Object System.Net.WebClient).DownloadString("${pcoip_agent_location}latest-standard-agent.json") | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+        $agent_latest = "${pcoip_agent_location}latest-standard-agent.json"
+        $wc = New-Object System.Net.WebClient
+
+        "Checking for the latest PCoIP Agent version from $agent_latest..."
+        $string = Retry -Action {$wc.DownloadString($agent_latest)}
+
+        $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
     }
     $pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
     $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
-    (New-Object System.Net.WebClient).DownloadFile($pcoipAgentInstallerUrl, $destFile)
+    $wc = New-Object System.Net.WebClient
+
+    "Downloading PCoIP Agent from $pcoipAgentInstallerUrl..."
+    Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
     "Teradici PCoIP Agent downloaded: $agent_filename"
 
     "Installing agent..."
@@ -181,8 +210,21 @@ function Join-Domain {
         # - when password is incorrect (retry because user might not be added yet)
         # - when computer is already in domain
         Catch [System.InvalidOperationException] {
-            $_.Exception.Message
-            if (($Elapsed -ge $Timeout) -or ($_.Exception.GetType().FullName -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand")) {
+            $PSItem
+
+            # Sometimes domain join is successful but renaming the computer fails
+            if ($PSItem.FullyQualifiedErrorId -match "FailToRenameAfterJoinDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
+                Retry -Action {Rename-Computer -NewName "$host_name" -DomainCredential $cred}
+                break
+            }
+
+            if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
+                "WARNING: Computer already joined to domain."
+                break
+            }
+
+            if ($Elapsed -ge $Timeout) {
+                "Timeout reached, exiting ..."
                 exit 1
             }
 
@@ -192,7 +234,7 @@ function Join-Domain {
             $Elapsed += $Interval
         }
         Catch {
-            $_.Exception.Message
+            $PSItem
             exit 1
         }
     } while ($Retry)
