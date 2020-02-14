@@ -18,6 +18,8 @@ resource "aws_s3_bucket_object" "cac-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      aws_region               = var.aws_region, 
+      customer_master_key_id   = var.customer_master_key_id,
       cam_url                  = var.cam_url,
       cac_installer_url        = var.cac_installer_url,
       cac_token                = var.cac_token,
@@ -70,11 +72,27 @@ resource "aws_iam_role" "cac-role" {
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
+data "aws_kms_key" "encryption-key" {
+  count = var.customer_master_key_id == "" ? 0 : 1
+
+  key_id = var.customer_master_key_id
+}
+
 data "aws_iam_policy_document" "cac-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
     effect    = "Allow"
+  }
+
+  dynamic statement {
+    for_each = data.aws_kms_key.encryption-key
+    iterator = i
+    content {
+      actions   = ["kms:Decrypt"]
+      resources = [i.value.arn]
+      effect    = "Allow"
+    }
   }
 }
 

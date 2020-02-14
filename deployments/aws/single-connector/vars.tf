@@ -264,3 +264,8 @@ variable "centos_std_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
   default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
 }
+
+variable "customer_master_key_id" {
+  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
+  default     = ""
+}

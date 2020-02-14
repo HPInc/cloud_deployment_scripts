@@ -16,10 +16,18 @@ log() {
 }
 
 get_credentials() {
-    log "Not using encryption"
+    if [[ -z "${customer_master_key_id}" ]]; then
+        log "Not using encryption"
 
-    PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-    SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+
+    else
+        log "Using encryption key ${customer_master_key_id}"
+
+        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+        SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+    fi
 
     # Exit if any of the required variables are missing
     if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" ]]; then
@@ -188,14 +196,12 @@ fi
 
 log "$(date)"
 
-get_credentials
-
 # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
 yum -y install epel-release
-
 yum -y update
-
 yum install -y wget awscli jq
+
+get_credentials
 
 update_hostname
 

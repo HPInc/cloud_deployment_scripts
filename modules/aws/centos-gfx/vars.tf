@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "aws_region" {
+  description = "AWS region"
+  default     = "us-west-1"
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources"
   default     = ""
@@ -99,4 +104,9 @@ variable "nvidia_driver_url" {
 variable "depends_on_hack" {
   description = "Workaround for Terraform Modules not supporting depends_on"
   default     = []
+}
+
+variable "customer_master_key_id" {
+  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
+  default     = ""
 }

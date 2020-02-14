@@ -13,9 +13,28 @@ $LOG_FILE = "C:\Teradici\provisioning.log"
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("account_password", "${account_password}")
 
+function Decrypt-Credentials {
+    try {
+        $ByteAry = [System.Convert]::FromBase64String("${account_password}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream 
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."account_password" = $StreamRead.ReadToEnd()
+    }
+    catch {
+        "Error decrypting credentials: $_"
+        return $false
+    }
+}
+
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-"Not using encryption"
+if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
+    "Not using encryption"
+} else {
+    "Using encryption key ${customer_master_key_id}"
+    Decrypt-Credentials
+}
 
 Write-Output "================================================================"
 Write-Output "Creating new AD Domain Admin account ${account_name}..."

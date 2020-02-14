@@ -23,6 +23,8 @@ resource "aws_s3_bucket_object" "centos-std-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      aws_region               = var.aws_region, 
+      customer_master_key_id   = var.customer_master_key_id,
       pcoip_registration_code  = var.pcoip_registration_code,
       domain_controller_ip     = var.domain_controller_ip,
       domain_name              = var.domain_name,
@@ -63,6 +65,12 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   }
 }
 
+data "aws_kms_key" "encryption-key" {
+  count = var.customer_master_key_id == "" ? 0 : 1
+
+  key_id = var.customer_master_key_id
+}
+
 resource "aws_iam_role" "centos-std-role" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
@@ -81,6 +89,16 @@ data "aws_iam_policy_document" "centos-std-policy-doc" {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
     effect    = "Allow"
+  }
+
+  dynamic statement {
+    for_each = data.aws_kms_key.encryption-key
+    iterator = i
+    content {
+      actions   = ["kms:Decrypt"]
+      resources = [i.value.arn]
+      effect    = "Allow"
+    }
   }
 }
 
