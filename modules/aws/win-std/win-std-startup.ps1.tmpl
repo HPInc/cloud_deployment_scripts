@@ -12,6 +12,32 @@ $DATA.Add("service_account_password", "${service_account_password}")
 
 $global:restart = $false
 
+function Decrypt-Credentials {
+    try {
+        $ByteAry = [System.Convert]::FromBase64String("${pcoip_registration_code}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
+    
+        $ByteAry = [System.Convert]::FromBase64String("${admin_password}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."admin_password" = $StreamRead.ReadToEnd()
+    
+        $ByteAry = [System.Convert]::FromBase64String("${service_account_password}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."service_account_password" = $StreamRead.ReadToEnd()
+    }
+    catch {
+        "Error decrypting credentials: $_"
+        return $false
+    }
+}
+
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
   $Current_Attempt = 0
@@ -230,7 +256,12 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "Not running as Administrator"
 }
 
-"This script is not using encryption for secrets."
+if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
+    "This script is not using encryption for secrets."
+} else {
+    "Using encryption key ${customer_master_key_id} for secrets."
+    Decrypt-Credentials
+}
 
 net user Administrator $DATA."admin_password" /active:yes
 

@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "aws_region" {
+  description = "AWS region"
+  default     = "us-west-1"
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources"
   default     = ""
@@ -103,4 +108,9 @@ variable "admin_ssh_key_name" {
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
   default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
+}
+
+variable "customer_master_key_id" {
+  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
+  default     = ""
 }

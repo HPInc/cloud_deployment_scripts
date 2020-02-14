@@ -24,6 +24,7 @@ resource "aws_s3_bucket_object" "win-gfx-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
+      customer_master_key_id   = var.customer_master_key_id,
       pcoip_agent_location     = var.pcoip_agent_location,
       pcoip_agent_filename     = var.pcoip_agent_filename,
       pcoip_registration_code  = var.pcoip_registration_code,
@@ -74,6 +75,12 @@ resource "aws_iam_role" "win-gfx-role" {
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
+data "aws_kms_key" "encryption-key" {
+  count = var.customer_master_key_id == "" ? 0 : 1
+
+  key_id = var.customer_master_key_id
+}
+
 data "aws_iam_policy_document" "win-gfx-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
@@ -85,6 +92,16 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
     effect    = "Allow"
+  }
+
+  dynamic statement {
+    for_each = data.aws_kms_key.encryption-key
+    iterator = i
+    content {
+      actions   = ["kms:Decrypt"]
+      resources = [i.value.arn]
+      effect    = "Allow"
+    }
   }
 }
 

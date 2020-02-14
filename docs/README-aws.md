@@ -22,11 +22,25 @@ aws_secret_access_key = <your_key>
 - in the AWS marketplace portal, visit the Product Overview pages of AMI images that will be used by Terraform scripts. Click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. The required subscriptions depend on which workstation is to be deployed:
     - Windows Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TV59ZQK
     - CentOS Standard or Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TV59ZQK
+- (Optional) For better security, create an AWS KMS Customer Managed Symmetric Customer Master Key (CMK) to encrypt secrets.  Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create CMKs.
 
 ### Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
 1. create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
 1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
+
+### (Optional) Encrypting Secrets
+Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket. Secrets may also show up in Terraform logs.
+
+The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
+
+To encrypt secrets using the KMS CMK created above, follow the instructions here: https://docs.aws.amazon.com/cli/latest/reference/kms/encrypt.html. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in a Linux shell to get the base64-encoded ciphertext:
+
+```aws kms encrypt --key-id <cmk-id> --plaintext <secret> --output text --query CiphertextBlob```
+
+The following command can be used to decrypt the ciphertext:
+
+```aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d```
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.

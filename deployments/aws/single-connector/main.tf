@@ -30,6 +30,7 @@ module "dc" {
 
   prefix = var.prefix
   
+  customer_master_key_id   = var.customer_master_key_id
   domain_name              = var.domain_name
   admin_password           = var.dc_admin_password
   safe_mode_admin_password = var.safe_mode_admin_password
@@ -64,6 +65,8 @@ module "cac" {
 
   prefix = var.prefix
 
+  aws_region              = var.aws_region
+  customer_master_key_id  = var.customer_master_key_id
   cam_url                 = var.cam_url
   pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
@@ -100,6 +103,8 @@ module "win-gfx" {
 
   prefix = var.prefix
 
+  customer_master_key_id = var.customer_master_key_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -132,6 +137,8 @@ module "win-std" {
 
   prefix = var.prefix
 
+  customer_master_key_id = var.customer_master_key_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -163,6 +170,8 @@ module "centos-gfx" {
   instance_count = var.centos_gfx_instance_count
 
   prefix = var.prefix
+
+  customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
 
@@ -197,6 +206,8 @@ module "centos-std" {
   instance_count = var.centos_std_instance_count
 
   prefix = var.prefix
+
+  customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
 
