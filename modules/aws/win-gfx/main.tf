@@ -29,10 +29,10 @@ resource "aws_s3_bucket_object" "win-gfx-startup-script" {
       pcoip_agent_filename     = var.pcoip_agent_filename,
       pcoip_registration_code  = var.pcoip_registration_code,
 
-      domain_name              = var.domain_name,
-      admin_password           = var.admin_password,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      domain_name                 = var.domain_name,
+      admin_password              = var.admin_password,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
     }
   )
 }
