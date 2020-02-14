@@ -19,7 +19,7 @@ get_credentials() {
         log "Not using encryption"
 
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+        AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
         CAC_TOKEN=${cac_token}
 
     else
@@ -28,15 +28,15 @@ get_credentials() {
         apt install -y awscli
 
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
-        SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
         CAC_TOKEN=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cac_token}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
 
     # Exit if any of the required variables are missing
-    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" || -z "$CAC_TOKEN" ]]; then
+    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$AD_SERVICE_ACCOUNT_PASSWORD" || -z "$CAC_TOKEN" ]]; then
         log "Missing required parameters:"
         log "PCoIP Registration Code = $PCOIP_REGISTRATION_CODE"
-        log "Service Account Password = $SERVICE_ACCOUNT_PASSWORD"
+        log "Active Directory Service Account Password = $AD_SERVICE_ACCOUNT_PASSWORD"
         log "CAC Token = $CAC_TOKEN"
         exit 1
     fi
@@ -97,13 +97,13 @@ echo '### Ensure AD account is available ###'
 TIMEOUT=1200
 until ldapwhoami \
     -H ldap://${domain_controller_ip} \
-    -D ${service_account_username}@${domain_name} \
-    -w $SERVICE_ACCOUNT_PASSWORD \
+    -D ${ad_service_account_username}@${domain_name} \
+    -w $AD_SERVICE_ACCOUNT_PASSWORD \
     -o nettimeout=1; do
     if [ $TIMEOUT -le 0 ]; then
         break
     else
-        echo "Waiting for AD account ${service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+        echo "Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
     fi
     TIMEOUT=$((TIMEOUT-10))
     sleep 10
@@ -117,8 +117,8 @@ $INSTALL_DIR/cloud-access-connector install \
     -t $CAC_TOKEN \
     --accept-policies \
     --insecure \
-    --sa-user ${service_account_username} \
-    --sa-password "$SERVICE_ACCOUNT_PASSWORD" \
+    --sa-user ${ad_service_account_username} \
+    --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
     --domain ${domain_name} \
     --domain-group "${domain_group}" \
     --reg-code $PCOIP_REGISTRATION_CODE \

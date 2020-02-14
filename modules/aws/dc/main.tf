@@ -67,8 +67,8 @@ data "template_file" "new-domain-admin-user-script" {
     customer_master_key_id = var.customer_master_key_id
     host_name              = local.host_name
     domain_name            = var.domain_name
-    account_name           = var.service_account_username
-    account_password       = var.service_account_password
+    account_name           = var.ad_service_account_username
+    account_password       = var.ad_service_account_password
   }
 }
 

@@ -25,11 +25,11 @@ resource "aws_s3_bucket_object" "cac-startup-script" {
       cac_token                = var.cac_token,
       pcoip_registration_code  = var.pcoip_registration_code,
 
-      domain_controller_ip     = var.domain_controller_ip,
-      domain_name              = var.domain_name,
-      domain_group             = var.domain_group,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_name                 = var.domain_name,
+      domain_group                = var.domain_group,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
     }
   )
 }

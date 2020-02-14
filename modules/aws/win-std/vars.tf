@@ -25,12 +25,12 @@ variable "domain_name" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service Account username"
   type        = string
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
 }
