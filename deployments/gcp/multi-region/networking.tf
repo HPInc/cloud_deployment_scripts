@@ -68,19 +68,6 @@ resource "google_compute_firewall" "allow-ssh" {
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
 }
 
-resource "google_compute_firewall" "allow-http" {
-  name    = "${local.prefix}fw-allow-http"
-  network = google_compute_network.vpc.self_link
-
-  allow {
-    protocol = "tcp"
-    ports    = ["80"]
-  }
-
-  target_tags   = ["${local.prefix}fw-allow-http"]
-  source_ranges = ["0.0.0.0/0"]
-}
-
 resource "google_compute_firewall" "allow-https" {
   name    = "${local.prefix}fw-allow-https"
   network = google_compute_network.vpc.self_link

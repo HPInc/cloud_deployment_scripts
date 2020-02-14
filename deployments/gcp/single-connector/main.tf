@@ -74,7 +74,6 @@ module "cac" {
   network_tags = [
     "${google_compute_firewall.allow-ssh.name}",
     "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-http.name}",
     "${google_compute_firewall.allow-https.name}",
     "${google_compute_firewall.allow-pcoip.name}",
   ]
