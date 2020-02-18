@@ -7,6 +7,22 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
+  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+}
+
+resource "random_id" "bucket-name" {
+  byte_length = 3
+}
+
+resource "aws_s3_bucket" "scripts" {
+  bucket        = local.bucket_name
+  region        = var.aws_region
+  acl           = "private"
+  force_destroy = true
+
+  tags = {
+    Name = local.bucket_name
+  }
 }
 
 module "dc" {
@@ -14,6 +30,7 @@ module "dc" {
 
   prefix = var.prefix
   
+  customer_master_key_id   = var.customer_master_key_id
   domain_name              = var.domain_name
   admin_password           = var.dc_admin_password
   safe_mode_admin_password = var.safe_mode_admin_password
@@ -21,8 +38,9 @@ module "dc" {
   service_account_password = var.service_account_password
   domain_users_list        = var.domain_users_list
 
-  subnet = aws_subnet.dc-subnet.id
-  private_ip = var.dc_private_ip
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.dc-subnet.id
+  private_ip         = var.dc_private_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-rdp.id,
@@ -47,6 +65,8 @@ module "cac" {
 
   prefix = var.prefix
 
+  aws_region              = var.aws_region
+  customer_master_key_id  = var.customer_master_key_id
   cam_url                 = var.cam_url
   pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
@@ -56,12 +76,13 @@ module "cac" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
-  subnet = aws_subnet.cac-subnet.id
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.cac-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
-    aws_security_group.allow-http.id,
+    aws_security_group.allow-https.id,
     aws_security_group.allow-pcoip.id,
   ]
 
@@ -82,6 +103,8 @@ module "win-gfx" {
 
   prefix = var.prefix
 
+  customer_master_key_id = var.customer_master_key_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -89,6 +112,7 @@ module "win-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
@@ -113,6 +137,8 @@ module "win-std" {
 
   prefix = var.prefix
 
+  customer_master_key_id = var.customer_master_key_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -120,6 +146,7 @@ module "win-std" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
@@ -144,6 +171,8 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
+  customer_master_key_id = var.customer_master_key_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -151,6 +180,7 @@ module "centos-gfx" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
@@ -177,6 +207,8 @@ module "centos-std" {
 
   prefix = var.prefix
 
+  customer_master_key_id = var.customer_master_key_id
+
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name              = var.domain_name
@@ -184,6 +216,7 @@ module "centos-std" {
   service_account_username = var.service_account_username
   service_account_password = var.service_account_password
 
+  bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [

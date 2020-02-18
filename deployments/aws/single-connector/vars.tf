@@ -6,7 +6,7 @@
  */
 
 variable "aws_credentials_file" {
-    description = "Location of AWS credentails file"
+    description = "Location of AWS credentials file"
     type        = string
 }
 
@@ -18,6 +18,11 @@ variable "aws_region" {
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default     = ""
+}
+
+variable "allowed_cidr_blks" {
+  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these CIDR blocks. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+  default     = []
 }
 
 variable "vpc_name" {
@@ -258,4 +263,9 @@ variable "centos_std_ami_owner" {
 variable "centos_std_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
   default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+}
+
+variable "customer_master_key_id" {
+  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
+  default     = ""
 }

@@ -1,4 +1,3 @@
-<powershell>
 # Copyright (c) 2020 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
@@ -9,9 +8,28 @@ $LOG_FILE = "C:\Teradici\provisioning.log"
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("admin_password", "${admin_password}")
 
+function Decrypt-Credentials {
+    try {
+        $ByteAry = [System.Convert]::FromBase64String("${admin_password}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."admin_password" = $StreamRead.ReadToEnd()
+    }
+    catch {
+        "Error decrypting credentials: $_"
+        return $false
+    }
+}
+
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-"Not using encryption"
+if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
+    "Not using encryption"
+} else {
+    "Using encryption key ${customer_master_key_id}"
+    Decrypt-Credentials
+}
 
 "Setting Administrator password ..."
 net user Administrator $DATA."admin_password" /active:yes
@@ -31,5 +49,3 @@ winrm create winrm/config/Listener?Address=*+Transport=HTTPS "@{CertificateThumb
 # Open Firewall
 "Adding firewall rule for TCP/5986 for WinRM over HTTPS ..."
 New-NetFirewallRule -DisplayName "WinRM HTTPS Created by Teradici Terraform" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow
-
-</powershell>

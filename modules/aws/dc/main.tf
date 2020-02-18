@@ -15,14 +15,38 @@ locals {
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
+  startup_script             = "dc-startup.ps1"
+  admin_password = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
 }
 
-data "template_file" "sysprep-script" {
-  template = file("${path.module}/sysprep.ps1.tmpl")
+data "aws_kms_secrets" "decrypted_secrets" {
+  count = var.customer_master_key_id == "" ? 0 : 1
+
+  secret {
+    name    = "admin_password"
+    payload = var.admin_password
+  }
+}
+
+resource "aws_s3_bucket_object" "dc-startup-script" {
+  key     = local.startup_script
+  bucket  = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      customer_master_key_id = var.customer_master_key_id
+      admin_password         = var.admin_password
+      hostname               = local.host_name
+    }
+  )
+}
+
+data "template_file" "user-data" {
+  template = file("${path.module}/user-data.ps1.tmpl")
 
   vars = {
-    admin_password = var.admin_password,
-    hostname       = local.host_name,
+    bucket_name = var.bucket_name,
+    file_name   = local.startup_script,
   }
 }
 
@@ -30,6 +54,7 @@ data "template_file" "setup-script" {
   template = file("${path.module}/setup.ps1.tpl")
 
   vars = {
+    customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
     safe_mode_admin_password = var.safe_mode_admin_password
   }
@@ -39,10 +64,11 @@ data "template_file" "new-domain-admin-user-script" {
   template = file("${path.module}/new_domain_admin_user.ps1.tpl")
 
   vars = {
-    host_name        = local.host_name
-    domain_name      = var.domain_name
-    account_name     = var.service_account_username
-    account_password = var.service_account_password
+    customer_master_key_id = var.customer_master_key_id
+    host_name              = local.host_name
+    domain_name            = var.domain_name
+    account_name           = var.service_account_username
+    account_password       = var.service_account_password
   }
 }
 
@@ -66,6 +92,57 @@ data "aws_ami" "ami" {
   }
 }
 
+data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
+  statement {
+    actions = [ "sts:AssumeRole" ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "dc-role" {
+  name               = "dc_role"
+  assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
+}
+
+data "aws_kms_key" "encryption-key" {
+  count = var.customer_master_key_id == "" ? 0 : 1
+
+  key_id = var.customer_master_key_id
+}
+
+data "aws_iam_policy_document" "dc-policy-doc" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    effect    = "Allow"
+  }
+
+  dynamic statement {
+    for_each = data.aws_kms_key.encryption-key
+    iterator = i
+    content {
+      actions   = ["kms:Decrypt"]
+      resources = [i.value.arn]
+      effect    = "Allow"
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "dc-role-policy" {
+  name = "dc_role_policy"
+  role = aws_iam_role.dc-role.id
+  policy = data.aws_iam_policy_document.dc-policy-doc.json
+}
+
+resource "aws_iam_instance_profile" "dc-instance-profile" {
+  name = "dc_instance_profile"
+  role = aws_iam_role.dc-role.name
+}
+
 resource "aws_instance" "dc" {
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
@@ -81,7 +158,9 @@ resource "aws_instance" "dc" {
 
   vpc_security_group_ids = var.security_group_ids
 
-  user_data = data.template_file.sysprep-script.rendered
+  iam_instance_profile = aws_iam_instance_profile.dc-instance-profile.name
+
+  user_data = data.template_file.user-data.rendered
 
   tags = {
     Name = local.host_name
@@ -98,7 +177,7 @@ resource "null_resource" "upload-scripts" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = aws_instance.dc.public_ip
     port     = 5986
     https    = true
@@ -132,7 +211,7 @@ resource "null_resource" "upload-domain-users-list" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = aws_instance.dc.public_ip
     port     = 5986
     https    = true
@@ -154,7 +233,7 @@ resource "null_resource" "run-setup-script" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = aws_instance.dc.public_ip
     port     = 5986
     https    = true
@@ -192,7 +271,7 @@ resource "null_resource" "new-domain-admin-user" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = aws_instance.dc.public_ip
     port     = 5986
     https    = true
@@ -223,7 +302,7 @@ resource "null_resource" "new-domain-user" {
   connection {
     type     = "winrm"
     user     = "Administrator"
-    password = var.admin_password
+    password = local.admin_password
     host     = aws_instance.dc.public_ip
     port     = 5986
     https    = true

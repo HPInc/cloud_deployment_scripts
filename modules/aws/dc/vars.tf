@@ -40,6 +40,11 @@ variable "domain_users_list" {
   default     = ""
 }
 
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
+  type        = string
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Domain Controller"
   type        = string
@@ -73,4 +78,9 @@ variable "ami_owner" {
 variable "ami_name" {
   description = "Name of the Windows AMI to create the Domain Controller from"
   default     = "Windows_Server-2016-English-Full-Base-*"
+}
+
+variable "customer_master_key_id" {
+  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
+  default     = ""
 }

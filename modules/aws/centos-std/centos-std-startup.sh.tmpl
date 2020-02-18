@@ -8,6 +8,7 @@
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 INST_LOG_FILE="/var/log/teradici/agent/install.log"
+METADATA_IP="http://169.254.169.254"
 
 log() {
     local message="$1"
@@ -15,10 +16,18 @@ log() {
 }
 
 get_credentials() {
-    log "Not using encryption"
+    if [[ -z "${customer_master_key_id}" ]]; then
+        log "Not using encryption"
 
-    PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-    SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+
+    else
+        log "Using encryption key ${customer_master_key_id}"
+
+        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+        SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+    fi
 
     # Exit if any of the required variables are missing
     if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" ]]; then
@@ -27,6 +36,17 @@ get_credentials() {
         log "Service Account Password = $SERVICE_ACCOUNT_PASSWORD"
         exit 1
     fi
+}
+
+# Update the hostname to match this instance's "Name" Tag
+update_hostname()
+{
+    TOKEN=`curl -X PUT "$METADATA_IP/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60"`
+    ID=`curl $METADATA_IP/latest/meta-data/instance-id -H "X-aws-ec2-metadata-token: $TOKEN"`
+    REGION=`curl $METADATA_IP/latest/dynamic/instance-identity/document/ -H "X-aws-ec2-metadata-token: $TOKEN" | jq -r .region`
+    NEW_HOSTNAME=`aws ec2 describe-tags --region $REGION --filters "Name=resource-id,Values=$ID" "Name=key,Values=Name" --output json | jq -r .Tags[0].Value`
+
+    sudo hostnamectl set-hostname $NEW_HOSTNAME.${domain_name}
 }
 
 exit_and_restart()
@@ -176,14 +196,14 @@ fi
 
 log "$(date)"
 
-get_credentials
-
 # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
 yum -y install epel-release
-
 yum -y update
+yum install -y wget awscli jq
 
-yum install -y wget
+get_credentials
+
+update_hostname
 
 # Install GNOME and set it as the desktop
 log "--> Install Linux GUI ..."

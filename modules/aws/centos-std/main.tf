@@ -15,15 +15,31 @@ locals {
   startup_script = "centos-std-startup.sh"
 }
 
-data "template_file" "startup-script" {
-  template = file("${path.module}/${local.startup_script}.tmpl")
+resource "aws_s3_bucket_object" "centos-std-startup-script" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  key     = local.startup_script
+  bucket  = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.startup_script}.tmpl",
+    {
+      aws_region               = var.aws_region, 
+      customer_master_key_id   = var.customer_master_key_id,
+      pcoip_registration_code  = var.pcoip_registration_code,
+      domain_controller_ip     = var.domain_controller_ip,
+      domain_name              = var.domain_name,
+      service_account_username = var.service_account_username,
+      service_account_password = var.service_account_password,
+    }
+  )
+}
+
+data "template_file" "user-data" {
+  template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
-    pcoip_registration_code  = var.pcoip_registration_code,
-    domain_controller_ip     = var.domain_controller_ip,
-    domain_name              = var.domain_name,
-    service_account_username = var.service_account_username,
-    service_account_password = var.service_account_password,
+    bucket_name = var.bucket_name,
+    file_name   = local.startup_script,
   }
 }
 
@@ -36,6 +52,69 @@ data "aws_ami" "ami" {
     name   = "name"
     values = [var.ami_name]
   }
+}
+
+data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
+  statement {
+    actions = [ "sts:AssumeRole" ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_kms_key" "encryption-key" {
+  count = var.customer_master_key_id == "" ? 0 : 1
+
+  key_id = var.customer_master_key_id
+}
+
+resource "aws_iam_role" "centos-std-role" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  name               = "centos_std_role"
+  assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
+}
+
+data "aws_iam_policy_document" "centos-std-policy-doc" {
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    effect    = "Allow"
+  }
+
+  dynamic statement {
+    for_each = data.aws_kms_key.encryption-key
+    iterator = i
+    content {
+      actions   = ["kms:Decrypt"]
+      resources = [i.value.arn]
+      effect    = "Allow"
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "centos-std-role-policy" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  name = "centos_std_role_policy"
+  role = aws_iam_role.centos-std-role[0].id
+  policy = data.aws_iam_policy_document.centos-std-policy-doc.json
+}
+
+resource "aws_iam_instance_profile" "centos-std-instance-profile" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  name = "centos_std_instance_profile"
+  role = aws_iam_role.centos-std-role[0].name
 }
 
 resource "aws_instance" "centos-std" {
@@ -56,7 +135,9 @@ resource "aws_instance" "centos-std" {
 
   key_name = var.admin_ssh_key_name
 
-  user_data = data.template_file.startup-script.rendered
+  iam_instance_profile = aws_iam_instance_profile.centos-std-instance-profile[0].name
+
+  user_data = data.template_file.user-data.rendered
 
   tags = {
     Name = "${local.host_name}-${count.index}"

@@ -35,6 +35,11 @@ variable "service_account_password" {
   type        = string
 }
 
+variable "bucket_name" {
+  description = "Name of bucket to retrieve startup script."
+  type        = string
+}
+
 variable "subnet" {
   description = "Subnet to deploy the Workstation"
   type        = string
@@ -93,4 +98,9 @@ variable "pcoip_agent_filename" {
 variable "depends_on_hack" {
   description = "Workaround for Terraform Modules not supporting depends_on"
   default     = []
+}
+
+variable "customer_master_key_id" {
+  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
+  default     = ""
 }

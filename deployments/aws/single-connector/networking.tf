@@ -5,6 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+data "http" "myip" {
+  url = "https://ipinfo.io/ip"
+}
+
+locals {
+  myip = "${chomp(data.http.myip.body)}/32"
+}
+
 resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -123,7 +131,7 @@ resource "aws_security_group" "allow-ssh" {
     protocol    = "tcp"
     from_port   = 22
     to_port     = 22
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
   }
 
   tags = {
@@ -131,16 +139,9 @@ resource "aws_security_group" "allow-ssh" {
   }
 }
 
-resource "aws_security_group" "allow-http" {
-  name   = "allow-http"
+resource "aws_security_group" "allow-https" {
+  name   = "allow-https"
   vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   ingress {
     protocol    = "tcp"
@@ -150,7 +151,7 @@ resource "aws_security_group" "allow-http" {
   }
 
   tags = {
-    Name = "${local.prefix}secgrp-allow-http"
+    Name = "${local.prefix}secgrp-allow-https"
   }
 }
 
@@ -162,14 +163,14 @@ resource "aws_security_group" "allow-rdp" {
     protocol    = "tcp"
     from_port   = 3389
     to_port     = 3389
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
   }
 
   ingress {
     protocol    = "udp"
     from_port   = 3389
     to_port     = 3389
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
   }
 
   tags = {
@@ -185,7 +186,7 @@ resource "aws_security_group" "allow-winrm" {
     protocol    = "tcp"
     from_port   = 5986
     to_port     = 5986
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
   }
 
   tags = {
@@ -206,7 +207,7 @@ resource "aws_security_group" "allow-icmp" {
     protocol    = "icmp"
     from_port   = 8
     to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
   }
 
   tags = {
