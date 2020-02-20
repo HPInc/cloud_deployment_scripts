@@ -52,7 +52,7 @@ Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directo
 If secrets are KMS-encrypted, fill in the ```kms_cryptokey_id``` variable with the crypto key used to encode the secrets, then paste the base64-encoded ciphertext for the following variables:
 - ```dc_admin_password```
 - ```safe_mode_admin_password```
-- ```service_account_password```
+- ```ad_service_account_password```
 - ```pcoip_registration_code```
 - ```cac_token```
 
