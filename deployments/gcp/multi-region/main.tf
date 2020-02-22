@@ -40,7 +40,7 @@ module "dc" {
   subnet       = google_compute_subnetwork.dc-subnet.self_link
   private_ip   = var.dc_private_ip
   network_tags = [
-    "${google_compute_firewall.allow-dns.name}",
+    "${google_compute_firewall.allow-google-dns.name}",
     "${google_compute_firewall.allow-rdp.name}",
     "${google_compute_firewall.allow-winrm.name}",
     "${google_compute_firewall.allow-icmp.name}",
@@ -73,9 +73,9 @@ module "cac-igm" {
   gcp_zone_list = var.cac_zone_list
   subnet_list   = google_compute_subnetwork.cac-subnets[*].self_link
   network_tags  = [
+    "${google_compute_firewall.allow-google-health-check.name}",
     "${google_compute_firewall.allow-ssh.name}",
     "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-https.name}",
     "${google_compute_firewall.allow-pcoip.name}",
   ]
 

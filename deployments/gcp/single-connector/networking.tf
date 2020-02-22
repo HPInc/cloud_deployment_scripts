@@ -65,20 +65,7 @@ resource "google_compute_firewall" "allow-ssh" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-ssh"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
-}
-
-resource "google_compute_firewall" "allow-https" {
-  name    = "${local.prefix}fw-allow-https"
-  network = google_compute_network.vpc.self_link
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443"]
-  }
-
-  target_tags   = ["${local.prefix}fw-allow-https"]
-  source_ranges = ["0.0.0.0/0"]
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-rdp" {
@@ -95,7 +82,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -108,7 +95,7 @@ resource "google_compute_firewall" "allow-winrm" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-winrm"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-icmp" {
@@ -120,13 +107,17 @@ resource "google_compute_firewall" "allow-icmp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-icmp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-pcoip" {
   name    = "${local.prefix}fw-allow-pcoip"
   network = google_compute_network.vpc.self_link
 
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
   allow {
     protocol = "tcp"
     ports    = ["4172"]
@@ -137,11 +128,13 @@ resource "google_compute_firewall" "allow-pcoip" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-pcoip"]
-  source_ranges = ["0.0.0.0/0"]
+  source_ranges = var.allowed_client_cidrs
 }
 
-resource "google_compute_firewall" "allow-dns" {
-  name    = "${local.prefix}fw-allow-dns"
+# Open TCP/UDP/53 for Google Cloud DNS managed zone
+# https://cloud.google.com/dns/zones
+resource "google_compute_firewall" "allow-google-dns" {
+  name    = "${local.prefix}fw-allow-google-dns"
   network = google_compute_network.vpc.self_link
 
   allow {
@@ -153,7 +146,7 @@ resource "google_compute_firewall" "allow-dns" {
     ports    = ["53"]
   }
 
-  target_tags   = ["${local.prefix}fw-allow-dns"]
+  target_tags   = ["${local.prefix}fw-allow-google-dns"]
   source_ranges = ["35.199.192.0/19"]
 }
 
