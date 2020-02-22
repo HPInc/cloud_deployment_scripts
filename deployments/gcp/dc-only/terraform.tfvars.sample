@@ -2,8 +2,8 @@
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
-# gcp_region           = "us-west1"
-# gcp_zone             = "us-west1-b"
+# gcp_region           = "us-west2"
+# gcp_zone             = "us-west2-b"
 
 # prefix = "myprefix"
 
