@@ -65,7 +65,7 @@ If secrets are KMS-encrypted, fill in the ```kms_cryptokey_id``` variable with t
 - ```safe_mode_admin_password```
 - ```ad_service_account_password```
 - ```pcoip_registration_code```
-- ```cac_token```
+- ```cam_credentials_file```
 
 Be sure to remove any spaces in the ciphertext.
 

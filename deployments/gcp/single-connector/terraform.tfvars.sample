@@ -1,7 +1,4 @@
 # Commented out lines represents defaults that can be changed
-####################
-#     General      #
-####################
 
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id       = "your-project-1234"
@@ -21,11 +18,6 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-
-####################
-#        CAC       #
-####################
-
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
 # cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200218"
@@ -33,11 +25,6 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # Optional: Specify SSL certificate for Connector
 # ssl_key  = "/path/to/privkey.pem"
 # ssl_cert = "/path/to/fullchain.pem"
-
-
-####################
-#   Workstations   #
-####################
 
 win_gfx_instance_count = 0
 # win_gfx_machine_type = "n1-standard-4"
@@ -65,29 +52,19 @@ centos_std_instance_count = 0
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
-####################
-#      GCP KMS     #
-####################
+###############
+#   Secrets   #
+###############
 # The secrets below may be supplied in 2 formats:
 #   1. plain text
 #   2. KMS encrypted, base64 encoded
-# For option 1, leave both keyring name and cryptokey name commented out.
-# For option 2, run the script located under tools using command "python3
-# gcp_kms_encrypto_secrets" which will overwrite this tfvars file with
-# your encrypted secrets and create an encrypted JSON for your CAM
-# credentials file. To set a custom keyring name and cryptokey name,
-# uncomment the two variables below and enter the new names, otherwise
-# a default name will be used by the script. The GCP service account 
-# specified above in "gcp_service_account" must be in the same project 
-# and have KMS decryptor permissions for this key.. 
+# For option 1, leave "kms_cryptokey_id" commented out.
+# For option 2, set "kms_cryptokey_id" to the KMS key used to encrypt the
+# secrets. The GCP service account specified above in "gcp_service_account"
+# must be in the same project and have KMS decryptor permissions for this key.
 
-# kms_keyring_name   = "terraform-keyring"
-# kms_cryptokey_name = "terraform-cryptokey"
+kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
 
-
-####################
-#      Secrets     #
-####################
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
 # 2. Must have 3 of the following categories:
@@ -98,6 +75,7 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 #    3. unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
+# Secrets below can be encrypted using GCP-KMS, refer to the README for more information.
 dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
