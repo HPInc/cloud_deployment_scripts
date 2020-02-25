@@ -85,10 +85,14 @@ variable "ami_owner" {
   default     = "aws-marketplace"
 }
 
+variable "ami_product_code" {
+  description = "Product Code of the AMI for the Workstation"
+  default     = "aw0evgkw8e5c1q413zgy5pjce"
+}
+
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  #default = "CentOS Linux 7 x86_64 HVM EBS ENA"
-  default = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
 }
 
 variable "admin_ssh_key_name" {

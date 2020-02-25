@@ -49,6 +49,11 @@ data "aws_ami" "ami" {
   owners      = [var.ami_owner]
 
   filter {
+    name   = "product-code"
+    values = [var.ami_product_code]
+  }
+
+  filter {
     name   = "name"
     values = [var.ami_name]
   }
