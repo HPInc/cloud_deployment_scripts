@@ -22,14 +22,14 @@ variable "gcp_service_account" {
 
 variable "gcp_region" {
   description = "GCP region"
-  default     = "us-west1"
+  default     = "us-west2"
 }
 
 variable "gcp_zone" {
   description = "GCP zone"
 
-  # Default to us-west1-b because Tesla T4 Workstation GPUs available here
-  default = "us-west1-b"
+  # Default to us-west2-b because Tesla P4 Workstation GPUs available here
+  default = "us-west2-b"
 }
 
 variable "prefix" {
@@ -99,7 +99,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200129a"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200218"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -186,7 +186,7 @@ variable "win_gfx_machine_type" {
 
 variable "win_gfx_accelerator_type" {
   description = "Accelerator type for Windows Graphics Workstations"
-  default     = "nvidia-tesla-t4-vws"
+  default     = "nvidia-tesla-p4-vws"
 }
 
 variable "win_gfx_accelerator_count" {
@@ -236,7 +236,7 @@ variable "centos_gfx_machine_type" {
 
 variable "centos_gfx_accelerator_type" {
   description = "Accelerator type for CentOS Graphics Workstations"
-  default     = "nvidia-tesla-t4-vws"
+  default     = "nvidia-tesla-p4-vws"
 }
 
 variable "centos_gfx_accelerator_count" {

@@ -22,14 +22,14 @@ variable "gcp_service_account" {
 
 variable "gcp_region" {
   description = "GCP region"
-  default     = "us-west1"
+  default     = "us-west2"
 }
 
 variable "gcp_zone" {
   description = "GCP zone"
 
-  # Default to us-west1-b because Tesla T4 Workstation GPUs available here
-  default = "us-west1-b"
+  # Default to us-west2-b because Tesla P4 Workstation GPUs available here
+  default = "us-west2-b"
 }
 
 variable "prefix" {

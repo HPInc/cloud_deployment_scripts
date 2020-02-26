@@ -47,6 +47,17 @@ terraform.tfvars is the file in which a user specify variables for a deployment.
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
+If secrets are KMS CMK encrypted, fill in the ```customer_master_key_id``` variable with the customer master key id used to encode the secrets, then paste the base64-encoded ciphertext for the following variables:
+- ```dc_admin_password```
+- ```safe_mode_admin_password```
+- ```ad_service_account_password```
+- ```pcoip_registration_code```
+- ```cac_token```
+
+Be sure to remove any spaces in the ciphertext.
+
+If secrets are in plaintext, make sure ```customer_master_key_id``` is commented out, and fill in the rest of the variables as plaintext.
+
 ### Creating the deployment
 With the terraform.tfvars file customized
 1. run ```terraform init``` to initialize the deployment

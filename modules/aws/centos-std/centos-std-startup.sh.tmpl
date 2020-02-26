@@ -20,20 +20,20 @@ get_credentials() {
         log "Not using encryption"
 
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-        SERVICE_ACCOUNT_PASSWORD=${service_account_password}
+        AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 
     else
         log "Using encryption key ${customer_master_key_id}"
 
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
-        SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
 
     # Exit if any of the required variables are missing
-    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$SERVICE_ACCOUNT_PASSWORD" ]]; then
+    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
         log "Missing required parameters:"
         log "PCoIP Registration Code = $PCOIP_REGISTRATION_CODE"
-        log "Service Account Password = $SERVICE_ACCOUNT_PASSWORD"
+        log "Active Directory Service Account Password = $AD_SERVICE_ACCOUNT_PASSWORD"
         exit 1
     fi
 }
@@ -101,7 +101,7 @@ join_domain()
     if [[ ! -f "$dns_record_file" ]]
     then
         log "--> DOMAIN NAME: ${domain_name}"
-        log "--> USERNAME: ${service_account_username}"
+        log "--> USERNAME: ${ad_service_account_username}"
         log "--> DOMAIN CONTROLLER: ${domain_controller_ip}"
 
         # default hostname has the form ip-10-0-0-1.us-west-1.compute.internal,
@@ -110,10 +110,10 @@ join_domain()
 
         # Wait for AD service account to be set up
         yum -y install openldap-clients
-        log "--> Wait for AD account ${service_account_username}@${domain_name} to be available"
-        until ldapwhoami -H ldap://${domain_controller_ip} -D ${service_account_username}@${domain_name} -w "$SERVICE_ACCOUNT_PASSWORD" -o nettimeout=1 > /dev/null 2>&1
+        log "--> Wait for AD account ${ad_service_account_username}@${domain_name} to be available"
+        until ldapwhoami -H ldap://${domain_controller_ip} -D ${ad_service_account_username}@${domain_name} -w "$AD_SERVICE_ACCOUNT_PASSWORD" -o nettimeout=1 > /dev/null 2>&1
         do
-            log "${service_account_username}@${domain_name} not available yet, retrying in 10 seconds..."
+            log "${ad_service_account_username}@${domain_name} not available yet, retrying in 10 seconds..."
             sleep 10
         done
 
@@ -138,9 +138,9 @@ join_domain()
         log "--> Joining the domain"
         if [[ -n "$OU" ]]
         then
-            echo "$SERVICE_ACCOUNT_PASSWORD" | realm join --user="${service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
         else
-            echo "$SERVICE_ACCOUNT_PASSWORD" | realm join --user="${service_account_username}" "${domain_name}" >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
         fi
         exitCode=$?
         if [[ $exitCode -eq 0 ]]
@@ -161,7 +161,7 @@ join_domain()
         log "--> Registering with DNS"
         DOMAIN_UPPER=$(echo "${domain_name}" | tr '[:lower:]' '[:upper:]')
         IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
-        echo "$SERVICE_ACCOUNT_PASSWORD" | kinit "${service_account_username}"@"$DOMAIN_UPPER"
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "${ad_service_account_username}"@"$DOMAIN_UPPER"
         touch "$dns_record_file"
         echo "server ${domain_controller_ip}" > "$dns_record_file"
         echo "update add $VM_NAME.${domain_name} 600 a $IP_ADDRESS" >> "$dns_record_file"

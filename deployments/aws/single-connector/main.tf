@@ -30,13 +30,13 @@ module "dc" {
 
   prefix = var.prefix
   
-  customer_master_key_id   = var.customer_master_key_id
-  domain_name              = var.domain_name
-  admin_password           = var.dc_admin_password
-  safe_mode_admin_password = var.safe_mode_admin_password
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
-  domain_users_list        = var.domain_users_list
+  customer_master_key_id      = var.customer_master_key_id
+  domain_name                 = var.domain_name
+  admin_password              = var.dc_admin_password
+  safe_mode_admin_password    = var.safe_mode_admin_password
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
+  domain_users_list           = var.domain_users_list
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.dc-subnet.id
@@ -71,10 +71,10 @@ module "cac" {
   pcoip_registration_code = var.pcoip_registration_code
   cac_token               = var.cac_token
 
-  domain_name              = var.domain_name
-  domain_controller_ip     = module.dc.internal-ip
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
+  domain_name                 = var.domain_name
+  domain_controller_ip        = module.dc.internal-ip
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.cac-subnet.id
@@ -107,10 +107,10 @@ module "win-gfx" {
 
   pcoip_registration_code = var.pcoip_registration_code
 
-  domain_name              = var.domain_name
-  admin_password           = var.dc_admin_password
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
+  domain_name                 = var.domain_name
+  admin_password              = var.dc_admin_password
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
@@ -141,10 +141,10 @@ module "win-std" {
 
   pcoip_registration_code = var.pcoip_registration_code
 
-  domain_name              = var.domain_name
-  admin_password           = var.dc_admin_password
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
+  domain_name                 = var.domain_name
+  admin_password              = var.dc_admin_password
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
@@ -175,10 +175,10 @@ module "centos-gfx" {
 
   pcoip_registration_code = var.pcoip_registration_code
 
-  domain_name              = var.domain_name
-  domain_controller_ip     = module.dc.internal-ip
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
+  domain_name                 = var.domain_name
+  domain_controller_ip        = module.dc.internal-ip
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
@@ -192,8 +192,9 @@ module "centos-gfx" {
   instance_type     = var.centos_gfx_instance_type
   disk_size_gb      = var.centos_gfx_disk_size_gb
 
-  ami_owner = var.centos_gfx_ami_owner
-  ami_name  = var.centos_gfx_ami_name
+  ami_owner        = var.centos_gfx_ami_owner
+  ami_product_code = var.centos_gfx_ami_product_code
+  ami_name         = var.centos_gfx_ami_name
 
   admin_ssh_key_name = var.admin_ssh_key_name
 
@@ -211,10 +212,10 @@ module "centos-std" {
 
   pcoip_registration_code = var.pcoip_registration_code
 
-  domain_name              = var.domain_name
-  domain_controller_ip     = module.dc.internal-ip
-  service_account_username = var.service_account_username
-  service_account_password = var.service_account_password
+  domain_name                 = var.domain_name
+  domain_controller_ip        = module.dc.internal-ip
+  ad_service_account_username = var.ad_service_account_username
+  ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.ws-subnet.id
@@ -228,8 +229,9 @@ module "centos-std" {
   instance_type     = var.centos_std_instance_type
   disk_size_gb      = var.centos_std_disk_size_gb
 
-  ami_owner = var.centos_std_ami_owner
-  ami_name  = var.centos_std_ami_name
+  ami_owner        = var.centos_std_ami_owner
+  ami_product_code = var.centos_std_ami_product_code
+  ami_name         = var.centos_std_ami_name
 
   admin_ssh_key_name = var.admin_ssh_key_name
 

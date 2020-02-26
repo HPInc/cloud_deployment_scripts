@@ -80,12 +80,12 @@ variable "safe_mode_admin_password" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
   default     = "cam_admin"
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
 }
@@ -235,9 +235,14 @@ variable "centos_gfx_ami_owner" {
   default     = "aws-marketplace"
 }
 
+variable "centos_gfx_ami_product_code" {
+  description = "Product Code of the AMI for the CentOS Graphics Workstation"
+  default     = "aw0evgkw8e5c1q413zgy5pjce"
+}
+
 variable "centos_gfx_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
 }
 
 variable "centos_std_instance_count" {
@@ -258,6 +263,11 @@ variable "centos_std_disk_size_gb" {
 variable "centos_std_ami_owner" {
   description = "Owner of AMI for the CentOS Standard Workstations"
   default     = "aws-marketplace"
+}
+
+variable "centos_std_ami_product_code" {
+  description = "Product Code of the AMI for the CentOS Standard Workstation"
+  default     = "aw0evgkw8e5c1q413zgy5pjce"
 }
 
 variable "centos_std_ami_name" {

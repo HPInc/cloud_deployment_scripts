@@ -23,14 +23,14 @@ resource "aws_s3_bucket_object" "centos-gfx-startup-script" {
   content = templatefile(
     "${path.module}/${local.startup_script}.tmpl",
     {
-      aws_region               = var.aws_region, 
-      customer_master_key_id   = var.customer_master_key_id,
-      pcoip_registration_code  = var.pcoip_registration_code,
-      domain_controller_ip     = var.domain_controller_ip,
-      domain_name              = var.domain_name,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
-      nvidia_driver_url        = var.nvidia_driver_url,
+      aws_region                  = var.aws_region, 
+      customer_master_key_id      = var.customer_master_key_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_name                 = var.domain_name,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
+      nvidia_driver_url           = var.nvidia_driver_url,
     }
   )
 }
@@ -48,6 +48,11 @@ data "template_file" "user-data" {
 data "aws_ami" "ami" {
   most_recent = true
   owners      = [var.ami_owner]
+
+  filter {
+    name   = "product-code"
+    values = [var.ami_product_code]
+  }
 
   filter {
     name   = "name"

@@ -8,7 +8,7 @@ $LOG_FILE = "C:\Teradici\provisioning.log"
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
 $DATA.Add("admin_password", "${admin_password}")
-$DATA.Add("service_account_password", "${service_account_password}")
+$DATA.Add("ad_service_account_password", "${ad_service_account_password}")
 
 $global:restart = $false
 
@@ -26,11 +26,11 @@ function Decrypt-Credentials {
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
         $DATA."admin_password" = $StreamRead.ReadToEnd()
     
-        $ByteAry = [System.Convert]::FromBase64String("${service_account_password}")
+        $ByteAry = [System.Convert]::FromBase64String("${ad_service_account_password}")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."service_account_password" = $StreamRead.ReadToEnd()
+        $DATA."ad_service_account_password" = $StreamRead.ReadToEnd()
     }
     catch {
         "Error decrypting credentials: $_"
@@ -161,8 +161,8 @@ function Join-Domain {
 
     "Computer not part of a domain. Joining ${domain_name}..."
 
-    $username = "${service_account_username}" + "@" + "${domain_name}"
-    $password = ConvertTo-SecureString $DATA."service_account_password" -AsPlainText -Force
+    $username = "${ad_service_account_username}" + "@" + "${domain_name}"
+    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
     # Read "Name" tag for hostname
