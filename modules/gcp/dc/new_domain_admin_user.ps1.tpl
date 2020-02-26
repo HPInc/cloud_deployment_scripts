@@ -71,7 +71,7 @@ Write-Output "================================================================"
 do {
     Try {
         $Retry = $false
-        New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force) -Enabled:$true 
+        New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force) -Enabled $True -PasswordNeverExpires $True
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
         $_.Exception.Message
