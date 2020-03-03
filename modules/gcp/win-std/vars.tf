@@ -90,13 +90,13 @@ variable "admin_password" {
   type        = string
 }
 
-variable "pcoip_agent_location" {
+variable "pcoip_agent_location_url" {
   description = "URL of Teradici PCoIP Standard Agent"
   default     = "https://downloads.teradici.com/win/stable/"
 }
 
 variable "pcoip_agent_filename" {
-  description = "Filename of Teradici PCoIP Graphics Agent. Leave blank to download the latest."
+  description = "Filename of Teradici PCoIP Standard Agent. Leave blank to download the latest."
   default     = ""
 }
 
