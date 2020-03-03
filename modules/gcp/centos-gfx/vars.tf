@@ -110,6 +110,16 @@ variable "ws_admin_ssh_pub_key_file" {
   type        = string
 }
 
+variable "pcoip_agent_repo_pubkey_url" {
+  description = "URL of Teradici repo public key"
+  default     = "https://downloads.teradici.com/rhel/teradici.pub.gpg"
+}
+
+variable "pcoip_agent_repo_url" {
+  description = "URL of Teradici PCoIP Graphics Agent"
+  default     = "https://downloads.teradici.com/rhel/pcoip.repo"
+}
+
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
   default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID9.1/NVIDIA-Linux-x86_64-430.46-grid.run"

@@ -105,7 +105,7 @@ variable "nvidia_driver_url" {
   default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID9.1/431.79_grid_win10_server2016_server2019_64bit_international.exe"
 }
 
-variable "pcoip_agent_location" {
+variable "pcoip_agent_location_url" {
   description = "URL of Teradici PCoIP Graphics Agent"
   default     = "https://downloads.teradici.com/win/stable/"
 }

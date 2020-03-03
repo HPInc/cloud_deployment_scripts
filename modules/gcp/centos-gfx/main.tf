@@ -31,6 +31,8 @@ resource "google_storage_bucket_object" "centos-gfx-startup-script" {
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
       nvidia_driver_url           = var.nvidia_driver_url,
+      pcoip_agent_repo_pubkey_url = var.pcoip_agent_repo_pubkey_url,
+      pcoip_agent_repo_url        = var.pcoip_agent_repo_url,
     }
   )
 }

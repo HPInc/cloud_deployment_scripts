@@ -25,14 +25,14 @@ resource "google_storage_bucket_object" "win-gfx-startup-script" {
     "${path.module}/${local.startup_script}.tmpl",
     {
       kms_cryptokey_id            = var.kms_cryptokey_id,
-      pcoip_agent_location        = var.pcoip_agent_location,
-      pcoip_agent_filename        = var.pcoip_agent_filename,
       pcoip_registration_code     = var.pcoip_registration_code,
       nvidia_driver_url           = var.nvidia_driver_url,
       domain_name                 = var.domain_name,
       admin_password              = var.admin_password,
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
+      pcoip_agent_location_url    = var.pcoip_agent_location_url,
+      pcoip_agent_filename        = var.pcoip_agent_filename,
     }
   )
 }
