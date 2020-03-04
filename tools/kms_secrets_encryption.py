@@ -7,367 +7,510 @@
 
 import argparse
 import base64
-import json
 import os
-from google.cloud  import kms_v1
-from google.oauth2 import service_account
-
-GCP_CREDENTIALS_FILE = None
-CAM_CREDENTIALS_FILE = None
+from google.cloud    import kms_v1
+from google.oauth2   import service_account
 
 
-# Create KMS key ring
-def create_key_ring(client, project_id, location, key_ring_id):
-    parent = client.location_path(project_id, location)
+SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
 
-    # The key ring object template
-    keyring_path = client.key_ring_path(project_id, location, key_ring_id)
-    keyring      = {"name": keyring_path}
+class Tfvars_Encryptor_GCP:
+    """Tfvars_Encryptor_GCP is used to automate the encryption or decryption of secrets in a terraform 
+    tfvars file so that it is ready to be used for terraform deployments using encrypted secrets.
 
-    # Create a key ring
-    response = client.create_key_ring(parent, key_ring_id, keyring)
+    Attributes:
+        tfvars_path (str)          Path to the terraform.tfvars file.
+        tfvars_data (dict)         Holds key value pairs for all terraform.tfvars configuration data.
+        tfvars_secrets (dict)      Holds key value pairs for all terraform.tfvars secrets.
+        max_key_length (int)       Longest string length of a tfvars_secrets key used to write secrets left-justified.
+        gcp_credentials_file (str) Path to the GCP credentials file used for GCP KMS.
+        gcp_credentials (object)   GCP Credentials object for a GCP service account.
+        kms_client (object)        Instance of GCP Key Management Service Client.
+        project_id (str)           GCP project ID associated with the GCP service account.
+        location (str)             Defaulted to use "global" as the location.
+        key_ring_id (str)          Defaulted to use "cas_keyring" as a key ring ID.
+        crypto_key_id (str)        Defaulted to use "cas_key" as a crypto key ID.
+        crypto_key_path (str)      Full GCP resource path to the crypto key being used to encrypt / decrypt.
 
-    return response.name
+    Methods:
+        __init__(self, tfvars_path)
+        create_crypto_key(crypto_key_id)
+        create_key_ring(key_ring_id)
+        decrypt_ciphertext(ciphertext)
+        decrypt_file(file_path)
+        decrypt_tfvars_secrets()
+        encrypt_file(file_path)
+        encrypt_plaintext(plaintext)
+        encrypt_tfvars_secrets()
+        initialize_keyring(key_ring_id)
+        initialize_cryptokey(crypto_key_id)
+        get_crypto_keys(key_ring_id)
+        get_key_rings()
+        read_tfvars_data(tfvars_file)
+        read_tfvars_secrets(tfvars_file)
+        write_new_tfvars()
+    """
 
-
-def create_crypto_key(client, project_id, location, key_ring_id, crypto_key_id):
-    parent = client.key_ring_path(project_id, location, key_ring_id)
-
-    # Create the crypto key object template
-    purpose    = kms_v1.enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
-    crypto_key = { "purpose": purpose }
-
-    # Create a crypto key for the given key ring
-    response = client.create_crypto_key(parent, crypto_key_id, crypto_key)
-
-    return response.name
-
-"""
-# Decrypt CAM JSON credentials file
-def decrypt_cam_credentials(client, kms_cryptokey_id):
-    # CAM credentials file path to be decrypted
-    cam_credentials_file = CAM_CREDENTIALS_FILE
-
-    # Decrypt CAM JSON credentials
-    try:
-        print("Decrypting CAM credentials...")
-        cam_credentials_ciphertext = ""
-
-        with open(cam_credentials_file) as f:
-            cam_credentials_ciphertext = f.read()
-    
-        cam_credentials_decrypted = decrypt_ciphertext(client, kms_cryptokey_id, cam_credentials_ciphertext)
+    def __init__(self, tfvars_path):
+        """Tfvars_Encryptor_GCP Class Constructor to initialize the object.
         
-        print("Finished decrypting CAM credentials.\n")
+        Args: 
+            tfvars_path (str):      a full path to the terraform.tfvars file
+        """
 
-        with open("{}".format(cam_credentials_file.replace(".encrypted", "")), "w") as cam_credentials_decrypted_file:
-            cam_credentials_decrypted_file.write(cam_credentials_decrypted)
+        # Read tfvars data and secrets into dictionaries
+        self.tfvars_path    = tfvars_path
+        self.tfvars_data    = self.read_tfvars_data(tfvars_path)
+        self.tfvars_secrets = self.read_tfvars_secrets(tfvars_path)
 
-        os.remove(cam_credentials_file)
+        # Find the max string length of all the keys to left-justify align them
+        self.max_key_length = max(map(len, self.tfvars_secrets))
 
-    except Exception as err:
-        print("An exception occurred decrypting CAM JSON credentials:")
-        print("{}\n".format(err))
-        raise SystemExit()
+        # Set GCP credentials instance variable from tfvars_data
+        self.gcp_credentials_file = self.tfvars_data.get("gcp_credentials_file")
 
+        # Create a client for the KMS API using the provided GCP service account
+        self.gcp_credentials = service_account.Credentials.from_service_account_file(self.gcp_credentials_file)
+        self.kms_client      = kms_v1.KeyManagementServiceClient(credentials = self.gcp_credentials)
 
-# Decrypt ciphertext using the provided symmetric crypto key
-def decrypt_ciphertext(client, kms_cryptokey_id, ciphertext):
-    # Resource name of the crypto key
-    crypto_key_path = kms_cryptokey_id
-
-    # Convert ciphertext string to a byte string
-    ciphertext = ciphertext.encode("utf-8")
-
-    # Base64 decoding of ciphertext
-    ciphertext = base64.b64decode(ciphertext)
-
-    # Use the KMS API to decrypt the data.
-    response = client.decrypt(crypto_key_path, ciphertext)
-
-    # Decode Base64 plaintext
-    plaintext = response.plaintext.decode()
-    return plaintext
+        # GCP KMS resource variables
+        self.project_id      = self.tfvars_data.get("gcp_project_id")
+        self.location        = "global"
+        self.key_ring_id     = self.initialize_keyring("cas_keyring")
+        self.crypto_key_id   = self.initialize_cryptokey("cas_key")
+        self.crypto_key_path = self.kms_client.crypto_key_path_path(self.project_id, self.location, self.key_ring_id, self.crypto_key_id)
 
 
-def decrypt_tfvars_secrets(tfvars_path):    
-    # Read tfvars file into a dictionary
-    tfvars_dict = read_terraform_tfvars(tfvars_path)
-
-    # Abort the decryption if the tfvars is already encrypted
-    if not tfvars_dict.get("kms_cryptokey_id"):
-        print("Did not find kms_cryptokey_id in tfvars. Ensure that the secrets are encrypted and try again.\n")
-        raise SystemExit()
-
-    # Get the ciphertext secrets to be decrypted inside the tfvars file
-    secrets = get_tfvars_secrets(tfvars_dict, tfvars_path)
-
-    # Set GCP credentials global variable for the client
-    global GCP_CREDENTIALS_FILE
-    GCP_CREDENTIALS_FILE = tfvars_dict.get("gcp_credentials_file")
-
-    # Create an API client for the KMS API using the provided GCP service account
-    credentials = service_account.Credentials.from_service_account_file(GCP_CREDENTIALS_FILE)
-    client      = kms_v1.KeyManagementServiceClient(credentials = credentials)
-
-    # GCP KMS resource variables
-    kms_cryptokey_id   = tfvars_dict.get("kms_cryptokey_id")
-
-    # Decrypt secrets including CAM credentials
-    print("Decrypting using cryptokey:\n{}\n".format(kms_cryptokey_id))
-
-    try:
-        for secret in secrets:
-            print("Decrypting {}...".format(secret))
-            plaintext = decrypt_ciphertext(client, kms_cryptokey_id, secrets.get(secret))
-            print("Finished decrypting {0}.\n".format(secret))
-            secrets[secret] = plaintext
-
-        if tfvars_dict.get("cam_credentials_file"):
-            decrypt_cam_credentials(client, kms_cryptokey_id)
-            
-    except Exception as err:
-        print("An exception occurred decrypting secrets:")
-        print("{}\n".format(err))
-        raise SystemExit()
-
-    # Overwrite existing terraform.tfvars file with plaintext secrets
-    write_new_tfvars(tfvars_path, secrets, kms_cryptokey_id)
-"""
-
-# Encrypt CAM JSON credential file
-def encrypt_cam_credentials(client, project_id, location, key_ring_id, crypto_key_id, secrets):
-    cam_credentials_file = CAM_CREDENTIALS_FILE
-
-    # Encrypt CAM JSON credentials
-    try:
-        print("Encrypting CAM credentials...\n")
+    def create_crypto_key(self, crypto_key_id):
+        """A method to create a crypto key on GCP KMS.
         
-        with open(cam_credentials_file) as cam_credentials:
-            cam_credentials = json.load(cam_credentials)
-    
-        cam_credentials_string = json.dumps(cam_credentials)
-        cam_credentials_encrypted_string = encrypt_plaintext(client, project_id, location, key_ring_id, 
-                                                             crypto_key_id, cam_credentials_string)
+        Args:
+            crypto_key_id (str): the name of the crypto key to be created
+        Returns:
+            string: the name of the crypto key created
+        """
+
+         # Create the crypto key object template
+        purpose    = kms_v1.enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
+        crypto_key = { "purpose": purpose }
+
+        # Create a crypto key for the given key ring
+        parent   = self.kms_client.key_ring_path(self.project_id, self.location, self.key_ring_id)
+        response = self.kms_client.create_crypto_key(parent, crypto_key_id, crypto_key)
+
+        return response.name
+
+
+    def create_key_ring(self, key_ring_id):
+        """A method to create a key ring on GCP KMS.
         
-        print("Finished encrypting CAM credentials.\n")
+        Args:
+            key_ring_id (str): the name of the key ring to be created
+        Returns:
+            string: the name of the key ring created
+        """
 
-        cam_credentials_file_encrypted = "{}.encrypted".format(cam_credentials_file)
+        # Create the key ring object template
+        keyring_path = self.kms_client.key_ring_path(self.project_id, self.location, key_ring_id)
+        keyring      = {"name": keyring_path}
+
+        # Create a key ring
+        parent   = self.kms_client.location_path(self.project_id, self.location)
+        response = self.kms_client.create_key_ring(parent, key_ring_id, keyring)
+
+        return response.name
+
+
+    def decrypt_ciphertext(self, ciphertext):
+        """A method that decrypts ciphertext.
+
+        Uses GCP KMS to decrypt ciphertext back to plaintext using the provided
+        symmetric crypto key that belongs to this instance.
         
-        with open(cam_credentials_file_encrypted, "w") as f:
-            f.write(cam_credentials_encrypted_string)
+        Args:
+            ciphertext (str): the ciphertext being decrypted
+        Returns:
+            string: the plaintext
+        """
+
+        # Convert ciphertext string to a byte string, then Base64 decode it
+        ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
+
+        # Use the KMS API to decrypt the data
+        response = self.kms_client.decrypt(self.crypto_key_path, ciphertext)
+
+        # Decode Base64 plaintext
+        plaintext = response.plaintext.decode("utf-8")
+
+        return plaintext
+
+
+    def decrypt_file(self, file_path):
+        """A method that decrypts the contents of a text file.
+
+        Uses GCP KMS to decrypt ciphertext back to plaintext using the provided
+        symmetric crypto key that belongs to this instance.
         
-        # Add .backup postfix to the original and change the global variable to the encrypted file
-        os.rename(cam_credentials_file, "{}.backup".format(cam_credentials_file))
+        Args:
+            file_path (str): the path of the text file being decrypted
+        Returns:
+            string: the path to the decrypted text file created
+        """
 
-    except Exception as err:
-        print("An exception occurred encrypting CAM JSON credentials:")
-        print("{}\n".format(err))
-        raise SystemExit()
-    
-    return cam_credentials_file_encrypted
-
-
-# Encrypt plaintext data using the provided symmetric crypto key
-def encrypt_plaintext(client, project_id, location, key_ring_id, crypto_key_id,
-                      plaintext):
-    # Resource path of the crypto key
-    crypto_key_path = client.crypto_key_path_path(project_id, location, key_ring_id, 
-                        crypto_key_id)
-
-    # UTF-8 encoding of plaintext
-    plaintext = plaintext.encode("utf-8")
-
-    # Use the KMS API to encrypt the data.
-    response = client.encrypt(crypto_key_path, plaintext)
-
-    # Base64 encoding of ciphertext
-    ciphertext = base64.b64encode(response.ciphertext).decode()
-    
-    return ciphertext
-
-
-def encrypt_tfvars_secrets(tfvars_path):    
-    # Read tfvars data and secrets into dictionaries
-    tfvars_data = read_tfvars_data(tfvars_path)
-    secrets     = read_tfvars_secrets(tfvars_path)
-    
-    # Abort the encryption if the tfvars is already encrypted with a kms_cryptokey_id present
-    if tfvars_data.get("kms_cryptokey_id"):
-        print("Detected kms_cryptokey_id in tfvars. Ensure that the secrets are not already encrypted and try again.\n")
-        raise SystemExit()
-
-    # Set GCP and CAM credentials global variables from tfvars
-    global GCP_CREDENTIALS_FILE
-    global CAM_CREDENTIALS_FILE
-    GCP_CREDENTIALS_FILE = tfvars_data.get("gcp_credentials_file")
-    CAM_CREDENTIALS_FILE = secrets.get("cam_credentials_file")
-
-    # Create an API client for the KMS API using the provided GCP service account
-    credentials = service_account.Credentials.from_service_account_file(GCP_CREDENTIALS_FILE)
-    client      = kms_v1.KeyManagementServiceClient(credentials = credentials)
-
-    # GCP KMS resource variables
-    project_id = tfvars_data.get("gcp_project_id")
-    location   = "global"
-
-    key_rings_list   = get_key_rings(client, project_id, location)
-    crypto_keys_list = get_crypto_keys(client, project_id, location, key_rings_list)
-
-    key_ring_id = "terraform-keyring"
-    crypto_key_id = "terraform-cryptokey"
-
-    # Create the key ring only if it doesn't exist
-    if key_ring_id not in key_rings_list:
         try:
-            key_ring_id = create_key_ring(client, project_id, location, key_ring_id)
-            print("Created key ring: {}\n".format(kms_keyring_id))
-    
-        except Exception as err:
-            print("An exception occurred creating new key ring:")
-            print("{}".format(err))
-            raise SystemExit()
-    
-    # Create a crypto key only if it doesn't exist
-    if crypto_key_id not in crypto_keys_list:
-        try:
-            crypto_key_id = create_crypto_key(client, project_id, location, key_ring_id, crypto_key_id)
-            print("kms_cryptokey_id: {}\n".format(kms_cryptokey_id))
+            print("Decrypting file: {}...".format(file_path))
+
+            with open(file_path) as f:
+                f_ciphertext = f.read()
+        
+            f_plaintext = self.decrypt_ciphertext(f_ciphertext)
+
+            # Removes the .encrypted appended using this encryptor
+            file_path_decrypted = "{}.decrypted".format(file_path).replace(".encrypted", "")
+
+            with open(file_path_decrypted, "w") as f:
+                f.write(f_plaintext)
 
         except Exception as err:
-            print("An exception occurred creating new crypto key:")
-            print("{}".format(err))
+            print("An exception occurred decrypting file.")
+            print("{}\n".format(err))
             raise SystemExit()
-    
-    # Encrypt all secrets found in the secrets dictionary
-    try:
-        for secret in secrets:
-            print("Encrypting {}...\n".format(secret))
-
-            # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
-            if secret == "cam_credentials_file":
-                cam_credentials_file_encrypted = encrypt_cam_credentials(client, project_id, location, key_ring_id, crypto_key_id, secrets)
-                secrets["cam_credentials_file"] = cam_credentials_file_encrypted
-            else:
-                ciphertext = encrypt_plaintext(client, project_id, location, key_ring_id, crypto_key_id, secrets.get(secret))
-                secrets[secret] = ciphertext
         
-
-    except Exception as err:
-        print("An exception occurred encrypting secrets:")
-        print("{}\n".format(err))
-        raise SystemExit()
-    
-    # Write secrets into new terraform.tfvars file
-    kms_cryptokey_id = client.crypto_key_path_path(project_id, location, key_ring_id, crypto_key_id)
-    write_new_tfvars(tfvars_path, secrets, kms_cryptokey_id)
+        return file_path_decrypted
 
 
-# Get KMS key rings
-def get_key_rings(client, project_id, location):
-    parent   = client.location_path(project_id, location)
-    response = client.list_key_rings(parent)
-    
-    # Extract just the key ring name from each response and put into a list
-    key_rings_list = list(map(lambda key_ring: key_ring.name.rpartition('/')[2], response))
+    def decrypt_tfvars_secrets(self):
+        """A method that decrypts the secrets contained in the terraform.tfvars file.
 
-    return key_rings_list
+        This method contains the logic for handling the decryption of the secrets 
+        and any file paths associated with it using GCP KMS. Once decrypted, it calls 
+        write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
+        """    
+
+        # Set crypto key path to use kms_cryptokey_id
+        self.crypto_key_path = self.tfvars_data.get("kms_cryptokey_id")
+
+        # Decrypt all secrets
+        try:
+            for secret in self.tfvars_secrets:
+                # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
+                if os.path.isfile(self.tfvars_secrets.get(secret)):
+                    self.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_secrets.get(secret))
+                else:
+                    print("Decrypting {}...".format(secret))
+                    self.tfvars_secrets[secret] = self.decrypt_ciphertext(self.tfvars_secrets.get(secret))
+            
+            # Write encrypted secrets into new terraform.tfvars file
+            self.write_new_tfvars()
+            print("\nSuccessfully decrypted all secrets!\n")
+
+        except Exception as err:
+            print("An exception occurred decrypting secrets:")
+            print("{}\n".format(err))
+            raise SystemExit()
 
 
-# Get KMS crypto keys
-def get_crypto_keys(client, project_id, location, key_rings_list):
-    crypto_keys_list = []
+    def encrypt_file(self, file_path):
+        """A method that encrypts the contents of a text file.
 
-    for key_ring in key_rings_list:
-        parent   = client.key_ring_path(project_id, location, key_ring)
-        response = client.list_crypto_keys(parent)
-
-        # Extract just the crypto key name from each response and put that into a temp list
-        temp_list = list(map(lambda key: key.name.rsplit('/', 1)[1], response))
-
-        for crypto_key in temp_list:
-            crypto_keys_list.append(crypto_key)
-
-    return crypto_keys_list
-
-
-# Read terraform.tfvars for user provided configurations
-def read_tfvars_data(tfvars_file):
-    tf_data = {}
-
-    with open(tfvars_file, 'r') as f:
-        for line in f:
-            if "# Secrets below can be encrypted using GCP-KMS, refer to the README for more information." in line:
-                break
-
-            if line[0] in ('#', '\n'):
-                continue
+        Uses GCP KMS to encrypt the plaintext in a file to ciphertext using 
+        the provided symmetric crypto key that belongs to this instance.
         
-            # Split using the first delimiter
-            key, value = map(str.strip, line.split('=', 1))
-            tf_data[key] = value.replace("\"", "")
+        Args:
+            file_path (str): the path of the text file being encrypted
+        Returns:
+            string: the path to the encrypted text file created
+        """
+
+        try:
+            print("Encrypting file: {}...".format(file_path))
             
-    return tf_data
+            with open(file_path) as f:
+                f_string = f.read()
 
-
-# Read terraform.tfvars for user provided secrets
-def read_tfvars_secrets(tfvars_file):
-    tf_secrets = {}
-    begin_reading_secrets = False
-
-    with open(tfvars_file, 'r') as f:
-        for line in f:
-            if "# Secrets below can be encrypted using GCP-KMS, refer to the README for more information." in line:
-                begin_reading_secrets = True
-                continue
+            f_encrypted_string = self.encrypt_plaintext(f_string)
+            file_path_encrypted = "{}.encrypted".format(file_path).replace(".decrypted", "")
             
-            if line[0] in ('#', '\n'):
-                continue
+            with open(file_path_encrypted, "w") as f:
+                f.write(f_encrypted_string)
 
-            if begin_reading_secrets:
-                # Split using the first delimiter
+        except Exception as err:
+            print("An exception occurred encrypting the file:")
+            print("{}\n".format(err))
+            raise SystemExit()
+        
+        return file_path_encrypted
+
+
+    def encrypt_plaintext(self, plaintext):
+        """A method that encrypts plaintext.
+
+        Uses GCP KMS to encrypt plaintext to ciphertext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            ciphertext (str): the plainttext being encrypted
+        Returns:
+            string: the ciphertext
+        """
+
+        # Use the KMS API to encrypt the data.
+        response = self.kms_client.encrypt(self.crypto_key_path, plaintext.encode("utf-8"))
+
+        # Base64 encoding of ciphertext
+        ciphertext = base64.b64encode(response.ciphertext).decode("utf-8")
+
+        return ciphertext
+
+
+    def encrypt_tfvars_secrets(self):
+        """A method that encrypts secrets contained in the terraform.tfvars file.
+
+        This method contains the logic for handling the encryption of the secrets 
+        and any file paths associated with it using GCP KMS. Once encrypted, it calls 
+        write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
+        """    
+
+        # Encrypt all secrets found in the tfvars_secrets dictionary
+        try:
+            for secret in self.tfvars_secrets:
+                # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
+                if os.path.isfile(self.tfvars_secrets.get(secret)):
+                    self.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_secrets.get(secret))
+                else:
+                    print("Encrypting {}...".format(secret))
+                    self.tfvars_secrets[secret] = self.encrypt_plaintext(self.tfvars_secrets.get(secret))
+
+            # Write encrypted secrets into new terraform.tfvars file
+            self.write_new_tfvars()
+            print("\nSuccessfully encrypted all secrets!\n")
+
+        except Exception as err:
+            print("An exception occurred encrypting secrets:")
+            print("{}\n".format(err))
+            raise SystemExit()
+
+
+    def initialize_cryptokey(self, crypto_key_id):
+        """A method that initializes this instance's crypto key.
+
+        This initialization method is called in the constructor to
+        create a default crypto key if it doesn't exist. If the key
+        exists already, then reuse it for this instance.
+        
+        Args:
+            crypto_key_id (str): crypto key used to encrypt and decrypt
+        Returns:
+            string: the crypto key used
+        """
+
+        crypto_keys_list = self.get_crypto_keys(self.key_ring_id)
+
+        # Create the crypto key only if it doesn't exist
+        if crypto_key_id not in crypto_keys_list:
+            try:
+                self.create_crypto_key(crypto_key_id)
+                print("Created key: {}\n".format(crypto_key_id))
+                
+            except Exception as err:
+                print("An exception occurred creating new crypto key:")
+                print("{}".format(err))
+                raise SystemExit()
+        else:
+            print("Using existing crypto key: {}\n".format(crypto_key_id))
+        
+        return crypto_key_id
+
+
+    def initialize_keyring(self, key_ring_id):
+        """A method that initializes this instance's key ring.
+
+        This initialization method is called in the constructor to
+        create a default key ring if it doesn't exist.
+        
+        Args:
+            key_ring_id (str): key ring being created
+        Returns:
+            string: the key ring used
+        """
+
+        key_rings_list = self.get_key_rings()
+
+        # Create the key ring only if it doesn't exist
+        if key_ring_id not in key_rings_list:
+            try:
+                self.create_key_ring(key_ring_id)
+                print("Created key ring: {}\n".format(key_ring_id))
+        
+            except Exception as err:
+                print("An exception occurred creating new key ring:")
+                print("{}".format(err))
+                raise SystemExit()
+        else: 
+            print("Using existing key ring: {}\n".format(key_ring_id))
+
+        return key_ring_id
+
+
+    def get_crypto_keys(self, key_ring_id):
+        """A method that retrieves a list of crypto keys associated with a key ring.
+
+        This method returns a list of all the crypto keys associated with a specific key ring.
+        
+        Args:
+            key_ring_id (str): a GCP KMS key ring
+        Returns:
+            list: a list of all the crypto keys associated with the key ring argument.
+        """
+
+        parent   = self.kms_client.key_ring_path(self.project_id, self.location, key_ring_id)
+        response = self.kms_client.list_crypto_keys(parent)
+
+        # Access the name property and split string from the right. [2] to get the string after the separator
+        # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring/cryptoKeys/cas_key"
+        crypto_keys_list = list(map(lambda key: key.name.rpartition('/')[2], response))
+
+        return crypto_keys_list
+
+
+    def get_key_rings(self):
+        """A method that retrieves a list of key rings.
+
+        This method returns a list of all the key rings associated 
+        with the GCP service account.
+        
+        Returns:
+            list: a list of all the key rings
+        """
+
+        parent   = self.kms_client.location_path(self.project_id, self.location)
+        response = self.kms_client.list_key_rings(parent)
+
+        # Access the name property and split string from the right. [2] to get the string after the separator
+        # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring"
+        key_rings_list = list(map(lambda key_ring: key_ring.name.rpartition('/')[2], response))
+
+        return key_rings_list
+
+
+    def read_tfvars_data(self, tfvars_file):
+        """A method that reads terraform.tfvars for all configuration data.
+
+        This method reads a terraform.tfvars file for all the user-provided 
+        configuration data above the secrets.
+        Args:
+            tfvars_file (str): a path to a terraform.tfvars file
+        Returns:
+            dict: key value pairs for all the terraform.tfvars data
+        """
+
+        tf_data = {}
+
+        with open(tfvars_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+
+                if SECRETS_START_FLAG in line:
+                    break
+
+                # Skip blank lines and comment lines
+                # "not line" must come first using short circuiting to avoid string index out of range error
+                if not line or line[0] in ("#"):
+                    continue
+            
+                # Split the line into key value pairs using the first delimiter
                 key, value = map(str.strip, line.split('=', 1))
-                tf_secrets[key] = value.replace("\"", "")
-            
-    return tf_secrets
+                tf_data[key] = value.replace("\"", "")
+                
+        return tf_data
 
 
-# Write the new tfvars file using encrypted secrets
-def write_new_tfvars(tfvars_file, secrets, kms_cryptokey_id):
-    cam_credentials_file = CAM_CREDENTIALS_FILE
+    def read_tfvars_secrets(self, tfvars_file):
+        """A method that reads terraform.tfvars for all secrets.
 
-    # Resource format "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
-    kms_resource_list  = kms_cryptokey_id.split('/')
+        This method reads a terraform.tfvars file for all the secrets into a dictionary.
 
-    # Key ring name is at index 5 and crypto key name is at index 7
-    kms_keyring_name   = kms_resource_list[5]
-    kms_cryptokey_name = kms_resource_list[7]
+        Args:
+            tfvars_file (str): a path to a terraform.tfvars file
+        Returns:
+            dict: key value pairs for all the terraform.tfvars secrets
+        """
 
-    lines = []
-    
-    with open(tfvars_file, 'r') as f:
+        tf_secrets = {}
+        begin_reading_secrets = False
 
-        for line in f:
-            lines.append(line.rstrip())
+        with open(tfvars_file, 'r') as f:
+            for line in f:
+                line = line.strip()
 
-            if "# Secrets below can be encrypted using GCP-KMS, refer to the README for more information." in line:
-                break
+                if SECRETS_START_FLAG in line:
+                    begin_reading_secrets = True
+                    continue
+                
+                # Skip blank lines and comment lines
+                # "not line" must come first using short circuiting to avoid string index out of range error
+                if not line or line[0] in ("#"):
+                    continue
+
+                if begin_reading_secrets:
+                    # Split the line into key value pairs using the first delimiter
+                    key, value = map(str.strip, line.split('=', 1))
+                    tf_secrets[key] = value.replace("\"", "")
+
+        return tf_secrets
+
+
+    def write_new_tfvars(self):
+        """A method that writes a new terraform.tfvars file
+
+        This method writes a new terraform.tfvars file that is ready to be used by
+        Terraform after encrypting or decrypting. 
+        """
+
+        # Parse existing tfvars and store each line into a list
+        lines = []
         
-        lines.append("{} = \"{}\"".format("kms_cryptokey_id", kms_cryptokey_id))
+        with open(self.tfvars_path, 'r') as f:
+            for line in f:
+                
+                # Remove leading and trailing whitespace including "\n" and "\t"
+                line = line.strip()
 
-        for key, value in secrets.items():
-            lines.append("{} = \"{}\"".format(key, value))
+                # Append the crypto key path to kms_cryptokey_id line
+                if "kms_cryptokey_id" in line:
+                    if not self.tfvars_data.get("kms_cryptokey_id"):
+                        lines.append("{} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                    else:
+                        lines.append("# {} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                    continue
 
-    # Add .backup postfix to the original tfvars file
-    os.rename(tfvars_file, "{}.backup".format(tfvars_file))
+                # Blank lines and comments are unchanged
+                # "not line" must come first using short circuit to avoid string index out of range error
+                if not line or line[0] in ("#"):
+                    lines.append(line)
+                    continue
+                
+                # Need to keep the .strip() here to sanitize the key being read
+                key = line.split("=")[0].strip()
 
-    # Rewrite the existing terraform.tfvars
-    with open(tfvars_file, 'w') as f:
-        f.writelines("%s\n" %line for line in lines)
+                if key in self.tfvars_secrets.keys():
+                    # Left justify all the secrets with space as padding on the right
+                    lines.append("{} = \"{}\"".format(key.ljust(self.max_key_length, " "), self.tfvars_secrets.get(key)))
+                else:
+                    lines.append(line)
+
+        # Add .backup postfix to the original tfvars file
+        print("Creating backup of terraform.tfvars...")
+        os.rename(self.tfvars_path, "{}.backup".format(self.tfvars_path))
+
+        # Rewrite the existing terraform.tfvars
+        print("Writing new terraform.tfvars...")
+        with open(self.tfvars_path, 'w') as f:
+            f.writelines("%s\n" %line for line in lines)
 
 
-# Use argparse to determine user's specified terraform.tfvars and provide -d flag for decryption instead
 def main():
+    # Set up argparse
     parser_description = ("Creates GCP KMS keyring and key, and uses the key to encrypt or decrypt secrets in the specified terraform.tfvars."
                           "The script encrypts by default. To decrypt instead, use the -d flag.")
 
@@ -378,12 +521,29 @@ def main():
 
     args = parser.parse_args()
     
+    # Instantiate a new Tfvars_Encryptor_GCP with the tfvars path
+    tfvars_encryptor_gcp = Tfvars_Encryptor_GCP(args.tfvars)
+    
+    # Abort the script if GCP credentials is missing
+    if not tfvars_encryptor_gcp.tfvars_data.get("gcp_credentials_file"):
+        print("Missing gcp_credentials_file in tfvars. Ensure gcp_credentials_file is valid and try again.\n")
+        raise SystemExit()
+
+    # Encryption is the default, user can specify a -d flag for decryption
     if args.d:
-        print("Decrypting secrets...\n")
-        decrypt_tfvars_secrets(args.tfvars)
+        # Abort the decryption if there is not a kms_cryptokey_id in the tfvars file
+        if not tfvars_encryptor_gcp.tfvars_data.get("kms_cryptokey_id"):
+            print("No kms_cryptokey_id present in tfvars. Ensure the secrets are encrypted and try again.\n")
+            raise SystemExit()
+
+        tfvars_encryptor_gcp.decrypt_tfvars_secrets()
     else:
-        print("Encrypting secrets...\n")
-        encrypt_tfvars_secrets(args.tfvars)
+        # Abort the encryption if the tfvars is already encrypted with a kms_cryptokey_id present
+        if tfvars_encryptor_gcp.tfvars_data.get("kms_cryptokey_id"):
+            print("Detected kms_cryptokey_id in tfvars. Ensure secrets are not already encrypted and try again.\n")
+            raise SystemExit()
+
+        tfvars_encryptor_gcp.encrypt_tfvars_secrets()
 
 
 if __name__ == '__main__':

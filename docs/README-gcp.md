@@ -36,7 +36,7 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
 ### (Optional) Encrypting Secrets
-Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and Cloud Access Manager service account credentials. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
+Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
 The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under tools.
 
@@ -65,7 +65,7 @@ If secrets are KMS-encrypted, fill in the ```kms_cryptokey_id``` variable with t
 - ```safe_mode_admin_password```
 - ```ad_service_account_password```
 - ```pcoip_registration_code```
-- ```cam_credentials_file```
+- ```cac_token```
 
 Be sure to remove any spaces in the ciphertext.
 

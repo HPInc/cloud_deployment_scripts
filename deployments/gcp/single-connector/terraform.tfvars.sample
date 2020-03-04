@@ -1,5 +1,4 @@
 # Commented out lines represents defaults that can be changed
-
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
@@ -80,5 +79,5 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cam_credentials_file        = "/path/to/cred.json"
+cac_token                   = "token from Cloud Access Manager for the connector"
 
