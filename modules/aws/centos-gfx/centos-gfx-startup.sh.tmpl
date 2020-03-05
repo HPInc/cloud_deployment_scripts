@@ -9,6 +9,8 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 INST_LOG_FILE="/var/log/teradici/agent/install.log"
 METADATA_IP="http://169.254.169.254"
+PCOIP_AGENT_REPO_PUBKEY_URL=${pcoip_agent_repo_pubkey_url}
+PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
 
 log() {
     local message="$1"
@@ -156,11 +158,11 @@ install_pcoip_agent() {
         log "--> Start to install PCoIP agent ..."
         # Get the Teradici pubkey
         log "--> Get Teradici pubkey"
-        rpm --import https://downloads.teradici.com/rhel/teradici.pub.gpg
+        rpm --import $PCOIP_AGENT_REPO_PUBKEY_URL
 
         # Get PCoIP repo
         log "--> Get Teradici PCoIP agent repo"
-        wget --retry-connrefused --tries=3 --waitretry=5 -O /etc/yum.repos.d/pcoip.repo https://downloads.teradici.com/rhel/pcoip.repo
+        wget --retry-connrefused --tries=3 --waitretry=5 -P /etc/yum.repos.d $PCOIP_AGENT_REPO_URL
 
         log "--> Install PCoIP graphics agent ..."
         yum -y install pcoip-agent-graphics

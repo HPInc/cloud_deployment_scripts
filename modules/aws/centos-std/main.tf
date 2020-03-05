@@ -30,6 +30,8 @@ resource "aws_s3_bucket_object" "centos-std-startup-script" {
       domain_name                 = var.domain_name,
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
+      pcoip_agent_repo_pubkey_url = var.pcoip_agent_repo_pubkey_url,
+      pcoip_agent_repo_url        = var.pcoip_agent_repo_url,
     }
   )
 }
