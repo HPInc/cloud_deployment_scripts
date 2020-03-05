@@ -47,7 +47,7 @@ variable "bucket_name" {
 
 variable "gcp_zone" {
   description = "Zone to deploy the Workstation"
-  default     = "us-west1-b"
+  default     = "us-west2-b"
 }
 
 variable "subnet" {
