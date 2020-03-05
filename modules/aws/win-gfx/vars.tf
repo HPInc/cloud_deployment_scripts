@@ -87,7 +87,7 @@ variable "admin_password" {
   type        = string
 }
 
-variable "pcoip_agent_location" {
+variable "pcoip_agent_location_url" {
   description = "URL of Teradici PCoIP Graphics Agent"
   default     = "https://downloads.teradici.com/win/stable/"
 }
