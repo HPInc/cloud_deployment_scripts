@@ -33,6 +33,9 @@ resource "google_storage_bucket_object" "win-gfx-startup-script" {
       ad_service_account_password = var.ad_service_account_password,
       pcoip_agent_location_url    = var.pcoip_agent_location_url,
       pcoip_agent_filename        = var.pcoip_agent_filename,
+      
+      enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
+      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
     }
   )
 }

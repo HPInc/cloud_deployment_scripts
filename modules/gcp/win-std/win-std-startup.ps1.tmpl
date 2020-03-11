@@ -20,6 +20,9 @@ $DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
 $DATA.Add("admin_password", "${admin_password}")
 $DATA.Add("ad_service_account_password", "${ad_service_account_password}")
 
+$ENABLE_AUTO_SHUTDOWN     = "${enable_workstation_idle_shutdown}"
+$AUTO_SHUTDOWN_IDLE_TIMER = ${minutes_idle_before_shutdown}
+
 $global:restart = $false
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
@@ -175,6 +178,37 @@ function PCoIP-Agent-Register {
     "PCoIP Agent Registered Successfully"
 }
 
+function Install-Idle-Shutdown {
+    "################################################################"
+    "Installing Idle Shutdown..."
+    "################################################################"
+
+    $serviceName = "CAMIdleShutdown"
+    $path = "C:\Program Files\Teradici\PCoIP Agent\bin"
+    $is64 = $true
+
+    cd $path
+
+    $ret = .\IdleShutdownAgent.exe -install
+    if( !$? ) {
+        "ERROR: failed to install idle shutdown."
+        exit 1
+    }
+
+    $idleTimerRegKeyPath = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
+    $idleTimerRegKeyName = "MinutesIdleBeforeShutdown"
+
+    if (!(Test-Path $idleTimerRegKeyPath)) {
+        New-Item -Path $idleTimerRegKeyPath -Force
+    }
+
+    New-ItemProperty -Path $idleTimerRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
+
+    if (!($ENABLE_AUTO_SHUTDOWN)) {
+        Set-Service CAMIdleShutdown -StartupType "Disabled"
+    }
+}
+
 function Join-Domain {
     "################################################################"
     "Join Domain"
@@ -289,6 +323,8 @@ net user Administrator $DATA."admin_password" /active:yes
 PCoIP-Agent-Install
 
 PCoIP-Agent-Register
+
+Install-Idle-Shutdown
 
 Join-Domain
 

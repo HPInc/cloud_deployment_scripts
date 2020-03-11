@@ -32,6 +32,9 @@ resource "google_storage_bucket_object" "centos-std-startup-script" {
       ad_service_account_password = var.ad_service_account_password,
       pcoip_agent_repo_pubkey_url = var.pcoip_agent_repo_pubkey_url,
       pcoip_agent_repo_url        = var.pcoip_agent_repo_url,
+
+      enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
+      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
     }
   )
 }

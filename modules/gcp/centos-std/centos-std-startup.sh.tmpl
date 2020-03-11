@@ -13,9 +13,33 @@ DECRYPT_URI="https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 PCOIP_AGENT_REPO_PUBKEY_URL=${pcoip_agent_repo_pubkey_url}
 PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
 
+ENABLE_AUTO_SHUTDOWN=${enable_workstation_idle_shutdown}
+AUTO_SHUTDOWN_IDLE_TIMER=${minutes_idle_before_shutdown}
+
 log() {
     local message="$1"
     echo "[$(date)] $${message}" | tee -a "$INST_LOG_FILE"
+}
+
+retry() {
+    local retries=0
+    local max_retries=3
+    until [[ $retries -ge $max_retries ]]
+    do  
+    # Break if command succeeds, or log then retry if command fails.
+        $@ && break || {
+
+            log "--> Failed to run command. $${@}"
+            log "--> Retries left... $(( $max_retries - $retries ))"
+            ((n++))
+            sleep 10;
+        }
+    done
+
+    if [[ $retries -eq $max_retries ]]
+    then
+        return 1
+    fi
 }
 
 get_credentials() {
@@ -89,6 +113,28 @@ install_pcoip_agent() {
             sleep 10
         done
         log "--> Pcoip agent is registered successfully"
+    fi
+}
+
+install_idle_shutdown() {
+    log "--> Installing idle shutdown..."
+    mkdir /tmp/idleShutdown
+
+    retry wget "https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh" -O /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh
+    
+    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && sudo chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
+
+    INSTALL_OPTS="--idle-timer $${AUTO_SHUTDOWN_IDLE_TIMER}"
+    if [[ "$${ENABLE_AUTO_SHUTDOWN}" = "false" ]]; then
+        INSTALL_OPTS="$${INSTALL_OPTS} --disabled"
+    fi
+    
+    retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $${INSTALL_OPTS}
+
+    exitCode=$?
+    if [[ $exitCode -ne 0 ]]; then
+        log "--> Failed to install idle shutdown."
+        exit 1
     fi
 }
 
@@ -200,6 +246,8 @@ systemctl set-default graphical.target
 join_domain
 
 install_pcoip_agent
+
+install_idle_shutdown
 
 log "--> Installation is completed !!!"
 

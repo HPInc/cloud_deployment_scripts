@@ -179,6 +179,16 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
+variable "enable_workstation_idle_shutdown" {
+  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
 variable "win_gfx_instance_count" {
   description = "Number of Windows Grpahics Workstations"
   default     = 0
