@@ -15,6 +15,7 @@ PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
 
 ENABLE_AUTO_SHUTDOWN=${enable_workstation_idle_shutdown}
 AUTO_SHUTDOWN_IDLE_TIMER=${minutes_idle_before_shutdown}
+CPU_POLLING_INTERVAL=${minutes_cpu_polling_interval}
 
 log() {
     local message="$1"
@@ -122,8 +123,9 @@ install_idle_shutdown() {
 
     retry wget "https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh" -O /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh
     
-    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && sudo chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
+    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
 
+    log "--> Setting auto shutdown idle timer to $${AUTO_SHUTDOWN_IDLE_TIMER} minutes"
     INSTALL_OPTS="--idle-timer $${AUTO_SHUTDOWN_IDLE_TIMER}"
     if [[ "$${ENABLE_AUTO_SHUTDOWN}" = "false" ]]; then
         INSTALL_OPTS="$${INSTALL_OPTS} --disabled"
@@ -135,6 +137,12 @@ install_idle_shutdown() {
     if [[ $exitCode -ne 0 ]]; then
         log "--> Failed to install idle shutdown."
         exit 1
+    fi
+
+    if [[ $CPU_POLLING_INTERVAL -ne 15 ]]; then
+        log "--> Setting CPU polling interval to $${CPU_POLLING_INTERVAL} minutes"
+        sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${CPU_POLLING_INTERVAL}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
+        systemctl daemon-reload
     fi
 }
 

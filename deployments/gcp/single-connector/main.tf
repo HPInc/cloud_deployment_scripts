@@ -112,6 +112,7 @@ module "win-gfx" {
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
   minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
@@ -151,6 +152,7 @@ module "win-std" {
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
   minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
@@ -188,6 +190,7 @@ module "centos-gfx" {
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
   minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
@@ -230,6 +233,7 @@ module "centos-std" {
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
   minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
