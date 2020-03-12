@@ -75,6 +75,11 @@ variable "minutes_idle_before_shutdown" {
   default     = 240
 }
 
+variable "minutes_cpu_polling_interval" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
+}
+
 variable "network_tags" {
   description = "Tags to be applied to the Workstation"
   type        = list(string)

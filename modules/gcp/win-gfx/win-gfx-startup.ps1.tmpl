@@ -23,6 +23,7 @@ $DATA.Add("ad_service_account_password", "${ad_service_account_password}")
 
 $ENABLE_AUTO_SHUTDOWN     = "${enable_workstation_idle_shutdown}"
 $AUTO_SHUTDOWN_IDLE_TIMER = ${minutes_idle_before_shutdown}
+$CPU_POLLING_INTERVAL     = ${minutes_cpu_polling_interval}
 
 $global:restart = $false
 
@@ -238,14 +239,16 @@ function Install-Idle-Shutdown {
         exit 1
     }
 
-    $idleTimerRegKeyPath = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
-    $idleTimerRegKeyName = "MinutesIdleBeforeShutdown"
+    $idleShutdownRegKeyPath       = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
+    $idleTimerRegKeyName          = "MinutesIdleBeforeShutdown"
+    $cpuPollingIntervalRegKeyName = "PollingIntervalMinutes"
 
-    if (!(Test-Path $idleTimerRegKeyPath)) {
+    if (!(Test-Path $idleShutdownRegKeyPath)) {
         New-Item -Path $idleTimerRegKeyPath -Force
     }
 
-    New-ItemProperty -Path $idleTimerRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $CPU_POLLING_INTERVAL -PropertyType DWORD -Force
 
     if (!($ENABLE_AUTO_SHUTDOWN)) {
         Set-Service CAMIdleShutdown -StartupType "Disabled"

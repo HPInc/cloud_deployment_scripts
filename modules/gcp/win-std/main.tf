@@ -35,6 +35,7 @@ resource "google_storage_bucket_object" "win-std-startup-script" {
 
       enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
       minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
+      minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval,
     }
   )
 }
