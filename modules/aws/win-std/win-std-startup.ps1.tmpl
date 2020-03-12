@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
+$PCOIP_AGENT_LOCATION_URL = "${pcoip_agent_location_url}"
+$PCOIP_AGENT_FILENAME     = "${pcoip_agent_filename}"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
@@ -73,10 +75,12 @@ function PCoIP-Agent-Install {
     }
 
     $agentInstallerDLDirectory = "C:\Teradici"
-    if ("${pcoip_agent_filename}") {
-        $agent_filename = "${pcoip_agent_filename}"
+    if (![string]::IsNullOrEmpty($PCOIP_AGENT_FILENAME)) {
+        "Using user-specified PCoIP Agent filename..."
+        $agent_filename = $PCOIP_AGENT_FILENAME
     } else {
-        $agent_latest = "${pcoip_agent_location}latest-standard-agent.json"
+        "Using default latest PCoIP Agent..."
+        $agent_latest = $PCOIP_AGENT_LOCATION_URL + "latest-standard-agent.json"
         $wc = New-Object System.Net.WebClient
 
         "Checking for the latest PCoIP Agent version from $agent_latest..."
@@ -84,7 +88,7 @@ function PCoIP-Agent-Install {
 
         $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
     }
-    $pcoipAgentInstallerUrl = "${pcoip_agent_location}$agent_filename"
+    $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + $agent_filename
     $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
     $wc = New-Object System.Net.WebClient
 

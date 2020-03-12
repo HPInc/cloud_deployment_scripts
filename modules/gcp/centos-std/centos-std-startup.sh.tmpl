@@ -10,6 +10,8 @@ INST_LOG_FILE="/var/log/teradici/agent/install.log"
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
 DECRYPT_URI="https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+PCOIP_AGENT_REPO_PUBKEY_URL=${pcoip_agent_repo_pubkey_url}
+PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
 
 log() {
     local message="$1"
@@ -58,11 +60,11 @@ install_pcoip_agent() {
         log "--> Start to install pcoip agent ..."
         # Get the Teradici pubkey
         log "--> Get Teradici pubkey"
-        rpm --import https://downloads.teradici.com/rhel/teradici.pub.gpg
+        rpm --import $PCOIP_AGENT_REPO_PUBKEY_URL
 
         # Get pcoip repo
         log "--> Get Teradici pcoip agent repo"
-        wget --retry-connrefused --tries=3 --waitretry=5 -O /etc/yum.repos.d/pcoip.repo https://downloads.teradici.com/rhel/pcoip.repo
+        wget --retry-connrefused --tries=3 --waitretry=5 -P /etc/yum.repos.d $PCOIP_AGENT_REPO_URL
 
         log "--> Install PCoIP standard agent ..."
         yum -y install pcoip-agent-standard
