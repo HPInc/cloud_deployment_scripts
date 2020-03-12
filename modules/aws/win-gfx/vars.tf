@@ -79,7 +79,7 @@ variable "ami_owner" {
 
 variable "ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "nvOffer-grid9.2-nv-windows-server-2016-QvWS-*"
+  default     = "nvOffer-grid9.2-nv-windows-server-2019-QvWS-*"
 }
 
 variable "admin_password" {
