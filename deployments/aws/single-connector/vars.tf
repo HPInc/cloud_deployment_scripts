@@ -20,9 +20,14 @@ variable "prefix" {
   default     = ""
 }
 
-variable "allowed_cidr_blks" {
-  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these CIDR blocks. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+variable "allowed_admin_cidrs" {
+  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
   default     = []
+}
+
+variable "allowed_client_cidrs" {
+  description = "Open VPC firewall to allow PCoIP connections from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+  default     = ["0.0.0.0/0"]
 }
 
 variable "vpc_name" {

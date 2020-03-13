@@ -131,27 +131,11 @@ resource "aws_security_group" "allow-ssh" {
     protocol    = "tcp"
     from_port   = 22
     to_port     = 22
-    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
   }
 
   tags = {
     Name = "${local.prefix}secgrp-allow-ssh"
-  }
-}
-
-resource "aws_security_group" "allow-https" {
-  name   = "allow-https"
-  vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 443
-    to_port     = 443
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${local.prefix}secgrp-allow-https"
   }
 }
 
@@ -163,14 +147,14 @@ resource "aws_security_group" "allow-rdp" {
     protocol    = "tcp"
     from_port   = 3389
     to_port     = 3389
-    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
   }
 
   ingress {
     protocol    = "udp"
     from_port   = 3389
     to_port     = 3389
-    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
   }
 
   tags = {
@@ -186,7 +170,7 @@ resource "aws_security_group" "allow-winrm" {
     protocol    = "tcp"
     from_port   = 5986
     to_port     = 5986
-    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
   }
 
   tags = {
@@ -207,7 +191,7 @@ resource "aws_security_group" "allow-icmp" {
     protocol    = "icmp"
     from_port   = 8
     to_port     = 0
-    cidr_blocks = concat([local.myip], var.allowed_cidr_blks)
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
   }
 
   tags = {
@@ -221,16 +205,23 @@ resource "aws_security_group" "allow-pcoip" {
 
   ingress {
     protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_blocks = var.allowed_client_cidrs
+  }
+
+  ingress {
+    protocol    = "tcp"
     from_port   = 4172
     to_port     = 4172
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_client_cidrs
   }
 
   ingress {
     protocol    = "udp"
     from_port   = 4172
     to_port     = 4172
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_client_cidrs
   }
 
   tags = {
