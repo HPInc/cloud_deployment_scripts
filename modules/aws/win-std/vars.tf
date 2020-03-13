@@ -77,7 +77,7 @@ variable "ami_owner" {
 
 variable "ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2016-English-Full-Base-*"
+  default     = "Windows_Server-2019-English-Full-Base-*"
 }
 
 variable "admin_password" {
