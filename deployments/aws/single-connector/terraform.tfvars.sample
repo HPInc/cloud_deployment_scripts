@@ -26,8 +26,8 @@ domain_name = "example.com"
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 # REQUIRED: ensure the AWS account used has subscribed to the "NVIDIA Quadro
-# Virtual Workstation - WinServer 2016" image using the AWS dashboard at
-# https://aws.amazon.com/marketplace/pp/B07TV59ZQK 
+# Virtual Workstation - WinServer 2019" image using the AWS dashboard at
+# https://aws.amazon.com/marketplace/pp/B07TS3S3ZH
 win_gfx_instance_count = 0
 # win_gfx_instance_type = "g4dn.xlarge"
 # win_gfx_disk_size_gb  = 50
