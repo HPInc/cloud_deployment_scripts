@@ -1,0 +1,507 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Prefix to add to name of new resources. Must be <= 9 characters."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Resource Location."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2ms",
+      "metadata": {
+        "description": "Virtual Machine Size."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('prefix'), '-slinux')]",
+      "metadata": {
+        "description": "Name of the Workstation"
+      }
+    },
+    "adminName": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Machine User Name ."
+      }
+    },
+    "adminPass": {
+      "type":"securestring",
+      "metadata": {
+        "type": "password",
+        "description": "Admin password."
+      }
+    },
+    "vNetName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'), '-vnet')]",
+      "metadata": {
+        "description": "Teradici Agent Virtual Network name"
+      }
+    },
+    "vNetARPrefixes": {
+      "type": "array",
+      "defaultValue": [
+        "10.0.0.0/26"
+      ],
+      "metadata": {
+        "description": "Address prefix of the virtual network"
+      }
+    },
+    "VNetNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "metadata": {
+        "description": "Virtual network is new or existing"
+      }
+    },
+    "subNetName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'),'-subnet')]",
+      "metadata": {
+        "description": "Teradici Agent Subnet name"
+      }
+    },
+    "subNetARPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/28",
+      "metadata": {
+        "description": "Subnet prefix of the virtual network"
+      }
+    },
+    "publicIpName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'),'-ipaddress')]",
+      "metadata": {
+        "description": "Unique public ip address name"
+      }
+    },
+    "publicIpDns": {
+      "type": "string",
+      "defaultValue": "[concat('tera', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "Unique DNS Public IP attached the VM"
+      }
+    },
+    "publicIpAllocationMethod": {
+      "type": "string",
+      "defaultValue": "Static",
+      "metadata": {
+        "description": "Public IP Allocation Method"
+      }
+    },
+    "publicIpSku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "SKU number "
+      }
+    },
+    "publicIpNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "metadata": {
+        "description": "Public IP New or Existing?"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the storage account that contains the deployment shell script"
+      }
+    },
+    "storageAccountResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group of the storage account that contains the deployment shell script"
+      }
+    },
+    "application_id": {
+    "type": "string",
+      "metadata": {
+        "description": "The application (client) ID of your app registration in AAD"
+      }
+    },
+    "aad_client_secret": {
+      "type": "string",
+      "metadata": {
+        "description": "The client secret of your app registration in AAD"
+      }
+    },
+    "tenant_id": {
+      "type": "string",
+      "metadata": {
+        "description": "The directory (tenant) ID of your app registration in AAD"
+      }
+    },
+    "key_identifier": {
+      "type": "string",
+      "metadata": {
+        "description": "The key identifier in your azure key vault, follow this format https://<keyvault-name>.vault.azure.net/keys/<key-name>/<key-version>"
+      }
+    },
+    "ad_service_account_password": {
+    "type": "string",
+      "metadata": {
+        "description": "Active Directory Service Account password"
+      }
+    },
+    "ad_service_account_username": {
+    "type": "string",
+      "metadata": {
+        "description": "Active Directory Service Account username"
+      }
+    },
+    "domain_controller_ip": {
+    "type": "string",
+      "metadata": {
+        "description": "Internal IP of the Domain Controller"
+      }
+    },
+    "domain_name": {
+    "type": "string",
+      "metadata": {
+        "description": "Name of the domain to join"
+      }
+    },
+    "pcoip_registration_code": {
+      "type": "securestring",
+      "metadata": { "description": "Teradici temporary Registration Key" }
+    },
+
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+          "description": "The base URI where artifacts required by this template are located including a trailing '/'"
+      },
+      "defaultValue": "[deployment().properties.templateLink.uri]"
+  },
+  "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+          "description": "The sasToken required to access _artifactsLocation."
+      },
+      "defaultValue": ""
+  }
+},
+ 
+"variables": {
+  "vmName": "[parameters('vmName')]",
+  "location": "[parameters('location')]",
+  "vmSize": "[parameters('vmSize')]",
+  "domainNameLabel": "[parameters('publicIpDns')]",
+  "VMDiskType": "StandardSSD_LRS",
+  "authenticationType": "password",
+    
+  "pubIpName": "[parameters('publicIpName')]",
+  "pubIpId": "[resourceId('Microsoft.Network/publicIPAddresses',variables('pubIpName'))]",
+  "ipconfName": "[concat(variables('vmName'),'-ipconf')]",
+  "vnetName": "[parameters('vNetName')]",
+  "vnetId": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]",
+  "subnetName": "[parameters('subnetName')]",
+  "pubIPSubID":"[ resourceId(resourceGroup().name , 'Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('subnetName'))]",
+    
+  "nicName": "[concat(variables('vmName'),'-nic')]",
+  "nicId": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]",
+  "AgentName": "[concat(variables('vmName'),'/AgentExtV0.1')]",
+  "nsgName": "[concat(variables('vmName'),'-nsg')]",
+  "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+
+  "VNetAddressSpacePrefix": "[first(parameters('vNetARPrefixes'))]",
+  "SNetAddressRangePrefix": "[parameters('subnetARPrefix')]",
+  
+  "PCoIPAgentEXE": "pcoip-agent-standard_19.08.0.exe",
+  "Script2Run": "centos-std-startup.sh",
+  "PCoIPAgentPath": "[uri(parameters('_artifactsLocation'), concat(variables('PCoIPAgentEXE'), parameters('_artifactsLocationSasToken')))]",
+  "Script2RunUri" :"[ uri(parameters('_artifactsLocation'), concat(variables('Script2Run'), parameters('_artifactsLocationSasToken')))]",
+  
+  "ScriptParams":  "[concat(' -a ', parameters('pcoip_registration_code'), ' -b ', parameters('ad_service_account_password'), ' -c ', parameters('ad_service_account_username'), ' -d ', parameters('domain_name'), ' -e ', parameters('domain_controller_ip'), ' -f ', parameters('application_id'), ' -g', parameters('aad_client_secret'), ' -h', parameters('tenant_id'), ' -i', parameters('key_identifier'))]",
+  "cmdToExecute":  "[concat('bash ', variables('Script2Run'),  variables('ScriptParams'))]",
+
+  "linuxConfiguration": {
+      "disablePasswordAuthentication": false,
+      "ssh": {
+        "publicKeys": [
+          {
+            "path": "[concat('/home/', parameters('adminName'), '/.ssh/authorized_keys')]",
+            "keyData": "[parameters('adminPass')]"
+          }
+        ]
+      }
+    },
+
+  "nsgRules": [
+    {
+      "name": "RDP",
+      "properties": {
+        "priority": 300,
+        "protocol": "TCP",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationAddressPrefix": "*",
+        "destinationPortRange": "3389"
+      }
+    },
+    {
+      "name": "PCoIPtcp",
+      "properties": {
+        "priority": 301,
+        "protocol": "TCP",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationAddressPrefix": "*",
+        "destinationPortRange": "4172"
+      }
+    },
+    {
+      "name": "PCoIPudp",
+      "properties": {
+        "priority": 302,
+        "protocol": "UDP",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationAddressPrefix": "*",
+        "destinationPortRange": "4172"
+      }
+    },
+    {
+      "name": "CertAuthHTTPS",
+      "properties": {
+        "priority": 303,
+        "protocol": "TCP",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationAddressPrefix": "*",
+        "destinationPortRange": "443"
+      }
+    },
+    {
+      "name": "TeradiciCom",
+      "properties": {
+        "priority": 304,
+        "protocol": "TCP",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationAddressPrefix": "*",
+        "destinationPortRange": "60443"
+      }
+    },
+    {
+      "name": "AllowSSH",
+      "properties": {
+        "priority": 400,
+        "protocol": "*",
+        "access": "Allow",
+        "direction": "Inbound",
+        "sourceAddressPrefix": "*",
+        "sourcePortRange": "*",
+        "destinationAddressPrefix": "*",
+        "destinationPortRange": "22"
+      }
+    }
+  ]
+},
+
+"resources": [
+  { 
+    "type": "Microsoft.Resources/deployments",
+    "apiVersion": "2019-05-01",
+    "name": "pid-0d95c7be-a922-5be2-841a-5381655bf4f1",
+    "properties": {
+        "mode": "Incremental",
+        "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "resources": []
+        }
+    }
+  },
+  
+  {
+    "condition": "[equals(parameters('publicIpNewOrExisting'), 'new')]",
+    "type": "Microsoft.Network/publicIPAddresses",
+    "name": "[variables('pubIpName')]",
+    "apiVersion": "2019-04-01",
+    "sku": { "name": "[parameters('publicIpSku')]" },
+    "location": "[variables('location')]",
+    "properties": {
+      "publicIPAllocationMethod": "[parameters('publicIpAllocationMethod')]",
+      "dnsSettings": {
+        "domainNameLabel": "[variables('domainNameLabel')]"
+      }
+    }
+  },
+  {
+    "type": "Microsoft.Network/networkSecurityGroups",
+    "name": "[variables('nsgName')]",
+    "apiVersion": "2018-11-01",
+    "location": "[variables('location')]",
+    "properties": {
+      "securityRules": "[variables('nsgRules')]"
+    }
+    
+  },
+  {
+    "condition": "[equals(parameters('VNetNewOrExisting'), 'new')]",
+    "type": "Microsoft.Network/virtualNetworks",
+    "name": "[variables('vNetName')]",
+    "apiVersion":  "2019-04-01",
+    "location": "[variables('location')]",
+    "properties": {
+      "addressSpace": {
+        "addressPrefixes": [            
+          "[variables('VNetAddressSpacePrefix')]"
+        ]
+      },
+      "subnets": [
+        {
+          "name": "[variables('subnetName')]",
+          "properties": {
+            "addressPrefix": "[variables('SNetAddressRangePrefix')]"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "type": "Microsoft.Network/networkInterfaces",
+    "name": "[variables('nicName')]",
+    "apiVersion": "2019-04-01",
+    "location": "[variables('location')]",
+    "dependsOn": [
+      "[variables('pubIpId')]",
+      "[variables('vnetId')]",
+      "[variables('nsgId')]"
+    ],
+    "properties": {
+      "ipConfigurations": [
+        {
+          "name": "[variables('ipconfName')]",
+          "properties": {
+            "subnet": {
+              "id": "[variables('pubIPSubID')]"
+            },
+            "privateIPAllocationMethod": "Dynamic",
+            "publicIPAddress": {
+              "id": "[variables('pubIpId')]"
+            }
+          }
+        }
+      ],
+      "networkSecurityGroup": {
+        "id": "[variables('nsgId')]"
+      }
+    }
+  },
+  {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-03-01",
+      "name": "[variables('vmName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+      "[variables('nicId')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vmSize')]"
+        },
+        "osProfile": {
+        "computerName": "[variables('vmName')]",
+        "adminUsername": "[parameters('adminName')]",
+        "adminPassword": "[parameters('adminPass')]",
+          "linuxConfiguration": "[if(equals(variables('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "OpenLogic",
+            "offer": "CentOS",
+            "sku": "7.5",
+            "version": "latest"
+          },
+          "osDisk": {
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[reference(resourceId(parameters('storageAccountResourceGroupName'), 'Microsoft.Storage/storageAccounts/', parameters('storageAccountName')), '2018-02-01').primaryEndpoints.blob]"
+          }
+        }
+      },
+      "resources": [
+        {
+          "type": "extensions",
+          "name": "configScript",
+          "apiVersion": "2018-04-01",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[parameters('vmName')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.0",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "[uri(parameters('_artifactsLocation'), concat(variables('Script2Run'), parameters('_artifactsLocationSasToken')))]",
+                "[variables('Script2RunUri')]"
+              ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[variables('cmdToExecute')]"
+            }
+          }
+        }
+      ]
+    }
+],
+"outputs": {
+  "Host Name": {
+    "type": "string",
+    "value": "[reference(variables('pubIpId')).dnsSettings.fqdn]"
+  },
+  "UserName": {
+    "type": "string",
+    "value": "[parameters('adminName')]"
+  },
+  "pubIp": {
+    "type":"string",
+    "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('pubIpName'))).IpAddress]"
+  }
+
+}
+}

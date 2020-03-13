@@ -1,0 +1,349 @@
+# Copyright (c) 2018 Teradici Corporation
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+<#
+    .SYNOPSIS
+        Configure Windows 10 Workstation with Teradici PCoIP.
+
+    .DESCRIPTION
+        Configure Windows 10 Workstation with Avid Media Composer.
+        Example command line: .\setupMachine.ps1 Avid Media Composer
+
+#>
+
+[CmdletBinding(DefaultParameterSetName = "Standard")]
+param(
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $TeraRegKey,
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $PCoIPAgentURI,
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $PCoIPAgentEXE,
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $WallPaperURI,
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $domain_name,
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $ad_service_account_username,
+
+    [string]
+    [ValidateNotNullOrEmpty()]
+    $ad_service_account_password
+)
+
+#Install/Test Configuration
+$AgentDestinationPath = 'C:\Installer\'
+$AgentLocation ='C:\Program Files\Teradici\PCoIP Agent\'
+
+$AgentDestination = $AgentDestinationPath + $PCoIPAgentEXE
+$PCoIPAgentURL = $PCoIPAgentUri
+
+Write-Output "TeraRegKey:                  $TeraRegKey"
+Write-Output "PCoIPAgentURI:               $PCoIPAgentURI"
+Write-Output "PCoIPAgentEXE:               $PCoIPAgentEXE"
+Write-Output "AgentDestination:            $AgentDestination"
+Write-Output "PCoIPAgentURL:               $PCoIPAgentURL"
+Write-Output "WallPaperURI:                $WallPaperURI"
+Write-Output "domain_name:                 $domain_name"
+Write-Output "ad_service_account_username: $ad_service_account_username"
+Write-Output "ad_service_account_password: $ad_service_account_password"
+
+#Disable Scheulded Tasks: ServerManager
+Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask -Verbose
+
+# Install and Set Wallpaper
+try {
+    # Create variables
+    $wallpapername = "img0.jpg"
+    $workdir = "C:\Installer"
+    Write-Output "Setting installation directory to $workdir"
+
+    # Check if work directory exists if not create it
+    If (Test-Path -Path $workdir -PathType Container)
+    { Write-Host "$workdir already exists" -ForegroundColor Red}
+    ELSE
+    { New-Item -Path $workdir  -ItemType directory }
+
+    # Download the Wallpaper
+    $source = $WallPaperURI
+
+    Write-Output = "Wallpaper Download URL: $source"
+    Write-Output = "Installation destination: $workdir"
+
+    # Check if Invoke-Webrequest exists otherwise execute WebClient
+    if (Get-Command 'Invoke-Webrequest')
+    {
+        Invoke-WebRequest -UseBasicParsing "${source}" -OutFile "$workdir\$wallpapername" -Verbose
+    }
+    else
+    {
+        $WebClient = New-Object System.Net.WebClient
+        $Webclient.DownloadFile("${source}", $workdir)
+    }
+
+    # Sleep 15 seconds to let download finish
+    Start-Sleep -Seconds 15
+
+    # Execute takeown and icacls to get the permissions to modify (C:\windows\WEB\wallpaper\Windows\img0.jpg) https://ccmexec.com/2015/08/replacing-default-wallpaper-in-windows-10-using-scriptmdtsccm/
+    TAKEOWN /f C:\windows\WEB\wallpaper\Windows\$wallpapername
+    ICACLS C:\windows\WEB\wallpaper\Windows\$wallpapername /Grant 'System:(F)'
+    Remove-Item C:\windows\WEB\wallpaper\Windows\$wallpapername
+    Copy-Item C:\installer\img0.jpg C:\windows\WEB\wallpaper\Windows\$wallpapername
+
+}
+catch [Exception]{
+    Write-Output $_.Exception.Message
+    Write-Error $_.Exception.Message  
+}
+
+# Install OpenSSH Server
+try {
+    # Declare Variables for this module of code
+    $postix = '.zip'
+    $downloadname = 'OpenSSH-Win64'
+    $workdir = "C:\Installer"
+    $downloadpath = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/v8.1.0.0p1-Beta/$downloadname$postix"
+
+    # Ensure that we create a secure TLS/SSL tunnel
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    
+    # Download the OpenSSH-Win-64.zip
+    Invoke-WebRequest -UseBasicParsing $downloadpath -OutFile "$workdir\$downloadname$postix" -Verbose
+    
+    # Extract the zip file
+    Expand-Archive -LiteralPath "C:\Installer\OpenSSH-Win64.zip" -DestinationPath $workdir -Force
+    
+    # Go to directory that contains install-sshd.ps1
+    cd "$workdir\$downloadname"
+
+    # Install the SSH Daemon
+    powershell.exe -ExecutionPolicy Bypass -File install-sshd.ps1
+    
+    # There should be a firewall rule named "OpenSSH-Server-In-TCP", which should be enabled
+    # If the firewall does not exist, create one
+    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+    
+    # Automatically generate host keys under %programdata%\ssh
+    net start sshd
+
+    # Configure the SSH Daemon process to start everytime the OS is booted up
+    Set-Service -Name sshd -StartupType 'Automatic'
+}
+catch [Exception]{
+    Write-Output $_.Exception.Message
+    Write-Error $_.Exception.Message
+}
+
+# Install Firefox
+try {
+    $workdir = "C:\Installer\"
+    Write-Output "Setting installation directory to $workdir"
+
+    # Check if work directory exists if not create it
+    If (Test-Path -Path $workdir -PathType Container)
+    { Write-Host "$workdir already exists" -ForegroundColor Red}
+    ELSE
+    { New-Item -Path $workdir  -ItemType directory }
+
+    # Download the installer
+    $source = "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=en-US"
+    $destination = "$workdir\firefox.exe"
+
+    Write-Output "Download URL: $source"
+    Write-Output "Installation destination: $destination"
+
+    # Check if Invoke-Webrequest exists otherwise execute WebClient
+    if (Get-Command 'Invoke-Webrequest')
+    {
+        Invoke-WebRequest $source -OutFile $destination 
+    }
+    else
+    {
+        $WebClient = New-Object System.Net.WebClient
+        $webclient.DownloadFile($source, $destination)
+    }
+
+    # Start the installation
+    Start-Process -FilePath "$workdir\firefox.exe" -ArgumentList "/S"
+
+    # Wait XX Seconds for the installation to finish
+    Start-Sleep -s 35
+}
+catch [Exception]{
+    Write-Output $_.Exception.Message
+    Write-Error $_.Exception.Message  
+}
+
+function Join-Domain 
+(
+    [string]$domain_name,
+    [string]$ad_service_account_username,
+    [string]$ad_service_account_password
+)
+{
+    Write-Output "Passed Variables $domain_name ; $ad_service_account_username ; $ad_service_account_password"
+    $obj = Get-WmiObject -Class Win32_ComputerSystem
+
+    if ($obj.PartOfDomain) {
+        if ($obj.Domain -ne "$domain_name") {
+            "ERROR: Trying to join '$domain_name' but computer is already joined to '$obj.Domain'"
+            exit 1
+        }
+
+        "Computer already part of the '$obj.Domain' domain."
+        return
+    } 
+
+    "Computer not part of a domain. Joining $domain_name..."
+
+    $username = "$ad_service_account_username" + "@" + "$domain_name"
+    $password = ConvertTo-SecureString $ad_service_account_password -AsPlainText -Force
+    $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
+
+    # Looping in case Domain Controller is not yet available
+    $Interval = 10
+    $Timeout = 1200
+    $Elapsed = 0
+
+    do {
+        Try {
+            $Retry = $false
+            # Don't do -Restart here because there is no log showing the restart
+            Add-Computer -DomainName "$domain_name" -Credential $cred -Verbose -Force -ErrorAction Stop
+        }
+
+        # The same Error, System.InvalidOperationException, is thrown in these cases: 
+        # - when Domain Controller not reachable (retry waiting for DC to come up)
+        # - when password is incorrect (retry because user might not be added yet)
+        # - when computer is already in domain
+        Catch [System.InvalidOperationException] {
+            $_.Exception.Message
+            if (($Elapsed -ge $Timeout) -or ($_.Exception.GetType().FullName -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand")) {
+                exit 1
+            }
+
+            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            $Retry = $true
+            Start-Sleep -Seconds $Interval
+            $Elapsed += $Interval
+        }
+        Catch {
+            $_.Exception.Message
+            exit 1
+        }
+    } while ($Retry)
+
+    $obj = Get-WmiObject -Class Win32_ComputerSystem
+    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "$domain_name") ) {
+        "ERROR: failed to join $domain_name"
+        exit 1
+    }
+
+    "Successfully joined $domain_name"
+    $global:restart = $true
+}
+
+function DownloadFileOverHttp($Url, $DestinationPath) {
+    $secureProtocols = @()
+    $insecureProtocols = @([System.Net.SecurityProtocolType]::SystemDefault, [System.Net.SecurityProtocolType]::Ssl3)
+
+    foreach ($protocol in [System.Enum]::GetValues([System.Net.SecurityProtocolType])) {
+        if ($insecureProtocols -notcontains $protocol) {
+            $secureProtocols += $protocol
+        }
+    }
+    [System.Net.ServicePointManager]::SecurityProtocol = $secureProtocols
+
+    # make Invoke-WebRequest go fast: https://stackoverflow.com/questions/14202054/why-is-this-powershell-code-invoke-webrequest-getelementsbytagname-so-incred
+    $ProgressPreference = "SilentlyContinue"
+    Invoke-WebRequest -UseBasicParsing "${Url}" -OutFile $DestinationPath -Verbose 
+    Write-Output "$DestinationPath updated"
+}
+
+try {
+   
+    #Join Domain if enough information is present
+    if (!($ad_service_account_username -eq $null -or $ad_service_account_password -eq $null) -and !($ad_service_account_username -eq "" -or $ad_service_account_password -eq "")) {
+        Write-Output "Joining Domain"
+        Join-Domain $domain_name $ad_service_account_username $ad_service_account_password
+    } else {
+        Write-Output "Not Joining Domain"
+    }
+    
+    #Set the Agent's destination 
+    If(!(test-path $AgentDestinationPath))  {
+        New-Item -ItemType Directory -Force -Path $AgentDestinationPath
+    }
+    Set-Location -Path $AgentDestinationPath
+
+    #Download Agent
+    Write-Output "Downloading latest PCoIP standard agent from $PCoIPAgentURL"
+    DownloadFileOverHttp $PCoIPAgentURL $AgentDestination
+
+    
+    #Install Agent from Agent Destination 
+    Write-Output "Install Teradici with Destination Path: $AgentDestination"
+    $ArgumentList = ' /S /NoPostReboot _?"' + $AgentDestination +'"'
+
+    Write-Output "Teradici Argument list at: $ArgumentList"
+    $process =  Start-Process -FilePath $AgentDestination -ArgumentList $ArgumentList -Wait -PassThru;     
+    Write-Output "Installed PCoIP Agent with Exit Code:" $process.ExitCode
+    
+    #Registering Agent with Licence Server
+    Set-Location -Path  $AgentLocation
+
+    $Registered = & .\pcoip-register-host.ps1 -RegistrationCode $TeraRegKey
+    Write-Output "Registering Teradici Host returned this result: $Registered"
+
+    #Validate Licence 
+    $Validate =& .\pcoip-validate-license.ps1
+    Write-Output "Validate Teradici Licence returned: $Validate"       
+    
+    # Set the Wallpaper
+    Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name WallPaper -Value "$workdir\$wallpapername"
+    Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name TileWallpaper -Value "0"
+	Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name WallpaperStyle -Value "2" -Force
+    for ($i=0; $i -le 25; $i++) {
+    RUNDLL32.EXE USER32.DLL ,UpdatePerUserSystemParameters
+    }
+    Write-Output = "Updated Registry and Forced Update with RUNDLL32.EXE"
+    Get-ItemProperty -Path 'HKCU:\Control Panel\Desktop'
+    
+    Write-Output "Restart VM..."   
+    Restart-Computer -Force
+
+}
+catch [Exception]{
+    Write-Output $_.Exception.Message
+    Write-Error $_.Exception.Message
+}
