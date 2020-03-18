@@ -4,8 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
+$NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
+
 $PCOIP_AGENT_LOCATION_URL = "${pcoip_agent_location_url}"
 $PCOIP_AGENT_FILENAME     = "${pcoip_agent_filename}"
+
+$NVIDIA_DRIVER_URL      = "${nvidia_driver_url}"
+$NVIDIA_DRIVER_FILENAME = "${nvidia_driver_filename}"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
@@ -58,6 +63,50 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     Write-Information "Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
     Start-Sleep -Seconds $Interval
   }
+}
+
+function Nvidia-is-Installed {
+    if (!(test-path $NVIDIA_DIR)) {
+        return $false
+    }
+
+    cd $NVIDIA_DIR
+    & .\nvidia-smi.exe
+    return $?
+    return $false
+}
+
+function Nvidia-Install {
+    "################################################################"
+    "Install NVIDIA GRID Driver"
+    "################################################################"
+
+    if (Nvidia-is-Installed) {
+        "NVIDIA driver already installed."
+        return
+    }
+
+    mkdir 'C:\Nvidia'
+    $driverDirectory = "C:\Nvidia"
+
+    $nvidiaInstallerUrl = $NVIDIA_DRIVER_URL + $NVIDIA_DRIVER_FILENAME
+    $destFile = $driverDirectory + "\" + $NVIDIA_DRIVER_FILENAME
+    $wc = New-Object System.Net.WebClient
+
+    "Downloading NVIDIA GRID Driver from $NVIDIA_DRIVER_URL..."
+    Retry -Action {$wc.DownloadFile($nvidiaInstallerUrl, $destFile)}
+    "File Downloaded: $NVIDIA_DRIVER_FILENAME"
+
+    "Installing NVIDIA GRID Driver..."
+    $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -PassThru -Wait
+
+    if (!(Nvidia-is-Installed)) {
+        "ERROR: Failed to install NVIDIA GRID driver."
+        exit 1
+    }
+
+    "NVIDIA GRID Driver installed successfully."
+    $global:restart = $true
 }
 
 function PCoIP-Agent-is-Installed {
@@ -271,6 +320,8 @@ if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
 net user Administrator $DATA."admin_password" /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
+Nvidia-Install
 
 PCoIP-Agent-Install
 

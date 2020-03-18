@@ -74,17 +74,27 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI"
-  default     = "aws-marketplace"
+  default     = "amazon"
 }
 
 variable "ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "nvOffer-grid9.2-nv-windows-server-2019-QvWS-*"
+  default     = "Windows_Server-2019-English-Full-Base-*"
 }
 
 variable "admin_password" {
   description = "Password for the Administrator of the Workstation"
   type        = string
+}
+
+variable "nvidia_driver_url" {
+  description = "URL of NVIDIA GRID driver"
+  default     = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/g4/grid-10.0/"
+}
+
+variable "nvidia_driver_filename" {
+  description = "Filename of NVIDIA GRID driver"
+  default     = "441.66_grid_win10_64bit_international_whql.exe"
 }
 
 variable "pcoip_agent_location_url" {
