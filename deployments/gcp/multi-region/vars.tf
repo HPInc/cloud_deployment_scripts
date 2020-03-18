@@ -157,7 +157,7 @@ variable "cac_admin_ssh_pub_key_file" {
 variable "cac_health_check" {
   description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/CloudAccessManager/"
+    path         = "/pcoip-broker/xml"
     port         = 443
     interval_sec = 5
     timeout_sec  = 5
