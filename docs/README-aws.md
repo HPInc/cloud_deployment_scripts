@@ -19,8 +19,7 @@ With a new AWS account:
 aws_access_key_id = <your_id>
 aws_secret_access_key = <your_key>
 ```
-- in the AWS marketplace portal, visit the Product Overview pages of AMI images that will be used by Terraform scripts. Click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. The required subscriptions depend on which workstation is to be deployed:
-    - Windows Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TS3S3ZH
+- in the AWS marketplace portal, visit the Product Overview pages of AMI images that will be used by Terraform scripts. Click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. Note that only CentOS Standard or Graphics workstations require subscriptions to the AMI images. Visit the following link to subscribe prior to deployment:
     - CentOS Standard or Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TV59ZQK
 - (Optional) For better security, create an AWS KMS Customer Managed Symmetric Customer Master Key (CMK) to encrypt secrets.  Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create CMKs.
 
