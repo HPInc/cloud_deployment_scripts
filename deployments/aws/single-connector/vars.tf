@@ -247,7 +247,7 @@ variable "centos_gfx_ami_product_code" {
 
 variable "centos_gfx_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
 }
 
 variable "centos_std_instance_count" {
@@ -277,7 +277,7 @@ variable "centos_std_ami_product_code" {
 
 variable "centos_std_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
 }
 
 variable "customer_master_key_id" {
