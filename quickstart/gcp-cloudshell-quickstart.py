@@ -253,6 +253,11 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
         for line in ref_file:
+            # Append the crypto key path to kms_cryptokey_id line since it is commented out in ref_file
+            if '# kms_cryptokey_id' in line:
+                out_file.write('{} = \"{}\"'.format('kms_cryptokey_id', settings['kms_cryptokey_id']))
+                continue
+
             # Comments and blank lines are unchanged
             if line[0] in ('#', '\n'):
                 out_file.write(line)
