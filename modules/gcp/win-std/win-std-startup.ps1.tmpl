@@ -37,11 +37,11 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     if ($?) { return $rc }
 
     if ($Current_Attempt -ge $Attempts) {
-        Write-Error "Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
         Throw
     }
 
-    Write-Information "Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Write-Information "--> Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
     Start-Sleep -Seconds $Interval
   }
 }
@@ -52,7 +52,7 @@ function Get-AuthToken {
         return $response."access_token"
     }
     catch {
-        "Error fetching auth token: $_"
+        "--> ERROR: Failed to fetch auth token: $_"
         return $false
     }
 }
@@ -68,18 +68,21 @@ function Decrypt-Credentials {
     $headers.Add("Authorization", "Bearer $($token)")
 
     try {
+        "--> Decrypting pcoip_registration_code..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource.Add("ciphertext", "${pcoip_registration_code}")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
 
+        "--> Decrypting admin_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource.Add("ciphertext", "${admin_password}")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
 
+        "--> Decrypting ad_service_account_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource.Add("ciphertext", "${ad_service_account_password}")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
@@ -87,7 +90,7 @@ function Decrypt-Credentials {
         $DATA."ad_service_account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
     }
     catch {
-        "Error decrypting credentials: $_"
+        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -98,24 +101,23 @@ function PCoIP-Agent-is-Installed {
 }
 
 function PCoIP-Agent-Install {
-    "################################################################"
-    "Install PCoIP Agent"
-    "################################################################"
+    "--> Installing PCoIP standard agent..."
+
     if (PCoIP-Agent-is-Installed) {
-        "PCoIP Agent already installed."
+        "--> PCoIP standard agent is already installed. Skipping..."
         return
     }
 
     $agentInstallerDLDirectory = "C:\Teradici"
     if (![string]::IsNullOrEmpty($PCOIP_AGENT_FILENAME)) {
-        "Using user-specified PCoIP Agent filename..."
+        "--> Using user-specified PCoIP standard agent filename..."
         $agent_filename = $PCOIP_AGENT_FILENAME
     } else {
-        "Using default latest PCoIP Agent..."
+        "--> Using default latest PCoIP standard agent..."
         $agent_latest = $PCOIP_AGENT_LOCATION_URL + "latest-standard-agent.json"
         $wc = New-Object System.Net.WebClient
 
-        "Checking for the latest PCoIP Agent version from $agent_latest..."
+        "--> Checking for the latest PCoIP standard agent version from $agent_latest..."
         $string = Retry -Action {$wc.DownloadString($agent_latest)}
 
         $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
@@ -124,32 +126,31 @@ function PCoIP-Agent-Install {
     $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
     $wc = New-Object System.Net.WebClient
 
-    "Downloading PCoIP Agent from $pcoipAgentInstallerUrl..."
+    "--> Downloading PCoIP standard agent from $pcoipAgentInstallerUrl..."
     Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
-    "Teradici PCoIP Agent downloaded: $agent_filename"
+    "--> Teradici PCoIP standard agent downloaded: $agent_filename"
 
-    "Installing agent..."
+    "--> Installing Teradici PCoIP standard agent..."
     Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot _?$destFile" -PassThru -Wait
 
     if (!(PCoIP-Agent-is-Installed)) {
-        "ERROR: Failed to install PCoIP Agent"
+        "--> ERROR: Failed to install PCoIP standard agent."
         exit 1
     }
 
-    "Teradici PCoIP Agent installed successfully"
+    "--> Teradici PCoIP standard agent installed successfully."
     $global:restart = $true
 }
 
 function PCoIP-Agent-Register {
-    "################################################################"
-    "Register PCoIP Agent"
-    "################################################################"
+    "--> Registering PCoIP agent..."
+
     cd 'C:\Program Files\Teradici\PCoIP Agent'
 
     "Checking for existing PCoIP License..."
     & .\pcoip-validate-license.ps1
     if ( $LastExitCode -eq 0 ) {
-        "Valid license found."
+        "--> Found valid license."
         return
     }
 
@@ -165,18 +166,18 @@ function PCoIP-Agent-Register {
 
         if ( $LastExitCode -ne 0 ) {
             if ($Elapsed -ge $Timeout) {
-                "Failed to register PCoIP Agent."
+                "--> ERROR: Failed to register PCoIP agent."
                 exit 1
             }
 
-            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
             $Retry = $true
             Start-Sleep -Seconds $Interval
             $Elapsed += $Interval
         }
     } while ($Retry)
 
-    "PCoIP Agent Registered Successfully"
+    "--> PCoIP agent registered successfully."
 }
 
 function Install-Idle-Shutdown {
@@ -224,22 +225,21 @@ function Install-Idle-Shutdown {
 }
 
 function Join-Domain {
-    "################################################################"
-    "Join Domain"
-    "################################################################"
+    "--> Joining domain..."
+
     $obj = Get-WmiObject -Class Win32_ComputerSystem
 
     if ($obj.PartOfDomain) {
         if ($obj.Domain -ne "${domain_name}") {
-            "ERROR: Trying to join '${domain_name}' but computer is already joined to '$obj.Domain'"
+            "--> ERROR: Trying to join '${domain_name}' but computer is already joined to '$obj.Domain'."
             exit 1
         }
 
-        "Computer already part of the '$obj.Domain' domain."
+        "--> Computer already part of the '$obj.Domain' domain."
         return
     } 
 
-    "Computer not part of a domain. Joining ${domain_name}..."
+    "--> Computer not part of a domain. Joining ${domain_name}..."
 
     $username = "${ad_service_account_username}" + "@" + "${domain_name}"
     $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
@@ -265,16 +265,16 @@ function Join-Domain {
             $PSItem
 
             if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                "WARNING: Computer already joined to domain."
+                "--> WARNING: Computer is already joined to the domain."
                 break
             }
 
             if ($Elapsed -ge $Timeout) {
-                "Timeout reached, exiting ..."
+                "--> Timeout reached, exiting..."
                 exit 1
             }
 
-            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
             $Retry = $true
             Start-Sleep -Seconds $Interval
             $Elapsed += $Interval
@@ -287,46 +287,46 @@ function Join-Domain {
 
     $obj = Get-WmiObject -Class Win32_ComputerSystem
     if (!($obj.PartOfDomain) -or ($obj.Domain -ne "${domain_name}") ) {
-        "ERROR: failed to join '${domain_name}'"
+        "--> ERROR: Failed to join '${domain_name}'."
         exit 1
     }
 
-    "Successfully joined '${domain_name}'"
+    "--> Successfully joined '${domain_name}'."
     $global:restart = $true
 
     # TODO: Find out why DNS entry is not always added after domain join.
     # Sometimes the DNS entry for this workstation is not added in the Domain
     # Controller after joining the domain, so explicitly add this machine to the
     # DNS.
-    "Registering with DNS..."
+    "--> Registering with DNS..."
     do {
         Start-Sleep -Seconds 5
         Register-DnsClient
     } while (!$?)
-    "Successfully registered with DNS."
+    "--> Successfully registered with DNS."
 }
 
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
-    "$LOG_FILE exists. Assume this startup script has run already."
+    "--> $LOG_FILE exists. Assuming this startup script has run, exiting..."
     exit 0
 }
 
 Start-Transcript -path $LOG_FILE -append
 
-"Script running as user '$(whoami)'"
+"--> Script running as user '$(whoami)'."
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    "Running as Administrator"
+    "--> Running as Administrator..."
 } else {
-    "Not running as Administrator"
+    "--> Not running as Administrator..."
 }
 
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "This script is not using encryption for secrets."
+    "--> Script is not using encryption for secrets."
 } else {
-    "Using ecnryption key ${kms_cryptokey_id} for secrets."
+    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
     Decrypt-Credentials
 }
 
@@ -342,12 +342,11 @@ Install-Idle-Shutdown
 
 Join-Domain
 
-"################################################################"
-"Restart Computer"
-"################################################################"
+"--> Restarting computer..."
+
 if ($global:restart) {
-    "Restart required. Restarting..."
+    "--> Restart required. Restarting..."
     Restart-Computer -Force
 } else {
-    "No restart required"
+    "--> No restart required."
 }
