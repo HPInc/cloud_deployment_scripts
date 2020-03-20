@@ -8,10 +8,20 @@
 locals {
   prefix         = var.prefix != "" ? "${var.prefix}-" : ""
   startup_script = "cac-startup.sh"
+  instance_info_list = flatten(
+    [ for i in range(length(var.zone_list)):
+      [ for j in range(var.instance_count_list[i]):
+        {
+          zone   = var.zone_list[i],
+          subnet = var.subnet_list[i],
+        }
+      ]
+    ]
+  )
 }
 
 resource "aws_s3_bucket_object" "cac-startup-script" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = length(local.instance_info_list) == 0 ? 0 : 1
 
   key     = local.startup_script
   bucket  = var.bucket_name
@@ -66,7 +76,7 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 }
 
 resource "aws_iam_role" "cac-role" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = length(local.instance_info_list) == 0 ? 0 : 1
 
   name               = "cac_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
@@ -97,7 +107,7 @@ data "aws_iam_policy_document" "cac-policy-doc" {
 }
 
 resource "aws_iam_role_policy" "cac-role-policy" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = length(local.instance_info_list) == 0 ? 0 : 1
 
   name = "cac_role_policy"
   role = aws_iam_role.cac-role[0].id
@@ -105,14 +115,17 @@ resource "aws_iam_role_policy" "cac-role-policy" {
 }
 
 resource "aws_iam_instance_profile" "cac-instance-profile" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = length(local.instance_info_list) == 0 ? 0 : 1
 
   name = "cac_instance_profile"
   role = aws_iam_role.cac-role[0].name
 }
 
 resource "aws_instance" "cac" {
-  count = var.instance_count
+  count = length(local.instance_info_list)
+
+  availability_zone = local.instance_info_list[count.index].zone
+  subnet_id         = local.instance_info_list[count.index].subnet
 
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
@@ -122,7 +135,6 @@ resource "aws_instance" "cac" {
     volume_size = var.disk_size_gb
   }
 
-  subnet_id                   = var.subnet
   associate_public_ip_address = true
 
   vpc_security_group_ids = var.security_group_ids

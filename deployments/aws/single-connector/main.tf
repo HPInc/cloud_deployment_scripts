@@ -76,8 +76,10 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.cac-subnet.id
+  zone_list           = [aws_subnet.cac-subnet.availability_zone]
+  subnet_list         = [aws_subnet.cac-subnet.id]
+  instance_count_list = [var.cac_instance_count]
+
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
@@ -85,9 +87,9 @@ module "cac" {
     aws_security_group.allow-pcoip.id,
   ]
 
-  instance_count = var.cac_instance_count
-  instance_type  = var.cac_instance_type
-  disk_size_gb   = var.cac_disk_size_gb
+  bucket_name   = aws_s3_bucket.scripts.id
+  instance_type = var.cac_instance_type
+  disk_size_gb  = var.cac_disk_size_gb
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name

@@ -60,19 +60,24 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "subnet" {
-  description = "Subnet to deploy the Cloud Access Connector"
-  type        = string
+variable "zone_list" {
+  description = "Availability Zones in which to deploy Connectors"
+  type        = list(string)
+}
+
+variable "subnet_list" {
+  description = "Subnets to deploy the Cloud Access Connector"
+  type        = list(string)
+}
+
+variable "instance_count_list" {
+  description = "Number of Cloud Access Connector instances to deploy in each Availability Zone"
+  type        = list(number)
 }
 
 variable "security_group_ids" {
   description = "Security Groups to be applied to the Cloud Access Connector"
   type        = list(string)
-}
-
-variable "instance_count" {
-  description = "Number of Cloud Access Connectors to deploy"
-  default     = 1
 }
 
 variable "instance_type" {
