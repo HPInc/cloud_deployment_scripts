@@ -25,14 +25,14 @@ output "cac-public-ip" {
   value = module.cac.public-ip
 }
 
-#output "win-gfx-internal-ip" {
-#  value = module.win-gfx.internal-ip
-#}
-#
-#output "win-gfx-public-ip" {
-#  value = module.win-gfx.public-ip
-#}
-#
+output "win-gfx-internal-ip" {
+  value = module.win-gfx.internal-ip
+}
+
+output "win-gfx-public-ip" {
+  value = module.win-gfx.public-ip
+}
+
 output "win-std-internal-ip" {
   value = module.win-std.internal-ip
 }
@@ -41,19 +41,18 @@ output "win-std-public-ip" {
   value = module.win-std.public-ip
 }
 
-#output "centos-gfx-internal-ip" {
-#  value = module.centos-gfx.internal-ip
-#}
-#
-#output "centos-gfx-public-ip" {
-#  value = module.centos-gfx.public-ip
-#}
-#
-#output "centos-std-internal-ip" {
-#  value = module.centos-std.internal-ip
-#}
-#
-#output "centos-std-public-ip" {
-#  value = module.centos-std.public-ip
-#}
-#
+output "centos-gfx-internal-ip" {
+  value = module.centos-gfx.internal-ip
+}
+
+output "centos-gfx-public-ip" {
+  value = module.centos-gfx.public-ip
+}
+
+output "centos-std-internal-ip" {
+  value = module.centos-std.internal-ip
+}
+
+output "centos-std-public-ip" {
+  value = module.centos-std.public-ip
+}
