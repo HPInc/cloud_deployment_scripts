@@ -17,8 +17,8 @@ domain_name = "example.com"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-# Specify the regions, zones and number of connectors to create per region.
-# cac_zone_list           = ["us-west-1a",  "europe-west-1b"]
+# Specify the zones, subnet CIDRs and number of connectors to create per zone.
+# cac_zone_list           = ["us-west-1a",  "us-west-1c"]
 # cac_subnet_cidr_list    = ["10.0.1.0/25", "10.0.1.128/25"]
 # cac_instance_count_list = [1,             1]
 
