@@ -46,8 +46,7 @@ class Tfvars_Encryptor_GCP:
         initialize_cryptokey(crypto_key_id)
         get_crypto_keys(key_ring_id)
         get_key_rings()
-        read_tfvars_data(tfvars_file)
-        read_tfvars_secrets(tfvars_file)
+        read_tfvars(tfvars_file)
         write_new_tfvars()
     """
 
@@ -59,9 +58,8 @@ class Tfvars_Encryptor_GCP:
         """
 
         # Read tfvars data and secrets into dictionaries
-        self.tfvars_path    = tfvars_path
-        self.tfvars_data    = self.read_tfvars_data(tfvars_path)
-        self.tfvars_secrets = self.read_tfvars_secrets(tfvars_path)
+        self.tfvars_path = tfvars_path
+        self.tfvars_data, self.tfvars_secrets = self.read_tfvars(tfvars_path)
 
         # Find the max string length of all the keys to left-justify align them
         self.max_key_length = max(map(len, self.tfvars_secrets))
@@ -393,7 +391,7 @@ class Tfvars_Encryptor_GCP:
         return key_rings_list
 
 
-    def read_tfvars_data(self, tfvars_file):
+    def read_tfvars(self, tfvars_file):
         """A method that reads terraform.tfvars for all configuration data.
 
         This method reads a terraform.tfvars file for all the user-provided 
@@ -401,42 +399,14 @@ class Tfvars_Encryptor_GCP:
         Args:
             tfvars_file (str): a path to a terraform.tfvars file
         Returns:
-            dict: key value pairs for all the terraform.tfvars data
+            tuple containing:
+                dict: key value pairs for all the terraform.tfvars data
+                dict: key value pairs for all the terraform.tfvars secrets
         """
 
         tf_data = {}
-
-        with open(tfvars_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-
-                if SECRETS_START_FLAG in line:
-                    break
-
-                # Skip blank lines and comment lines
-                # "not line" must come first using short circuiting to avoid string index out of range error
-                if not line or line[0] in ("#"):
-                    continue
-            
-                # Split the line into key value pairs using the first delimiter
-                key, value = map(str.strip, line.split('=', 1))
-                tf_data[key] = value.replace("\"", "")
-                
-        return tf_data
-
-
-    def read_tfvars_secrets(self, tfvars_file):
-        """A method that reads terraform.tfvars for all secrets.
-
-        This method reads a terraform.tfvars file for all the secrets into a dictionary.
-
-        Args:
-            tfvars_file (str): a path to a terraform.tfvars file
-        Returns:
-            dict: key value pairs for all the terraform.tfvars secrets
-        """
-
         tf_secrets = {}
+
         begin_reading_secrets = False
 
         with open(tfvars_file, 'r') as f:
@@ -445,8 +415,7 @@ class Tfvars_Encryptor_GCP:
 
                 if SECRETS_START_FLAG in line:
                     begin_reading_secrets = True
-                    continue
-                
+
                 # Skip blank lines and comment lines
                 # "not line" must come first using short circuiting to avoid string index out of range error
                 if not line or line[0] in ("#"):
@@ -456,8 +425,12 @@ class Tfvars_Encryptor_GCP:
                     # Split the line into key value pairs using the first delimiter
                     key, value = map(str.strip, line.split('=', 1))
                     tf_secrets[key] = value.replace("\"", "")
+                else:           
+                    # Split the line into key value pairs using the first delimiter
+                    key, value = map(str.strip, line.split('=', 1))
+                    tf_data[key] = value.replace("\"", "")
 
-        return tf_secrets
+        return tf_data, tf_secrets
 
 
     def write_new_tfvars(self):
@@ -512,7 +485,7 @@ class Tfvars_Encryptor_GCP:
 def main():
     # Set up argparse
     parser_description = ("Creates GCP KMS keyring and key, and uses the key to encrypt or decrypt secrets in the specified terraform.tfvars."
-                          "The script encrypts by default. To decrypt instead, use the -d flag.")
+                          "The script encrypts by default. To decrypt instead, add the -d flag.")
 
     parser = argparse.ArgumentParser(description=parser_description)
 
