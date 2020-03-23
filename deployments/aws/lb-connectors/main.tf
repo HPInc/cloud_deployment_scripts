@@ -88,31 +88,9 @@ resource "aws_lb_target_group" "cac-tg" {
   #TODO add health check
 }
 
-resource "tls_private_key" "priv-key" {
-  algorithm   = "RSA"
-}
-
-resource "tls_self_signed_cert" "ss-cert" {
-  key_algorithm   = "RSA"
-  private_key_pem = tls_private_key.priv-key.private_key_pem
-
-  subject {
-    common_name  = var.domain_name
-  }
-
-  # 90 days, like letsencrypt
-  validity_period_hours = 2160
-
-  allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "server_auth",
-  ]
-}
-
 resource "aws_acm_certificate" "ssl-cert" {
-  private_key      = tls_private_key.priv-key.private_key_pem
-  certificate_body = tls_self_signed_cert.ss-cert.cert_pem
+  private_key      = file(var.ssl_key)
+  certificate_body = file(var.ssl_cert)
 
   tags = {
     Name = "${local.prefix}ssl-cert"

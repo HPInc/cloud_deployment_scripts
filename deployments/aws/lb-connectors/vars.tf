@@ -98,17 +98,17 @@ variable "domain_users_list" {
 
 variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
-  default     = ["us-west-1a", "us-west-1c"]
+  default     = list(string)
 }
 
 variable "cac_subnet_cidr_list" {
   description = "CIDRs for subnet containing the Cloud Access Connector"
-  default     = ["10.0.1.0/25", "10.0.1.128/25"]
+  default     = list(string)
 }
 
 variable "cac_instance_count_list" {
   description = "Number of Cloud Access Connector instances to deploy in each region"
-  default     = [1, 1]
+  default     = list(string)
 }
 
 variable "cac_instance_type" {
@@ -139,6 +139,16 @@ variable "admin_ssh_key_name" {
 variable "admin_ssh_pub_key_file" {
   description = "Admin SSH public key file"
   type        = string
+}
+
+variable "ssl_key" {
+  description = "SSL private key for the Connector in PEM format"
+  default     = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector in PEM format"
+  default     = ""
 }
 
 variable "cac_token" {
