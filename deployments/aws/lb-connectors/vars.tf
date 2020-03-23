@@ -98,17 +98,17 @@ variable "domain_users_list" {
 
 variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
-  default     = list(string)
+  type        = list(string)
 }
 
 variable "cac_subnet_cidr_list" {
   description = "CIDRs for subnet containing the Cloud Access Connector"
-  default     = list(string)
+  type        = list(string)
 }
 
 variable "cac_instance_count_list" {
   description = "Number of Cloud Access Connector instances to deploy in each region"
-  default     = list(string)
+  type        = list(number)
 }
 
 variable "cac_instance_type" {
