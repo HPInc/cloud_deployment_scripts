@@ -17,8 +17,9 @@ This is a Python 3 script that automates the encryption and decryption of secret
 so that it is ready to be used for terraform deployments with KMS encryption of the secrets.
 
 All secrets below the line "# <-- Start of secrets section, do not edit this line. -->" will be encrypted by this script.
-If the secret is a path to a text file, the text file itself will be encrypted instead. The script will create a new file with 
-ciphertext in it instead of the plaintext and will append ".encrypted" to the end of the file name. Finally, the script will
+
+If the secret is a path to a text file, the text file itself will be encrypted instead. The script will encrypt the
+plaintext in the textfile and will also append ".encrypted" to the end of the file name. Finally, the script will
 update the path to the encrypted text file to be used in your new terraform.tfvars.
 
 The script is defaulted to use "cas-keyring" and "cas_key" to encrypt your secrets. Ensure that the "kms_cryptokey_id" 
@@ -31,5 +32,5 @@ To encrypt:
 
 To decrypt:
 ```
-./kms_secrets_encryption.py <path/to/terraform.tfvars> -d
+./kms_secrets_encryption.py -d <path/to/terraform.tfvars> 
 ```
