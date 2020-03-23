@@ -97,7 +97,7 @@ variable "ami_owner" {
 
 variable "ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200311"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200317"
 }
 
 variable "host_name" {
