@@ -2,31 +2,40 @@
 
 # Path to an AWS Crentials File. Please see
 # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
-# for details on file format.
+# for details on file format, or use aws_credentials.sample as an example.
 aws_credentials_file = "/path/to/aws_key"
-# aws_region = "us-west-1"
+# aws_region   = "us-west-1"
 
 # prefix = "myprefix"
 
 # By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
-# Define allowed_admin_cidrs to open the VPC firewall to additional IP addresses
-# or CIDR.
-# allowed_admin_cidrs = ["a.b.c.d/32", "e.f.g.0/24"]
-
-# By default, PCoIP clients are allowed from any IP (0.0.0.0/0). Define
-# allowed_client_cidrs to restrict IP addresses from which PCoIP clients can
-# connect to remote workstations.
-# allowed_client_cidrs = ["a.b.c.d/32", "e.f.g.0/24"]
+# Define allowed_cidr to open the VPC firewall to additional CIDR blocks.
+# allowed_cidr_blks = ["a.b.c.d/32", "e.f.g.0/24"]
 
 domain_name = "example.com"
 
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
+# Specify the zones (min. 2 zones, ensure the zones are available in your AWS
+# account), subnet CIDRs and number of connectors to create per zone.
+# For example:
+# cac_zone_list           = ["us-west-1a",  "us-west-1c"]
+# cac_subnet_cidr_list    = ["10.0.1.0/25", "10.0.1.128/25"]
+# cac_instance_count_list = [1,             1]
+
+cac_zone_list           = []
+cac_subnet_cidr_list    = []
+cac_instance_count_list = []
+
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
+# Ensure the certificates have a domain name e.g. CN=example.com
+ssl_key  = "/path/to/privkey.pem"
+ssl_cert = "/path/to/fullchain.pem"
+
 # REQUIRED: ensure the AWS account used has subscribed to the "NVIDIA Quadro
-# Virtual Workstation - WinServer 2019" image using the AWS dashboard at
+# Virtual Workstation - WinServer 2016" image using the AWS dashboard at
 # https://aws.amazon.com/marketplace/pp/B07TS3S3ZH
 win_gfx_instance_count = 0
 # win_gfx_instance_type = "g4dn.xlarge"
