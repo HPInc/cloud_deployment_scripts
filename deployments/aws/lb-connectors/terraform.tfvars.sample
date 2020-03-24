@@ -1,4 +1,6 @@
 # Commented out lines represents defaults that can be changed
+# On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
+# Example: aws_credentials_file = "C:/path/to/aws_key"
 
 # Path to an AWS Crentials File. Please see
 # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
