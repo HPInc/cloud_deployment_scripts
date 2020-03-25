@@ -27,7 +27,7 @@ function Get-AuthToken {
         return $response."access_token"
     }
     catch {
-        "Error fetching auth token: $_"
+        "--> ERROR: Failed to fetch auth token: $_"
         return $false
     }
 }
@@ -43,6 +43,7 @@ function Decrypt-Credentials {
     $headers.Add("Authorization", "Bearer $($token)")
 
     try {
+        "--> Decrypting account_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource.Add("ciphertext", "${account_password}")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
@@ -50,7 +51,7 @@ function Decrypt-Credentials {
         $DATA."account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
     }
     catch {
-        "Error decrypting credentials: $_"
+        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -58,30 +59,29 @@ function Decrypt-Credentials {
 Start-Transcript -path $LOG_FILE -append
 
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "Not using encryption"
+    "--> Script is not using encryption for secrets."
 } else {
-    "Using ecnryption key ${kms_cryptokey_id}"
+    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
     Decrypt-Credentials
 }
 
-Write-Output "================================================================"
-Write-Output "Creating new AD Domain Admin account ${account_name}..."
-Write-Output "================================================================"
-
+"================================================================"
+"Creating new AD Domain Admin account ${account_name}..."
+"================================================================"
 do {
     Try {
         $Retry = $false
         New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force) -Enabled $True -PasswordNeverExpires $True
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
-        $_.Exception.Message
+        "--> $($_.Exception.Message)"
 
         if ($Elapsed -ge $Timeout) {
-            Write-Output "Error: Timed out trying to create new AD acccount."
-            exit
+            Write-Output "ERROR: Timed out trying to create new AD acccount, exiting..."
+            exit 1
         }
 
-        "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+        "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
         $Retry = $true
         Start-Sleep -Seconds $Interval
         $Elapsed += $Interval
