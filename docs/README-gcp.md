@@ -1,5 +1,9 @@
 # Google Cloud Platform Deployments
 
+There are two ways to create a Cloud Access Software deployment using this repository:
+- __GCP Quickstart Tutorial__: for those who have less experience with the Command Line Interface (CLI) and Terraform, use this tutorial to get a deployment running with the least amount of effort. The quickstart will prepare most of the requirements for the user and call a script to deploy the _single-connector_ deployment using Terraform.
+- __Running Terraform scripts__: for those who are experienced with the CLI and Terraform, this is the primary way this repository is meant to be used. A user can choose between different types of deployments, variables can be customized, and deployment architecture can be modified to suit the user's needs.
+
 ## GCP Quickstart Tutorial
 
 The quickest way to create a reference deployment on GCP is to run the Quickstart Python script in the Google Cloud Shell. The goal is to automate the creation of a [single-connector deployment](#single-connector) as much as possible by using auto-generated values for required parameters.
