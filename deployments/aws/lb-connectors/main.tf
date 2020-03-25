@@ -29,7 +29,7 @@ module "dc" {
   source = "../../../modules/aws/dc"
 
   prefix = var.prefix
-  
+
   customer_master_key_id      = var.customer_master_key_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -60,6 +60,55 @@ resource "aws_key_pair" "cam_admin" {
   public_key = file(var.admin_ssh_pub_key_file)
 }
 
+resource "aws_lb" "cac-alb" {
+  name               = "${local.prefix}cac-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [
+    data.aws_security_group.default.id,
+    aws_security_group.allow-ssh.id,
+    aws_security_group.allow-icmp.id,
+    aws_security_group.allow-https.id,
+    aws_security_group.allow-pcoip.id,
+  ]
+  subnets            = aws_subnet.cac-subnets[*].id
+}
+
+resource "aws_lb_target_group" "cac-tg" {
+  name        = "${local.prefix}cac-tg"
+  port        = 443
+  protocol    = "HTTPS"
+  target_type = "instance"
+  vpc_id      = aws_vpc.vpc.id
+
+  stickiness {
+    type = "lb_cookie"
+  }
+
+  #TODO add health check
+}
+
+resource "aws_acm_certificate" "ssl-cert" {
+  private_key      = file(var.ssl_key)
+  certificate_body = file(var.ssl_cert)
+
+  tags = {
+    Name = "${local.prefix}ssl-cert"
+  }
+}
+
+resource "aws_lb_listener" "alb-listener" {
+  load_balancer_arn = aws_lb.cac-alb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  certificate_arn   = aws_acm_certificate.ssl-cert.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.cac-tg.arn
+  }
+}
+
 module "cac" {
   source = "../../../modules/aws/cac"
 
@@ -76,25 +125,34 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  zone_list           = [aws_subnet.cac-subnet.availability_zone]
-  subnet_list         = [aws_subnet.cac-subnet.id]
-  instance_count_list = [var.cac_instance_count]
+  zone_list           = aws_subnet.cac-subnets[*].availability_zone
+  subnet_list         = aws_subnet.cac-subnets[*].id
+  instance_count_list = var.cac_instance_count_list
 
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
+    aws_security_group.allow-https.id,
     aws_security_group.allow-pcoip.id,
   ]
 
-  bucket_name   = aws_s3_bucket.scripts.id
-  instance_type = var.cac_instance_type
-  disk_size_gb  = var.cac_disk_size_gb
+  bucket_name    = aws_s3_bucket.scripts.id
+  instance_type  = var.cac_instance_type
+  disk_size_gb   = var.cac_disk_size_gb
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
 
   admin_ssh_key_name = var.admin_ssh_key_name
+}
+
+resource "aws_lb_target_group_attachment" "cac-tg-attachement" {
+  count            = length(module.cac.instance-id)
+
+  target_group_arn = aws_lb_target_group.cac-tg.arn
+  target_id        = module.cac.instance-id[count.index]
+  port             = 443
 }
 
 module "win-gfx" {

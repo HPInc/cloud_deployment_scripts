@@ -92,7 +92,7 @@ variable "ami_product_code" {
 
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 1901*"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
 }
 
 variable "admin_ssh_key_name" {

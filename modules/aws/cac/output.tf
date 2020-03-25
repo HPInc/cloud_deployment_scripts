@@ -12,3 +12,7 @@ output "internal-ip" {
 output "public-ip" {
   value = [aws_instance.cac[*].public_ip]
 }
+
+output "instance-id" {
+  value = aws_instance.cac[*].id
+}

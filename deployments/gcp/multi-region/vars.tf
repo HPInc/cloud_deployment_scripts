@@ -74,7 +74,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200211"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200310"
 }
 
 variable "dc_admin_password" {
@@ -140,7 +140,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200218"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200317"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -157,7 +157,7 @@ variable "cac_admin_ssh_pub_key_file" {
 variable "cac_health_check" {
   description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/CloudAccessManager/"
+    path         = "/pcoip-broker/xml"
     port         = 443
     interval_sec = 5
     timeout_sec  = 5
@@ -226,7 +226,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200211"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200310"
 }
 
 variable "win_std_instance_count" {
@@ -246,7 +246,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200211"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200310"
 }
 
 variable "centos_gfx_instance_count" {
