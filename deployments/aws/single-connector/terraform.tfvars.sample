@@ -20,10 +20,19 @@ aws_credentials_file = "/path/to/aws_key"
 # connect to remote workstations. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_client_cidrs = ["0.0.0.0/0"]
 
-domain_name = "example.com"
+# domain_name = "example.com"
 
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
+
+# cac_instance_type = "t2.xlarge"
+# cac_disk_size_gb  = "50"
+# cac_ami_owner     = "099720109477"
+# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200323"
+
+# Optional: Specify SSL certificate for Connector
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -77,15 +86,11 @@ centos_std_instance_count = 0
 #
 # For option 2, a user encrypts the secrets independent of these Terraform
 # scripts. Once the secrets are encrypted with an AWS KMS customer managed CMK,
-# set the "customer_master_key_id" to key ID used to encrypt the secrets, and
+# set "customer_master_key_id" to key ID used to encrypt the secrets, and
 # enter the base64-encoded ciphertext as strings in the variables below. The
 # AWS IAM account corresponding to the "aws_credentials_file" above must have
 # admin permissions to manage the CMK specified.
-
-# (Optional) If using encryption, enter the CMK ID, in the form of a UUID, e.g.
-# "123e4567-e89b-12d3-a456-426655440000". Otherwise, comment out.
-customer_master_key_id = "<key-id>"
-
+#
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
 # 2. Must have 3 of the following categories:
@@ -95,6 +100,9 @@ customer_master_key_id = "<key-id>"
 #    d. (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
 #    3. unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+
+# If using encryption, enter the CMK ID. Otherwise, comment out.
+# customer_master_key_id = "<key-id-uuid>"
 
 dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
