@@ -190,7 +190,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.02.12"
+  default     = "Windows_Server-2019-English-Full-Base-2020.03.18"
 }
 
 variable "win_std_instance_count" {
