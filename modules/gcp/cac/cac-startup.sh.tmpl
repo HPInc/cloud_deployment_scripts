@@ -5,8 +5,10 @@
 
 #!/bin/bash
 
+LOG_FILE="/var/log/teradici/provisioning.log"
+
 INSTALL_DIR="/root"
-INSTALL_LOG="$INSTALL_DIR/cac-install.log"
+CAC_INSTALL_LOG="$INSTALL_DIR/cac-install.log"
 cd $INSTALL_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
@@ -19,7 +21,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$INSTALL_LOG"
+    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
 }
 
 get_credentials() {
@@ -187,7 +189,7 @@ install_cac() {
             --domain-group "${domain_group}" \
             --reg-code $PCOIP_REGISTRATION_CODE \
             --sync-interval 5 \
-            2>&1 | tee $INSTALL_LOG
+            2>&1 | tee -a $CAC_INSTALL_LOG
     else
         gsutil cp gs://${bucket_name}/${ssl_key} $INSTALL_DIR
         gsutil cp gs://${bucket_name}/${ssl_cert} $INSTALL_DIR
@@ -205,9 +207,16 @@ install_cac() {
             --domain-group "${domain_group}" \
             --reg-code $PCOIP_REGISTRATION_CODE \
             --sync-interval 5 \
-            2>&1 | tee $INSTALL_LOG
+            2>&1 | tee -a $CAC_INSTALL_LOG
     fi
 }
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $${LOG_FILE})"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
+fi
 
 get_credentials
 

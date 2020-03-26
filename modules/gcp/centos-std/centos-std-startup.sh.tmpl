@@ -5,7 +5,7 @@
 
 #!/bin/bash
 
-INST_LOG_FILE="/var/log/teradici/agent/install.log"
+LOG_FILE="/var/log/teradici/provisioning.log"
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
@@ -19,7 +19,7 @@ CPU_POLLING_INTERVAL=${minutes_cpu_polling_interval}
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$INST_LOG_FILE"
+    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
 }
 
 retry() {
@@ -224,11 +224,11 @@ if (rpm -q pcoip-agent-standard); then
     exit
 fi
 
-if [[ ! -f "$INST_LOG_FILE" ]]
+if [[ ! -f "$LOG_FILE" ]]
 then
-    mkdir -p "$(dirname $${INST_LOG_FILE})"
-    touch "$INST_LOG_FILE"
-    chmod +644 "$INST_LOG_FILE"
+    mkdir -p "$(dirname $${LOG_FILE})"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
 fi
 
 log "$(date)"
