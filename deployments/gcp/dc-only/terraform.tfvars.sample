@@ -11,9 +11,9 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # prefix = "myprefix"
 
 # By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
-# Define allowed_cidr to open the VPC firewall to additional IP addresses or 
+# Define allowed_admin_cidrs to open the VPC firewall to additional IP addresses
 # or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
-# allowed_cidr = []
+# allowed_admin_cidrs = []
 
 # domain_name = "example.com"
 
