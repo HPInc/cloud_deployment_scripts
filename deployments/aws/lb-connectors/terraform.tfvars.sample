@@ -19,6 +19,11 @@ domain_name = "example.com"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
+# SSL Private Key & Certificate for Load Balancer. Note: AWS requires CN to be
+# a domain name. e.g. "example.com"
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
+
 # Specify the zones (min. 2 zones, ensure the zones are available in your AWS
 # account), subnet CIDRs and number of connectors to create per zone.
 # For example:
@@ -30,11 +35,12 @@ cac_zone_list           = []
 cac_subnet_cidr_list    = []
 cac_instance_count_list = []
 
-admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+# cac_instance_type = "t2.xlarge"
+# cac_disk_size_gb  = "50"
+# cac_ami_owner     = "099720109477"
+# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200311"
 
-# Ensure the certificates have a domain name e.g. CN=example.com
-ssl_key  = "/path/to/privkey.pem"
-ssl_cert = "/path/to/fullchain.pem"
+admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 # REQUIRED: ensure the AWS account used has subscribed to the "NVIDIA Quadro
 # Virtual Workstation - WinServer 2016" image using the AWS dashboard at

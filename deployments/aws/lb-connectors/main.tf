@@ -88,9 +88,34 @@ resource "aws_lb_target_group" "cac-tg" {
   #TODO add health check
 }
 
+resource "tls_private_key" "tls-key" {
+  count = var.ssl_key == "" ? 1 : 0
+
+  algorithm = "RSA"
+  rsa_bits  = "2048"
+}
+
+resource "tls_self_signed_cert" "tls-cert" {
+  count = var.ssl_cert == "" ? 1 : 0
+
+  key_algorithm   = tls_private_key.tls-key[0].algorithm
+  private_key_pem = tls_private_key.tls-key[0].private_key_pem
+
+  subject {
+    common_name  = var.domain_name
+  }
+
+  validity_period_hours = 8760
+
+  allowed_uses = [
+    "key_encipherment",
+    "cert_signing",
+  ]
+}
+
 resource "aws_acm_certificate" "ssl-cert" {
-  private_key      = file(var.ssl_key)
-  certificate_body = file(var.ssl_cert)
+  private_key      = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
+  certificate_body = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
 
   tags = {
     Name = "${local.prefix}ssl-cert"
