@@ -50,7 +50,7 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 #    3. unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
-# If using encryption, enter the KMS key ID. Otherwise, comment out.
+# Uncomment and enter the KMS key ID if using encryption.
 # kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
 
 # <-- Start of secrets section, do not edit this line. -->

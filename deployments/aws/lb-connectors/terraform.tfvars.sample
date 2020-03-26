@@ -97,11 +97,12 @@ centos_std_instance_count = 0
 # scripts once downloaded by the VMs.
 #
 # For option 2, a user encrypts the secrets independent of these Terraform
-# scripts. Once the secrets are encrypted with an AWS KMS customer managed CMK,
-# set "customer_master_key_id" to key ID used to encrypt the secrets, and
-# enter the base64-encoded ciphertext as strings in the variables below. The
-# AWS IAM account corresponding to the "aws_credentials_file" above must have
-# admin permissions to manage the CMK specified.
+# scripts. Once the secrets are encrypted with an AWS KMS customer managed
+# Customer Master Key (CMK), set "customer_master_key_id" to key ID used to
+# encrypt the secrets, and enter the base64-encoded ciphertext as strings in the
+# variables below. The AWS IAM account corresponding to the
+# "aws_credentials_file" above must have admin permissions to manage the CMK
+# specified.
 #
 # Note Windows password complexity requirements:
 # 1. Must not contain user's account name or display name
@@ -113,7 +114,7 @@ centos_std_instance_count = 0
 #    3. unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
-# If using encryption, enter the CMK ID. Otherwise, comment out.
+# Uncomment and enter the Customer Master Key ID if using encryption.
 # customer_master_key_id = "<key-id-uuid>"
 
 dc_admin_password           = "SecuRe_pwd1"
