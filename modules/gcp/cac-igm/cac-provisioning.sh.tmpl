@@ -68,7 +68,7 @@ check_required_vars() {
 
 check_connector_installed() {
     if [[ -f "$INSTALL_DIR/cloud-access-connector" ]]; then
-        log "--> Connector already installed. Skipping startup script..."
+        log "--> Connector already installed. Skipping provisioning script..."
         exit 0
     fi
 }
