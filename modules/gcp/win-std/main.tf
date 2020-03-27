@@ -13,16 +13,16 @@ locals {
   host_name = substr("${local.prefix}${var.name}", 0, 11)
 
   enable_public_ip = var.enable_public_ip ? [true] : []
-  startup_script = "win-std-startup.ps1"
+  provisioning_script = "win-std-provisioning.ps1"
 }
 
-resource "google_storage_bucket_object" "win-std-startup-script" {
+resource "google_storage_bucket_object" "win-std-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name    = local.startup_script
+  name    = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       pcoip_registration_code     = var.pcoip_registration_code,
@@ -70,7 +70,7 @@ resource "google_compute_instance" "win-std" {
   tags = var.network_tags
 
   metadata = {
-    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-std-startup-script[0].output_name}"
+    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-std-provisioning-script[0].output_name}"
   }
 
   service_account {
