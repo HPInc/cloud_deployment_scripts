@@ -112,7 +112,7 @@ class CloudAccessManager:
         resp.raise_for_status()
         resp = resp.json()
 
-        return resp['data'][0] if resp['total'] >= 1 else None
+        return resp['data'][0] if len(resp.get('data', [])) >= 1 else None
 
     def machines_get(self, deployment):
         resp = requests.get(
