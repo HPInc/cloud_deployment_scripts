@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
-$NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
 $PCOIP_AGENT_LOCATION_URL = "${pcoip_agent_location_url}"
 $PCOIP_AGENT_FILENAME     = "${pcoip_agent_filename}"
 
@@ -42,7 +41,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
         Throw
     }
 
-    Write-Information "--> Attempt $Attempt failed. Retrying in $Interval seconds..." -InformationAction Continue
+    Write-Information "--> Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
     Start-Sleep -Seconds $Interval
   }
 }
@@ -75,7 +74,7 @@ function Decrypt-Credentials {
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-        
+
         "--> Decrypting admin_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource.Add("ciphertext", "${admin_password}")
@@ -96,69 +95,29 @@ function Decrypt-Credentials {
     }
 }
 
-function Nvidia-is-Installed {
-    if (!(test-path $NVIDIA_DIR)) {
-        return $false
-    }
-
-    cd $NVIDIA_DIR
-    & .\nvidia-smi.exe
-    return $?
-    return $false
-}
-
-function Nvidia-Install {
-    "--> Installing NVIDIA GRID driver..."
-
-    if (Nvidia-is-Installed) {
-        "--> NVIDIA driver is already installed. Skipping..."
-        return
-    }
-
-    mkdir 'C:\Nvidia'
-    $driverDirectory = "C:\Nvidia"
-    $nvidiaDriverFileName = Split-Path ${nvidia_driver_url} -Leaf
-    $nvidiaDriverLocation = Split-Path ${nvidia_driver_url} -Parent
-    $destFile = $driverDirectory + "\" + $nvidiaDriverFileName
-    "--> Downloading NVIDIA GRID driver from $nvidiaDriverLocation..."
-    (New-Object System.Net.WebClient).DownloadFile("${nvidia_driver_url}", $destFile)
-    "--> NVIDIA GRID driver downloaded."
-
-    "--> Installing NVIDIA GRID Driver..."
-    $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -PassThru -Wait
-
-    if (!(Nvidia-is-Installed)) {
-        "--> ERROR: Failed to install NVIDIA GRID driver."
-        exit 1
-    }
-
-    "--> NVIDIA GRID driver installed successfully."
-    $global:restart = $true
-}
-
 function PCoIP-Agent-is-Installed {
     Get-Service "PCoIPAgent"
     return $?
 }
 
 function PCoIP-Agent-Install {
-    "--> Installing PCoIP graphics agent..."
+    "--> Installing PCoIP standard agent..."
 
     if (PCoIP-Agent-is-Installed) {
-        "--> PCoIP graphics agent is already installed. Skipping..."
+        "--> PCoIP standard agent is already installed. Skipping..."
         return
     }
 
     $agentInstallerDLDirectory = "C:\Teradici"
     if (![string]::IsNullOrEmpty($PCOIP_AGENT_FILENAME)) {
-        "--> Using user-specified PCoIP graphics agent filename..."
+        "--> Using user-specified PCoIP standard agent filename..."
         $agent_filename = $PCOIP_AGENT_FILENAME
     } else {
-        "--> Using default latest PCoIP graphics agent..."
-        $agent_latest = $PCOIP_AGENT_LOCATION_URL + "latest-graphics-agent.json"
+        "--> Using default latest PCoIP standard agent..."
+        $agent_latest = $PCOIP_AGENT_LOCATION_URL + "latest-standard-agent.json"
         $wc = New-Object System.Net.WebClient
 
-        "--> Checking for the latest PCoIP graphics agent version from $agent_latest..."
+        "--> Checking for the latest PCoIP standard agent version from $agent_latest..."
         $string = Retry -Action {$wc.DownloadString($agent_latest)}
 
         $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
@@ -167,19 +126,19 @@ function PCoIP-Agent-Install {
     $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
     $wc = New-Object System.Net.WebClient
 
-    "--> Downloading PCoIP graphics agent from $pcoipAgentInstallerUrl..."
+    "--> Downloading PCoIP standard agent from $pcoipAgentInstallerUrl..."
     Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
-    "--> Teradici PCoIP graphics agent downloaded: $agent_filename"
+    "--> Teradici PCoIP standard agent downloaded: $agent_filename"
 
-    "--> Installing Teradici PCoIP graphics agent..."
+    "--> Installing Teradici PCoIP standard agent..."
     Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot _?$destFile" -PassThru -Wait
 
     if (!(PCoIP-Agent-is-Installed)) {
-        "--> ERROR: Failed to install PCoIP graphics agent."
+        "--> ERROR: Failed to install PCoIP standard agent."
         exit 1
     }
 
-    "--> Teradici PCoIP graphics agent installed successfully."
+    "--> Teradici PCoIP standard agent installed successfully."
     $global:restart = $true
 }
 
@@ -188,14 +147,14 @@ function PCoIP-Agent-Register {
 
     cd 'C:\Program Files\Teradici\PCoIP Agent'
 
-    "--> Checking for existing PCoIP License..."
+    "Checking for existing PCoIP License..."
     & .\pcoip-validate-license.ps1
     if ( $LastExitCode -eq 0 ) {
         "--> Found valid license."
         return
     }
 
-    # License registration may have intermittent failures
+    # License regisration may have intermittent failures
     $Interval = 10
     $Timeout = 600
     $Elapsed = 0
@@ -203,7 +162,7 @@ function PCoIP-Agent-Register {
     do {
         $Retry = $false
         & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
-        # The script already produces error message
+        # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
             if ($Elapsed -ge $Timeout) {
@@ -349,7 +308,7 @@ function Join-Domain {
 
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
-    "--> $LOG_FILE exists. Assuming this startup script has run, exiting..."
+    "--> $LOG_FILE exists. Assuming this provisioning script has run, exiting..."
     exit 0
 }
 
@@ -375,8 +334,6 @@ net user Administrator $DATA."admin_password" /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-Nvidia-Install
-
 PCoIP-Agent-Install
 
 PCoIP-Agent-Register
@@ -393,4 +350,3 @@ if ($global:restart) {
 } else {
     "--> No restart required."
 }
-
