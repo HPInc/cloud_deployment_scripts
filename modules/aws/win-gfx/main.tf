@@ -26,6 +26,8 @@ resource "aws_s3_bucket_object" "win-gfx-startup-script" {
     {
       customer_master_key_id      = var.customer_master_key_id,
       pcoip_registration_code     = var.pcoip_registration_code,
+      nvidia_driver_url           = var.nvidia_driver_url,
+      nvidia_driver_filename      = var.nvidia_driver_filename,
       domain_name                 = var.domain_name,
       admin_password              = var.admin_password,
       ad_service_account_username = var.ad_service_account_username,
