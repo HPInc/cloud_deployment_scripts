@@ -7,7 +7,7 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script = "cac-startup.sh"
+  provisioning_script = "cac-provisioning.sh"
   num_cacs = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_zone_list)
 
@@ -35,13 +35,13 @@ data "google_compute_image" "cac-base-img" {
   name    = local.disk_image_name
 }
 
-resource "google_storage_bucket_object" "cac-startup-script" {
+resource "google_storage_bucket_object" "cac-provisioning-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
   bucket  = var.bucket_name
-  name    = local.startup_script
+  name    = local.provisioning_script
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
@@ -90,7 +90,7 @@ resource "google_compute_instance_template" "cac-template" {
 
   metadata = {
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
-    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.cac-startup-script[0].output_name}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.cac-provisioning-script[0].output_name}"
   }
 
   service_account {
