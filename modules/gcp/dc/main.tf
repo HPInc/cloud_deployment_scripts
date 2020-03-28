@@ -10,8 +10,8 @@ locals {
 
   # Windows computer names must be <= 15 characters
   host_name                  = substr("${local.prefix}vm-dc", 0, 15)
-  sysprep_filename           = "sysprep.ps1"
-  setup_file                 = "C:/Temp/setup.ps1"
+  sysprep_filename           = "dc-sysprep.ps1"
+  provisioning_file          = "C:/Temp/dc-provisioning.ps1"
   new_domain_admin_user_file = "C:/Temp/new_domain_admin_user.ps1"
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
@@ -19,7 +19,7 @@ locals {
   admin_password = var.kms_cryptokey_id == "" ? var.admin_password : data.google_kms_secret.decrypted_admin_password[0].plaintext
 }
 
-resource "google_storage_bucket_object" "sysprep-script" {
+resource "google_storage_bucket_object" "dc-sysprep-script" {
   bucket  = var.bucket_name
   name    = local.sysprep_filename
   content = templatefile(
@@ -31,8 +31,8 @@ resource "google_storage_bucket_object" "sysprep-script" {
   )
 }
 
-data "template_file" "setup-script" {
-  template = file("${path.module}/setup.ps1.tpl")
+data "template_file" "dc-provisioning-script" {
+  template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
     kms_cryptokey_id         = var.kms_cryptokey_id
@@ -93,7 +93,7 @@ resource "google_compute_instance" "dc" {
   tags = var.network_tags
 
   metadata = {
-    sysprep-specialize-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.sysprep-script.output_name}"
+    sysprep-specialize-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.dc-sysprep-script.output_name}"
   }
 
   service_account {
@@ -119,8 +119,8 @@ resource "null_resource" "upload-scripts" {
   }
 
   provisioner "file" {
-    content     = data.template_file.setup-script.rendered
-    destination = local.setup_file
+    content     = data.template_file.dc-provisioning-script.rendered
+    destination = local.provisioning_file
   }
 
   provisioner "file" {
@@ -158,7 +158,7 @@ resource "null_resource" "upload-domain-users-list" {
   }
 }
 
-resource "null_resource" "run-setup-script" {
+resource "null_resource" "run-provisioning-script" {
   depends_on = [null_resource.upload-scripts]
   triggers = {
     instance_id = google_compute_instance.dc.instance_id
@@ -176,14 +176,14 @@ resource "null_resource" "run-setup-script" {
 
   provisioner "remote-exec" {
     inline = [
-      "powershell -file ${local.setup_file}",
-      "del ${replace(local.setup_file, "/", "\\")}",
+      "powershell -file ${local.provisioning_file}",
+      "del ${replace(local.provisioning_file, "/", "\\")}",
     ]
   }
 }
 
 resource "null_resource" "wait-for-reboot" {
-  depends_on = [null_resource.run-setup-script]
+  depends_on = [null_resource.run-provisioning-script]
   triggers = {
     instance_id = google_compute_instance.dc.instance_id
   }
