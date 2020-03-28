@@ -115,6 +115,16 @@ variable "cac_installer_url" {
   default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
 }
 
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default     = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
+  default     = ""
+}
+
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""

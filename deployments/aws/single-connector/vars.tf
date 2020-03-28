@@ -141,6 +141,16 @@ variable "admin_ssh_pub_key_file" {
   type        = string
 }
 
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default     = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
+  default     = ""
+}
+
 variable "cac_token" {
   description = "Connector Token from CAM Service"
   type        = string
