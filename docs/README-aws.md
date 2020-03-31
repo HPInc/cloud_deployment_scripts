@@ -108,3 +108,12 @@ Domain-joined workstations are optionally created, specified by the following pa
 These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics driver are also installed.
 
 ![single-connector diagram](./single-connector-aws.png)
+
+### lb-connectors
+The difference between single-connector and lb-connectors deployments is that instead of creating only one Cloud Access Connector, the lb-connectors deployment creates a group of Cloud Access Connectors in two or more availability zones (AZs) within an AWS region behind an AWS Application Load Balancer (ALB). In this setup, a client initiates a PCoIP session with the public DNS name of the ALB, and the ALB will select one of the Cloud Access Connectors to establish the PCoIP connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the ALB.
+
+The AZs and number of Cloud Access Connectors for each AZs are specified by the ```cac_zone_list``` and ```cac_instance_count_list``` variables, respectively. At least two AZ and one Cloud Access Connector instance must be specified.
+
+The following diagram shows what a lb-connectors deployment looks like with 2 AZs specified:
+
+![aws-lb-connectors diagram](aws-lb-connectors.png)
