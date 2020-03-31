@@ -95,6 +95,9 @@ module "cac" {
   ami_name  = var.cac_ami_name
 
   admin_ssh_key_name = var.admin_ssh_key_name
+
+  ssl_key  = var.ssl_key
+  ssl_cert = var.ssl_cert
 }
 
 module "win-gfx" {

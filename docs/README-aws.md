@@ -19,8 +19,7 @@ With a new AWS account:
 aws_access_key_id = <your_id>
 aws_secret_access_key = <your_key>
 ```
-- in the AWS marketplace portal, visit the Product Overview pages of AMI images that will be used by Terraform scripts. Click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. The required subscriptions depend on which workstation is to be deployed:
-    - Windows Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TS3S3ZH
+- in the AWS marketplace portal, visit the Product Overview pages of AMI images that will be used by Terraform scripts. Click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. Note that only CentOS Standard or Graphics workstations require subscriptions to the AMI images. Visit the following link to subscribe prior to deployment:
     - CentOS Standard or Graphics workstation: https://aws.amazon.com/marketplace/pp/B07TV59ZQK
 - (Optional) For better security, create an AWS KMS Customer Managed Symmetric Customer Master Key (CMK) to encrypt secrets.  Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create CMKs.
 
@@ -44,6 +43,10 @@ The following command can be used to decrypt the ciphertext:
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
+
+Note that all path variables in terraform.tfvars depend on the host platform: 
+- On Linux systems, the forward slash / is used as the path segment separator. ```aws_credentials_file = "/path/to/aws_key"```
+- On Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```aws_credentials_file = "C:/path/to/aws_key"```
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
@@ -105,3 +108,12 @@ Domain-joined workstations are optionally created, specified by the following pa
 These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics driver are also installed.
 
 ![single-connector diagram](./single-connector-aws.png)
+
+### lb-connectors
+The difference between single-connector and lb-connectors deployments is that instead of creating only one Cloud Access Connector, the lb-connectors deployment creates a group of Cloud Access Connectors in two or more availability zones (AZs) within an AWS region behind an AWS Application Load Balancer (ALB). In this setup, a client initiates a PCoIP session with the public DNS name of the ALB, and the ALB will select one of the Cloud Access Connectors to establish the PCoIP connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the ALB.
+
+The AZs and number of Cloud Access Connectors for each AZs are specified by the ```cac_zone_list``` and ```cac_instance_count_list``` variables, respectively. At least two AZ and one Cloud Access Connector instance must be specified.
+
+The following diagram shows what a lb-connectors deployment looks like with 2 AZs specified:
+
+![aws-lb-connectors diagram](aws-lb-connectors.png)

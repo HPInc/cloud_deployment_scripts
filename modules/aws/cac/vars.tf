@@ -97,7 +97,7 @@ variable "ami_owner" {
 
 variable "ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200311"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"
 }
 
 variable "host_name" {
@@ -113,6 +113,16 @@ variable "admin_ssh_key_name" {
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
   default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
+}
+
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default     = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
+  default     = ""
 }
 
 variable "customer_master_key_id" {

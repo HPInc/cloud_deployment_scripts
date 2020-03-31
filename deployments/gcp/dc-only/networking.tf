@@ -69,7 +69,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -82,7 +82,7 @@ resource "google_compute_firewall" "allow-winrm" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-winrm"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-icmp" {
@@ -94,7 +94,7 @@ resource "google_compute_firewall" "allow-icmp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-icmp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-dns" {

@@ -20,9 +20,14 @@ variable "prefix" {
   default     = ""
 }
 
-variable "allowed_cidr_blks" {
-  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these CIDR blocks. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+variable "allowed_admin_cidrs" {
+  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
   default     = []
+}
+
+variable "allowed_client_cidrs" {
+  description = "Open VPC firewall to allow PCoIP connections from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+  default     = ["0.0.0.0/0"]
 }
 
 variable "vpc_name" {
@@ -62,7 +67,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.03.11"
+  default     = "Windows_Server-2019-English-Full-Base-2020.03.18"
 }
 
 variable "domain_name" {
@@ -128,7 +133,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200311"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200323"
 }
 
 variable "admin_ssh_key_name" {
@@ -195,12 +200,12 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_ami_owner" {
   description = "Owner of AMI for the Windows Graphics Workstations"
-  default     = "aws-marketplace"
+  default     = "amazon"
 }
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "nvOffer-grid9.2-nv-windows-server-2019-QvWS-432.08-v201911180035*"
+  default     = "Windows_Server-2019-English-Full-Base-2020.03.18"
 }
 
 variable "win_std_instance_count" {
@@ -225,7 +230,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.03.11"
+  default     = "Windows_Server-2019-English-Full-Base-2020.03.18"
 }
 
 variable "centos_gfx_instance_count" {

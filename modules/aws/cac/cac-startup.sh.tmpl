@@ -113,16 +113,34 @@ done
 echo '### Installing Cloud Access Connector ###'
 export CAM_BASE_URI=${cam_url}
 
-$INSTALL_DIR/cloud-access-connector install \
-    -t $CAC_TOKEN \
-    --accept-policies \
-    --insecure \
-    --sa-user ${ad_service_account_username} \
-    --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-    --domain ${domain_name} \
-    --domain-group "${domain_group}" \
-    --reg-code $PCOIP_REGISTRATION_CODE \
-    --sync-interval 5 \
-    2>&1 | tee $INSTALL_LOG
+if [ -z "${ssl_key}" ]; then
+    $INSTALL_DIR/cloud-access-connector install \
+        -t $CAC_TOKEN \
+        --accept-policies \
+        --insecure \
+        --sa-user ${ad_service_account_username} \
+        --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
+        --domain ${domain_name} \
+        --domain-group "${domain_group}" \
+        --reg-code $PCOIP_REGISTRATION_CODE \
+        --sync-interval 5 \
+        2>&1 | tee $INSTALL_LOG
+else
+    aws s3 cp s3://${bucket_name}/${ssl_key} $INSTALL_DIR
+    aws s3 cp s3://${bucket_name}/${ssl_cert} $INSTALL_DIR
+
+    $INSTALL_DIR/cloud-access-connector install \
+        -t $CAC_TOKEN \
+        --accept-policies \
+        --ssl-key $INSTALL_DIR/${ssl_key} \
+        --ssl-cert $INSTALL_DIR/${ssl_cert} \
+        --sa-user ${ad_service_account_username} \
+        --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
+        --domain ${domain_name} \
+        --domain-group "${domain_group}" \
+        --reg-code $PCOIP_REGISTRATION_CODE \
+        --sync-interval 5 \
+        2>&1 | tee $INSTALL_LOG
+fi
 
 docker service ls

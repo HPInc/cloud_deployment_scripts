@@ -18,10 +18,33 @@ locals {
       ]
     ]
   )
+  ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
+  ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+}
+
+resource "aws_s3_bucket_object" "ssl-key" {
+  count = length(local.instance_info_list) == 0 ? 0 : var.ssl_key == "" ? 0 : 1
+
+  bucket = var.bucket_name
+  key    = local.ssl_key_filename
+  source = var.ssl_key
+}
+
+resource "aws_s3_bucket_object" "ssl-cert" {
+  count = length(local.instance_info_list) == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
+
+  bucket = var.bucket_name
+  key    = local.ssl_cert_filename
+  source = var.ssl_cert
 }
 
 resource "aws_s3_bucket_object" "cac-startup-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
+
+  depends_on = [
+    aws_s3_bucket_object.ssl-key,
+    aws_s3_bucket_object.ssl-cert,
+  ]
 
   key     = local.startup_script
   bucket  = var.bucket_name
@@ -40,6 +63,10 @@ resource "aws_s3_bucket_object" "cac-startup-script" {
       domain_group                = var.domain_group,
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
+
+      bucket_name = var.bucket_name,
+      ssl_key     = local.ssl_key_filename,
+      ssl_cert    = local.ssl_cert_filename,
     }
   )
 }
@@ -50,6 +77,8 @@ data "template_file" "user-data" {
   vars = {
     bucket_name = var.bucket_name,
     file_name   = local.startup_script,
+    ssl_key     = local.ssl_key_filename,
+    ssl_cert    = local.ssl_cert_filename,
   }
 }
 
@@ -93,6 +122,26 @@ data "aws_iam_policy_document" "cac-policy-doc" {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
     effect    = "Allow"
+  }
+
+  dynamic statement {
+    for_each = aws_s3_bucket_object.ssl-key
+    iterator = i
+    content {
+      actions   = ["s3:GetObject"]
+      resources = ["arn:aws:s3:::${var.bucket_name}/${local.ssl_key_filename}"]
+      effect    = "Allow"
+    }
+  }
+
+  dynamic statement {
+    for_each = aws_s3_bucket_object.ssl-cert
+    iterator = i
+    content {
+      actions   = ["s3:GetObject"]
+      resources = ["arn:aws:s3:::${var.bucket_name}/${local.ssl_cert_filename}"]
+      effect    = "Allow"
+    }
   }
 
   dynamic statement {

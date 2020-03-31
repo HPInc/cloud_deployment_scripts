@@ -124,10 +124,35 @@ resource "google_compute_url_map" "cac-urlmap" {
   default_service = google_compute_backend_service.cac-bkend-service.self_link
 }
 
+resource "tls_private_key" "tls-key" {
+  count = var.ssl_key == "" ? 1 : 0
+
+  algorithm = "RSA"
+  rsa_bits  = "2048"
+}
+
+resource "tls_self_signed_cert" "tls-cert" {
+  count = var.ssl_cert == "" ? 1 : 0
+
+  key_algorithm   = tls_private_key.tls-key[0].algorithm
+  private_key_pem = tls_private_key.tls-key[0].private_key_pem
+
+  subject {
+    common_name = var.domain_name
+  }
+
+  validity_period_hours = 8760
+
+  allowed_uses = [
+    "key_encipherment",
+    "cert_signing",
+  ]
+}
+
 resource "google_compute_ssl_certificate" "ssl-cert" {
   name        = "${local.prefix}ssl-cert"
-  private_key = file(var.ssl_key)
-  certificate = file(var.ssl_cert)
+  private_key = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
+  certificate = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
 }
 
 resource "google_compute_target_https_proxy" "cac-proxy" {
