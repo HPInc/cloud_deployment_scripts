@@ -104,7 +104,7 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 }
 
 resource "aws_iam_role" "dc-role" {
-  name               = "dc_role"
+  name               = "${local.prefix}dc_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -133,13 +133,13 @@ data "aws_iam_policy_document" "dc-policy-doc" {
 }
 
 resource "aws_iam_role_policy" "dc-role-policy" {
-  name = "dc_role_policy"
+  name = "${local.prefix}dc_role_policy"
   role = aws_iam_role.dc-role.id
   policy = data.aws_iam_policy_document.dc-policy-doc.json
 }
 
 resource "aws_iam_instance_profile" "dc-instance-profile" {
-  name = "dc_instance_profile"
+  name = "${local.prefix}dc_instance_profile"
   role = aws_iam_role.dc-role.name
 }
 

@@ -70,7 +70,7 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 resource "aws_iam_role" "win-std-role" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name               = "win_std_role"
+  name               = "${local.prefix}win_std_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -107,7 +107,7 @@ data "aws_iam_policy_document" "win-std-policy-doc" {
 resource "aws_iam_role_policy" "win-std-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "win_std_role_policy"
+  name = "${local.prefix}win_std_role_policy"
   role = aws_iam_role.win-std-role[0].id
   policy = data.aws_iam_policy_document.win-std-policy-doc.json
 }
@@ -115,7 +115,7 @@ resource "aws_iam_role_policy" "win-std-role-policy" {
 resource "aws_iam_instance_profile" "win-std-instance-profile" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "win_std_instance_profile"
+  name = "${local.prefix}win_std_instance_profile"
   role = aws_iam_role.win-std-role[0].name
 }
 

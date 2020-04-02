@@ -82,7 +82,7 @@ data "aws_kms_key" "encryption-key" {
 resource "aws_iam_role" "centos-gfx-role" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name               = "centos_gfx_role"
+  name               = "${local.prefix}centos_gfx_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -113,7 +113,7 @@ data "aws_iam_policy_document" "centos-gfx-policy-doc" {
 resource "aws_iam_role_policy" "centos-gfx-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "centos_gfx_role_policy"
+  name = "${local.prefix}centos_gfx_role_policy"
   role = aws_iam_role.centos-gfx-role[0].id
   policy = data.aws_iam_policy_document.centos-gfx-policy-doc.json
 }
@@ -121,7 +121,7 @@ resource "aws_iam_role_policy" "centos-gfx-role-policy" {
 resource "aws_iam_instance_profile" "centos-gfx-instance-profile" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "centos_gfx_instance_profile"
+  name = "${local.prefix}centos_gfx_instance_profile"
   role = aws_iam_role.centos-gfx-role[0].name
 }
 
