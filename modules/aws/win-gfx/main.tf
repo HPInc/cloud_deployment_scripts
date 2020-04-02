@@ -72,7 +72,7 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 resource "aws_iam_role" "win-gfx-role" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name               = "win_gfx_role"
+  name               = "${local.prefix}win_gfx_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -109,7 +109,7 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
 resource "aws_iam_role_policy" "win-gfx-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "win_gfx_role_policy"
+  name = "${local.prefix}win_gfx_role_policy"
   role = aws_iam_role.win-gfx-role[0].id
   policy = data.aws_iam_policy_document.win-gfx-policy-doc.json
 }
@@ -117,7 +117,7 @@ resource "aws_iam_role_policy" "win-gfx-role-policy" {
 resource "aws_iam_instance_profile" "win-gfx-instance-profile" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "win_gfx_instance_profile"
+  name = "${local.prefix}win_gfx_instance_profile"
   role = aws_iam_role.win-gfx-role[0].name
 }
 

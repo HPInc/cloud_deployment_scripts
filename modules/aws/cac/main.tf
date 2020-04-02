@@ -107,7 +107,7 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 resource "aws_iam_role" "cac-role" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  name               = "cac_role"
+  name               = "${local.prefix}cac_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -158,7 +158,7 @@ data "aws_iam_policy_document" "cac-policy-doc" {
 resource "aws_iam_role_policy" "cac-role-policy" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  name = "cac_role_policy"
+  name = "${local.prefix}cac_role_policy"
   role = aws_iam_role.cac-role[0].id
   policy = data.aws_iam_policy_document.cac-policy-doc.json
 }
@@ -166,7 +166,7 @@ resource "aws_iam_role_policy" "cac-role-policy" {
 resource "aws_iam_instance_profile" "cac-instance-profile" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  name = "cac_instance_profile"
+  name = "${local.prefix}cac_instance_profile"
   role = aws_iam_role.cac-role[0].name
 }
 
