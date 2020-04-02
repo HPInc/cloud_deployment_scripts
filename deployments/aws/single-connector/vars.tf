@@ -15,6 +15,11 @@ variable "aws_region" {
   default     = "us-west-1"
 }
 
+variable "az_id_blacklist" {
+  description = "List of blacklisted availability zone IDs."
+  default     = ["usw2-az4"]
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default     = ""

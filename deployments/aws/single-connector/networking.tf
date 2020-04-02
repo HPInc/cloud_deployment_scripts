@@ -9,6 +9,11 @@ data "http" "myip" {
   url = "https://ipinfo.io/ip"
 }
 
+data "aws_availability_zones" "available_az" {
+  state                = "available"
+  blacklisted_zone_ids = var.az_id_blacklist
+}
+
 locals {
   myip = "${chomp(data.http.myip.body)}/32"
 }
@@ -24,8 +29,9 @@ resource "aws_vpc" "vpc" {
 }
 
 resource "aws_subnet" "dc-subnet" {
-  cidr_block = var.dc_subnet_cidr
-  vpc_id     = aws_vpc.vpc.id
+  cidr_block        = var.dc_subnet_cidr
+  vpc_id            = aws_vpc.vpc.id
+  availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
     Name = "${local.prefix}subnet-dc"
@@ -33,8 +39,9 @@ resource "aws_subnet" "dc-subnet" {
 }
 
 resource "aws_subnet" "cac-subnet" {
-  cidr_block = var.cac_subnet_cidr
-  vpc_id     = aws_vpc.vpc.id
+  cidr_block        = var.cac_subnet_cidr
+  vpc_id            = aws_vpc.vpc.id
+  availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
     Name = "${local.prefix}subnet-cac"
@@ -42,8 +49,9 @@ resource "aws_subnet" "cac-subnet" {
 }
 
 resource "aws_subnet" "ws-subnet" {
-  cidr_block = var.ws_subnet_cidr
-  vpc_id     = aws_vpc.vpc.id
+  cidr_block        = var.ws_subnet_cidr
+  vpc_id            = aws_vpc.vpc.id
+  availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
     Name = "${local.prefix}subnet-ws"
