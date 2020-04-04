@@ -15,6 +15,13 @@ variable "aws_region" {
   default     = "us-west-1"
 }
 
+# "usw2-az4" failed to provision t2.xlarge EC2 instances in April 2020
+# "use1-az3" failed to provision g4dn.xlarge Windows EC2 instances in April 2020
+variable "az_id_blacklist" {
+  description = "List of blacklisted availability zone IDs."
+  default     = ["usw2-az4", "use1-az3"]
+}
+
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 9 characters."
   default     = ""
