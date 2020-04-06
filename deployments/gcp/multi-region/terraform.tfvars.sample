@@ -8,7 +8,9 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # gcp_region           = "us-west2"
 # gcp_zone             = "us-west2-b"
 
-# prefix = "myprefix"
+# Prefix to add to resources' names, max 5 characters to avoid cropping of
+# workstation hostnames.
+# prefix = ""
 
 # By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
 # Define allowed_admin_cidrs to open the VPC firewall to additional IP addresses
