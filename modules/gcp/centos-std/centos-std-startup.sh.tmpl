@@ -32,7 +32,7 @@ retry() {
 
             log "--> Failed to run command. $${@}"
             log "--> Retries left... $(( $max_retries - $retries ))"
-            ((n++))
+            ((retries++))
             sleep 10;
         }
     done
