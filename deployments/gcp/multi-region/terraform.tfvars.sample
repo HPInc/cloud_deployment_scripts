@@ -1,6 +1,6 @@
 # Commented out lines represents defaults that can be changed
 # On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
-# Example: gcp_credentials_file = "C:/path/to/cred.json"
+# Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
 gcp_credentials_file = "/path/to/cred.json"
 gcp_project_id       = "your-project-1234"
@@ -114,4 +114,4 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cac_token                   = "token from Cloud Access Manager for the connector"
+cam_deployment_sa_file      = "/path/to/cam_deployment_sa_cred.json"
