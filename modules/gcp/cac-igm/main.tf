@@ -7,8 +7,12 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
-  provisioning_script = "cac-provisioning.sh"
-  num_cacs = length(flatten([for i in var.instance_count_list: range(i)]))
+
+  provisioning_script  = "cac-provisioning.sh"
+  cam_script           = "cac-cam.py"
+  cam_deployment_sa_file = "cam-cred.json"
+
+  num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_zone_list)
 
   disk_image_project = regex("^projects/([-\\w]+).+$", var.disk_image)[0]
@@ -25,6 +29,22 @@ locals {
       "^projects/${local.disk_image_project}/global/images/([-\\w]+)$",
       var.disk_image
     )[0] : null
+}
+
+resource "google_storage_bucket_object" "cam-deployment-sa-file" {
+  count = local.num_cacs == 0 ? 0 : 1
+
+  bucket = var.bucket_name
+  name   = local.cam_deployment_sa_file
+  source = var.cam_deployment_sa_file
+}
+
+resource "google_storage_bucket_object" "cac-cam-script" {
+  count = local.num_cacs == 0 ? 0 : 1
+
+  bucket = var.bucket_name
+  name   = local.cam_script
+  source = "${path.module}/cac-cam.py"
 }
 
 # This is needed so new VMs will be based on the same image in case the public
@@ -46,7 +66,8 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
       cac_installer_url           = var.cac_installer_url,
-      cac_token                   = var.cac_token,
+      cam_deployment_sa_file      = local.cam_deployment_sa_file,
+      cam_script                  = local.cam_script,
       pcoip_registration_code     = var.pcoip_registration_code,
 
       domain_controller_ip        = var.domain_controller_ip,
