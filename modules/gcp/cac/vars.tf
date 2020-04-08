@@ -20,13 +20,13 @@ variable "cam_url" {
   default     = "https://cam.teradici.com"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
+variable "cam_deployment_sa_file" {
+  description = "Location of CAM deployment-level service account JSON file"
   type        = string
 }
 
-variable "cac_token" {
-  description = "Connector Token from CAM Service"
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code"
   type        = string
 }
 

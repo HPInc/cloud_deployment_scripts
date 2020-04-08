@@ -24,19 +24,25 @@ log() {
     echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
 }
 
+install_python() {
+    log "--> Installing Python and Python3..."
+    apt-get -qq update
+    apt install -y python
+    apt install -y python3
+}
+
 get_credentials() {
+    log "--> Downloading CAM deployment-level service account JSON file from the bucket..."
+    gsutil cp gs://${bucket_name}/${cam_deployment_sa_file} $INSTALL_DIR
+
     if [[ -z "${kms_cryptokey_id}" ]]; then
         log "--> Script is not using encryption for secrets."
 
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
         AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
-        CAC_TOKEN=${cac_token}
 
     else
         log "--> Script is using encryption key: ${kms_cryptokey_id}"
-
-        apt-get -qq update
-        apt install -y python
 
         # Gets access token attribute of response json object
         token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python -c "import sys, json; print json.load(sys.stdin)['access_token']")
@@ -52,10 +58,29 @@ get_credentials() {
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
         AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
 
-        log "--> Decrypting CAC token..."
-        data=$(echo "{ \"ciphertext\": \"${cac_token}\" }")
+        log "--> Decrypting CAM deployment-level service account JSON file..."
+        cam_cred_encrypted=$(cat ${cam_deployment_sa_file})
+        data=$(echo "{ \"ciphertext\": \"$cam_cred_encrypted\" }")
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
-        CAC_TOKEN=$(echo "$b64_data" | base64 --decode)
+        CAM_CREDENTIALS=$(echo "$b64_data" | base64 --decode)
+        echo $CAM_CREDENTIALS | tee ${cam_deployment_sa_file}
+    fi
+}
+
+get_cac_token() {
+    log "--> Retrieving connector token before CAC install..."
+
+    log "--> Downloading CAM python script from the bucket..."
+    gsutil cp gs://${bucket_name}/${cam_script} $INSTALL_DIR
+    chmod +x ${cam_script}
+
+    # Set CAC_TOKEN variable using the script's output
+    CAC_TOKEN=`./${cam_script} ${cam_deployment_sa_file}`
+
+    # Check and exit startup script if retrieving connector token failed
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to retrieve connector token using CAM script. Exiting startup script..."
+        exit 1
     fi
 }
 
@@ -236,7 +261,11 @@ fi
 
 log "$(date)"
 
+install_python
+
 get_credentials
+
+get_cac_token
 
 check_required_vars
 
