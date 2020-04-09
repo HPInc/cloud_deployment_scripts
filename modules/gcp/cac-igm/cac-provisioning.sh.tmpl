@@ -97,27 +97,6 @@ download_cac() {
     tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz
 }
 
-install_ldap_utils() {
-    # Wait for service account to be added. Do this last because it takes
-    # a while for new AD user to be added in a new Domain Controller.
-    # Note: using the domain controller IP instead of the domain name for
-    #       the host is more resilient.
-    log "--> Installing ldap_utils..."
-    RETRIES=5
-    while true; do
-        apt-get -qq update
-        apt-get -qq install ldap-utils
-        RC=$?
-        if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then
-            break
-        fi
-
-        log "--> ERROR: Failed to install ldap-utils. $RETRIES retries remaining..."
-        RETRIES=$((RETRIES-1))
-        sleep 5
-    done
-}
-
 wait_for_dc() {
     log "--> Ensure AD account is available..."
     TIMEOUT=1200
@@ -127,6 +106,7 @@ wait_for_dc() {
         -w $AD_SERVICE_ACCOUNT_PASSWORD \
         -o nettimeout=1; do
         if [ $TIMEOUT -le 0 ]; then
+            log "--> Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
             break
         else
             log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
@@ -144,9 +124,10 @@ wait_for_dc() {
     TIMEOUT=1200
     until host ${domain_name}; do
         if [ $TIMEOUT -le 0 ]; then
+            log "--> Timed out trying to resolve ${domain_name}. Continuing..."
             break
         else
-            log "Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+            log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         fi
         TIMEOUT=$((TIMEOUT-10))
         sleep 10
@@ -156,12 +137,32 @@ wait_for_dc() {
     TIMEOUT=1200
     until netcat -vz ${domain_name} 636; do
         if [ $TIMEOUT -le 0 ]; then
+            log "--> Timed out trying to contact ${domain_name}:636. Continuing..."
             break
         else
-            log "Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+            log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         fi
         TIMEOUT=$((TIMEOUT-10))
         sleep 10
+    done
+
+    # Wait for service account to be added. Do this last because it takes
+    # a while for new AD user to be added in a new Domain Controller.
+    # Note: using the domain controller IP instead of the domain name for
+    #       the host is more resilient.
+    log "--> Installing ldap_utils..."
+    RETRIES=5
+    while true; do
+        apt-get -qq update
+        apt-get -qq install ldap-utils
+        RC=$?
+        if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then
+            break
+        fi
+
+        log "--> ERROR: Failed to install ldap-utils. $RETRIES retries remaining..."
+        RETRIES=$((RETRIES-1))
+        sleep 5
     done
 }
 
@@ -229,8 +230,6 @@ check_connector_installed
 config_network
 
 download_cac
-
-install_ldap_utils
 
 wait_for_dc
 
