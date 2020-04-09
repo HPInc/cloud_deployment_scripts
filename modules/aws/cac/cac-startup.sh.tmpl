@@ -9,6 +9,8 @@ INSTALL_DIR="/root"
 INSTALL_LOG="$INSTALL_DIR/cac-install.log"
 cd $INSTALL_DIR
 
+export DEBIAN_FRONTEND=noninteractive
+
 log() {
     local message="$1"
     echo "[$(date)] $${message}" | tee -a "$INSTALL_LOG"
@@ -76,8 +78,11 @@ tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz
 # Wait for service account to be added
 # do this last because it takes a while for new AD user to be added in a
 # new Domain Controller
-# Note: using the domain controller IP instead of the domain name for the
-#       host is more resilient
+# Note:
+# Using the domain controller IP instead of the domain name for the host is more
+# resilient. With the domain name, sometimes it loops failing to resolve the
+# domain even though another SSH session to the same machine is able to resolve.
+
 echo '### Installing ldap-utils ###'
 RETRIES=5
 while true; do
@@ -109,6 +114,35 @@ until ldapwhoami \
     sleep 10
 done
 
+# Check that the domain name can be resolved and that the LDAP port is accepting
+# connections. This could have been all done with the ldapwhoami command, but
+# due to a number of occasional cac-installation issues, such as "domain
+# controller unreachable" or "DNS error occurred" errors, check these explicitly
+# for logging and debug purposes.
+
+echo '### Ensure domain ${domain_name} can be resolved ###'
+TIMEOUT=1200
+until host ${domain_name}; do
+    if [ $TIMEOUT -le 0 ]; then
+        break
+    else
+        echo "Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+    fi
+    TIMEOUT=$((TIMEOUT-10))
+    sleep 10
+done
+
+echo '### Ensure domain ${domain_name} port 636 is reacheable ###'
+TIMEOUT=1200
+until netcat -vz ${domain_name} 636; do
+    if [ $TIMEOUT -le 0 ]; then
+        break
+    else
+        echo "Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+    fi
+    TIMEOUT=$((TIMEOUT-10))
+    sleep 10
+done
 
 echo '### Installing Cloud Access Connector ###'
 export CAM_BASE_URI=${cam_url}
@@ -124,7 +158,7 @@ if [ -z "${ssl_key}" ]; then
         --domain-group "${domain_group}" \
         --reg-code $PCOIP_REGISTRATION_CODE \
         --sync-interval 5 \
-        2>&1 | tee $INSTALL_LOG
+        2>&1 | tee -a $INSTALL_LOG
 else
     aws s3 cp s3://${bucket_name}/${ssl_key} $INSTALL_DIR
     aws s3 cp s3://${bucket_name}/${ssl_cert} $INSTALL_DIR
@@ -140,7 +174,7 @@ else
         --domain-group "${domain_group}" \
         --reg-code $PCOIP_REGISTRATION_CODE \
         --sync-interval 5 \
-        2>&1 | tee $INSTALL_LOG
+        2>&1 | tee -a $INSTALL_LOG
 fi
 
 docker service ls

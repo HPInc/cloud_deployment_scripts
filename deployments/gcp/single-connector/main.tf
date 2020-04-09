@@ -109,6 +109,11 @@ module "win-gfx" {
   gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
+
+  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
+  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
     "${google_compute_firewall.allow-rdp.name}",
@@ -144,6 +149,11 @@ module "win-std" {
   gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
+
+  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
+  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
     "${google_compute_firewall.allow-rdp.name}",
@@ -177,6 +187,11 @@ module "centos-gfx" {
   gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
+
+  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
+  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
     "${google_compute_firewall.allow-ssh.name}",
@@ -215,6 +230,11 @@ module "centos-std" {
   gcp_zone         = var.gcp_zone
   subnet           = google_compute_subnetwork.ws-subnet.self_link
   enable_public_ip = var.enable_workstation_public_ip
+
+  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
+  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
+  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+
   network_tags     = [
     "${google_compute_firewall.allow-icmp.name}",
     "${google_compute_firewall.allow-ssh.name}",

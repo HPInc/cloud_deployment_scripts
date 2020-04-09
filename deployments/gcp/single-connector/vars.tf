@@ -179,6 +179,21 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
+variable "enable_workstation_idle_shutdown" {
+  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
+variable "minutes_cpu_polling_interval" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
+}
+
 variable "win_gfx_instance_count" {
   description = "Number of Windows Grpahics Workstations"
   default     = 0
@@ -256,7 +271,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200309"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200403"
 }
 
 variable "centos_std_instance_count" {
@@ -276,7 +291,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200309"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200403"
 }
 
 variable "centos_admin_user" {

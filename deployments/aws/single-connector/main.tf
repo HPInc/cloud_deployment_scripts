@@ -6,8 +6,9 @@
  */
 
 locals {
-  prefix = var.prefix != "" ? "${var.prefix}-" : ""
-  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  prefix             = var.prefix != "" ? "${var.prefix}-" : ""
+  bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
 }
 
 resource "random_id" "bucket-name" {
@@ -56,7 +57,7 @@ module "dc" {
 }
 
 resource "aws_key_pair" "cam_admin" {
-  key_name   = var.admin_ssh_key_name
+  key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
 }
 
@@ -94,7 +95,7 @@ module "cac" {
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
 
-  admin_ssh_key_name = var.admin_ssh_key_name
+  admin_ssh_key_name = local.admin_ssh_key_name
 
   ssl_key  = var.ssl_key
   ssl_cert = var.ssl_cert
@@ -200,7 +201,7 @@ module "centos-gfx" {
   ami_product_code = var.centos_gfx_ami_product_code
   ami_name         = var.centos_gfx_ami_name
 
-  admin_ssh_key_name = var.admin_ssh_key_name
+  admin_ssh_key_name = local.admin_ssh_key_name
 
   depends_on_hack = [aws_nat_gateway.nat.id]
 }
@@ -237,7 +238,7 @@ module "centos-std" {
   ami_product_code = var.centos_std_ami_product_code
   ami_name         = var.centos_std_ami_name
 
-  admin_ssh_key_name = var.admin_ssh_key_name
+  admin_ssh_key_name = local.admin_ssh_key_name
 
   depends_on_hack = [aws_nat_gateway.nat.id]
 }
