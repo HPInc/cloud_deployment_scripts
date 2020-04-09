@@ -8,7 +8,7 @@
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 INSTALL_DIR="/root"
-CAC_INSTALL_LOG="$INSTALL_DIR/cac-install.log"
+CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
 cd $INSTALL_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
@@ -213,10 +213,12 @@ install_cac() {
 
 if [[ ! -f "$LOG_FILE" ]]
 then
-    mkdir -p "$(dirname $${LOG_FILE})"
+    mkdir -p "$(dirname $LOG_FILE)"
     touch "$LOG_FILE"
     chmod +644 "$LOG_FILE"
 fi
+
+log "$(date)"
 
 get_credentials
 

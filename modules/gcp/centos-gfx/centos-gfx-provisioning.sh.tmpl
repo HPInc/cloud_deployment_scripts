@@ -309,7 +309,7 @@ fi
 
 if [[ ! -f "$LOG_FILE" ]]
 then
-    mkdir -p "$(dirname $${LOG_FILE})"
+    mkdir -p "$(dirname $LOG_FILE)"
     touch "$LOG_FILE"
     chmod +644 "$LOG_FILE"
 else
