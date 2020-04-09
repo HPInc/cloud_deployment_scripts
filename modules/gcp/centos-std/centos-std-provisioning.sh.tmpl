@@ -185,19 +185,15 @@ join_domain() {
             return 106
         fi
 
-        log "--> Joining the domain..."
-        if [[ -n "$OU" ]]
-        then
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
-        else
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
-        fi
+        log "--> Joining the domain '${domain_name}'..."
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
+        
         exitCode=$?
         if [[ $exitCode -eq 0 ]]
         then
-            log "--> Joined Domain '${domain_name}' and OU '$OU'."
+            log "--> Joined Domain '${domain_name}'."
         else
-            log "--> ERROR: Failed to join Domain '${domain_name}' and OU '$OU'."
+            log "--> ERROR: Failed to join Domain '${domain_name}'."
             return 106
         fi
 

@@ -106,15 +106,15 @@ install_gpu_driver() {
     # the second part to check if the NVIDIA driver is installed
     if [[ $(lspci -d '10de:*:0300' -s '.0' | wc -l) -gt 0 ]] && ! (modprobe --resolve-alias nvidia > /dev/null 2>&1)
     then
-        log "--> Installing gpu driver..."
+        log "--> Installing GPU driver..."
 
         local nvidia_driver_filename=$(basename ${nvidia_driver_url})
         local gpu_installer="/tmp/$nvidia_driver_filename"
 
-        log "--> Downloading gpu driver $nvidia_driver_filename to $gpu_installer..."
+        log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
         wget --retry-connrefused --tries=3 --waitretry=5 -O "$gpu_installer" ${nvidia_driver_url}
         chmod u+x "$gpu_installer"
-        log "--> Running gpu driver installer..."
+        log "--> Running GPU driver installer..."
 
         # -s, --silent Run silently; no questions are asked and no output is printed,
         # This option implies '--ui=none --no-questions'.
@@ -127,7 +127,7 @@ install_gpu_driver() {
         then
             log "--> GPU driver installed successfully."
         else
-            log "--> ERROR: Failed to install gpu driver."
+            log "--> ERROR: Failed to install GPU driver."
             exit 1
         fi
     fi
@@ -265,19 +265,15 @@ join_domain() {
             return 106
         fi
 
-        log "--> Joining the domain..."
-        if [[ -n "$OU" ]]
-        then
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
-        else
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
-        fi
+        log "--> Joining the domain '${domain_name}'..."
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
+        
         exitCode=$?
         if [[ $exitCode -eq 0 ]]
         then
-            log "--> Joined Domain '${domain_name}' and OU '$OU'."
+            log "--> Joined Domain '${domain_name}'."
         else
-            log "--> Failed to join Domain '${domain_name}' and OU '$OU'."
+            log "--> Failed to join Domain '${domain_name}'."
             return 106
         fi
 
@@ -346,7 +342,7 @@ else
     install_pcoip_agent
 
     install_idle_shutdown
-    
+
     log "--> Installation is complete!"
 
     exit_and_restart
