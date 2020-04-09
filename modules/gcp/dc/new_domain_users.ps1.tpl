@@ -7,6 +7,11 @@
 # Script downloaded from https://activedirectorypro.com/create-bulk-users-active-directory/
 # on 2019.03.22. Modified for Teradici use.
 #
+
+$LOG_FILE = "C:\Teradici\provisioning.log"
+
+Start-Transcript -path $LOG_FILE -append
+
 "================================================================"
 "Creating new AD Domain Users from CSV file..."
 "================================================================"
@@ -26,7 +31,7 @@ foreach ($User in $ADUsers) {
     #Check to see if the user already exists in AD
     if (Get-ADUser -F {SamAccountName -eq $Username}) {
         #If user does exist, give a warning
-        Write-Warning "WARNING: A user account with username $Username already exist in Active Directory."
+        "WARNING: A user account with username $Username already exist in Active Directory."
     } 
     
     else {

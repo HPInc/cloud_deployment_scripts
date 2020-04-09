@@ -77,7 +77,7 @@ do {
         "--> $($_.Exception.Message)"
 
         if ($Elapsed -ge $Timeout) {
-            Write-Output "ERROR: Timed out trying to create new AD acccount, exiting..."
+            "--> ERROR: Timed out trying to create new AD acccount, exiting..."
             exit 1
         }
 
