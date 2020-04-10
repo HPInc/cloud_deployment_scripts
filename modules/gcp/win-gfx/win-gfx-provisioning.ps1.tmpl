@@ -59,6 +59,9 @@ function Get-AuthToken {
 }
 
 function Decrypt-Credentials {
+    "################################################################"
+    "Decrypting credentials..."
+    "################################################################"
     $token = Get-AuthToken
 
     if(!($token)) {
@@ -108,7 +111,9 @@ function Nvidia-is-Installed {
 }
 
 function Nvidia-Install {
-    "--> Installing NVIDIA GRID driver..."
+    "################################################################"
+    "Installing NVIDIA driver..."
+    "################################################################"
 
     if (Nvidia-is-Installed) {
         "--> NVIDIA driver is already installed. Skipping..."
@@ -142,7 +147,9 @@ function PCoIP-Agent-is-Installed {
 }
 
 function PCoIP-Agent-Install {
-    "--> Installing PCoIP graphics agent..."
+    "################################################################"
+    "Installing PCoIP graphics agent..."
+    "################################################################"
 
     if (PCoIP-Agent-is-Installed) {
         "--> PCoIP graphics agent is already installed. Skipping..."
@@ -184,7 +191,9 @@ function PCoIP-Agent-Install {
 }
 
 function PCoIP-Agent-Register {
-    "--> Registering PCoIP agent..."
+    "################################################################"
+    "Registering PCoIP agent..."
+    "################################################################"
 
     cd 'C:\Program Files\Teradici\PCoIP Agent'
 
@@ -266,7 +275,9 @@ function Install-Idle-Shutdown {
 }
 
 function Join-Domain {
-    "--> Joining domain..."
+    "################################################################"
+    "Joining domain '${domain_name}'..."
+    "################################################################"
 
     $obj = Get-WmiObject -Class Win32_ComputerSystem
 
@@ -306,7 +317,7 @@ function Join-Domain {
             $PSItem
 
             if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                "--> WARNING: Computer is already joined to the domain."
+                "--> WARNING: Computer is already joined to the domain '${domain_name}'."
                 break
             }
 
@@ -384,8 +395,6 @@ PCoIP-Agent-Register
 Install-Idle-Shutdown
 
 Join-Domain
-
-"--> Restarting computer..."
 
 if ($global:restart) {
     "--> Restart required. Restarting..."
