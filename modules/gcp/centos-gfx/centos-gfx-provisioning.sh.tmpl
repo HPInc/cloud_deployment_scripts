@@ -69,8 +69,18 @@ get_credentials() {
     fi
 
     # Exit if any of the required variables are missing
-    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
-        log "--> ERROR: Required variables are missing, exiting..."
+    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
+        log "--> ERROR: Missing <PCOIP_REGISTRATION_CODE> variable..."
+        missing_vars=true
+    fi
+
+    if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
+        log "--> ERROR: Missing <AD_SERVICE_ACCOUNT_PASSWORD> variable..."
+        missing_vars=true
+    fi
+
+    if [[ $missing_vars = true ]]; then
+        log "--> Exiting..."
         exit 1
     fi
 }

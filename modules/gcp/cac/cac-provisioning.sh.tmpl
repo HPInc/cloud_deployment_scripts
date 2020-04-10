@@ -60,8 +60,23 @@ get_credentials() {
 }
 
 check_required_vars() {
-    if [[ -z "$PCOIP_REGISTRATION_CODE" || -z "$AD_SERVICE_ACCOUNT_PASSWORD" || -z "$CAC_TOKEN" ]]; then
-        log "--> ERROR: Required variables are missing, exiting..."
+    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
+        log "--> ERROR: Missing <PCOIP_REGISTRATION_CODE> variable..."
+        missing_vars=true
+    fi
+
+    if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
+        log "--> ERROR: Missing <AD_SERVICE_ACCOUNT_PASSWORD> variable..."
+        missing_vars=true
+    fi
+
+    if [[ -z "$CAC_TOKEN" ]]; then
+        log "--> ERROR: Missing <CAC_TOKEN> variable..."
+        missing_vars=true
+    fi
+
+    if [[ $missing_vars = true ]]; then
+        log "--> Exiting..."
         exit 1
     fi
 }
@@ -172,10 +187,10 @@ install_cac() {
 
     log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
     log "--> CAC install options:"
-    log "-t $${CAC_TOKEN} --accept-policies"
+    log "-t <cac_token> --accept-policies"
     log "--sa-user <ad_service_account_username> --sa-password <ad_service_account_password>"
     log "--domain ${domain_name} --domain-group ${domain_group}"
-    log "--reg-code $${PCOIP_REGISTRATION_CODE} --sync-interval 5"
+    log "--reg-code <pcoip_registration_code> --sync-interval 5"
 
     if [ -z "${ssl_key}" ]; then
         log "--insecure"
