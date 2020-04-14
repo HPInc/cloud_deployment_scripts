@@ -51,6 +51,7 @@ TF_VARS_PATH     = 'terraform.tfvars'
 SECRETS_DIR      = 'secrets'
 SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
+CAM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cam_deployment_sa_key.json.encrypted'
 
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
@@ -242,6 +243,15 @@ def ssh_key_create(path):
     subprocess.run(ssh_cmd.split(' '), check=True)
 
 
+def cam_deployment_sa_create_key(service_account, filepath):
+    print('Creating CAM deployment service account key...')
+
+    with open(filepath, 'w+') as keyfile:
+        keyfile.write(service_account)
+
+    print('  Key written to ' + filepath)
+
+
 # Creates a new .tfvar based on the .tfvar.sample file
 def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
@@ -326,8 +336,16 @@ if __name__ == '__main__':
     deployment = mycam.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
     mycam.deployment_add_gcp_account(sa_key, deployment)
 
-    print('Creating connector {}...'.format(CONNECTOR_NAME))
-    connector = mycam.connector_create(CONNECTOR_NAME, deployment)
+    print('Creating CAM API key...')
+    cam_deployment_key = mycam.deployment_key_create(deployment)
+
+    print('Building CAM deployment service account...')
+    cam_deployment_sa = {
+        'username': cam_deployment_key['username'],
+        'apiKey': cam_deployment_key['apiKey'],
+        'deploymentId': deployment['deploymentId'],
+        'tenantId': cam_deployment_key['tenantId']
+    }
 
     print('Cloud Access Manager setup complete.\n')
 
@@ -373,9 +391,11 @@ if __name__ == '__main__':
 
     password = kms_encode(key_name, password)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'))
-    connector['token'] = kms_encode(key_name, connector['token'])
+    cam_deployment_sa = kms_encode(key_name, json.dumps(cam_deployment_sa))
 
     print('Done encrypting secrets.')
+
+    cam_deployment_sa_create_key(cam_deployment_sa, CAM_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
     #TODO: refactor this to work with more types of deployments
@@ -394,7 +414,7 @@ if __name__ == '__main__':
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cac_token':                      connector['token'],
+        'cam_deployment_sa_file':         CAM_DEPLOYMENT_SA_KEY_PATH
     }
 
     # update tfvar
