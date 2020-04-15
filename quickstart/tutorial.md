@@ -1,7 +1,7 @@
 # Cloud Access Connector Quickstart
 
 ## Introduction
-The goal of this tutorial is to create the [single-connector](https://github.com/teradici/cloud_deployment_scripts#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
+The goal of this tutorial is to create the [single-connector](https://github.com/teradici/cloud_deployment_scripts/blob/master/docs/README-gcp.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
 
 This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the Cloud Access Connector deployment.
 
@@ -106,7 +106,7 @@ Service account password: <set by you at start of script>
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, change directory to **~/cloud_deployment_scripts/deployments/gcp/single-connector** using the command
+  2. In GCP cloudshell, change directory to **~/cloudshell_open/cloud_deployment_scripts/deployments/gcp/single-connector** using the command
 ```bash
 cd ../deployments/gcp/single-connector
 ```   
