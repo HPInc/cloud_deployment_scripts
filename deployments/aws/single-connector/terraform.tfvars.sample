@@ -30,7 +30,7 @@ aws_credentials_file = "/path/to/aws_key"
 # cac_instance_type = "t2.xlarge"
 # cac_disk_size_gb  = "50"
 # cac_ami_owner     = "099720109477"
-# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200323"
+# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200408"
 
 # Optional: Specify SSL certificate for Connector
 # ssl_key  = "/path/to/privkey.pem"
