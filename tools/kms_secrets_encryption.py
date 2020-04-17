@@ -477,7 +477,7 @@ class Tfvars_Encryptor_GCP:
                 line = line.strip()
 
                 # Append the crypto key path to kms_cryptokey_id line
-                if "kms_cryptokey_id" in line:
+                if "kms_cryptokey_id =" in line:
                     if not self.tfvars_data.get("kms_cryptokey_id"):
                         lines.append("{} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
                     else:
