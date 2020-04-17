@@ -134,10 +134,65 @@ class Tfvars_Encryptor_AWS:
         return crypto_keys_list
 
 
+    def encrypt_plaintext(self, plaintext):
+        """A method that encrypts plaintext.
+
+        Uses AWS KMS to encrypt plaintext to ciphertext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            plaintext (str): the plainttext being encrypted
+        Returns:
+            string: the ciphertext
+        """
+
+        # Use the KMS API to encrypt the data.
+        response = self.kms_client.encrypt(
+                        KeyId = self.crypto_key_id, 
+                        Plaintext = plaintext.encode("utf-8")
+                    )
+
+        # Base64 encoding of ciphertext
+        ciphertext = base64.b64encode(response.get('CiphertextBlob')).decode("utf-8")
+        
+        return ciphertext
+
+
+    def decrypt_ciphertext(self, ciphertext):
+        """A method that decrypts ciphertext.
+
+        Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            ciphertext (str): the ciphertext being decrypted
+        Returns:
+            string: the plaintext
+        """
+
+        # Convert ciphertext string to a byte string, then Base64 decode it
+        ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
+
+        # Use the KMS API to decrypt the data
+        response = self.kms_client.decrypt(
+                        KeyId = self.crypto_key_id,
+                        CiphertextBlob = ciphertext
+                    )
+
+        # Decode Base64 plaintext
+        plaintext = response.get('Plaintext').decode("utf-8")
+
+        return plaintext
+
+
 def main():
     encryptor = Tfvars_Encryptor_AWS()
 
-    print(encryptor.encrypt_plaintext('hello'))
+    ciphertext = encryptor.encrypt_plaintext('hello')
+    print(ciphertext)
+
+    plaintext = encryptor.decrypt_ciphertext(ciphertext)
+    print(plaintext)
 
 
 if __name__ == '__main__':
