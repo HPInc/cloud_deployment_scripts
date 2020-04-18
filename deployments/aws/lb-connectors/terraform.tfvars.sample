@@ -1,8 +1,8 @@
-# Commented out lines represents defaults that can be changed
-# On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
+# Commented out lines represent defaults that can be changed.
+# On Windows systems, the default backslash \ path separator must be changed to forward slash / for any path variables.
 # Example: aws_credentials_file = "C:/path/to/aws_key"
 
-# Path to an AWS Crentials File. Please see
+# Path to an AWS Credentials File. Please see
 # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
 # for details on file format.
 aws_credentials_file = "/path/to/aws_key"
@@ -69,7 +69,7 @@ centos_gfx_instance_count = 0
 # centos_gfx_instance_type    = "g4dn.xlarge"
 # centos_gfx_disk_size_gb     = 50
 # centos_gfx_ami_owner        = "aws-marketplace"
-# centos_gfx_ami_proudct_code = "aw0evgkw8e5c1q413zgy5pjce"
+# centos_gfx_ami_product_code = "aw0evgkw8e5c1q413zgy5pjce"
 # centos_gfx_ami_name         = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
 
 # REQUIRED: ensure the AWS account used has subscribed to the "CentOS 7 (x86_64)
@@ -79,7 +79,7 @@ centos_std_instance_count = 0
 # centos_std_instance_type    = "t2.xlarge"
 # centos_std_disk_size_gb     = 50
 # centos_std_ami_owner        = "aws-marketplace"
-# centos_std_ami_proudct_code = "aw0evgkw8e5c1q413zgy5pjce"
+# centos_std_ami_product_code = "aw0evgkw8e5c1q413zgy5pjce"
 # centos_std_ami_name         = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
 
 ###############
