@@ -61,21 +61,21 @@ get_credentials() {
 
 check_required_vars() {
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
-        log "--> ERROR: Missing <PCOIP_REGISTRATION_CODE> variable..."
-        missing_vars=true
+        log "--> ERROR: Missing PCoIP Registration Code."
+        missing_vars="true"
     fi
 
     if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
-        log "--> ERROR: Missing <AD_SERVICE_ACCOUNT_PASSWORD> variable..."
-        missing_vars=true
+        log "--> ERROR: Missing Active Directory Service Account Password."
+        missing_vars="true"
     fi
 
     if [[ -z "$CAC_TOKEN" ]]; then
-        log "--> ERROR: Missing <CAC_TOKEN> variable..."
-        missing_vars=true
+        log "--> ERROR: Missing Cloud Access Connector Token."
+        missing_vars="true"
     fi
 
-    if [[ $missing_vars = true ]]; then
+    if [[ "$missing_vars" = "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
@@ -113,54 +113,6 @@ download_cac() {
 }
 
 wait_for_dc() {
-    log "--> Ensure AD account is available..."
-    TIMEOUT=1200
-    until ldapwhoami \
-        -H ldap://${domain_controller_ip} \
-        -D ${ad_service_account_username}@${domain_name} \
-        -w $AD_SERVICE_ACCOUNT_PASSWORD \
-        -o nettimeout=1; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
-            break
-        else
-            log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        fi
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
-
-    # Check that the domain name can be resolved and that the LDAP port is accepting
-    # connections. This could have been all done with the ldapwhoami command, but
-    # due to a number of occasional cac-installation issues, such as "domain
-    # controller unreachable" or "DNS error occurred" errors, check these explicitly
-    # for logging and debug purposes.
-    log "--> Ensure domain ${domain_name} can be resolved..."
-    TIMEOUT=1200
-    until host ${domain_name}; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> Timed out trying to resolve ${domain_name}. Continuing..."
-            break
-        else
-            log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        fi
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
-
-    log "--> Ensure domain ${domain_name} port 636 is reacheable..."
-    TIMEOUT=1200
-    until netcat -vz ${domain_name} 636; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> Timed out trying to contact ${domain_name}:636. Continuing..."
-            break
-        else
-            log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        fi
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
-
     # Wait for service account to be added. Do this last because it takes
     # a while for new AD user to be added in a new Domain Controller.
     # Note: using the domain controller IP instead of the domain name for
@@ -178,6 +130,54 @@ wait_for_dc() {
         log "--> ERROR: Failed to install ldap-utils. $RETRIES retries remaining..."
         RETRIES=$((RETRIES-1))
         sleep 5
+    done
+
+    log "--> Ensure AD account is available..."
+    TIMEOUT=1200
+    until ldapwhoami \
+        -H ldap://${domain_controller_ip} \
+        -D ${ad_service_account_username}@${domain_name} \
+        -w $AD_SERVICE_ACCOUNT_PASSWORD \
+        -o nettimeout=1; do
+        if [ $TIMEOUT -le 0 ]; then
+            log "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
+            break
+        else
+            log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+        fi
+        TIMEOUT=$((TIMEOUT-10))
+        sleep 10
+    done
+
+    # Check that the domain name can be resolved and that the LDAP port is accepting
+    # connections. This could have been all done with the ldapwhoami command, but
+    # due to a number of occasional cac-installation issues, such as "domain
+    # controller unreachable" or "DNS error occurred" errors, check these explicitly
+    # for logging and debug purposes.
+    log "--> Ensure domain ${domain_name} can be resolved..."
+    TIMEOUT=1200
+    until host ${domain_name}; do
+        if [ $TIMEOUT -le 0 ]; then
+            log "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
+            break
+        else
+            log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+        fi
+        TIMEOUT=$((TIMEOUT-10))
+        sleep 10
+    done
+
+    log "--> Ensure domain ${domain_name} port 636 is reacheable..."
+    TIMEOUT=1200
+    until netcat -vz ${domain_name} 636; do
+        if [ $TIMEOUT -le 0 ]; then
+            log "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
+            break
+        else
+            log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+        fi
+        TIMEOUT=$((TIMEOUT-10))
+        sleep 10
     done
 }
 

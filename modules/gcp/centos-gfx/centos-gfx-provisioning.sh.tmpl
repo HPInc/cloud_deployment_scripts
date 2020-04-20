@@ -67,19 +67,20 @@ get_credentials() {
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
         AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
     fi
+}
 
-    # Exit if any of the required variables are missing
+check_required_vars() {
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
-        log "--> ERROR: Missing <PCOIP_REGISTRATION_CODE> variable..."
-        missing_vars=true
+        log "--> ERROR: Missing PCoIP Registration Code."
+        missing_vars="true"
     fi
 
     if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
-        log "--> ERROR: Missing <AD_SERVICE_ACCOUNT_PASSWORD> variable..."
-        missing_vars=true
+        log "--> ERROR: Missing Active Directory Service Account Password."
+        missing_vars="true"
     fi
 
-    if [[ $missing_vars = true ]]; then
+    if [[ "$missing_vars" = "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
@@ -325,6 +326,8 @@ fi
 log "$(date)"
 
 get_credentials
+
+check_required_vars
 
 if [[ $RE_ENTER -eq 0 ]]
 then

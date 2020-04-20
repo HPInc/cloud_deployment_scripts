@@ -31,7 +31,7 @@ foreach ($User in $ADUsers) {
     #Check to see if the user already exists in AD
     if (Get-ADUser -F {SamAccountName -eq $Username}) {
         #If user does exist, give a warning
-        "WARNING: A user account with username $Username already exist in Active Directory."
+        "--> WARNING: A user account with username $Username already exists in Active Directory."
     } 
     
     else {
