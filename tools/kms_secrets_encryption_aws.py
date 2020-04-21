@@ -17,20 +17,19 @@ class Tfvars_Encryptor_AWS:
         """Tfvars_Encryptor_AWS Class Constructor to initialize the object.
         
         """
-        self.tfvars_data           = { 'aws_credentials_file': '/home/epau/Documents/staging/cloud_deployment_scripts/aws_cred' }
+        self.tfvars_data = { 'aws_credentials_file': '/home/epau/Documents/staging/cloud_deployment_scripts/aws_cred' }
 
         # Set AWS credentials instance variables from tfvars_data
-        self.aws_credentials_file  = self.tfvars_data.get("aws_credentials_file")
-        self.aws_access_key_id     = None
-        self.aws_secret_access_key = None
-        self.initialize_aws_credentials(self.aws_credentials_file)
-
+        self.aws_credentials_file = self.tfvars_data.get("aws_credentials_file")
+        
         # Create a client for the KMS API using the provided AWS credentials
-        self.kms_client = boto3.client('kms', aws_access_key_id = self.aws_access_key_id, aws_secret_access_key = self.aws_secret_access_key)
+        self.aws_credentials = self.initialize_aws_credentials(self.tfvars_data.get('aws_credentials_file'))
+        self.kms_client      = boto3.client('kms', aws_access_key_id = self.aws_credentials.get('aws_access_key_id'),
+                                               aws_secret_access_key = self.aws_credentials.get('aws_access_key_id'))
 
         # AWS KMS resource variables
         self.crypto_key_id = self.initialize_cryptokey("cas_key")
-
+        
 
     def initialize_aws_credentials(self, path):
         """A method that parses the aws_access_key_id and aws_secret_access_key 
@@ -63,6 +62,9 @@ class Tfvars_Encryptor_AWS:
                 if 'aws_access_key_id' in line:
                     self.aws_access_key_id = line.rpartition('=')[2].strip()
                     continue
+        
+        return {    'aws_access_key_id': aws_access_key_id, 
+                'aws_secret_access_key': aws_secret_access_key }
 
 
     def initialize_cryptokey(self, crypto_key_alias_name):
