@@ -125,6 +125,37 @@ class Tfvars_Encryptor_AWS:
         return file_path_decrypted
 
 
+    def decrypt_tfvars_secrets(self):
+        """A method that decrypts the secrets contained in the terraform.tfvars file.
+
+        This method contains the logic for handling the decryption of the secrets 
+        and any file paths associated with it using GCP KMS. Once decrypted, it calls 
+        write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
+        """    
+
+        # Set crypto key path to use kms_cryptokey_id
+        self.crypto_key_path = self.tfvars_data.get("kms_cryptokey_id")
+
+        # Decrypt all secrets
+        try:
+            for secret in self.tfvars_secrets:
+                # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
+                if os.path.isfile(self.tfvars_secrets.get(secret)):
+                    self.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_secrets.get(secret))
+                else:
+                    print("Decrypting {}...".format(secret))
+                    self.tfvars_secrets[secret] = self.decrypt_ciphertext(self.tfvars_secrets.get(secret))
+            
+            # Write encrypted secrets into new terraform.tfvars file
+            self.write_new_tfvars()
+            print("\nSuccessfully decrypted all secrets!\n")
+
+        except Exception as err:
+            print("An exception occurred decrypting secrets:")
+            print("{}\n".format(err))
+            raise SystemExit()
+
+
     def encrypt_plaintext(self, plaintext):
         """A method that encrypts plaintext.
 
@@ -179,6 +210,34 @@ class Tfvars_Encryptor_AWS:
             raise SystemExit()
         
         return file_path_encrypted
+
+
+    def encrypt_tfvars_secrets(self):
+        """A method that encrypts secrets contained in the terraform.tfvars file.
+
+        This method contains the logic for handling the encryption of the secrets 
+        and any file paths associated with it using AWS KMS. Once encrypted, it calls 
+        write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
+        """    
+
+        # Encrypt all secrets found in the tfvars_secrets dictionary
+        try:
+            for secret in self.tfvars_secrets:
+                # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
+                if os.path.isfile(self.tfvars_secrets.get(secret)):
+                    self.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_secrets.get(secret))
+                else:
+                    print("Encrypting {}...".format(secret))
+                    self.tfvars_secrets[secret] = self.encrypt_plaintext(self.tfvars_secrets.get(secret))
+
+            # Write encrypted secrets into new terraform.tfvars file
+            self.write_new_tfvars()
+            print("\nSuccessfully encrypted all secrets!\n")
+
+        except Exception as err:
+            print("An exception occurred encrypting secrets:")
+            print("{}\n".format(err))
+            raise SystemExit()
 
 
     def get_crypto_keys(self):
