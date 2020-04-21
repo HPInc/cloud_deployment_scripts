@@ -11,13 +11,23 @@ import boto3
 import os
 
 
+SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
+
 class Tfvars_Encryptor_AWS:
 
-    def __init__(self):
+    def __init__(self, tfvars_path):
         """Tfvars_Encryptor_AWS Class Constructor to initialize the object.
         
+        Args: 
+            tfvars_path (str):      a full path to the terraform.tfvars file
         """
-        self.tfvars_data = { 'aws_credentials_file': '/home/epau/Documents/staging/cloud_deployment_scripts/aws_cred' }
+
+        # Read tfvars data and secrets into dictionaries
+        self.tfvars_path = tfvars_path
+        self.tfvars_data, self.tfvars_secrets = self.read_tfvars(tfvars_path)
+
+        # Find the max string length of all the keys to left-justify align them
+        self.max_key_length = max(map(len, self.tfvars_secrets))
 
         # Set AWS credentials instance variables from tfvars_data
         self.aws_credentials_file = self.tfvars_data.get("aws_credentials_file")
@@ -268,8 +278,50 @@ class Tfvars_Encryptor_AWS:
         return file_path_decrypted
 
 
+    def read_tfvars(self, tfvars_file):
+        """A method that reads terraform.tfvars for all configuration data.
+        This method reads a terraform.tfvars file for all the user-provided 
+        configuration data above the secrets.
+        Args:
+            tfvars_file (str): a path to a terraform.tfvars file
+        Returns:
+            dict: key value pairs for all the terraform.tfvars data
+            tuple containing:
+                dict: key value pairs for all the terraform.tfvars data
+                dict: key value pairs for all the terraform.tfvars secrets
+        """
+
+        tf_data = {}
+        tf_secrets = {}
+
+        begin_reading_secrets = False
+
+        with open(tfvars_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+
+                if SECRETS_START_FLAG in line:
+                    begin_reading_secrets = True
+                    continue
+
+                # Skip blank lines and comment lines
+                # "not line" must come first using short circuiting to avoid string index out of range error
+                if not line or line[0] in ("#"):
+                    continue
+                
+                # Split the line into key value pairs using the first delimiter
+                key, value = map(str.strip, line.split('=', 1))
+
+                if begin_reading_secrets:
+                    tf_secrets[key] = value.replace("\"", "")
+                else:
+                    tf_data[key] = value.replace("\"", "")
+
+        return tf_data, tf_secrets
+
+
 def main():
-    encryptor = Tfvars_Encryptor_AWS()
+    encryptor = Tfvars_Encryptor_AWS('/home/epau/Documents/staging/cloud_deployment_scripts/deployments/aws/single-connector/terraform.tfvars')
 
     encryptor.encrypt_file('/home/epau/Documents/staging/cloud_deployment_scripts/cam_cred.json')
 
