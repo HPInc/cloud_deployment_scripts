@@ -64,6 +64,142 @@ class Tfvars_Encryptor_AWS:
         return customer_master_key_id
 
 
+    def decrypt_ciphertext(self, ciphertext):
+        """A method that decrypts ciphertext.
+
+        Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            ciphertext (str): the ciphertext being decrypted
+        Returns:
+            string: the plaintext
+        """
+
+        # Convert ciphertext string to a byte string, then Base64 decode it
+        ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
+
+        # Use the KMS API to decrypt the data
+        response = self.kms_client.decrypt(
+                        KeyId = self.crypto_key_id,
+                        CiphertextBlob = ciphertext
+                    )
+
+        # Decode Base64 plaintext
+        plaintext = response.get('Plaintext').decode("utf-8")
+
+        return plaintext
+
+
+    def decrypt_file(self, file_path):
+        """A method that decrypts the contents of a text file.
+
+        Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            file_path (str): the path of the text file being decrypted
+        Returns:
+            string: the path to the decrypted text file created
+        """
+
+        try:
+            print("Decrypting file: {}...".format(file_path))
+
+            with open(file_path) as f:
+                f_ciphertext = f.read()
+        
+            f_plaintext = self.decrypt_ciphertext(f_ciphertext)
+
+            # Removes the .encrypted appended using this encryptor
+            file_path_decrypted = "{}.decrypted".format(file_path).replace(".encrypted", "")
+
+            with open(file_path_decrypted, "w") as f:
+                f.write(f_plaintext)
+
+        except Exception as err:
+            print("An exception occurred decrypting file.")
+            print("{}\n".format(err))
+            raise SystemExit()
+        
+        return file_path_decrypted
+
+
+    def encrypt_plaintext(self, plaintext):
+        """A method that encrypts plaintext.
+
+        Uses AWS KMS to encrypt plaintext to ciphertext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            plaintext (str): the plainttext being encrypted
+        Returns:
+            string: the ciphertext
+        """
+
+        # Use the KMS API to encrypt the data.
+        response = self.kms_client.encrypt(
+                        KeyId = self.crypto_key_id, 
+                        Plaintext = plaintext.encode("utf-8")
+                    )
+
+        # Base64 encoding of ciphertext
+        ciphertext = base64.b64encode(response.get('CiphertextBlob')).decode("utf-8")
+        
+        return ciphertext
+
+
+    def encrypt_file(self, file_path):
+        """A method that encrypts the contents of a text file.
+
+        Uses AWS KMS to encrypt the plaintext in a file to ciphertext using 
+        the provided symmetric crypto key that belongs to this instance.
+        
+        Args:
+            file_path (str): the path of the text file being encrypted
+        Returns:
+            string: the path to the encrypted text file created
+        """
+
+        try:
+            print("Encrypting file: {}...".format(file_path))
+            
+            with open(file_path) as f:
+                f_string = f.read()
+
+            f_encrypted_string = self.encrypt_plaintext(f_string)
+            file_path_encrypted = "{}.encrypted".format(file_path).replace(".decrypted", "")
+            
+            with open(file_path_encrypted, "w") as f:
+                f.write(f_encrypted_string)
+
+        except Exception as err:
+            print("An exception occurred encrypting the file:")
+            print("{}\n".format(err))
+            raise SystemExit()
+        
+        return file_path_encrypted
+
+
+    def get_crypto_keys(self):
+        """A method that retrieves a list of crypto keys aliase names associated with the AWS credentials in the region.
+
+        This method returns a list of all the crypto keys aliase names associated with the AWS credentials in the region.
+        
+        Returns:
+            list: a list of all the crypto keys aliase names associated with the AWS credentials in the region.
+        """
+
+        # Use crypto keys data under the 'Aliases' dict key
+        response = self.kms_client.list_aliases().get('Aliases')
+
+        # Access the 'AliasName' property for each key entry by splitting string from the right. [2] to get the string after the separator
+        # eg. response.get('Aliases') returns [{'AliasName': '<alias/AliasName>', 'AliasArn': '<AliasArn>', 'TargetKeyId': '<TargetKeyId>'}]
+        crypto_keys_list = list(map(lambda key: key.get('AliasName').rpartition('/')[2], response))
+
+        return crypto_keys_list
+
+
     def initialize_aws_credentials(self, path):
         """A method that parses the aws_access_key_id and aws_secret_access_key 
         from aws_credentials_file required for the KMS client.
@@ -140,142 +276,6 @@ class Tfvars_Encryptor_AWS:
             print("Using existing crypto key {}: {}\n".format(crypto_key_alias_name, crypto_key_id))
         
         return crypto_key_id
-
-
-    def get_crypto_keys(self):
-        """A method that retrieves a list of crypto keys aliase names associated with the AWS credentials in the region.
-
-        This method returns a list of all the crypto keys aliase names associated with the AWS credentials in the region.
-        
-        Returns:
-            list: a list of all the crypto keys aliase names associated with the AWS credentials in the region.
-        """
-
-        # Use crypto keys data under the 'Aliases' dict key
-        response = self.kms_client.list_aliases().get('Aliases')
-
-        # Access the 'AliasName' property for each key entry by splitting string from the right. [2] to get the string after the separator
-        # eg. response.get('Aliases') returns [{'AliasName': '<alias/AliasName>', 'AliasArn': '<AliasArn>', 'TargetKeyId': '<TargetKeyId>'}]
-        crypto_keys_list = list(map(lambda key: key.get('AliasName').rpartition('/')[2], response))
-
-        return crypto_keys_list
-
-
-    def encrypt_plaintext(self, plaintext):
-        """A method that encrypts plaintext.
-
-        Uses AWS KMS to encrypt plaintext to ciphertext using the provided
-        symmetric crypto key that belongs to this instance.
-        
-        Args:
-            plaintext (str): the plainttext being encrypted
-        Returns:
-            string: the ciphertext
-        """
-
-        # Use the KMS API to encrypt the data.
-        response = self.kms_client.encrypt(
-                        KeyId = self.crypto_key_id, 
-                        Plaintext = plaintext.encode("utf-8")
-                    )
-
-        # Base64 encoding of ciphertext
-        ciphertext = base64.b64encode(response.get('CiphertextBlob')).decode("utf-8")
-        
-        return ciphertext
-
-
-    def encrypt_file(self, file_path):
-        """A method that encrypts the contents of a text file.
-
-        Uses AWS KMS to encrypt the plaintext in a file to ciphertext using 
-        the provided symmetric crypto key that belongs to this instance.
-        
-        Args:
-            file_path (str): the path of the text file being encrypted
-        Returns:
-            string: the path to the encrypted text file created
-        """
-
-        try:
-            print("Encrypting file: {}...".format(file_path))
-            
-            with open(file_path) as f:
-                f_string = f.read()
-
-            f_encrypted_string = self.encrypt_plaintext(f_string)
-            file_path_encrypted = "{}.encrypted".format(file_path).replace(".decrypted", "")
-            
-            with open(file_path_encrypted, "w") as f:
-                f.write(f_encrypted_string)
-
-        except Exception as err:
-            print("An exception occurred encrypting the file:")
-            print("{}\n".format(err))
-            raise SystemExit()
-        
-        return file_path_encrypted
-
-
-    def decrypt_ciphertext(self, ciphertext):
-        """A method that decrypts ciphertext.
-
-        Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
-        symmetric crypto key that belongs to this instance.
-        
-        Args:
-            ciphertext (str): the ciphertext being decrypted
-        Returns:
-            string: the plaintext
-        """
-
-        # Convert ciphertext string to a byte string, then Base64 decode it
-        ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
-
-        # Use the KMS API to decrypt the data
-        response = self.kms_client.decrypt(
-                        KeyId = self.crypto_key_id,
-                        CiphertextBlob = ciphertext
-                    )
-
-        # Decode Base64 plaintext
-        plaintext = response.get('Plaintext').decode("utf-8")
-
-        return plaintext
-
-
-    def decrypt_file(self, file_path):
-        """A method that decrypts the contents of a text file.
-
-        Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
-        symmetric crypto key that belongs to this instance.
-        
-        Args:
-            file_path (str): the path of the text file being decrypted
-        Returns:
-            string: the path to the decrypted text file created
-        """
-
-        try:
-            print("Decrypting file: {}...".format(file_path))
-
-            with open(file_path) as f:
-                f_ciphertext = f.read()
-        
-            f_plaintext = self.decrypt_ciphertext(f_ciphertext)
-
-            # Removes the .encrypted appended using this encryptor
-            file_path_decrypted = "{}.decrypted".format(file_path).replace(".encrypted", "")
-
-            with open(file_path_decrypted, "w") as f:
-                f.write(f_plaintext)
-
-        except Exception as err:
-            print("An exception occurred decrypting file.")
-            print("{}\n".format(err))
-            raise SystemExit()
-        
-        return file_path_decrypted
 
 
     def read_tfvars(self, tfvars_file):
