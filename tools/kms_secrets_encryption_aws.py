@@ -38,7 +38,7 @@ class Tfvars_Encryptor_AWS:
                                                aws_secret_access_key = self.aws_credentials.get('aws_access_key_id'))
 
         # AWS KMS resource variables
-        self.crypto_key_id = self.initialize_cryptokey("cas_key")
+        self.customer_master_key_id = self.initialize_cryptokey("cas_key")
 
 
     def create_crypto_key(self, crypto_key_alias):
@@ -56,7 +56,7 @@ class Tfvars_Encryptor_AWS:
         self.kms_client.create_alias(
             # The alias to create. Aliases must begin with 'alias/'.
             AliasName = 'alias/{}'.format(crypto_key_alias_name),
-            TargetKeyId = crypto_key_id
+            TargetKeyId = customer_master_key_id
         )
         
         print("Created {}: {}\n".format(crypto_key_alias_name, customer_master_key_id))
@@ -81,7 +81,7 @@ class Tfvars_Encryptor_AWS:
 
         # Use the KMS API to decrypt the data
         response = self.kms_client.decrypt(
-                        KeyId = self.crypto_key_id,
+                        KeyId = self.customer_master_key_id,
                         CiphertextBlob = ciphertext
                     )
 
@@ -134,7 +134,7 @@ class Tfvars_Encryptor_AWS:
         """    
 
         # Set crypto key path to use kms_cryptokey_id
-        self.crypto_key_path = self.tfvars_data.get("kms_cryptokey_id")
+        self.customer_master_key_id = self.tfvars_data.get("kms_cryptokey_id")
 
         # Decrypt all secrets
         try:
@@ -170,7 +170,7 @@ class Tfvars_Encryptor_AWS:
 
         # Use the KMS API to encrypt the data.
         response = self.kms_client.encrypt(
-                        KeyId = self.crypto_key_id, 
+                        KeyId = self.customer_master_key_id, 
                         Plaintext = plaintext.encode("utf-8")
                     )
 
@@ -303,13 +303,13 @@ class Tfvars_Encryptor_AWS:
         exists already, then reuse it for this instance.
         
         Args:
-            crypto_key_id (str): crypto key used to encrypt and decrypt
+            crypto_key_alias_name (str): crypto key used to encrypt and decrypt
         Returns:
             string: the crypto key used
         """
 
         crypto_keys_list = self.get_crypto_keys()
-        crypto_key_id = None
+        customer_master_key_id = None
 
         # Create the crypto key only if it doesn't exist
         if crypto_key_alias_name not in crypto_keys_list:
@@ -329,12 +329,12 @@ class Tfvars_Encryptor_AWS:
             # eg. response.get('Aliases') returns [{'AliasName': '<alias/AliasName>', 'AliasArn': '<AliasArn>', 'TargetKeyId': '<TargetKeyId>'}]
             matched_crypto_keys = filter(lambda key: key.get('AliasName').rpartition('/')[2] == crypto_key_alias_name, response)
             
-            # Access the 'TargetKeyId' property of the first matched key to retrieve the crypto_key_id associated with it.
-            crypto_key_id = list(matched_crypto_keys)[0].get('TargetKeyId')
+            # Access the 'TargetKeyId' property of the first matched key to retrieve the customer_master_key_id associated with it.
+            customer_master_key_id = list(matched_crypto_keys)[0].get('TargetKeyId')
 
-            print("Using existing crypto key {}: {}\n".format(crypto_key_alias_name, crypto_key_id))
+            print("Using existing crypto key {}: {}\n".format(crypto_key_alias_name, customer_master_key_id))
         
-        return crypto_key_id
+        return customer_master_key_id
 
 
     def read_tfvars(self, tfvars_file):
@@ -379,12 +379,59 @@ class Tfvars_Encryptor_AWS:
         return tf_data, tf_secrets
 
 
+    def write_new_tfvars(self):
+        """A method that writes a new terraform.tfvars file
+
+        This method writes a new terraform.tfvars file that is ready to be used by
+        Terraform after encrypting or decrypting. 
+        """
+
+        # Parse existing tfvars and store each line into a list
+        lines = []
+        
+        with open(self.tfvars_path, 'r') as f:
+            for line in f:
+                
+                # Remove leading and trailing whitespace including "\n" and "\t"
+                line = line.strip()
+
+                # Append the crypto key path to customer_master_key_id line
+                if "customer_master_key_id =" in line:
+                    if not self.tfvars_data.get("customer_master_key_id"):
+                        lines.append("{} = \"{}\"".format("customer_master_key_id", self.customer_master_key_id))
+                    else:
+                        lines.append("# {} = \"{}\"".format("customer_master_key_id", self.customer_master_key_id))
+                    continue
+
+                # Blank lines and comments are unchanged
+                # "not line" must come first using short circuit to avoid string index out of range error
+                if not line or line[0] in ("#"):
+                    lines.append(line)
+                    continue
+                
+                # Need to keep the .strip() here to sanitize the key being read
+                key = line.split("=")[0].strip()
+
+                if key in self.tfvars_secrets.keys():
+                    # Left justify all the secrets with space as padding on the right
+                    lines.append("{} = \"{}\"".format(key.ljust(self.max_key_length, " "), self.tfvars_secrets.get(key)))
+                else:
+                    lines.append(line)
+
+        # Add .backup postfix to the original tfvars file
+        print("Creating backup of terraform.tfvars...")
+        os.rename(self.tfvars_path, "{}.backup".format(self.tfvars_path))
+
+        # Rewrite the existing terraform.tfvars
+        print("Writing new terraform.tfvars...")
+        with open(self.tfvars_path, 'w') as f:
+            f.writelines("%s\n" %line for line in lines)
+
+
 def main():
     encryptor = Tfvars_Encryptor_AWS('/home/epau/Documents/staging/cloud_deployment_scripts/deployments/aws/single-connector/terraform.tfvars')
 
-    encryptor.encrypt_file('/home/epau/Documents/staging/cloud_deployment_scripts/cam_cred.json')
-
-    encryptor.decrypt_file('/home/epau/Documents/staging/cloud_deployment_scripts/cam_cred.json.encrypted')
+    encryptor.encrypt_tfvars_secrets()
 
 
 if __name__ == '__main__':
