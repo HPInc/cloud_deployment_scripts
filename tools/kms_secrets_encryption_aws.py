@@ -29,7 +29,30 @@ class Tfvars_Encryptor_AWS:
 
         # AWS KMS resource variables
         self.crypto_key_id = self.initialize_cryptokey("cas_key")
+
+
+    def create_crypto_key(self, crypto_key_alias):
+        """A method to create a crypto key on AWS KMS.
         
+        Args:
+            crypto_key_alias (str): the alias name of the crypto key to be created
+        Returns:
+            string: customer_master_key_id used for the tfvars
+        """
+        # Use KMS client to create key and store the returned KeyId
+        customer_master_key_id = self.kms_client.create_key().get('KeyMetadata').get('KeyId')
+        
+        # Give this KeyId an alias name
+        self.kms_client.create_alias(
+            # The alias to create. Aliases must begin with 'alias/'.
+            AliasName = 'alias/{}'.format(crypto_key_alias_name),
+            TargetKeyId = crypto_key_id
+        )
+        
+        print("Created {}: {}\n".format(crypto_key_alias_name, customer_master_key_id))
+
+        return customer_master_key_id
+
 
     def initialize_aws_credentials(self, path):
         """A method that parses the aws_access_key_id and aws_secret_access_key 
@@ -86,15 +109,7 @@ class Tfvars_Encryptor_AWS:
         # Create the crypto key only if it doesn't exist
         if crypto_key_alias_name not in crypto_keys_list:
             try:
-                crypto_key_id = self.kms_client.create_key().get('KeyMetadata').get('KeyId')
-                
-                self.kms_client.create_alias(
-                    # The alias to create. Aliases must begin with 'alias/'.
-                    AliasName = 'alias/{}'.format(crypto_key_alias_name),
-                    TargetKeyId = crypto_key_id
-                )
-                
-                print("Created {}: {}\n".format(crypto_key_alias_name, crypto_key_id))
+                self.create_crypto_key(crypto_key_alias_name)
 
             except Exception as err:
                 print("An exception occurred creating new crypto key:")
