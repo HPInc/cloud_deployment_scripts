@@ -175,6 +175,38 @@ class Tfvars_Encryptor_AWS:
         return ciphertext
 
 
+    def encrypt_file(self, file_path):
+        """A method that encrypts the contents of a text file.
+
+        Uses AWS KMS to encrypt the plaintext in a file to ciphertext using 
+        the provided symmetric crypto key that belongs to this instance.
+        
+        Args:
+            file_path (str): the path of the text file being encrypted
+        Returns:
+            string: the path to the encrypted text file created
+        """
+
+        try:
+            print("Encrypting file: {}...".format(file_path))
+            
+            with open(file_path) as f:
+                f_string = f.read()
+
+            f_encrypted_string = self.encrypt_plaintext(f_string)
+            file_path_encrypted = "{}.encrypted".format(file_path).replace(".decrypted", "")
+            
+            with open(file_path_encrypted, "w") as f:
+                f.write(f_encrypted_string)
+
+        except Exception as err:
+            print("An exception occurred encrypting the file:")
+            print("{}\n".format(err))
+            raise SystemExit()
+        
+        return file_path_encrypted
+
+
     def decrypt_ciphertext(self, ciphertext):
         """A method that decrypts ciphertext.
 
@@ -202,14 +234,46 @@ class Tfvars_Encryptor_AWS:
         return plaintext
 
 
+    def decrypt_file(self, file_path):
+        """A method that decrypts the contents of a text file.
+
+        Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
+        symmetric crypto key that belongs to this instance.
+        
+        Args:
+            file_path (str): the path of the text file being decrypted
+        Returns:
+            string: the path to the decrypted text file created
+        """
+
+        try:
+            print("Decrypting file: {}...".format(file_path))
+
+            with open(file_path) as f:
+                f_ciphertext = f.read()
+        
+            f_plaintext = self.decrypt_ciphertext(f_ciphertext)
+
+            # Removes the .encrypted appended using this encryptor
+            file_path_decrypted = "{}.decrypted".format(file_path).replace(".encrypted", "")
+
+            with open(file_path_decrypted, "w") as f:
+                f.write(f_plaintext)
+
+        except Exception as err:
+            print("An exception occurred decrypting file.")
+            print("{}\n".format(err))
+            raise SystemExit()
+        
+        return file_path_decrypted
+
+
 def main():
     encryptor = Tfvars_Encryptor_AWS()
 
-    ciphertext = encryptor.encrypt_plaintext('hello')
-    print(ciphertext)
+    encryptor.encrypt_file('/home/epau/Documents/staging/cloud_deployment_scripts/cam_cred.json')
 
-    plaintext = encryptor.decrypt_ciphertext(ciphertext)
-    print(plaintext)
+    encryptor.decrypt_file('/home/epau/Documents/staging/cloud_deployment_scripts/cam_cred.json.encrypted')
 
 
 if __name__ == '__main__':
