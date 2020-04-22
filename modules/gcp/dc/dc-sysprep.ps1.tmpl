@@ -22,7 +22,7 @@ function Get-AuthToken {
         return $response."access_token"
     }
     catch {
-        "Error fetching auth token: $_"
+        "--> ERROR: Failed to fetch auth token: $_"
         return $false
     }
 }
@@ -38,6 +38,7 @@ function Decrypt-Credentials {
     $headers.Add("Authorization", "Bearer $($token)")
 
     try {
+        "--> Decrypting admin_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource.Add("ciphertext", "${admin_password}")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
@@ -45,7 +46,7 @@ function Decrypt-Credentials {
         $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
     }
     catch {
-        "Error decrypting credentials: $_"
+        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -53,9 +54,9 @@ function Decrypt-Credentials {
 Start-Transcript -path $LOG_FILE -append
 
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "Not using encryption"
+    "--> Script is not using encryption for secrets."
 } else {
-    "Using ecnryption key ${kms_cryptokey_id}"
+    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
     Decrypt-Credentials
 }
 
