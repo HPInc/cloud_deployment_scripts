@@ -133,8 +133,7 @@ class Tfvars_Encryptor_AWS:
         write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
         """    
 
-        # Set crypto key path to use kms_cryptokey_id
-        self.customer_master_key_id = self.tfvars_data.get("kms_cryptokey_id")
+        self.customer_master_key_id = self.tfvars_data.get("customer_master_key_id")
 
         # Decrypt all secrets
         try:
@@ -429,9 +428,40 @@ class Tfvars_Encryptor_AWS:
 
 
 def main():
-    encryptor = Tfvars_Encryptor_AWS('/home/epau/Documents/staging/cloud_deployment_scripts/deployments/aws/single-connector/terraform.tfvars')
+    # Set up argparse
+    parser_description = ("Creates AWS KMS customer master key, and uses the key to encrypt or decrypt secrets in the specified terraform.tfvars."
+                          "The script encrypts by default. To decrypt instead, use the -d flag.")
 
-    encryptor.encrypt_tfvars_secrets()
+    parser = argparse.ArgumentParser(description=parser_description)
+
+    parser.add_argument("tfvars", help="specify the path to terraform.tfvars file")
+    parser.add_argument("-d", help="decrypt secrets in terraform.tfvars specified", action='store_true')
+
+    args = parser.parse_args()
+
+    # Instantiate a new Tfvars_Encryptor_GCP with the tfvars path
+    tfvars_encryptor_aws = Tfvars_Encryptor_AWS(args.tfvars)
+
+    # Abort the script if AWS credentials is missing
+    if not tfvars_encryptor_aws.tfvars_data.get("aws_credentials_file"):
+        print("Missing aws_credentials_file in tfvars. Ensure aws_credentials_file is valid and try again.\n")
+        raise SystemExit()
+
+    # Encryption is the default, user can specify a -d flag for decryption
+    if args.d:
+        # Abort the decryption if there is not a customer_master_key_id in the tfvars file
+        if not tfvars_encryptor_aws.tfvars_data.get("customer_master_key_id"):
+            print("No customer_master_key_id present in tfvars. Ensure the secrets are encrypted and try again.\n")
+            raise SystemExit()
+
+        tfvars_encryptor_aws.decrypt_tfvars_secrets()
+    else:
+        # Abort the encryption if the tfvars is already encrypted with a customer_master_key_id present
+        if tfvars_encryptor_aws.tfvars_data.get("customer_master_key_id"):
+            print("Detected customer_master_key_id tfvars. Ensure secrets are not already encrypted and try again.\n")
+            raise SystemExit()
+
+        tfvars_encryptor_aws.encrypt_tfvars_secrets()
 
 
 if __name__ == '__main__':
