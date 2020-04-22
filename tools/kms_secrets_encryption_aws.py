@@ -14,6 +14,34 @@ import os
 SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
 
 class Tfvars_Encryptor_AWS:
+    """Tfvars_Encryptor_AWS is used to automate the encryption or decryption of secrets in a Terraform 
+    tfvars file so that it is ready to be used for Terraform deployments using encrypted secrets.
+
+        Attributes:
+        tfvars_path (str)            Path to the terraform.tfvars file.
+        tfvars_data (dict)           Holds key value pairs for all terraform.tfvars configuration data.
+        tfvars_secrets (dict)        Holds key value pairs for all terraform.tfvars secrets.
+        max_key_length (int)         Longest string length of a tfvars_secrets key used to write secrets left-justified.
+        aws_credentials_file (str)   Path to the AWS credentials file used for AWS KMS.
+        aws_credentials (dict)       Dictionary containing two keys, aws_access_key_id and aws_secret_access_key
+        kms_client (object)          Instance of AWS Key Management Service Client.
+        customer_master_key_id (str) Defaulted to use "cas_key" as a crypto key ID.
+
+    Methods:
+        __init__(self, tfvars_path)
+        create_crypto_key(crypto_key_alias)
+        decrypt_ciphertext(ciphertext)
+        decrypt_file(file_path)
+        decrypt_tfvars_secrets()
+        encrypt_file(file_path)
+        encrypt_plaintext(plaintext)
+        encrypt_tfvars_secrets()
+        initialize_aws_credentials(path)
+        initialize_cryptokey(crypto_key_alias_name)
+        get_crypto_keys()
+        read_tfvars(tfvars_file)
+        write_new_tfvars()
+    """
 
     def __init__(self, tfvars_path):
         """Tfvars_Encryptor_AWS Class Constructor to initialize the object.
@@ -129,7 +157,7 @@ class Tfvars_Encryptor_AWS:
         """A method that decrypts the secrets contained in the terraform.tfvars file.
 
         This method contains the logic for handling the decryption of the secrets 
-        and any file paths associated with it using GCP KMS. Once decrypted, it calls 
+        and any file paths associated with it using AWS KMS. Once decrypted, it calls 
         write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
         """    
 
@@ -439,7 +467,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Instantiate a new Tfvars_Encryptor_GCP with the tfvars path
+    # Instantiate a new Tfvars_Encryptor_AWS with the tfvars path
     tfvars_encryptor_aws = Tfvars_Encryptor_AWS(args.tfvars)
 
     # Abort the script if AWS credentials is missing
