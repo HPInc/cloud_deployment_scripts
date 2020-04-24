@@ -12,16 +12,16 @@ locals {
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
 
-  startup_script = "centos-gfx-startup.sh"
+  provisioning_script = "centos-gfx-provisioning.sh"
 }
 
-resource "aws_s3_bucket_object" "centos-gfx-startup-script" {
+resource "aws_s3_bucket_object" "centos-gfx-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  key     = local.startup_script
+  key     = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
       aws_region                  = var.aws_region, 
       customer_master_key_id      = var.customer_master_key_id,
@@ -42,7 +42,7 @@ data "template_file" "user-data" {
 
   vars = {
     bucket_name = var.bucket_name,
-    file_name   = local.startup_script,
+    file_name   = local.provisioning_script,
   }
 }
 
@@ -95,7 +95,7 @@ data "aws_iam_policy_document" "centos-gfx-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
   }
 

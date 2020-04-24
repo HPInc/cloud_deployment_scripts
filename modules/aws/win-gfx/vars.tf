@@ -36,7 +36,7 @@ variable "ad_service_account_password" {
 }
 
 variable "bucket_name" {
-  description = "Name of bucket to retrieve startup script."
+  description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
 
