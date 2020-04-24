@@ -10,12 +10,12 @@ locals {
 
   # Windows computer names must be <= 15 characters
   host_name                  = substr("${local.prefix}vm-dc", 0, 15)
-  setup_file                 = "C:/Temp/setup.ps1"
+  provisioning_file                 = "C:/Temp/provisioning.ps1"
   new_domain_admin_user_file = "C:/Temp/new_domain_admin_user.ps1"
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
-  startup_script             = "dc-startup.ps1"
+  sysprep_script             = "dc-sysprep.ps1"
   admin_password = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
 }
 
@@ -28,11 +28,11 @@ data "aws_kms_secrets" "decrypted_secrets" {
   }
 }
 
-resource "aws_s3_bucket_object" "dc-startup-script" {
-  key     = local.startup_script
+resource "aws_s3_bucket_object" "dc-sysprep-script" {
+  key     = local.sysprep_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.sysprep_script}.tmpl",
     {
       customer_master_key_id = var.customer_master_key_id
       admin_password         = var.admin_password
@@ -46,12 +46,12 @@ data "template_file" "user-data" {
 
   vars = {
     bucket_name = var.bucket_name,
-    file_name   = local.startup_script,
+    file_name   = local.sysprep_script,
   }
 }
 
-data "template_file" "setup-script" {
-  template = file("${path.module}/setup.ps1.tpl")
+data "template_file" "dc-provisioning-script" {
+  template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
     customer_master_key_id   = var.customer_master_key_id
@@ -117,7 +117,7 @@ data "aws_kms_key" "encryption-key" {
 data "aws_iam_policy_document" "dc-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.sysprep_script}"]
     effect    = "Allow"
   }
 
@@ -185,8 +185,8 @@ resource "null_resource" "upload-scripts" {
   }
 
   provisioner "file" {
-    content     = data.template_file.setup-script.rendered
-    destination = local.setup_file
+    content     = data.template_file.dc-provisioning-script.rendered
+    destination = local.provisioning_file
   }
 
   provisioner "file" {
@@ -224,7 +224,7 @@ resource "null_resource" "upload-domain-users-list" {
   }
 }
 
-resource "null_resource" "run-setup-script" {
+resource "null_resource" "run-provisioning-script" {
   depends_on = [null_resource.upload-scripts]
   triggers = {
     id = aws_instance.dc.id
@@ -242,14 +242,14 @@ resource "null_resource" "run-setup-script" {
 
   provisioner "remote-exec" {
     inline = [
-      "powershell -file ${local.setup_file}",
-      "del ${replace(local.setup_file, "/", "\\")}",
+      "powershell -file ${local.provisioning_file}",
+      "del ${replace(local.provisioning_file, "/", "\\")}",
     ]
   }
 }
 
 resource "null_resource" "wait-for-reboot" {
-  depends_on = [null_resource.run-setup-script]
+  depends_on = [null_resource.run-provisioning-script]
   triggers = {
     id = aws_instance.dc.id
   }
