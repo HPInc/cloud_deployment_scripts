@@ -117,20 +117,6 @@ join_domain()
         log "--> Install required packages to join domain"
         yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python
 
-        log "--> Restarting messagebus service"
-        if ! (systemctl restart messagebus)
-        then
-            log "--> Failed to restart messagebus service"
-            return 106
-        fi
-
-        log "--> Enable and start sssd service"
-        if ! (systemctl enable sssd --now)
-        then
-            log "Failed to start sssd service"
-            return 106
-        fi
-
         log "--> Joining the domain"
         if [[ -n "$OU" ]]
         then
@@ -151,6 +137,22 @@ join_domain()
         sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf
         sed -c -i "s/\\(use_fully_qualified_names *= *\\).*/\\1False/" /etc/sssd/sssd.conf
         sed -c -i "s/\\(fallback_homedir *= *\\).*/\\1\\/home\\/%u/" /etc/sssd/sssd.conf
+
+        # sssd.conf configuration is required first before enabling sssd
+        log "--> Restarting messagebus service"
+        if ! (systemctl restart messagebus)
+        then
+            log "--> Failed to restart messagebus service"
+            return 106
+        fi
+
+        log "--> Enable and start sssd service"
+        if ! (systemctl enable sssd --now)
+        then
+            log "Failed to start sssd service"
+            return 106
+        fi
+
         domainname "$VM_NAME.${domain_name}"
         echo "%${domain_name}\\\\Domain\\ Admins ALL=(ALL) ALL" > /etc/sudoers.d/sudoers
 
