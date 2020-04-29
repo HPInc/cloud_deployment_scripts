@@ -55,6 +55,11 @@ variable "ad_service_account_password" {
   type        = string
 }
 
+variable "lls_ip" {
+  description = "Internal IP of the PCoIP License Server"
+  default     = ""
+}
+
 variable "bucket_name" {
   description = "Name of bucket to retrieve provisioning script."
   type        = string

@@ -64,6 +64,8 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
 
+      lls_ip = var.lls_ip,
+
       bucket_name = var.bucket_name,
       ssl_key     = local.ssl_key_filename,
       ssl_cert    = local.ssl_cert_filename,
