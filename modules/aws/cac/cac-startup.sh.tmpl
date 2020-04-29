@@ -145,36 +145,78 @@ until netcat -vz ${domain_name} 636; do
 done
 
 echo '### Installing Cloud Access Connector ###'
+RETRIES=3
 export CAM_BASE_URI=${cam_url}
 
+# Set pipefail option to return status of the connector install command
+set -o pipefail
+
 if [ -z "${ssl_key}" ]; then
-    $INSTALL_DIR/cloud-access-connector install \
-        -t $CAC_TOKEN \
-        --accept-policies \
-        --insecure \
-        --sa-user ${ad_service_account_username} \
-        --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-        --domain ${domain_name} \
-        --domain-group "${domain_group}" \
-        --reg-code $PCOIP_REGISTRATION_CODE \
-        --sync-interval 5 \
-        2>&1 | tee -a $INSTALL_LOG
+    while true
+    do
+        $INSTALL_DIR/cloud-access-connector install \
+            -t $CAC_TOKEN \
+            --accept-policies \
+            --insecure \
+            --sa-user ${ad_service_account_username} \
+            --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
+            --domain ${domain_name} \
+            --domain-group "${domain_group}" \
+            --reg-code $PCOIP_REGISTRATION_CODE \
+            --sync-interval 5 \
+            2>&1 | tee -a $INSTALL_LOG
+
+        RC=$?
+        if [ $RC -eq 0 ]
+        then
+            log "--> Successfully installed Cloud Access Connector."
+            break
+        fi
+
+        if [ $RETRIES -eq 0 ]
+        then
+            exit 1
+        fi
+
+        log "--> ERROR: Failed to install Cloud Access Connector. $RETRIES retries remaining..."
+        RETRIES=$((RETRIES-1))
+        sleep 60
+    done
 else
     aws s3 cp s3://${bucket_name}/${ssl_key} $INSTALL_DIR
     aws s3 cp s3://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
-    $INSTALL_DIR/cloud-access-connector install \
-        -t $CAC_TOKEN \
-        --accept-policies \
-        --ssl-key $INSTALL_DIR/${ssl_key} \
-        --ssl-cert $INSTALL_DIR/${ssl_cert} \
-        --sa-user ${ad_service_account_username} \
-        --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-        --domain ${domain_name} \
-        --domain-group "${domain_group}" \
-        --reg-code $PCOIP_REGISTRATION_CODE \
-        --sync-interval 5 \
-        2>&1 | tee -a $INSTALL_LOG
+    while true
+    do
+        $INSTALL_DIR/cloud-access-connector install \
+            -t $CAC_TOKEN \
+            --accept-policies \
+            --ssl-key $INSTALL_DIR/${ssl_key} \
+            --ssl-cert $INSTALL_DIR/${ssl_cert} \
+            --sa-user ${ad_service_account_username} \
+            --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
+            --domain ${domain_name} \
+            --domain-group "${domain_group}" \
+            --reg-code $PCOIP_REGISTRATION_CODE \
+            --sync-interval 5 \
+            2>&1 | tee -a $INSTALL_LOG
+
+        RC=$?
+        if [ $RC -eq 0 ]
+        then
+            log "--> Successfully installed Cloud Access Connector."
+            break
+        fi
+
+        if [ $RETRIES -eq 0 ]
+        then
+            exit 1
+        fi
+
+        log "--> ERROR: Failed to install Cloud Access Connector. $RETRIES retries remaining..."
+        RETRIES=$((RETRIES-1))
+        sleep 60
+    done
 fi
 
 docker service ls
