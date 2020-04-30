@@ -50,14 +50,15 @@ To encrypt secrets using the KMS crypto key created above, follow the instructio
 ```echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64```
 
 #### Encryption Using Python Script
-Alternatively, run the kms_secrets_encryption.py Python 3 script under the tools directory to automate the KMS encryption process. 
+Alternatively, the kms_secrets_encryption.py Python 3 script under the tools directory can be used to automate the KMS encryption process. 
 
-Execute the following command inside the tools directory:
-```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
+1. Open the terraform.tfvars file and enter all the secrets in plaintext located under the line "# <-- Start of secrets section, do not edit this line. -->".
+1. Save the file.
+1. Run the script by executing the following command inside the tools directory: ```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
 
-The script rewrites your existing terraform.tfvars secrets using ciphertext so that it is ready to be used for your Terraform deployment. In addition, any text files specified under the secrets as a path will also be encrypted so that it is ready to be used by Terraform. The script will also update the path to the encrypted text file inside of the new terraform.tfvars.
+The script will replace all the plaintext inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
 
-The default mode is encryption; to decrypt the secrets back to plaintext, use the ```-d``` flag when executing the script. Decryption mode decrypts the ciphertext in the terraform.tfvars file back to the original plaintext. The script rewrites the ciphertext version of terraform.tfvars file with the plaintext secrets again. 
+The script can also reverse the encryption by running with the '-d' flag. See script's documentation for details (--help).
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
