@@ -415,19 +415,19 @@ class Tfvars_Encryptor_GCP:
 
                 if SECRETS_START_FLAG in line:
                     begin_reading_secrets = True
+                    continue
 
                 # Skip blank lines and comment lines
                 # "not line" must come first using short circuiting to avoid string index out of range error
                 if not line or line[0] in ("#"):
                     continue
+                
+                # Split the line into key value pairs using the first delimiter
+                key, value = map(str.strip, line.split('=', 1))
 
                 if begin_reading_secrets:
-                    # Split the line into key value pairs using the first delimiter
-                    key, value = map(str.strip, line.split('=', 1))
                     tf_secrets[key] = value.replace("\"", "")
-                else:           
-                    # Split the line into key value pairs using the first delimiter
-                    key, value = map(str.strip, line.split('=', 1))
+                else:
                     tf_data[key] = value.replace("\"", "")
 
         return tf_data, tf_secrets
