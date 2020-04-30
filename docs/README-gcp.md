@@ -52,12 +52,11 @@ To encrypt secrets using the KMS crypto key created above, follow the instructio
 #### Encryption Using Python Script
 Alternatively, the kms_secrets_encryption.py Python 3 script under the tools directory can be used to automate the KMS encryption process. 
 
-First, open the terraform.tfvars file and enter all the secrets in plaintext located under the line "# <-- Start of secrets section, do not edit this line. -->", then save the file. 
+1. Open the terraform.tfvars file and enter all the secrets in plaintext located under the line "# <-- Start of secrets section, do not edit this line. -->".
+1. Save the file.
+1. Run the script by executing the following command inside the tools directory: ```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
 
-Run the script by executing the following command inside the tools directory:
-```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
-
-The script will replace all your plaintext secrets inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
+The script will replace all the plaintext inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
 
 The script can also reverse the encryption by running with the '-d' flag. See script's documentation for details (--help).
 
