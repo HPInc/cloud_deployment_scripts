@@ -40,12 +40,14 @@ function Decrypt-Credentials {
     "Decrypting credentials..."
     "################################################################"
     try {
-        "--> Decrypting pcoip_registration_code..."
-        $ByteAry = [System.Convert]::FromBase64String("${pcoip_registration_code}")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
+        if ( -not [string]::IsNullOrEmpty("${pcoip_registration_code}") ) {
+            "--> Decrypting pcoip_registration_code..."
+            $ByteAry = [System.Convert]::FromBase64String("${pcoip_registration_code}")
+            $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+            $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+            $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+            $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
+        }
 
         "--> Decrypting admin_password..."
         $ByteAry = [System.Convert]::FromBase64String("${admin_password}")
@@ -281,7 +283,9 @@ net user Administrator $DATA."admin_password" /active:yes
 
 PCoIP-Agent-Install
 
-PCoIP-Agent-Register
+if ( -not [string]::IsNullOrEmpty("${pcoip_registration_code}") ) {
+    PCoIP-Agent-Register
+}
 
 Join-Domain
 
