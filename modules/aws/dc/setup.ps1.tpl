@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Teradici Corporation
+# Copyright (c) 2020 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -7,44 +7,16 @@
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
-
-$METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$METADATA_HEADERS.Add("Metadata-Flavor", "Google")
-
-$METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
-$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
-
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("safe_mode_admin_password", "${safe_mode_admin_password}")
 
-function Get-AuthToken {
-    try {
-        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
-        return $response."access_token"
-    }
-    catch {
-        "Error fetching auth token: $_"
-        return $false
-    }
-}
-
 function Decrypt-Credentials {
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
     try {
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${safe_mode_admin_password}")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."safe_mode_admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
+        $ByteAry = [System.Convert]::FromBase64String("${safe_mode_admin_password}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream 
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."safe_mode_admin_password" = $StreamRead.ReadToEnd()
     }
     catch {
         "Error decrypting credentials: $_"
@@ -52,12 +24,12 @@ function Decrypt-Credentials {
     }
 }
 
-Start-Transcript -path $LOG_FILE -append
+Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
+if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
     "Not using encryption"
 } else {
-    "Using ecnryption key ${kms_cryptokey_id}"
+    "Using encryption key ${customer_master_key_id}"
     Decrypt-Credentials
 }
 

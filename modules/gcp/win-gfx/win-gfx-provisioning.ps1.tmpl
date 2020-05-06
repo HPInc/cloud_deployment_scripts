@@ -1,0 +1,405 @@
+# Copyright (c) 2019 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+$LOG_FILE = "C:\Teradici\provisioning.log"
+$NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
+$PCOIP_AGENT_LOCATION_URL = "${pcoip_agent_location_url}"
+$PCOIP_AGENT_FILENAME     = "${pcoip_agent_filename}"
+
+$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+
+$METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$METADATA_HEADERS.Add("Metadata-Flavor", "Google")
+
+$METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
+$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
+
+$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
+$DATA.Add("admin_password", "${admin_password}")
+$DATA.Add("ad_service_account_password", "${ad_service_account_password}")
+
+$ENABLE_AUTO_SHUTDOWN     = [System.Convert]::ToBoolean("${enable_workstation_idle_shutdown}")
+$AUTO_SHUTDOWN_IDLE_TIMER = ${minutes_idle_before_shutdown}
+$CPU_POLLING_INTERVAL     = ${minutes_cpu_polling_interval}
+
+$global:restart = $false
+
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
+
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
+
+    if ($?) { return $rc }
+
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
+    }
+
+    Write-Information "--> Attempt $Attempt failed. Retrying in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
+}
+
+function Get-AuthToken {
+    try {
+        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
+        return $response."access_token"
+    }
+    catch {
+        "--> ERROR: Failed to fetch auth token: $_"
+        return $false
+    }
+}
+
+function Decrypt-Credentials {
+    "################################################################"
+    "Decrypting credentials..."
+    "################################################################"
+    $token = Get-AuthToken
+
+    if(!($token)) {
+        return $false
+    }
+
+    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+    $headers.Add("Authorization", "Bearer $($token)")
+
+    try {
+        "--> Decrypting pcoip_registration_code..."
+        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+        $resource.Add("ciphertext", "${pcoip_registration_code}")
+        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
+        $credsB64 = $response."plaintext"
+        $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
+        
+        "--> Decrypting admin_password..."
+        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+        $resource.Add("ciphertext", "${admin_password}")
+        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
+        $credsB64 = $response."plaintext"
+        $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
+
+        "--> Decrypting ad_service_account_password..."
+        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+        $resource.Add("ciphertext", "${ad_service_account_password}")
+        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
+        $credsB64 = $response."plaintext"
+        $DATA."ad_service_account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
+    }
+    catch {
+        "--> ERROR: Failed to decrypt credentials: $_"
+        return $false
+    }
+}
+
+function Nvidia-is-Installed {
+    if (!(test-path $NVIDIA_DIR)) {
+        return $false
+    }
+
+    cd $NVIDIA_DIR
+    & .\nvidia-smi.exe
+    return $?
+    return $false
+}
+
+function Nvidia-Install {
+    "################################################################"
+    "Installing NVIDIA driver..."
+    "################################################################"
+
+    if (Nvidia-is-Installed) {
+        "--> NVIDIA driver is already installed. Skipping..."
+        return
+    }
+
+    mkdir 'C:\Nvidia'
+    $driverDirectory = "C:\Nvidia"
+    $nvidiaDriverFileName = Split-Path ${nvidia_driver_url} -Leaf
+    $nvidiaDriverLocation = Split-Path ${nvidia_driver_url} -Parent
+    $destFile = $driverDirectory + "\" + $nvidiaDriverFileName
+    "--> Downloading NVIDIA GRID driver from $nvidiaDriverLocation..."
+    (New-Object System.Net.WebClient).DownloadFile("${nvidia_driver_url}", $destFile)
+    "--> NVIDIA GRID driver downloaded."
+
+    "--> Installing NVIDIA GRID Driver..."
+    $ret = Start-Process -FilePath $destFile -ArgumentList "/s /noeula /noreboot" -PassThru -Wait
+
+    if (!(Nvidia-is-Installed)) {
+        "--> ERROR: Failed to install NVIDIA GRID driver."
+        exit 1
+    }
+
+    "--> NVIDIA GRID driver installed successfully."
+    $global:restart = $true
+}
+
+function PCoIP-Agent-is-Installed {
+    Get-Service "PCoIPAgent"
+    return $?
+}
+
+function PCoIP-Agent-Install {
+    "################################################################"
+    "Installing PCoIP graphics agent..."
+    "################################################################"
+
+    if (PCoIP-Agent-is-Installed) {
+        "--> PCoIP graphics agent is already installed. Skipping..."
+        return
+    }
+
+    $agentInstallerDLDirectory = "C:\Teradici"
+    if (![string]::IsNullOrEmpty($PCOIP_AGENT_FILENAME)) {
+        "--> Using user-specified PCoIP graphics agent filename..."
+        $agent_filename = $PCOIP_AGENT_FILENAME
+    } else {
+        "--> Using default latest PCoIP graphics agent..."
+        $agent_latest = $PCOIP_AGENT_LOCATION_URL + "latest-graphics-agent.json"
+        $wc = New-Object System.Net.WebClient
+
+        "--> Checking for the latest PCoIP graphics agent version from $agent_latest..."
+        $string = Retry -Action {$wc.DownloadString($agent_latest)}
+
+        $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
+    }
+    $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + $agent_filename
+    $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
+    $wc = New-Object System.Net.WebClient
+
+    "--> Downloading PCoIP graphics agent from $pcoipAgentInstallerUrl..."
+    Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
+    "--> Teradici PCoIP graphics agent downloaded: $agent_filename"
+
+    "--> Installing Teradici PCoIP graphics agent..."
+    Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot _?$destFile" -PassThru -Wait
+
+    if (!(PCoIP-Agent-is-Installed)) {
+        "--> ERROR: Failed to install PCoIP graphics agent."
+        exit 1
+    }
+
+    "--> Teradici PCoIP graphics agent installed successfully."
+    $global:restart = $true
+}
+
+function PCoIP-Agent-Register {
+    "################################################################"
+    "Registering PCoIP agent..."
+    "################################################################"
+
+    cd 'C:\Program Files\Teradici\PCoIP Agent'
+
+    "--> Checking for existing PCoIP License..."
+    & .\pcoip-validate-license.ps1
+    if ( $LastExitCode -eq 0 ) {
+        "--> Found valid license."
+        return
+    }
+
+    # License registration may have intermittent failures
+    $Interval = 10
+    $Timeout = 600
+    $Elapsed = 0
+
+    do {
+        $Retry = $false
+        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        # The script already produces error message
+
+        if ( $LastExitCode -ne 0 ) {
+            if ($Elapsed -ge $Timeout) {
+                "--> ERROR: Failed to register PCoIP agent."
+                exit 1
+            }
+
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            $Retry = $true
+            Start-Sleep -Seconds $Interval
+            $Elapsed += $Interval
+        }
+    } while ($Retry)
+
+    "--> PCoIP agent registered successfully."
+}
+
+function Install-Idle-Shutdown {
+    "################################################################"
+    "Installing Idle Shutdown..."
+    "################################################################"
+    $path = "C:\Program Files\Teradici\PCoIP Agent\bin"
+    cd $path
+
+    # Install service and check for success
+    $ret = .\IdleShutdownAgent.exe -install
+    if( !$? ) {
+        "ERROR: failed to install idle shutdown."
+        exit 1
+    }
+
+    $idleShutdownRegKeyPath       = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
+    $idleTimerRegKeyName          = "MinutesIdleBeforeShutdown"
+    $cpuPollingIntervalRegKeyName = "PollingIntervalMinutes"
+
+    if (!(Test-Path $idleShutdownRegKeyPath)) {
+        New-Item -Path $idleTimerRegKeyPath -Force
+    }
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $CPU_POLLING_INTERVAL -PropertyType DWORD -Force
+
+    if (!$ENABLE_AUTO_SHUTDOWN) {
+        $svc = Get-Service -Name "CAMIdleShutdown"
+        "Attempting to disable CAMIdleShutdown..."
+        try {
+            if ($svc.Status -ne "Stopped") {
+                Start-Sleep -s 15
+                $svc.Stop()
+                $svc.WaitForStatus("Stopped", 180)
+            }
+            Set-Service -InputObject $svc -StartupType "Disabled"
+            $status = if ($?) { "succeeded" } else { "failed" }
+            $msg = "Disabling CAMIdleShutdown {0}." -f $status
+            "$msg"
+        }
+        catch {
+            throw "ERROR: Failed to disable CAMIdleShutdown service."
+        }
+    }
+}
+
+function Join-Domain {
+    "################################################################"
+    "Joining domain '${domain_name}'..."
+    "################################################################"
+
+    $obj = Get-WmiObject -Class Win32_ComputerSystem
+
+    if ($obj.PartOfDomain) {
+        if ($obj.Domain -ne "${domain_name}") {
+            "--> ERROR: Trying to join '${domain_name}' but computer is already joined to '$obj.Domain'."
+            exit 1
+        }
+
+        "--> Computer already part of the '$obj.Domain' domain."
+        return
+    } 
+
+    "--> Computer not part of a domain. Joining ${domain_name}..."
+
+    $username = "${ad_service_account_username}" + "@" + "${domain_name}"
+    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
+    $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
+
+    # Looping in case Domain Controller is not yet available
+    $Interval = 10
+    $Timeout = 1200
+    $Elapsed = 0
+
+    do {
+        Try {
+            $Retry = $false
+            # Don't do -Restart here because there is no log showing the restart
+            Add-Computer -DomainName "${domain_name}" -Credential $cred -Verbose -Force -ErrorAction Stop
+        }
+
+        # The same Error, System.InvalidOperationException, is thrown in these cases: 
+        # - when Domain Controller not reachable (retry waiting for DC to come up)
+        # - when password is incorrect (retry because user might not be added yet)
+        # - when computer is already in domain
+        Catch [System.InvalidOperationException] {
+            $PSItem
+
+            if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
+                "--> WARNING: Computer is already joined to the domain '${domain_name}'."
+                break
+            }
+
+            if ($Elapsed -ge $Timeout) {
+                "--> Timeout reached, exiting..."
+                exit 1
+            }
+
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            $Retry = $true
+            Start-Sleep -Seconds $Interval
+            $Elapsed += $Interval
+        }
+        Catch {
+            $PSItem
+            exit 1
+        }
+    } while ($Retry)
+
+    $obj = Get-WmiObject -Class Win32_ComputerSystem
+    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "${domain_name}") ) {
+        "--> ERROR: Failed to join '${domain_name}'."
+        exit 1
+    }
+
+    "--> Successfully joined '${domain_name}'."
+    $global:restart = $true
+
+    # TODO: Find out why DNS entry is not always added after domain join.
+    # Sometimes the DNS entry for this workstation is not added in the Domain
+    # Controller after joining the domain, so explicitly add this machine to the
+    # DNS.
+    "--> Registering with DNS..."
+    do {
+        Start-Sleep -Seconds 5
+        Register-DnsClient
+    } while (!$?)
+    "--> Successfully registered with DNS."
+}
+
+if (Test-Path $LOG_FILE) {
+    Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+    "--> $LOG_FILE exists. Assuming this provisioning script has run, exiting..."
+    exit 0
+}
+
+Start-Transcript -path $LOG_FILE -append
+
+"--> Script running as user '$(whoami)'."
+
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    "--> Running as Administrator..."
+} else {
+    "--> Not running as Administrator..."
+}
+
+if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
+    "--> Script is not using encryption for secrets."
+} else {
+    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
+    Decrypt-Credentials
+}
+
+net user Administrator $DATA."admin_password" /active:yes
+
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
+Nvidia-Install
+
+PCoIP-Agent-Install
+
+PCoIP-Agent-Register
+
+Install-Idle-Shutdown
+
+Join-Domain
+
+if ($global:restart) {
+    "--> Restart required. Restarting..."
+    Restart-Computer -Force
+} else {
+    "--> No restart required."
+}
+

@@ -28,7 +28,7 @@ variable "gcp_region" {
 variable "gcp_zone" {
   description = "GCP zone"
 
-  # Default to us-west2-b because P4 Workstation GPUs available here
+  # Default to us-west2-b because Tesla P4 Workstation GPUs available here
   default = "us-west2-b"
 }
 
@@ -37,7 +37,7 @@ variable "prefix" {
   default     = ""
 }
 
-variable "allowed_cidr" {
+variable "allowed_admin_cidrs" {
   description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d', 'e.f.g.0/24']"
   default     = []
 }
@@ -69,7 +69,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2016-dc-v20190620"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
 }
 
 variable "dc_admin_password" {
@@ -87,12 +87,12 @@ variable "safe_mode_admin_password" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
   default     = "cam_admin"
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
 }

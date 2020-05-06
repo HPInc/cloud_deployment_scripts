@@ -15,7 +15,7 @@ resource "google_compute_network" "vpc" {
 }
 
 resource "google_dns_managed_zone" "private_zone" {
-  provider    = "google-beta"
+  provider    = google-beta
 
   name        = replace("${local.prefix}${var.domain_name}-zone", ".", "-")
   dns_name    = "${var.domain_name}."
@@ -69,7 +69,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -78,11 +78,11 @@ resource "google_compute_firewall" "allow-winrm" {
 
   allow {
     protocol = "tcp"
-    ports    = ["5985-5986"]
+    ports    = ["5986"]
   }
 
   target_tags   = ["${local.prefix}fw-allow-winrm"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-icmp" {
@@ -94,7 +94,7 @@ resource "google_compute_firewall" "allow-icmp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-icmp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-dns" {

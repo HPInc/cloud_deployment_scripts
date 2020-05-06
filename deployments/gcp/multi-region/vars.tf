@@ -28,7 +28,7 @@ variable "gcp_region" {
 variable "gcp_zone" {
   description = "GCP zone"
 
-  # Default to us-west2-b because P4 Workstation GPUs available here
+  # Default to us-west2-b because Tesla P4 Workstation GPUs available here
   default = "us-west2-b"
 }
 
@@ -37,9 +37,14 @@ variable "prefix" {
   default     = ""
 }
 
-variable "allowed_cidr" {
+variable "allowed_admin_cidrs" {
   description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d', 'e.f.g.0/24']"
   default     = []
+}
+
+variable "allowed_client_cidrs" {
+  description = "Open VPC firewall to allow PCoIP connections from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d', 'e.f.g.0/24']"
+  default     = ["0.0.0.0/0"]
 }
 
 variable "vpc_name" {
@@ -69,7 +74,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2016-dc-v20190620"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
 }
 
 variable "dc_admin_password" {
@@ -87,12 +92,12 @@ variable "safe_mode_admin_password" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
   default     = "cam_admin"
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
 }
@@ -108,7 +113,6 @@ variable "cac_region_list" {
   type        = list(string)
 }
 
-# Hard-coded to accept list of 3.
 variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
   type        = list(string)
@@ -136,7 +140,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200414"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -153,7 +157,7 @@ variable "cac_admin_ssh_pub_key_file" {
 variable "cac_health_check" {
   description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/CloudAccessManager/"
+    path         = "/pcoip-broker/xml"
     port         = 443
     interval_sec = 5
     timeout_sec  = 5
@@ -195,6 +199,21 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
+variable "enable_workstation_idle_shutdown" {
+  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
+variable "minutes_cpu_polling_interval" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
+}
+
 variable "win_gfx_instance_count" {
   description = "Number of Windows Grpahics Workstations"
   default     = 0
@@ -222,7 +241,27 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2016-dc-v20190620"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
+}
+
+variable "win_std_instance_count" {
+  description = "Number of Windows Standard Workstations"
+  default     = 0
+}
+
+variable "win_std_machine_type" {
+  description = "Machine type for Windows Standard Workstations"
+  default     = "n1-standard-4"
+}
+
+variable "win_std_disk_size_gb" {
+  description = "Disk size (GB) of Windows Standard Workstations"
+  default     = 50
+}
+
+variable "win_std_disk_image" {
+  description = "Disk image for the Windows Standard Workstation"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
 }
 
 variable "centos_gfx_instance_count" {
@@ -252,7 +291,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20190813"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200429"
 }
 
 variable "centos_std_instance_count" {
@@ -272,7 +311,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20190813"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200429"
 }
 
 variable "centos_admin_user" {

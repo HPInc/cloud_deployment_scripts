@@ -35,23 +35,23 @@ variable "domain_controller_ip" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service Account username"
   type        = string
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
 }
 
 variable "bucket_name" {
-  description = "Name of bucket to retrieve startup script."
+  description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
 
 variable "gcp_zone" {
-  description = "Zone to deploy the Cloud Access Connector"
+  description = "Zone to deploy the Workstation"
   default     = "us-west2-b"
 }
 
@@ -63,6 +63,21 @@ variable "subnet" {
 variable "enable_public_ip" {
   description = "Assign a public IP to the workstation"
   default     = false
+}
+
+variable "enable_workstation_idle_shutdown" {
+  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
+variable "minutes_cpu_polling_interval" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
 }
 
 variable "network_tags" {
@@ -98,6 +113,16 @@ variable "ws_admin_user" {
 variable "ws_admin_ssh_pub_key_file" {
   description = "SSH public key for the Workstation Administrator"
   type        = string
+}
+
+variable "pcoip_agent_repo_pubkey_url" {
+  description = "URL of Teradici repo public key"
+  default     = "https://downloads.teradici.com/rhel/teradici.pub.gpg"
+}
+
+variable "pcoip_agent_repo_url" {
+  description = "URL of Teradici PCoIP Standard Agent"
+  default     = "https://downloads.teradici.com/rhel/pcoip.repo"
 }
 
 variable "depends_on_hack" {

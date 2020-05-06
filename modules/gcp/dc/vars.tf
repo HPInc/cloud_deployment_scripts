@@ -30,29 +30,28 @@ variable "safe_mode_admin_password" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service account to be created"
   type        = string
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
 }
 
 variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
-  type        = string
   default     = ""
 }
 
 variable "bucket_name" {
-  description = "Name of bucket to retrieve startup script."
+  description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
 
 variable "gcp_zone" {
-  description = "Zone to deploy the Cloud Access Connector"
+  description = "Zone to deploy the Domain Controller"
   default     = "us-west2-b"
 }
 
@@ -63,11 +62,11 @@ variable "subnet" {
 
 variable "private_ip" {
   description = "Static internal IP address for the Domain Controller"
-  default     = ""
+  type        = string
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the Workstation"
+  description = "Tags to be applied to the Domain Controller"
   type        = list(string)
 }
 
@@ -83,7 +82,7 @@ variable "disk_size_gb" {
 
 variable "disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/family/windows-2016"
+  default     = "projects/windows-cloud/global/images/family/windows-2019"
 }
 
 variable "kms_cryptokey_id" {

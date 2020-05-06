@@ -1,7 +1,7 @@
 # Cloud Access Connector Quickstart
 
 ## Introduction
-The goal of this tutorial is to create the [single-connector](https://github.com/teradici/cloud_deployment_scripts#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
+The goal of this tutorial is to create the [single-connector](https://github.com/teradici/cloud_deployment_scripts/blob/master/docs/README-gcp.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
 
 This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the Cloud Access Connector deployment.
 
@@ -25,16 +25,17 @@ If you don't have one, visit [https://www.teradici.com/compare-plans](https://ww
 ### api_token
 Replace **`<token>`** with the Cloud Access Manager API token.
 
-Log into [https://cam.teradici.com/beta-ui](https://cam.teradici.com/beta-ui) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
+Log into [https://cam.teradici.com](https://cam.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
 ### Number of Workstations
 Enter the number of workstations to create.
 
 Parameter | Description
 --- | ---
-scent | Standard CentOS 7 Workstations
-gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstations GPU
-gwin | Windows Server 2016 with NVIDIA Tesla P4 Virtual Workstations GPU
+scent | Standard CentOS 7 Workstation
+gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstation GPU
+swin | Windows Server 2019 Workstation
+gwin | Windows Server 2019 with NVIDIA Tesla P4 Virtual Workstation GPU
 
 ### Check your Quota
 Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Cloud Access Connector (CAC) which will also be created.
@@ -47,6 +48,7 @@ DC | 4 | 15 | 50 | 0
 CAC | 2 | 7.5 | 50 | 0 
 scent | 2 | 7.5 | 50 | 0 
 gcent | 2 | 7.5 | 50 | 1
+swin | 4 | 15 | 50 | 0
 gwin | 4 | 15 | 50 | 1
 
 You can check your quota [here](https://console.cloud.google.com/iam-admin/quotas).
@@ -67,12 +69,10 @@ gcloud config set project <project_id>
 ### Run the script
 
 Run the following command in Cloud Shell. You will be prompted to create a password for the Active Directory Administrator.
-
 ```bash
 cd quickstart
 ./gcp-cloudshell-quickstart.py
 ```
-
 The script should take approximately 25 minutes to run.
 
 ## Next steps
@@ -85,10 +85,10 @@ The script should take approximately 25 minutes to run.
 **Note:** When connecting to a workstation immediately after this script completes, the workstation (especially graphics ones) may still be setting up. You may see "Remote Desktop is restarting..." in the client. Please wait a few minutes or reconnect if it times out.
 
 ### Add additional workstations
-1. Log in to [https://cam.teradici.com/beta-ui](https://cam.teradici.com/beta-ui)
-2. Click on **Remote Workstations** in the left panel, select **Create Remote workstation** from the **+** button
-3. Select connector **`sample_connector_<timestamp>`**
-4. Fill in the form according to you preferences. Note that the following
+1. Log in to [https://cam.teradici.com](https://cam.teradici.com)
+2. Click on **Workstations** in the left panel, select **Create new remote workstation** from the **+** button
+3. Select connector **`quickstart_connector_<timestamp>`**
+4. Fill in the form according to your preferences. Note that the following
    values must be used for their respective fields:
 ```
 Region:                   "us-west2"
@@ -106,10 +106,13 @@ Service account password: <set by you at start of script>
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, go to the **~/cloud_deployment_scripts/quickstart/** directory
-     and run 
+  2. In GCP cloudshell, change directory to **~/cloudshell_open/cloud_deployment_scripts/deployments/gcp/single-connector** using the command
+```bash
+cd ../deployments/gcp/single-connector
+```   
+  3. Remove resources deployed by Terraform using the following command. Enter "yes" when prompted to confirm.
 ```bash
 terraform destroy
 ```
-  3. Log in to [https://cam.teradici.com/beta-ui](https://cam.teradici.com/beta-ui) and delete the deployment named
-     **`sample_deployment_<timestamp>`**
+  4. Log in to [https://cam.teradici.com](https://cam.teradici.com) and delete the deployment named
+     **`quickstart_deployment_<timestamp>`**

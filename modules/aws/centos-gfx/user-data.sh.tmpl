@@ -1,0 +1,45 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#!/bin/bash
+
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+INST_LOG_FILE="/var/log/teradici/agent/install.log"
+
+# exit if PCoIP agent is already installed
+if (rpm -q pcoip-agent-graphics); then
+    exit
+fi
+
+# download startup script if first run
+if [[ ! -f "$INST_LOG_FILE" ]]
+then
+    yum -y update
+    yum -y install awscli dos2unix
+    aws s3 cp s3://${bucket_name}/${file_name} .
+    chmod +x ${file_name}
+    dos2unix ${file_name}
+fi
+
+# run script during 1st and 2nd reboot
+. ${file_name}

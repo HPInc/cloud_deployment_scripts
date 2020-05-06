@@ -13,29 +13,30 @@ locals {
   host_name = substr("${local.prefix}${var.name}", 0, 11)
 
   enable_public_ip = var.enable_public_ip ? [true] : []
-  startup_script = "win-gfx-startup.ps1"
+  provisioning_script = "win-gfx-provisioning.ps1"
 }
 
-resource "google_storage_bucket_object" "win-gfx-startup-script" {
+resource "google_storage_bucket_object" "win-gfx-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name    = local.startup_script
+  name    = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id         = var.kms_cryptokey_id,
-      pcoip_agent_location     = var.pcoip_agent_location,
-      pcoip_agent_filename     = var.pcoip_agent_filename,
-      pcoip_registration_code  = var.pcoip_registration_code,
-
-      nvidia_driver_location   = var.nvidia_driver_location,
-      nvidia_driver_filename   = var.nvidia_driver_filename,
-
-      domain_name              = var.domain_name,
-      admin_password           = var.admin_password,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      nvidia_driver_url           = var.nvidia_driver_url,
+      domain_name                 = var.domain_name,
+      admin_password              = var.admin_password,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
+      pcoip_agent_location_url    = var.pcoip_agent_location_url,
+      pcoip_agent_filename        = var.pcoip_agent_filename,
+      
+      enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
+      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
+      minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval,
     }
   )
 }
@@ -78,7 +79,7 @@ resource "google_compute_instance" "win-gfx" {
   tags = var.network_tags
 
   metadata = {
-    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-startup-script[0].output_name}"
+    windows-startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.win-gfx-provisioning-script[0].output_name}"
   }
 
   service_account {

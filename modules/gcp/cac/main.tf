@@ -7,7 +7,7 @@
 
 locals {
   prefix            = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script    = "cac-startup.sh"
+  provisioning_script    = "cac-provisioning.sh"
   ssl_key_filename  = var.ssl_key == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
 }
@@ -28,7 +28,7 @@ resource "google_storage_bucket_object" "ssl-cert" {
   source = var.ssl_cert
 }
 
-resource "google_storage_bucket_object" "startup-script" {
+resource "google_storage_bucket_object" "cac-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   depends_on = [
@@ -37,21 +37,21 @@ resource "google_storage_bucket_object" "startup-script" {
   ]
 
   bucket  = var.bucket_name
-  name    = local.startup_script
+  name    = local.provisioning_script
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id         = var.kms_cryptokey_id,
-      cam_url                  = var.cam_url,
-      cac_installer_url        = var.cac_installer_url,
-      cac_token                = var.cac_token,
-      pcoip_registration_code  = var.pcoip_registration_code,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      cam_url                     = var.cam_url,
+      cac_installer_url           = var.cac_installer_url,
+      cac_token                   = var.cac_token,
+      pcoip_registration_code     = var.pcoip_registration_code,
 
-      domain_controller_ip     = var.domain_controller_ip,
-      domain_name              = var.domain_name,
-      domain_group             = var.domain_group,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_name                 = var.domain_name,
+      domain_group                = var.domain_group,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
 
       bucket_name = var.bucket_name,
       ssl_key     = local.ssl_key_filename,
@@ -88,7 +88,7 @@ resource "google_compute_instance" "cac" {
 
   metadata = {
     ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
-    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.startup-script[0].output_name}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.cac-provisioning-script[0].output_name}"
   }
 
   service_account {

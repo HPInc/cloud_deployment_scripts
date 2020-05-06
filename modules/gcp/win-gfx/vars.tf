@@ -30,23 +30,23 @@ variable "domain_name" {
   type        = string
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service Account username"
   type        = string
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
 }
 
 variable "bucket_name" {
-  description = "Name of bucket to retrieve startup script."
+  description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
 
 variable "gcp_zone" {
-  description = "Zone to deploy the Cloud Access Connector"
+  description = "Zone to deploy the Workstation"
   default     = "us-west2-b"
 }
 
@@ -58,6 +58,21 @@ variable "subnet" {
 variable "enable_public_ip" {
   description = "Assign a public IP to the Workstation"
   default     = false
+}
+
+variable "enable_workstation_idle_shutdown" {
+  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
+variable "minutes_cpu_polling_interval" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
 }
 
 variable "network_tags" {
@@ -92,7 +107,7 @@ variable "disk_size_gb" {
 
 variable "disk_image" {
   description = "Disk image for the Workstation"
-  default     = "projects/windows-cloud/global/images/family/windows-2016"
+  default     = "projects/windows-cloud/global/images/family/windows-2019"
 }
 
 variable "admin_password" {
@@ -100,17 +115,12 @@ variable "admin_password" {
   type        = string
 }
 
-variable "nvidia_driver_location" {
-  description = "URL of NVIDIA GRID driver location"
-  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID7.1/"
+variable "nvidia_driver_url" {
+  description = "URL of NVIDIA GRID driver"
+  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID9.1/431.79_grid_win10_server2016_server2019_64bit_international.exe"
 }
 
-variable "nvidia_driver_filename" {
-  description = "Filename of NVIDIA GRID driver"
-  default     = "412.16_grid_win10_server2016_64bit_international.exe"
-}
-
-variable "pcoip_agent_location" {
+variable "pcoip_agent_location_url" {
   description = "URL of Teradici PCoIP Graphics Agent"
   default     = "https://downloads.teradici.com/win/stable/"
 }

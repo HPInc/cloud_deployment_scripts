@@ -33,11 +33,12 @@ REQUIRED_APIS = [
     'cloudresourcemanager.googleapis.com',
     'compute.googleapis.com',
     'dns.googleapis.com',
+    'iam.googleapis.com',
 ]
 
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
-CONNECTOR_NAME  = 'quickstart_connector_' + iso_time
+CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
@@ -52,7 +53,7 @@ SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 
 # Types of workstations
-WS_TYPES = ['scent', 'gcent', 'gwin']
+WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
 
 next_steps = """
 Next steps:
@@ -66,11 +67,11 @@ Next steps:
      minutes or reconnect if it times out.
 
 - Add additional workstations:
-  1. Log in to https://cam.teradici.com/beta-ui
-  2. Click on "Remote Workstations" in the left panel, select "Create Remote
+  1. Log in to https://cam.teradici.com
+  2. Click on "Workstations" in the left panel, select "Create new remote
      workstation" from the "+" button
-  3. Select connector "quickstart_connector_<timestamp>"
-  4. Fill in the form according to you preferences. Note that the following
+  3. Select connector "quickstart_cac_<timestamp>"
+  4. Fill in the form according to your preferences. Note that the following
      values must be used for their respective fields:
        Region:                   "us-west2"
        Zone:                     "us-west2-b"
@@ -86,9 +87,9 @@ Next steps:
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, go to the ~/cloud_deployment_scripts/{deployment_path} directory
-     and run "terraform destroy"
-  3. Log in to https://cam.teradici.com/beta-ui and delete the deployment named
+  2. In GCP cloudshell, change directory using the command "cd ~/cloud_deployment_scripts/{deployment_path}"
+  3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
+  4. Log in to https://cam.teradici.com and delete the deployment named
      "quickstart_deployment_<timestamp>"
 """
 
@@ -252,6 +253,11 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
         for line in ref_file:
+            # Append the crypto key path to kms_cryptokey_id line since it is commented out in ref_file
+            if '# kms_cryptokey_id' in line:
+                out_file.write('{} = \"{}\"'.format('kms_cryptokey_id', settings['kms_cryptokey_id']))
+                continue
+
             # Comments and blank lines are unchanged
             if line[0] in ('#', '\n'):
                 out_file.write(line)
@@ -306,10 +312,10 @@ if __name__ == '__main__':
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
 
+    apis_enable(REQUIRED_APIS)
     sa = service_account_create(sa_email)
     iam_policy_update(sa, SA_ROLES)
     sa_key = service_account_create_key(sa, SA_KEY_PATH)
-    apis_enable(REQUIRED_APIS)
 
     print('GCP project setup complete.\n')
 
@@ -380,9 +386,10 @@ if __name__ == '__main__':
         'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
-        'service_account_password':       password,
+        'ad_service_account_password':    password,
         'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
+        'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',

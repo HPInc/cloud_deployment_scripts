@@ -13,23 +13,30 @@ locals {
   host_name = substr("${local.prefix}${var.name}", 0, 11)
 
   enable_public_ip = var.enable_public_ip ? [true] : []
-  startup_script = "centos-gfx-startup.sh"
+  provisioning_script = "centos-gfx-provisioning.sh"
 }
 
-resource "google_storage_bucket_object" "centos-gfx-startup-script" {
+resource "google_storage_bucket_object" "centos-gfx-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name    = local.startup_script
+  name    = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id         = var.kms_cryptokey_id,
-      pcoip_registration_code  = var.pcoip_registration_code,
-      domain_controller_ip     = var.domain_controller_ip,
-      domain_name              = var.domain_name,
-      service_account_username = var.service_account_username,
-      service_account_password = var.service_account_password,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_name                 = var.domain_name,
+      ad_service_account_username = var.ad_service_account_username,
+      ad_service_account_password = var.ad_service_account_password,
+      nvidia_driver_url           = var.nvidia_driver_url,
+      pcoip_agent_repo_pubkey_url = var.pcoip_agent_repo_pubkey_url,
+      pcoip_agent_repo_url        = var.pcoip_agent_repo_url,
+
+      enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
+      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
+      minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval,
     }
   )
 }
@@ -73,7 +80,7 @@ resource "google_compute_instance" "centos-gfx" {
 
   metadata = {
     ssh-keys = "${var.ws_admin_user}:${file(var.ws_admin_ssh_pub_key_file)}"
-    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.centos-gfx-startup-script[0].output_name}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.centos-gfx-provisioning-script[0].output_name}"
   }
 
   service_account {

@@ -45,18 +45,18 @@ variable "domain_group" {
   default     = "Domain Admins"
 }
 
-variable "service_account_username" {
+variable "ad_service_account_username" {
   description = "Active Directory Service Account username"
   type        = string
 }
 
-variable "service_account_password" {
+variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
 }
 
 variable "bucket_name" {
-  description = "Name of bucket to retrieve startup script."
+  description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
 
@@ -71,7 +71,7 @@ variable "subnet" {
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the Workstation"
+  description = "Tags to be applied to the Cloud Access Connector"
   type        = list(string)
 }
 
