@@ -48,8 +48,23 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name of VPC containing workstations, AD, and Teradici components"
   default     = "vpc-cas"
+}
+
+variable "workstations_network" {
+  description = "Name of the VPC containing workstations"
+  default     = "subnet-ws"
+}
+
+variable "controller_network" {
+  description = "Name of the VPC containing AD components"
+  default     = "subnet-dc"
+}
+
+variable "connector_network" {
+  description = "Name of the VPC containing Teradici components"
+  default     = "subnet-cac"
 }
 
 variable "dc_subnet_cidr" {
@@ -307,4 +322,9 @@ variable "centos_admin_ssh_pub_key_file" {
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
+}
+
+variable "win_gfx_instance_name" {
+  description = "Base name for Windows workstations"
+  default     = "gwin"
 }
