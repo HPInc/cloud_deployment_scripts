@@ -323,3 +323,8 @@ variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
 }
+
+variable "win_gfx_instance_name" {
+  description = "Base name for Windows workstations"
+  default     = "gwin"
+}
