@@ -31,8 +31,9 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 ### (Optional) Encrypting Secrets
 Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket. Secrets may also show up in Terraform logs.
 
-The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
+The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under tools.
 
+#### Manual Encryption
 To encrypt secrets using the KMS CMK created above, follow the instructions here: https://docs.aws.amazon.com/cli/latest/reference/kms/encrypt.html. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in a Linux shell to get the base64-encoded ciphertext:
 
 ```aws kms encrypt --key-id <cmk-id> --plaintext <secret> --output text --query CiphertextBlob```
@@ -40,6 +41,17 @@ To encrypt secrets using the KMS CMK created above, follow the instructions here
 The following command can be used to decrypt the ciphertext:
 
 ```aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d```
+
+#### Encryption Using Python Script
+Alternatively, the kms_secrets_encryption.py Python 3 script under the tools directory can be used to automate the KMS encryption process. 
+
+1. Open the terraform.tfvars file and enter all the secrets in plaintext located under the line "# <-- Start of secrets section, do not edit this line. -->".
+1. Save the file.
+1. Run the script by executing the following command inside the tools directory: ```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
+
+The script will replace all the plaintext inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
+
+The script can also reverse the encryption by running with the '-d' flag. See script's documentation for details (--help).
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
