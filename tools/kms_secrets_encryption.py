@@ -220,8 +220,12 @@ class Tfvars_Encryptor(ABC):
         write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
         """
 
-        # Set crypto key path to use kms_cryptokey_id
-        self.crypto_key_path = self.tfvars_parser.tfvars_data.get("kms_cryptokey_id")
+        # GCP uses kms_cryptokey_id while AWS uses customer_master_key_id
+        if type(self).__name__ == "GCP_Tfvars_Encryptor":
+            self.crypto_key_path = self.tfvars_parser.tfvars_data.get("kms_cryptokey_id")
+
+        if type(self).__name__ == "AWS_Tfvars_Encryptor":
+            self.customer_master_key_id = self.tfvars_parser.tfvars_data.get("customer_master_key_id")
 
         # Decrypt all secrets
         try:
@@ -315,6 +319,18 @@ class Tfvars_Encryptor(ABC):
         Terraform after encrypting or decrypting. 
         """
 
+        key_id = None
+        key_value = None
+
+        # GCP uses kms_cryptokey_id while AWS uses customer_master_key_id
+        if type(self).__name__ == "GCP_Tfvars_Encryptor":
+            key_id = "kms_cryptokey_id"
+            key_value = self.crypto_key_path
+
+        if type(self).__name__ == "AWS_Tfvars_Encryptor":
+            key_id = "customer_master_key_id"
+            key_value = self.customer_master_key_id
+
         # Parse existing tfvars and store each line into a list
         lines = []
 
@@ -324,12 +340,12 @@ class Tfvars_Encryptor(ABC):
                 # Remove leading and trailing whitespace including "\n" and "\t"
                 line = line.strip()
 
-                # Append the crypto key path to kms_cryptokey_id line
-                if "kms_cryptokey_id =" in line:
-                    if not self.tfvars_parser.tfvars_data.get("kms_cryptokey_id"):
-                        lines.append("{} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                # Append the crypto key value to key_id line
+                if key_id + " =" in line:
+                    if not self.tfvars_parser.tfvars_data.get(key_id):
+                        lines.append("{} = \"{}\"".format(key_id, key_value))
                     else:
-                        lines.append("# {} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                        lines.append("# {} = \"{}\"".format(key_id, key_value))
                     continue
 
                 # Blank lines and comments are unchanged
@@ -706,22 +722,44 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
     def encrypt_plaintext(self, plaintext):
         """A method that encrypts plaintext.
 
-        Uses GCP KMS to encrypt plaintext to ciphertext using the provided
+        Uses AWS KMS to encrypt plaintext to ciphertext using the provided
         symmetric crypto key that belongs to this instance.
         
         Args:
-            ciphertext (str): the plainttext being encrypted
+            plaintext (str): the plainttext being encrypted
         Returns:
             string: the ciphertext
         """
 
         # Use the KMS API to encrypt the data.
-        response = self.kms_client.encrypt(self.crypto_key_path, plaintext.encode("utf-8"))
+        response = self.kms_client.encrypt(
+                        KeyId = self.customer_master_key_id, 
+                        Plaintext = plaintext.encode("utf-8")
+                    )
 
         # Base64 encoding of ciphertext
-        ciphertext = base64.b64encode(response.ciphertext).decode("utf-8")
-
+        ciphertext = base64.b64encode(response.get('CiphertextBlob')).decode("utf-8")
+        
         return ciphertext
+
+
+    def get_crypto_keys(self):
+        """A method that retrieves a list of crypto keys aliase names associated with the AWS credentials in the region.
+
+        This method returns a list of all the crypto keys aliase names associated with the AWS credentials in the region.
+        
+        Returns:
+            list: a list of all the crypto keys aliase names associated with the AWS credentials in the region.
+        """
+
+        # Use crypto keys data under the 'Aliases' dict key
+        response = self.kms_client.list_aliases().get('Aliases')
+
+        # Access the 'AliasName' property for each key entry by splitting string from the right. [2] to get the string after the separator
+        # eg. response.get('Aliases') returns [{'AliasName': '<alias/AliasName>', 'AliasArn': '<AliasArn>', 'TargetKeyId': '<TargetKeyId>'}]
+        crypto_keys_list = list(map(lambda key: key.get('AliasName').rpartition('/')[2], response))
+
+        return crypto_keys_list
 
 
     def initialize_aws_credentials(self, path):
