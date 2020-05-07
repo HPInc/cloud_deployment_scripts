@@ -5,8 +5,12 @@
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 $NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
+
 $PCOIP_AGENT_LOCATION_URL = "${pcoip_agent_location_url}"
 $PCOIP_AGENT_FILENAME     = "${pcoip_agent_filename}"
+
+$NVIDIA_DRIVER_URL      = "${nvidia_driver_url}"
+$NVIDIA_DRIVER_FILENAME = "${nvidia_driver_filename}"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
@@ -122,11 +126,13 @@ function Nvidia-Install {
 
     mkdir 'C:\Nvidia'
     $driverDirectory = "C:\Nvidia"
-    $nvidiaDriverFileName = Split-Path ${nvidia_driver_url} -Leaf
-    $nvidiaDriverLocation = Split-Path ${nvidia_driver_url} -Parent
-    $destFile = $driverDirectory + "\" + $nvidiaDriverFileName
-    "--> Downloading NVIDIA GRID driver from $nvidiaDriverLocation..."
-    (New-Object System.Net.WebClient).DownloadFile("${nvidia_driver_url}", $destFile)
+
+    $nvidiaInstallerUrl = $NVIDIA_DRIVER_URL + $NVIDIA_DRIVER_FILENAME
+    $destFile = $driverDirectory + "\" + $NVIDIA_DRIVER_FILENAME
+    $wc = New-Object System.Net.WebClient
+
+    "--> Downloading NVIDIA GRID driver from $NVIDIA_DRIVER_URL..."
+    Retry -Action {$wc.DownloadFile($nvidiaInstallerUrl, $destFile)}
     "--> NVIDIA GRID driver downloaded."
 
     "--> Installing NVIDIA GRID Driver..."
