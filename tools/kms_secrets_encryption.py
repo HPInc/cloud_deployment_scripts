@@ -78,7 +78,7 @@ class Tfvars_Parser:
 
         begin_reading_secrets = False
 
-        with open(tfvars_file, 'r') as f:
+        with open(tfvars_file, "r") as f:
             for line in f:
                 line = line.strip()
 
@@ -92,7 +92,7 @@ class Tfvars_Parser:
                     continue
 
                 # Split the line into key value pairs using the first delimiter
-                key, value = map(str.strip, line.split('=', 1))
+                key, value = map(str.strip, line.split("=", 1))
 
                 if begin_reading_secrets:
                     tf_secrets[key] = value.replace("\"", "")
@@ -330,7 +330,7 @@ class Tfvars_Encryptor(ABC):
         # Parse existing tfvars and store each line into a list
         lines = []
 
-        with open(self.tfvars_parser.tfvars_path, 'r') as f:
+        with open(self.tfvars_parser.tfvars_path, "r") as f:
             for line in f:
                 
                 # Remove leading and trailing whitespace including "\n" and "\t"
@@ -365,7 +365,7 @@ class Tfvars_Encryptor(ABC):
 
         # Rewrite the existing terraform.tfvars
         print("Writing new terraform.tfvars...")
-        with open(self.tfvars_parser.tfvars_path, 'w') as f:
+        with open(self.tfvars_parser.tfvars_path, "w") as f:
             f.writelines("%s\n" %line for line in lines)
 
 
@@ -529,7 +529,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
 
         # Access the name property and split string from the right. [2] to get the string after the separator
         # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring/cryptoKeys/cas_key"
-        crypto_keys_list = list(map(lambda key: key.name.rpartition('/')[2], response))
+        crypto_keys_list = list(map(lambda key: key.name.rpartition("/")[2], response))
 
         return crypto_keys_list
 
@@ -551,7 +551,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
 
         # Access the name property and split string from the right. [2] to get the string after the separator
         # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring"
-        key_rings_list = list(map(lambda key_ring: key_ring.name.rpartition('/')[2], response))
+        key_rings_list = list(map(lambda key_ring: key_ring.name.rpartition("/")[2], response))
 
         return key_rings_list
 
@@ -666,9 +666,9 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         self.credentials_file = self.tfvars_parser.tfvars_data.get("aws_credentials_file")
 
         # Create a client for the KMS API using the provided AWS credentials
-        self.aws_credentials = self.initialize_aws_credentials(self.tfvars_parser.tfvars_data.get('aws_credentials_file'))
-        self.kms_client      = boto3.client('kms', aws_access_key_id = self.aws_credentials.get('aws_access_key_id'),
-                                               aws_secret_access_key = self.aws_credentials.get('aws_secret_access_key'))
+        self.aws_credentials = self.initialize_aws_credentials(self.tfvars_parser.tfvars_data.get("aws_credentials_file"))
+        self.kms_client      = boto3.client("kms", aws_access_key_id = self.aws_credentials.get("aws_access_key_id"),
+                                               aws_secret_access_key = self.aws_credentials.get("aws_secret_access_key"))
 
         # AWS KMS resource variables
         self.customer_master_key_id = self.initialize_cryptokey("cas_key")
@@ -689,12 +689,12 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         """
 
         # Use KMS client to create key and store the returned KeyId
-        customer_master_key_id = self.kms_client.create_key().get('KeyMetadata').get('KeyId')
+        customer_master_key_id = self.kms_client.create_key().get("KeyMetadata").get("KeyId")
         
         # Give this KeyId an alias name
         self.kms_client.create_alias(
-            # The alias to create. Aliases must begin with 'alias/'.
-            AliasName = 'alias/{}'.format(crypto_key_alias_name),
+            # The alias to create. Aliases must begin with "alias/".
+            AliasName = "alias/{}".format(crypto_key_alias_name),
             TargetKeyId = customer_master_key_id
         )
         
@@ -730,7 +730,7 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
                     )
 
         # Decode Base64 plaintext
-        plaintext = response.get('Plaintext').decode("utf-8")
+        plaintext = response.get("Plaintext").decode("utf-8")
 
         return plaintext
 
@@ -759,7 +759,7 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
                     )
 
         # Base64 encoding of ciphertext
-        ciphertext = base64.b64encode(response.get('CiphertextBlob')).decode("utf-8")
+        ciphertext = base64.b64encode(response.get("CiphertextBlob")).decode("utf-8")
         
         return ciphertext
 
@@ -774,12 +774,12 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
             a list of all the crypto keys aliase names associated with the AWS credentials in the region.
         """
 
-        # Use crypto keys data under the 'Aliases' dict key
-        response = self.kms_client.list_aliases().get('Aliases')
+        # Use crypto keys data under the "Aliases" dict key
+        response = self.kms_client.list_aliases().get("Aliases")
 
-        # Access the 'AliasName' property for each key entry by splitting string from the right. [2] to get the string after the separator
-        # eg. response.get('Aliases') returns [{'AliasName': '<alias/AliasName>', 'AliasArn': '<AliasArn>', 'TargetKeyId': '<TargetKeyId>'}]
-        crypto_keys_list = list(map(lambda key: key.get('AliasName').rpartition('/')[2], response))
+        # Access the "AliasName" property for each key entry by splitting string from the right. [2] to get the string after the separator
+        # eg. response.get("Aliases") returns [{"AliasName": "<alias/AliasName>", "AliasArn": "<AliasArn>", "TargetKeyId": "<TargetKeyId>"}]
+        crypto_keys_list = list(map(lambda key: key.get("AliasName").rpartition("/")[2], response))
 
         return crypto_keys_list
 
@@ -800,13 +800,13 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         Returns
         -------
         dict
-            Dictionary containing the 'aws_access_key_id' and 'aws_secret_access_key'.
+            Dictionary containing the "aws_access_key_id" and "aws_secret_access_key".
         """
 
         aws_access_key_id = None
         aws_secret_access_key = None
 
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             for line in f:
                 line = line.strip()
                 
@@ -815,16 +815,16 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
                 if not line or line[0] in ("#"):
                     continue
 
-                if 'aws_secret_access_key' in line:
-                    aws_secret_access_key = line.rpartition('=')[2].strip()
+                if "aws_secret_access_key" in line:
+                    aws_secret_access_key = line.rpartition("=")[2].strip()
                     continue
 
-                if 'aws_access_key_id' in line:
-                    aws_access_key_id = line.rpartition('=')[2].strip()
+                if "aws_access_key_id" in line:
+                    aws_access_key_id = line.rpartition("=")[2].strip()
                     continue
 
-        return {    'aws_access_key_id': aws_access_key_id, 
-                'aws_secret_access_key': aws_secret_access_key }
+        return {    "aws_access_key_id": aws_access_key_id, 
+                "aws_secret_access_key": aws_secret_access_key }
 
 
     def initialize_cryptokey(self, crypto_key_alias_name):
@@ -858,16 +858,16 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
                 print("{}".format(err))
                 raise SystemExit()
         else:
-            # Use crypto keys data under the 'Aliases' dict key
-            response = self.kms_client.list_aliases().get('Aliases')
+            # Use crypto keys data under the "Aliases" dict key
+            response = self.kms_client.list_aliases().get("Aliases")
 
-            # Trim the 'AliasName' string for each key entry by splitting string from the right. [2] to get the just the 'AliasName' after the separator
+            # Trim the "AliasName" string for each key entry by splitting string from the right. [2] to get the just the "AliasName" after the separator
             # For each key entry, compare the string to find a match.
-            # eg. response.get('Aliases') returns [{'AliasName': '<alias/AliasName>', 'AliasArn': '<AliasArn>', 'TargetKeyId': '<TargetKeyId>'}]
-            matched_crypto_keys = filter(lambda key: key.get('AliasName').rpartition('/')[2] == crypto_key_alias_name, response)
+            # eg. response.get("Aliases") returns [{"AliasName": "<alias/AliasName>", "AliasArn": "<AliasArn>", "TargetKeyId": "<TargetKeyId>"}]
+            matched_crypto_keys = filter(lambda key: key.get("AliasName").rpartition("/")[2] == crypto_key_alias_name, response)
             
-            # Access the 'TargetKeyId' property of the first matched key to retrieve the customer_master_key_id associated with it.
-            customer_master_key_id = list(matched_crypto_keys)[0].get('TargetKeyId')
+            # Access the "TargetKeyId" property of the first matched key to retrieve the customer_master_key_id associated with it.
+            customer_master_key_id = list(matched_crypto_keys)[0].get("TargetKeyId")
 
             print("Using existing crypto key {}: {}\n".format(crypto_key_alias_name, customer_master_key_id))
         
@@ -882,7 +882,7 @@ def main():
     parser = argparse.ArgumentParser(description = parser_description)
 
     parser.add_argument("tfvars", help = "specify the path to terraform.tfvars file")
-    parser.add_argument("-d", help = "decrypt secrets in terraform.tfvars specified", action = 'store_true')
+    parser.add_argument("-d", help = "decrypt secrets in terraform.tfvars specified", action = "store_true")
 
     args = parser.parse_args()
 
@@ -924,6 +924,6 @@ def main():
         tfvars_encryptor.encrypt_tfvars_secrets()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
