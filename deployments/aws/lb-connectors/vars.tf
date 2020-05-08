@@ -140,7 +140,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200408"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200430"
 }
 
 variable "admin_ssh_key_name" {
