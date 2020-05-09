@@ -138,7 +138,7 @@ install_idle_shutdown() {
     
     awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
 
-    log "--> Setting auto shutdown idle timer to $${AUTO_SHUTDOWN_IDLE_TIMER} minutes"
+    log "--> Setting auto shutdown idle timer to $${AUTO_SHUTDOWN_IDLE_TIMER} minutes..."
     INSTALL_OPTS="--idle-timer $${AUTO_SHUTDOWN_IDLE_TIMER}"
     if [[ "$${ENABLE_AUTO_SHUTDOWN}" = "false" ]]; then
         INSTALL_OPTS="$${INSTALL_OPTS} --disabled"
@@ -148,12 +148,12 @@ install_idle_shutdown() {
 
     exitCode=$?
     if [[ $exitCode -ne 0 ]]; then
-        log "--> Failed to install idle shutdown."
+        log "--> ERROR: Failed to install idle shutdown."
         exit 1
     fi
 
     if [[ $CPU_POLLING_INTERVAL -ne 15 ]]; then
-        log "--> Setting CPU polling interval to $${CPU_POLLING_INTERVAL} minutes"
+        log "--> Setting CPU polling interval to $${CPU_POLLING_INTERVAL} minutes..."
         sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${CPU_POLLING_INTERVAL}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
         systemctl daemon-reload
     fi
@@ -183,16 +183,29 @@ join_domain() {
         yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python
 
         log "--> Joining the domain '${domain_name}'..."
-        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
-        
-        exitCode=$?
-        if [[ $exitCode -eq 0 ]]
-        then
-            log "--> Joined Domain '${domain_name}'."
-        else
-            log "--> ERROR: Failed to join Domain '${domain_name}'."
-            return 106
-        fi
+        local retries=10
+
+        while true
+        do
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" --verbose >&2
+            
+            local rc=$?
+            if [[ $rc -eq 0 ]]
+            then
+                log "--> Successfully joined domain '${domain_name}'."
+                break
+            fi
+
+            if [ $retries -eq 0 ]
+            then
+                log "--> ERROR: Failed to join domain '${domain_name}'."
+                return 106
+            fi
+
+            log "--> ERROR: Failed to join domain '${domain_name}'. $retries retries remaining..."
+            retries=$((retries-1))
+            sleep 60
+        done
 
         log "--> Configuring settings..."
         sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf
@@ -203,7 +216,7 @@ join_domain() {
         log "--> Restarting messagebus service..."
         if ! (systemctl restart messagebus)
         then
-            log "--> ERROR: Failed to restart messagebus service..."
+            log "--> ERROR: Failed to restart messagebus service."
             return 106
         fi
 
