@@ -38,13 +38,18 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
 }
 
 variable "vpc_cidr" {
   description = "CIDR for the VPC containing the CAS deployment"
   default     = "10.0.0.0/16" 
+}
+
+variable "dc_subnet_name" {
+  description = "Name for subnet containing the Domain Controller"
+  default     = "subnet-dc"
 }
 
 variable "dc_subnet_cidr" {
@@ -113,8 +118,13 @@ variable "cac_zone_list" {
   type        = list(string)
 }
 
+variable "cac_subnet_name" {
+  description = "Name for subnets containing the Cloud Access Connector"
+  default     = "subnet-cac"
+}
+
 variable "cac_subnet_cidr_list" {
-  description = "CIDRs for subnet containing the Cloud Access Connector"
+  description = "CIDRs for subnets containing the Cloud Access Connector"
   type        = list(string)
 }
 
@@ -176,6 +186,11 @@ variable "pcoip_registration_code" {
 variable "cam_url" {
   description = "cam server url."
   default     = "https://cam.teradici.com"
+}
+
+variable "ws_subnet_name" {
+  description = "Name for subnet containing Remote Workstations"
+  default     = "subnet-ws"
 }
 
 variable "ws_subnet_cidr" {

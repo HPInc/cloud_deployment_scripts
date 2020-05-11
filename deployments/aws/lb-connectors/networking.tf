@@ -34,7 +34,7 @@ resource "aws_subnet" "dc-subnet" {
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}subnet-dc"
+    Name = "${local.prefix}${var.dc_subnet_name}"
   }
 }
 
@@ -46,7 +46,7 @@ resource "aws_subnet" "cac-subnets" {
   availability_zone = var.cac_zone_list[count.index]
 
   tags = {
-    Name = "${local.prefix}subnet-cac-${var.cac_zone_list[count.index]}"
+    Name = "${local.prefix}${var.cac_subnet_name}-${var.cac_zone_list[count.index]}"
   }
 }
 
@@ -56,7 +56,7 @@ resource "aws_subnet" "ws-subnet" {
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}subnet-ws"
+    Name = "${local.prefix}${var.ws_subnet_name}"
   }
 }
 

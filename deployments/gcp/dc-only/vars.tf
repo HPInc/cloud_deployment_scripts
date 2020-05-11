@@ -43,8 +43,13 @@ variable "allowed_admin_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
+}
+
+variable "dc_subnet_name" {
+  description = "Name for subnet containing the Domain Controller"
+  default     = "subnet-dc"
 }
 
 variable "dc_subnet_cidr" {

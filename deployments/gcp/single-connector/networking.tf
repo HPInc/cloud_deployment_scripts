@@ -151,19 +151,19 @@ resource "google_compute_firewall" "allow-google-dns" {
 }
 
 resource "google_compute_subnetwork" "dc-subnet" {
-  name          = "${local.prefix}subnet-dc"
+  name          = "${local.prefix}${var.dc_subnet_name}"
   ip_cidr_range = var.dc_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
 resource "google_compute_subnetwork" "cac-subnet" {
-  name          = "${local.prefix}subnet-cac"
+  name          = "${local.prefix}${var.cac_subnet_name}"
   ip_cidr_range = var.cac_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
 resource "google_compute_subnetwork" "ws-subnet" {
-  name          = "${local.prefix}subnet-ws"
+  name          = "${local.prefix}${var.ws_subnet_name}"
   ip_cidr_range = var.ws_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }

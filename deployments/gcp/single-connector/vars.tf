@@ -48,8 +48,13 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
+}
+
+variable "dc_subnet_name" {
+  description = "Name for subnet containing the Domain Controller"
+  default     = "subnet-dc"
 }
 
 variable "dc_subnet_cidr" {
@@ -80,6 +85,11 @@ variable "dc_disk_image" {
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+}
+
+variable "cac_subnet_name" {
+  description = "Name for subnet containing the Cloud Access Connector"
+  default     = "subnet-cac"
 }
 
 variable "cac_subnet_cidr" {
@@ -152,6 +162,11 @@ variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   type        = string
   default     = ""
+}
+
+variable "ws_subnet_name" {
+  description = "Name for subnet containing Remote Workstations"
+  default     = "subnet-ws"
 }
 
 variable "ws_subnet_cidr" {
