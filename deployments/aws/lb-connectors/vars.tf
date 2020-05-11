@@ -208,6 +208,11 @@ variable "win_gfx_instance_count" {
   default     = 0
 }
 
+variable "win_gfx_instance_name" {
+  description = "Name for Windows Graphics Workstations"
+  default     = "gwin"
+}
+
 # G4s are Tesla T4s
 # G3s are M60
 variable "win_gfx_instance_type" {
@@ -235,6 +240,11 @@ variable "win_std_instance_count" {
   default     = 0
 }
 
+variable "win_std_instance_name" {
+  description = "Name for Windows Standard Workstations"
+  default     = "swin"
+}
+
 variable "win_std_instance_type" {
   description = "Instance type for the Windows Standard Workstations"
   default     = "t2.xlarge"
@@ -258,6 +268,11 @@ variable "win_std_ami_name" {
 variable "centos_gfx_instance_count" {
   description = "Number of CentOS Graphics Workstations"
   default     = 0
+}
+
+variable "centos_gfx_instance_name" {
+  description = "Name for CentOS Graphics Workstations"
+  default     = "gcent"
 }
 
 # G4s are Tesla T4s
@@ -290,6 +305,11 @@ variable "centos_gfx_ami_name" {
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0
+}
+
+variable "centos_std_instance_name" {
+  description = "Name for CentOS Standard Workstations"
+  default     = "scent"
 }
 
 variable "centos_std_instance_type" {

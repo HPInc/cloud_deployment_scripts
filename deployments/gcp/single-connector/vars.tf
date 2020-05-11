@@ -210,8 +210,13 @@ variable "minutes_cpu_polling_interval" {
 }
 
 variable "win_gfx_instance_count" {
-  description = "Number of Windows Grpahics Workstations"
+  description = "Number of Windows Graphics Workstations"
   default     = 0
+}
+
+variable "win_gfx_instance_name" {
+  description = "Name for Windows Graphics Workstations"
+  default     = "gwin"
 }
 
 variable "win_gfx_machine_type" {
@@ -244,6 +249,11 @@ variable "win_std_instance_count" {
   default     = 0
 }
 
+variable "win_std_instance_name" {
+  description = "Name for Windows Standard Workstations"
+  default     = "swin"
+}
+
 variable "win_std_machine_type" {
   description = "Machine type for Windows Standard Workstations"
   default     = "n1-standard-4"
@@ -260,8 +270,13 @@ variable "win_std_disk_image" {
 }
 
 variable "centos_gfx_instance_count" {
-  description = "Number of CentOS Grpahics Workstations"
+  description = "Number of CentOS Graphics Workstations"
   default     = 0
+}
+
+variable "centos_gfx_instance_name" {
+  description = "Name for CentOS Graphics Workstations"
+  default     = "gcent"
 }
 
 variable "centos_gfx_machine_type" {
@@ -292,6 +307,11 @@ variable "centos_gfx_disk_image" {
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0
+}
+
+variable "centos_std_instance_name" {
+  description = "Name for CentOS Standard Workstations"
+  default     = "scent"
 }
 
 variable "centos_std_machine_type" {

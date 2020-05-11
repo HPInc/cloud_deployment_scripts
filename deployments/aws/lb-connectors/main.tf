@@ -182,8 +182,6 @@ resource "aws_lb_target_group_attachment" "cac-tg-attachement" {
 module "win-gfx" {
   source = "../../../modules/aws/win-gfx"
 
-  instance_count = var.win_gfx_instance_count
-
   prefix = var.prefix
 
   customer_master_key_id = var.customer_master_key_id
@@ -204,8 +202,10 @@ module "win-gfx" {
     aws_security_group.allow-rdp.id,
   ]
 
-  instance_type     = var.win_gfx_instance_type
-  disk_size_gb      = var.win_gfx_disk_size_gb
+  instance_count = var.win_gfx_instance_count
+  instance_name  = var.win_gfx_instance_name
+  instance_type  = var.win_gfx_instance_type
+  disk_size_gb   = var.win_gfx_disk_size_gb
 
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
@@ -216,8 +216,6 @@ module "win-gfx" {
 module "win-std" {
   source = "../../../modules/aws/win-std"
 
-  instance_count = var.win_std_instance_count
-
   prefix = var.prefix
 
   customer_master_key_id = var.customer_master_key_id
@@ -238,8 +236,10 @@ module "win-std" {
     aws_security_group.allow-rdp.id,
   ]
 
-  instance_type     = var.win_std_instance_type
-  disk_size_gb      = var.win_std_disk_size_gb
+  instance_count = var.win_std_instance_count
+  instance_name  = var.win_std_instance_name
+  instance_type  = var.win_std_instance_type
+  disk_size_gb   = var.win_std_disk_size_gb
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
@@ -249,8 +249,6 @@ module "win-std" {
 
 module "centos-gfx" {
   source = "../../../modules/aws/centos-gfx"
-
-  instance_count = var.centos_gfx_instance_count
 
   prefix = var.prefix
 
@@ -272,8 +270,10 @@ module "centos-gfx" {
     aws_security_group.allow-ssh.id,
   ]
 
-  instance_type     = var.centos_gfx_instance_type
-  disk_size_gb      = var.centos_gfx_disk_size_gb
+  instance_count = var.centos_gfx_instance_count
+  instance_name  = var.centos_gfx_instance_name
+  instance_type  = var.centos_gfx_instance_type
+  disk_size_gb   = var.centos_gfx_disk_size_gb
 
   ami_owner        = var.centos_gfx_ami_owner
   ami_product_code = var.centos_gfx_ami_product_code
@@ -287,8 +287,6 @@ module "centos-gfx" {
 module "centos-std" {
   source = "../../../modules/aws/centos-std"
 
-  instance_count = var.centos_std_instance_count
-
   prefix = var.prefix
 
   customer_master_key_id = var.customer_master_key_id
@@ -309,8 +307,10 @@ module "centos-std" {
     aws_security_group.allow-ssh.id,
   ]
 
-  instance_type     = var.centos_std_instance_type
-  disk_size_gb      = var.centos_std_disk_size_gb
+  instance_count = var.centos_std_instance_count
+  instance_name  = var.centos_std_instance_name
+  instance_type  = var.centos_std_instance_type
+  disk_size_gb   = var.centos_std_disk_size_gb
 
   ami_owner        = var.centos_std_ami_owner
   ami_product_code = var.centos_std_ami_product_code
