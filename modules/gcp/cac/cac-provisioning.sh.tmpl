@@ -118,17 +118,19 @@ wait_for_dc() {
     # Note: using the domain controller IP instead of the domain name for
     #       the host is more resilient.
     log "--> Installing ldap_utils..."
-    RETRIES=5
+    local retries=5
+
     while true; do
         apt-get -qq update
         apt-get -qq install ldap-utils
-        RC=$?
-        if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then
+
+        local rc=$?
+        if [ $rc -eq 0 ] || [ $retries -eq 0 ]; then
             break
         fi
 
-        log "--> ERROR: Failed to install ldap-utils. $RETRIES retries remaining..."
-        RETRIES=$((RETRIES-1))
+        log "--> ERROR: Failed to install ldap-utils. $retries retries remaining..."
+        retries=$((retries-1))
         sleep 5
     done
 
@@ -183,7 +185,7 @@ wait_for_dc() {
 
 install_cac() {
     log "--> Installing Cloud Access Connector..."
-    RETRIES=3
+    local retries=10
     export CAM_BASE_URI=${cam_url}
 
     log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
@@ -197,10 +199,10 @@ install_cac() {
     set -o pipefail
 
     if [ -z "${ssl_key}" ]; then
+        log "--insecure"
+
         while true
         do
-            log "--insecure"
-
             $INSTALL_DIR/cloud-access-connector install \
                 -t $CAC_TOKEN \
                 --accept-policies \
@@ -212,31 +214,30 @@ install_cac() {
                 --reg-code $PCOIP_REGISTRATION_CODE \
                 --sync-interval 5 \
                 2>&1 | tee -a $CAC_INSTALL_LOG
-            
-            RC=$?
-            if [ $RC -eq 0 ]
+
+            local rc=$?
+            if [ $rc -eq 0 ]
             then
                 log "--> Successfully installed Cloud Access Connector."
                 break
             fi
 
-            if [ $RETRIES -eq 0 ]
+            if [ $retries -eq 0 ]
             then
                 exit 1
             fi
 
-            log "--> ERROR: Failed to install Cloud Access Connector. $RETRIES retries remaining..."
-            RETRIES=$((RETRIES-1))
+            log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
+            retries=$((retries-1))
             sleep 60
         done
     else
+        log "--ssl-key <ssl_key> --ssl-cert <ssl_cert>"
         gsutil cp gs://${bucket_name}/${ssl_key} $INSTALL_DIR
         gsutil cp gs://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
         while true
         do
-            log "--ssl-key <ssl_key> --ssl-cert <ssl_cert>"
-
             $INSTALL_DIR/cloud-access-connector install \
                 -t $CAC_TOKEN \
                 --accept-policies \
@@ -250,20 +251,20 @@ install_cac() {
                 --sync-interval 5 \
                 2>&1 | tee -a $CAC_INSTALL_LOG
 
-            RC=$?
-            if [ $RC -eq 0 ]
+            local rc=$?
+            if [ $rc -eq 0 ]
             then
                 log "--> Successfully installed Cloud Access Connector."
                 break
             fi
 
-            if [ $RETRIES -eq 0 ]
+            if [ $retries -eq 0 ]
             then
                 exit 1
             fi
 
-            log "--> ERROR: Failed to install Cloud Access Connector. $RETRIES retries remaining..."
-            RETRIES=$((RETRIES-1))
+            log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
+            retries=$((retries-1))
             sleep 60
         done
     fi
