@@ -220,9 +220,9 @@ join_domain()
         log "--> Joining the domain"
         if [[ -n "$OU" ]]
         then
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" --computer-ou="$OU" "${domain_name}" >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" --computer-ou="$OU" "${domain_name}" >&2
         else
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" >&2
         fi
         exitCode=$?
         if [[ $exitCode -eq 0 ]]
