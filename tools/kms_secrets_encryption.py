@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2020 Teradici Corporation
 #
@@ -7,12 +7,48 @@
 
 import argparse
 import base64
+import importlib
 import os
-from google.cloud    import kms_v1
-from google.oauth2   import service_account
+import subprocess
 
 
 SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
+
+
+def import_or_install_module(pip_package, module_name = None):
+    """A function that imports a Python top-level package or module. 
+    If the required package is not installed, it will install the package before importing it again.
+
+    Args:
+        pip_package (str): the name of the pip package to be installed
+        module_name (str): the import name of the module if it is different than the pip package name
+
+    Returns:
+        module: the top-level package or module
+    """
+
+    if module_name is None:
+        module_name = pip_package
+
+    try:
+        module = importlib.import_module(module_name)
+        print("Successfully imported {}.".format(module_name))
+
+    except ImportError:
+        install_cmd = "pip3 install {} --user".format(pip_package)
+        subprocess.run(install_cmd.split(' '), check=True)
+        print("Successfully installed {}.".format(pip_package))
+
+        module = importlib.import_module(module_name)
+        print("Successfully imported {}.".format(module_name))
+
+    except Exception as err:
+        print("An exception occurred importing {}.".format(module_name))
+        print("{}\n".format(err))
+        raise SystemExit()
+
+    return module
+
 
 class Tfvars_Encryptor_GCP:
     """Tfvars_Encryptor_GCP is used to automate the encryption or decryption of secrets in a terraform 
@@ -520,5 +556,9 @@ def main():
 
 
 if __name__ == '__main__':
+    # Install and import the required packages and modules
+    kms_v1 = import_or_install_module("google-cloud-kms", "google.cloud.kms_v1")
+    service_account = import_or_install_module("google_oauth2_tool", "google.oauth2.service_account")
+
     main()
 
