@@ -297,6 +297,8 @@ if __name__ == '__main__':
     kms_python_client_install()
     os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
+    # Paths passed into terraform.tfvars should be absolute paths
+    cwd = os.getcwd() + '/'
 
     try:
         print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
@@ -385,21 +387,22 @@ if __name__ == '__main__':
     print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
+
     #TODO: refactor this to work with more types of deployments
     settings = {
-        'gcp_credentials_file':           GCP_SA_KEY_PATH,
+        'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
         'gcp_project_id':                 PROJECT_ID,
         'gcp_service_account':            sa_email,
         'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
         'ad_service_account_password':    password,
-        'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
+        'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
-        'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
+        'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
         'cam_deployment_sa_file':         CAM_DEPLOYMENT_SA_KEY_PATH
     }
