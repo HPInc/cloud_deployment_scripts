@@ -378,21 +378,24 @@ if __name__ == '__main__':
     print('Done encrypting secrets.')
 
     print('Deploying with Terraform...')
+    # Paths passed into terraform.tfvars should be absolute paths
+    cwd = os.getcwd() + '/'
+
     #TODO: refactor this to work with more types of deployments
     settings = {
-        'gcp_credentials_file':           SA_KEY_PATH,
+        'gcp_credentials_file':           cwd + SA_KEY_PATH,
         'gcp_project_id':                 PROJECT_ID,
         'gcp_service_account':            sa_email,
         'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
         'ad_service_account_password':    password,
-        'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
+        'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
-        'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
+        'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
         'cac_token':                      connector['token'],
     }
