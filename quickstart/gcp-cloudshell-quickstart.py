@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2019 Teradici Corporation
 #
@@ -8,12 +8,14 @@
 import base64
 import datetime
 import getpass
-import googleapiclient.discovery
+import importlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import textwrap
 import time
 
 import cam
@@ -43,8 +45,13 @@ CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
 
-CFG_FILE_PATH    = 'gcp-cloudshell-quickstart.cfg'
-DEPLOYMENT_PATH  = 'deployments/gcp/single-connector'
+HOME               = os.path.expanduser('~')
+TERRAFORM_BIN_DIR  = f'{HOME}/bin'
+TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
+TERRAFORM_VER_PATH = '../deployments/gcp/single-connector/versions.tf'
+CFG_FILE_PATH      = 'gcp-cloudshell-quickstart.cfg'
+DEPLOYMENT_PATH    = 'deployments/gcp/single-connector'
+
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
@@ -88,19 +95,114 @@ Next steps:
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, change directory using the command "cd ~/cloud_deployment_scripts/{deployment_path}"
+  2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{deployment_path}"
   3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
+     "{terraform_path} destroy"
   4. Log in to https://cam.teradici.com and delete the deployment named
      "quickstart_deployment_<timestamp>"
 """
 
-def check_requirements():
+def ensure_requirements():
     if not PROJECT_ID:
         print('The PROJECT property has not been set.')
         print('Please run "gcloud config set project [PROJECT_ID]" to set the project.')
         print('See: https://cloud.google.com/sdk/gcloud/reference/config/set')
         print('')
         sys.exit(1)
+
+    ensure_google_libraries()
+    ensure_terraform()
+
+
+def ensure_google_libraries():
+    """A function that ensures Google libraries are installed. 
+
+    The function first tries to import the required Google libraries and 
+    if the required PyPI packages are not installed, it will prompt the 
+    user to install the required packages in the user's home directory. 
+    """
+
+    # Global calls for import statements are required to avoid module not found error
+    import_google_libraries = '''\
+    import googleapiclient.discovery
+    from google.cloud import kms_v1
+    from google.cloud.kms_v1 import enums
+    from google.api_core import exceptions as google_exc
+    '''
+
+    try:
+        exec(textwrap.dedent(import_google_libraries), globals())
+        print('Successfully imported Google libraries.')
+
+    except ImportError as err:
+        required_google_libraries = 'google-api-python-client grpc-google-iam-v1 google-cloud google-cloud-kms'
+
+        install_permission = input(
+            'One or more of the following Python packages are missing:\n'
+            f'  {required_google_libraries}\n\n'
+            'The script can install these packages in the user\'s home directory using the following command:\n' 
+            f'  (i.e. {sys.executable} -m pip install {required_google_libraries} --user)\n'
+            'Proceed? (y/n)? ').strip().lower()
+
+        if install_permission not in ('y', 'yes'):
+            print('Google libraries are required for deployment. Exiting...')
+            sys.exit(1)
+
+        install_cmd = f'{sys.executable} -m pip install {required_google_libraries} --user'
+        subprocess.check_call(install_cmd.split(' '))
+
+        # Recommended to clear cache after installing python packages for dynamic imports
+        importlib.invalidate_caches()
+
+        exec(textwrap.dedent(import_google_libraries), globals())
+        print('Successfully imported Google libraries.')
+
+
+def ensure_terraform():
+    """A function that ensures the required Terraform version is installed. 
+
+    The function first checks if the required Terraform version is installed in 
+    the user's system. If Terraform is not installed, it will prompt the user to 
+    install Terraform in the user's home directory. 
+    """
+
+    global TERRAFORM_BIN_PATH
+
+    path = shutil.which('terraform')
+
+    if path:
+        cmd = 'terraform -v'
+        # Run the command 'terraform -v' and use the first line as the Terraform version
+        terraform_version = subprocess.run(cmd.split(' '),  stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()[0]
+        print(f'Found {terraform_version} in {path}.')
+
+        # Use regex to parse the version number from string (i.e. 0.12.18)
+        current_version = re.search(r'Terraform\s*v([\d.]+)', terraform_version).group(1)
+
+        # Reference versions.tf file for the required version
+        with open(TERRAFORM_VER_PATH,"r") as f:
+            data = f.read()
+        
+        required_version = re.search(r'\">=\s([\d.]+)\"', data).group(1)
+
+        # Convert the string into a tuple of numbers for comparison
+        current_version_tuple  = tuple( map(int, current_version.split('.')) )
+        required_version_tuple = tuple( map(int, required_version.split('.')) )
+
+        if current_version_tuple >= required_version_tuple:
+            TERRAFORM_BIN_PATH = path
+            return
+
+    install_permission = input(
+        'This system is missing Terraform version >= 0.12.\n'
+        f'Proceed to download and install Terraform in {TERRAFORM_BIN_DIR} (y/n)? ').strip().lower()
+
+    if install_permission not in ('y', 'yes'):
+        print('Terraform is required for deployment. Exiting...')
+        sys.exit(1)
+
+    install_cmd = f'{sys.executable} install-terraform.py {TERRAFORM_BIN_DIR}'
+    subprocess.run(install_cmd.split(' '), check=True)
 
 
 def quickstart_config_read(cfg_file):
@@ -132,7 +234,7 @@ def ad_password_get():
 
     See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
     '''
-    print(txt)
+    print(textwrap.dedent(txt))
     while True:
         password1 = getpass.getpass('Enter a password: ').strip()
         password2 = getpass.getpass('Re-enter the password: ').strip()
@@ -164,7 +266,7 @@ def service_account_create(email):
 
     service_account = service_account_find(email)
     if service_account:
-        print('  Service account {} already exist.'.format(email))
+        print('  Service account {} already exists.'.format(email))
         return service_account
 
     service_account = iam_service.projects().serviceAccounts().create(
@@ -247,9 +349,9 @@ def ssh_key_create(path):
 def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     if os.path.exists(tfvar_file_path):
-        overwrite = input("Found an existing .tfvar file, overwrite (y/N)?").strip().lower()
+        overwrite = input("Found an existing .tfvar file, overwrite (y/n)? ").strip().lower()
         if overwrite not in ('y', 'yes'):
-            print('{} already exist. Exiting...'.format(tfvar_file_path))
+            print('{} already exists. Exiting...'.format(tfvar_file_path))
             sys.exit(1)
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
@@ -274,35 +376,24 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
                 sys.exit(1)
 
 
-def terraform_install():
-    # Don't attempt to install unless needed, since it requires sudo
-    if not shutil.which('terraform'):
-        install_cmd = 'sudo python3 install-terraform.py'
-        subprocess.run(install_cmd.split(' '), check=True)
-
-
-def kms_python_client_install():
-    install_cmd = 'sudo pip3 install google-cloud-kms'
-    subprocess.run(install_cmd.split(' '), check=True)
-
 if __name__ == '__main__':
-    check_requirements()
+    ensure_requirements()
 
     cfg_data = quickstart_config_read(CFG_FILE_PATH)
 
     password = ad_password_get()
 
     print('Preparing local requirements...')
-    terraform_install()
-    kms_python_client_install()
     os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
+    # Paths passed into terraform.tfvars should be absolute paths
+    cwd = os.getcwd() + '/'
 
     try:
         print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
         os.mkdir(SECRETS_DIR, 0o700)
     except FileExistsError:
-        print('Directory {} already exist.'.format(SECRETS_DIR))
+        print('Directory {} already exists.'.format(SECRETS_DIR))
 
     ssh_key_create(SSH_KEY_PATH)
 
@@ -333,10 +424,6 @@ if __name__ == '__main__':
     print('Cloud Access Manager setup complete.\n')
 
     print('Encrypting secrets...')
-    from google.cloud import kms_v1
-    from google.cloud.kms_v1 import enums
-    from google.api_core import exceptions as google_exc
-
     days90 = 7776000
 
     kms_client = kms_v1.KeyManagementServiceClient()
@@ -385,35 +472,36 @@ if __name__ == '__main__':
     print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
+
     #TODO: refactor this to work with more types of deployments
     settings = {
-        'gcp_credentials_file':           GCP_SA_KEY_PATH,
+        'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
         'gcp_project_id':                 PROJECT_ID,
         'gcp_service_account':            sa_email,
         'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
         'ad_service_account_password':    password,
-        'cac_admin_ssh_pub_key_file':     SSH_KEY_PATH + '.pub',
+        'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
-        'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
+        'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cam_deployment_sa_file':         CAM_DEPLOYMENT_SA_KEY_PATH
+        'cam_deployment_sa_file':         cwd + CAM_DEPLOYMENT_SA_KEY_PATH
     }
 
     # update tfvar
     tf_vars_create(TF_VARS_REF_PATH, TF_VARS_PATH, settings)
 
-    tf_cmd = 'terraform init'
+    tf_cmd = f'{TERRAFORM_BIN_PATH} init'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    tf_cmd = 'terraform apply -auto-approve'
+    tf_cmd = f'{TERRAFORM_BIN_PATH} apply -auto-approve'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    comp_proc = subprocess.run(['terraform','output','cac-public-ip'],
+    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','cac-public-ip'],
                                check=True,
                                stdout=subprocess.PIPE)
     cac_public_ip = comp_proc.stdout.decode().split('"')[1]
@@ -456,5 +544,8 @@ if __name__ == '__main__':
     print('')
     print(next_steps.format(cac_public_ip=cac_public_ip,
                             entitle_user=ENTITLE_USER,
-                            deployment_path=DEPLOYMENT_PATH))
+                            deployment_path=DEPLOYMENT_PATH,
+                            terraform_path=('terraform'
+                            if TERRAFORM_BIN_PATH == shutil.which('terraform') 
+                            else TERRAFORM_BIN_PATH)))
     print('')
