@@ -5,7 +5,7 @@ The goal of this tutorial is to create the [single-connector](https://github.com
 
 This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the Cloud Access Connector deployment.
 
-The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the GCP infrasturcture such as Networking and Compute resources.
+The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the GCP infrastructure such as Networking and Compute resources.
 
 **Time to complete**: about 30 minutes
 
