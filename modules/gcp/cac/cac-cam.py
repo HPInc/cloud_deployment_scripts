@@ -51,13 +51,13 @@ def get_auth_token(filepath):
     try:
         with open(filepath) as f:
             cam_credentials = json.load(f)
+
     except Exception as err:
         print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n{}".format(err))
-        raise ex
+        raise err
 
     request_body = dict(username = cam_credentials.get('username'), 
-                        password = cam_credentials.get('apiKey'),
-                        tenantId = cam_credentials.get('tenantId'))
+                        password = cam_credentials.get('apiKey'))
 
     response = requests.post("{}/auth/signin".format(API_URL), json = request_body)
 
@@ -84,9 +84,10 @@ def get_deployment_id(filepath):
     try:
         with open(filepath) as f:
             cam_credentials = json.load(f)
+
     except Exception as err:
         print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n{}".format(err))
-        raise ex
+        raise err
 
     return cam_credentials.get('deploymentId')
 
@@ -144,6 +145,7 @@ if __name__ == '__main__':
     try:
         # Print the cac_token string as the output of this script
         print(main())
+
     except:
         # Prevent bash from interpreting any error messages
         sys.exit(1)
