@@ -32,7 +32,7 @@ install_python() {
 }
 
 get_credentials() {
-    log "--> Downloading CAM deployment-level service account JSON file from the bucket..."
+    log "--> Downloading CAM Deployment Service Account JSON file from the bucket..."
     gsutil cp gs://${bucket_name}/${cam_deployment_sa_file} $INSTALL_DIR
 
     if [[ -z "${kms_cryptokey_id}" ]]; then
@@ -58,7 +58,7 @@ get_credentials() {
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
         AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
 
-        log "--> Decrypting CAM deployment-level service account JSON file..."
+        log "--> Decrypting CAM Deployment Service Account JSON file..."
         cam_cred_encrypted=$(cat ${cam_deployment_sa_file})
         data=$(echo "{ \"ciphertext\": \"$cam_cred_encrypted\" }")
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")

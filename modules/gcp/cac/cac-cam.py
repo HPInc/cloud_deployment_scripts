@@ -40,10 +40,10 @@ def create_connector_name():
 def get_auth_token(filepath):
     """A function to retrieve a CAM authentication token
     
-    Uses a CAM deployment-level service account JSON file to request a CAM authentication token.
+    Uses a CAM Deployment Service Account JSON file to request a CAM authentication token.
     
     Args:
-        filepath (str): the location of CAM deployment-level service account JSON file
+        filepath (str): the location of CAM Deployment Service Account JSON file
     Returns:
         string: a string for the CAM authentication token
     """
@@ -52,7 +52,7 @@ def get_auth_token(filepath):
         with open(filepath) as f:
             cam_credentials = json.load(f)
     except Exception as err:
-        print("Exception occurred opening CAM deployment-level service account JSON file. Exiting CAM script...\n{}".format(err))
+        print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n{}".format(err))
         raise ex
 
     request_body = dict(username = cam_credentials.get('username'), 
@@ -73,10 +73,10 @@ def get_auth_token(filepath):
 def get_deployment_id(filepath):
     """A function to parse the deployment ID
     
-    Parses the deployment ID from the CAM deployment-level service account JSON file.
+    Parses the deployment ID from the CAM Deployment Service Account JSON file.
     
     Args:
-        filepath (str): the location of CAM deployment-level service account JSON file
+        filepath (str): the location of CAM Deployment Service Account JSON file
     Returns:
         string: a string for the deployment ID
     """
@@ -85,7 +85,7 @@ def get_deployment_id(filepath):
         with open(filepath) as f:
             cam_credentials = json.load(f)
     except Exception as err:
-        print("Exception occurred opening CAM deployment-level service account JSON file. Exiting CAM script...\n{}".format(err))
+        print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n{}".format(err))
         raise ex
 
     return cam_credentials.get('deploymentId')
@@ -97,7 +97,7 @@ def get_cac_token(auth_token, deployment_id, connector_name):
     Creates a connector token using the authentication token and deployment ID.
     
     Args:
-        auth_token (str)    : auth_token created using CAM deployment-level service account
+        auth_token (str)    : auth_token created using CAM Deployment Service Account
         deployment_id (str) : a string for the deployment ID
     	connector_name (str): a string for the connector name
     Returns:
@@ -122,9 +122,9 @@ def get_cac_token(auth_token, deployment_id, connector_name):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="This script uses CAM deployment-level service account JSON file to create a new connector token.")
+    parser = argparse.ArgumentParser(description="This script uses CAM Deployment Service Account JSON file to create a new connector token.")
 
-    parser.add_argument("cam", help="specify the path to CAM deployment-level service account JSON file")
+    parser.add_argument("cam", help="specify the path to CAM Deployment Service Account JSON file")
     parser.add_argument("--url", default="https://cam.teradici.com/api/v1", help="specify the api url")
     args = parser.parse_args()
 
