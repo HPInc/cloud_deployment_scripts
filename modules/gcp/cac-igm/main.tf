@@ -44,7 +44,7 @@ resource "google_storage_bucket_object" "cac-cam-script" {
 
   bucket = var.bucket_name
   name   = local.cam_script
-  source = "${path.module}/cac-cam.py"
+  source = "${path.module}/${local.cam_script}"
 }
 
 # This is needed so new VMs will be based on the same image in case the public
