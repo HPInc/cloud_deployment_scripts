@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2019 Teradici Corporation
 #
@@ -296,6 +296,8 @@ if __name__ == '__main__':
     kms_python_client_install()
     os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
+    # Paths passed into terraform.tfvars should be absolute paths
+    cwd = os.getcwd() + '/'
 
     try:
         print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
@@ -378,8 +380,6 @@ if __name__ == '__main__':
     print('Done encrypting secrets.')
 
     print('Deploying with Terraform...')
-    # Paths passed into terraform.tfvars should be absolute paths
-    cwd = os.getcwd() + '/'
 
     #TODO: refactor this to work with more types of deployments
     settings = {
