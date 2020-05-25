@@ -165,7 +165,7 @@ variable "cam_url" {
 }
 
 variable "cam_deployment_sa_file" {
-  description = "Location of CAM deployment-level service account JSON file"
+  description = "Location of CAM Deployment Service Account JSON file"
   type        = string
 }
 

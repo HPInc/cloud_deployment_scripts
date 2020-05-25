@@ -17,7 +17,7 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 ### Requirements
 - the user must have owner permissions to a GCP project
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
-- a Cloud Access Manager deployment-level service account is needed. Please see the Cloud Access Manager Setup section below.
+- a Cloud Access Manager Deployment Service Account is needed. Please see the Cloud Access Manager Setup section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
@@ -38,11 +38,11 @@ With a new GCP project:
 ### Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
 1. create a new deployment and submit the credentials for the GCP service account created above.
-2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM deployment-level service account.
-3. click on "Download JSON file" to download the CAM deployment-level service account credentials file which will be used in terraform.tfvars.
+2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM Deployment Service Account.
+3. click on "Download JSON file" to download the CAM Deployment Service Account credentials file which will be used in terraform.tfvars.
 
 ### (Optional) Encrypting Secrets
-Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the CAM deployment-level service account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
+Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the CAM Deployment Service Account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
 The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under tools.
 
@@ -51,7 +51,7 @@ To encrypt secrets using the KMS crypto key created above, follow the instructio
 
 ```echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64```
 
-If using encryption, the CAM deployment-level service account credentials file must also be encrypted. To encrypt, open the file and replace the contents of the file with the ciphertext.
+If using encryption, the CAM Deployment Service Account credentials file must also be encrypted. To encrypt, open the file and replace the contents of the file with the ciphertext.
 
 #### Encryption Using Python Script
 Alternatively, the kms_secrets_encryption.py Python 3 script under the tools directory can be used to automate the KMS encryption process. 
@@ -118,7 +118,7 @@ Firewall rules are created to allow wide-open access within the VPC, and selecte
 
 A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: ```Administrator``` and ```cam_admin``` (default). Domain Users are also created if a ```domain_users_list``` CSV file is specified. The Domain Controller is given a static IP (configurable).
 
-A Cloud Access Connector is created and registers itself with the CAM service with the given CAM deployment-level service account credentials and PCoIP Registration code.
+A Cloud Access Connector is created and registers itself with the CAM service with the given CAM Deployment Service Account credentials and PCoIP Registration code.
 
 Domain-joined workstations are optionally created, specified by the following parameters:
 - ```win_gfx_instance_count```: Windows Graphics workstation,
