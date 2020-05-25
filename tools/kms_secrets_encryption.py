@@ -33,18 +33,18 @@ def import_or_install_module(pip_package, module_name = None):
 
     try:
         module = importlib.import_module(module_name)
-        print("Successfully imported {}.".format(module_name))
+        print(f"Successfully imported {module_name}.")
 
     except ImportError:
-        install_cmd = "pip3 install {} --user".format(pip_package)
+        install_cmd = f"pip3 install {pip_package} --user"
         subprocess.run(install_cmd.split(' '), check=True)
-        print("Successfully installed {}.".format(pip_package))
+        print(f"Successfully installed {pip_package}.")
 
         module = importlib.import_module(module_name)
-        print("Successfully imported {}.".format(module_name))
+        print(f"Successfully imported {module_name}.")
 
     except Exception as err:
-        print("An exception occurred importing {}.".format(module_name))
+        print(f"An exception occurred importing {module_name}.")
         print("{}\n".format(err))
         raise SystemExit()
 
@@ -193,7 +193,7 @@ class Tfvars_Encryptor_GCP:
         """
 
         try:
-            print("Decrypting file: {}...".format(file_path))
+            print(f"Decrypting file: {file_path}...")
 
             with open(file_path) as f:
                 f_ciphertext = f.read()
@@ -201,7 +201,7 @@ class Tfvars_Encryptor_GCP:
             f_plaintext = self.decrypt_ciphertext(f_ciphertext)
 
             # Removes the .encrypted appended using this encryptor
-            file_path_decrypted = "{}.decrypted".format(file_path).replace(".encrypted", "")
+            file_path_decrypted = f"{file_path}.decrypted".replace(".encrypted", "")
 
             with open(file_path_decrypted, "w") as f:
                 f.write(f_plaintext)
@@ -232,7 +232,7 @@ class Tfvars_Encryptor_GCP:
                 if os.path.isfile(self.tfvars_secrets.get(secret)):
                     self.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_secrets.get(secret))
                 else:
-                    print("Decrypting {}...".format(secret))
+                    print(f"Decrypting {secret}...")
                     self.tfvars_secrets[secret] = self.decrypt_ciphertext(self.tfvars_secrets.get(secret))
             
             # Write encrypted secrets into new terraform.tfvars file
@@ -258,13 +258,13 @@ class Tfvars_Encryptor_GCP:
         """
 
         try:
-            print("Encrypting file: {}...".format(file_path))
+            print(f"Encrypting file: {file_path}...")
             
             with open(file_path) as f:
                 f_string = f.read()
 
             f_encrypted_string = self.encrypt_plaintext(f_string)
-            file_path_encrypted = "{}.encrypted".format(file_path).replace(".decrypted", "")
+            file_path_encrypted = f"{file_path}.encrypted".replace(".decrypted", "")
             
             with open(file_path_encrypted, "w") as f:
                 f.write(f_encrypted_string)
@@ -313,7 +313,7 @@ class Tfvars_Encryptor_GCP:
                 if os.path.isfile(self.tfvars_secrets.get(secret)):
                     self.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_secrets.get(secret))
                 else:
-                    print("Encrypting {}...".format(secret))
+                    print(f"Encrypting {secret}...")
                     self.tfvars_secrets[secret] = self.encrypt_plaintext(self.tfvars_secrets.get(secret))
 
             # Write encrypted secrets into new terraform.tfvars file
@@ -345,14 +345,14 @@ class Tfvars_Encryptor_GCP:
         if crypto_key_id not in crypto_keys_list:
             try:
                 self.create_crypto_key(crypto_key_id)
-                print("Created key: {}\n".format(crypto_key_id))
+                print(f"Created key: {crypto_key_id}\n")
                 
             except Exception as err:
                 print("An exception occurred creating new crypto key:")
                 print("{}".format(err))
                 raise SystemExit()
         else:
-            print("Using existing crypto key: {}\n".format(crypto_key_id))
+            print(f"Using existing crypto key: {crypto_key_id}\n")
         
         return crypto_key_id
 
@@ -375,14 +375,14 @@ class Tfvars_Encryptor_GCP:
         if key_ring_id not in key_rings_list:
             try:
                 self.create_key_ring(key_ring_id)
-                print("Created key ring: {}\n".format(key_ring_id))
+                print(f"Created key ring: {key_ring_id}\n")
         
             except Exception as err:
                 print("An exception occurred creating new key ring:")
                 print("{}".format(err))
                 raise SystemExit()
         else: 
-            print("Using existing key ring: {}\n".format(key_ring_id))
+            print(f"Using existing key ring: {key_ring_id}\n")
 
         return key_ring_id
 
@@ -489,9 +489,9 @@ class Tfvars_Encryptor_GCP:
                 # Append the crypto key path to kms_cryptokey_id line
                 if "kms_cryptokey_id =" in line:
                     if not self.tfvars_data.get("kms_cryptokey_id"):
-                        lines.append("{} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                        lines.append(f"kms_cryptokey_id = \"{self.crypto_key_path}\"")
                     else:
-                        lines.append("# {} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                        lines.append(f"# kms_cryptokey_id = \"{self.crypto_key_path}\"")
                     continue
 
                 # Blank lines and comments are unchanged
@@ -505,13 +505,13 @@ class Tfvars_Encryptor_GCP:
 
                 if key in self.tfvars_secrets.keys():
                     # Left justify all the secrets with space as padding on the right
-                    lines.append("{} = \"{}\"".format(key.ljust(self.max_key_length, " "), self.tfvars_secrets.get(key)))
+                    lines.append(f"{key.ljust(self.max_key_length, ' ')} = \"{self.tfvars_secrets.get(key)}\"")
                 else:
                     lines.append(line)
 
         # Add .backup postfix to the original tfvars file
         print("Creating backup of terraform.tfvars...")
-        os.rename(self.tfvars_path, "{}.backup".format(self.tfvars_path))
+        os.rename(self.tfvars_path, f"{self.tfvars_path}.backup")
 
         # Rewrite the existing terraform.tfvars
         print("Writing new terraform.tfvars...")
