@@ -44,9 +44,8 @@ def import_or_install_module(pip_package, module_name = None):
         print(f"Successfully imported {module_name}.")
 
     except Exception as err:
-        print(f"An exception occurred importing {module_name}.")
-        print("{}\n".format(err))
-        raise SystemExit()
+        print(f"An exception occurred importing {module_name}.\n")
+        raise SystemExit(err)
 
     return module
 
@@ -207,9 +206,8 @@ class Tfvars_Encryptor_GCP:
                 f.write(f_plaintext)
 
         except Exception as err:
-            print("An exception occurred decrypting file.")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred decrypting file.\n")
+            raise SystemExit(err)
         
         return file_path_decrypted
 
@@ -240,9 +238,8 @@ class Tfvars_Encryptor_GCP:
             print("\nSuccessfully decrypted all secrets!\n")
 
         except Exception as err:
-            print("An exception occurred decrypting secrets:")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred decrypting secrets:\n")
+            raise SystemExit(err)
 
 
     def encrypt_file(self, file_path):
@@ -270,9 +267,8 @@ class Tfvars_Encryptor_GCP:
                 f.write(f_encrypted_string)
 
         except Exception as err:
-            print("An exception occurred encrypting the file:")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred encrypting the file:\n")
+            raise SystemExit(err)
         
         return file_path_encrypted
 
@@ -321,9 +317,8 @@ class Tfvars_Encryptor_GCP:
             print("\nSuccessfully encrypted all secrets!\n")
 
         except Exception as err:
-            print("An exception occurred encrypting secrets:")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred encrypting secrets:\n")
+            raise SystemExit(err)
 
 
     def initialize_cryptokey(self, crypto_key_id):
@@ -348,9 +343,8 @@ class Tfvars_Encryptor_GCP:
                 print(f"Created key: {crypto_key_id}\n")
                 
             except Exception as err:
-                print("An exception occurred creating new crypto key:")
-                print("{}".format(err))
-                raise SystemExit()
+                print("An exception occurred creating new crypto key:\n")
+                raise SystemExit(err)
         else:
             print(f"Using existing crypto key: {crypto_key_id}\n")
         
@@ -378,9 +372,8 @@ class Tfvars_Encryptor_GCP:
                 print(f"Created key ring: {key_ring_id}\n")
         
             except Exception as err:
-                print("An exception occurred creating new key ring:")
-                print("{}".format(err))
-                raise SystemExit()
+                print("An exception occurred creating new key ring:\n")
+                raise SystemExit(err)
         else: 
             print(f"Using existing key ring: {key_ring_id}\n")
 
