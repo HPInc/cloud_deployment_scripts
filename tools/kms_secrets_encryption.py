@@ -10,7 +10,6 @@ import base64
 import importlib
 import os
 import subprocess
-from google.oauth2   import service_account
 
 
 SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
