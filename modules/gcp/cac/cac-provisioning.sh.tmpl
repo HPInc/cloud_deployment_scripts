@@ -25,10 +25,14 @@ log() {
 }
 
 install_python() {
-    log "--> Installing Python and Python3..."
+    log "--> Installing Python3..."
     apt-get -qq update
-    apt install -y python
     apt install -y python3
+
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to install Python3. Exiting provisioning script..."
+        exit 1
+    fi
 }
 
 get_credentials() {
@@ -45,25 +49,25 @@ get_credentials() {
         log "--> Script is using encryption key: ${kms_cryptokey_id}"
 
         # Gets access token attribute of response json object
-        token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python -c "import sys, json; print json.load(sys.stdin)['access_token']")
+        token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
 
         # Gets data using access token and decodes it
         log "--> Decrypting PCoIP registration code..."
         data=$(echo "{ \"ciphertext\": \"${pcoip_registration_code}\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
         PCOIP_REGISTRATION_CODE=$(echo "$b64_data" | base64 --decode)
 
         log "--> Decrypting AD service account password..."
         data=$(echo "{ \"ciphertext\": \"${ad_service_account_password}\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
         AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
 
         log "--> Decrypting CAM Deployment Service Account JSON file..."
-        cam_cred_encrypted=$(cat ${cam_deployment_sa_file})
+        cam_cred_encrypted=$(cat $INSTALL_DIR/${cam_deployment_sa_file})
         data=$(echo "{ \"ciphertext\": \"$cam_cred_encrypted\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
+        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
         CAM_CREDENTIALS=$(echo "$b64_data" | base64 --decode)
-        echo $CAM_CREDENTIALS | tee ${cam_deployment_sa_file}
+        echo $CAM_CREDENTIALS | tee $INSTALL_DIR/${cam_deployment_sa_file}
     fi
 }
 
@@ -72,14 +76,14 @@ get_cac_token() {
 
     log "--> Downloading CAM python script from the bucket..."
     gsutil cp gs://${bucket_name}/${cam_script} $INSTALL_DIR
-    chmod +x ${cam_script}
+    chmod +x $INSTALL_DIR/${cam_script}
 
     # Set CAC_TOKEN variable using the script's output
-    CAC_TOKEN=`./${cam_script} ${cam_deployment_sa_file}`
+    CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file}`
 
     # Check and exit startup script if retrieving connector token failed
     if [ $? -ne 0 ]; then
-        log "--> ERROR: Failed to retrieve connector token using CAM script. Exiting startup script..."
+        log "--> ERROR: Failed to retrieve connector token using CAM script. Exiting provisioning script..."
         exit 1
     fi
 }
