@@ -49,7 +49,7 @@ DEPLOYMENT_PATH  = 'deployments/gcp/single-connector'
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
 SECRETS_DIR      = 'secrets'
-SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
+GCP_SA_KEY_PATH  = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
 CAM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cam_deployment_sa_key.json.encrypted'
 
@@ -243,15 +243,6 @@ def ssh_key_create(path):
     subprocess.run(ssh_cmd.split(' '), check=True)
 
 
-def cam_deployment_sa_create_key(service_account, filepath):
-    print('Creating CAM deployment service account key...')
-
-    with open(filepath, 'w+') as keyfile:
-        keyfile.write(service_account)
-
-    print('  Key written to ' + filepath)
-
-
 # Creates a new .tfvar based on the .tfvar.sample file
 def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
@@ -325,7 +316,7 @@ if __name__ == '__main__':
     apis_enable(REQUIRED_APIS)
     sa = service_account_create(sa_email)
     iam_policy_update(sa, SA_ROLES)
-    sa_key = service_account_create_key(sa, SA_KEY_PATH)
+    sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
     print('GCP project setup complete.\n')
 
@@ -338,14 +329,6 @@ if __name__ == '__main__':
 
     print('Creating CAM API key...')
     cam_deployment_key = mycam.deployment_key_create(deployment)
-
-    print('Building CAM deployment service account...')
-    cam_deployment_sa = {
-        'username': cam_deployment_key['username'],
-        'apiKey': cam_deployment_key['apiKey'],
-        'deploymentId': deployment['deploymentId'],
-        'tenantId': cam_deployment_key['tenantId']
-    }
 
     print('Cloud Access Manager setup complete.\n')
 
@@ -391,16 +374,20 @@ if __name__ == '__main__':
 
     password = kms_encode(key_name, password)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'))
-    cam_deployment_sa = kms_encode(key_name, json.dumps(cam_deployment_sa))
+    cam_deployment_key = kms_encode(key_name, json.dumps(cam_deployment_key))
 
     print('Done encrypting secrets.')
 
-    cam_deployment_sa_create_key(cam_deployment_sa, CAM_DEPLOYMENT_SA_KEY_PATH)
+    print('Creating CAM Deployment Service Account Key...')
+    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
+        keyfile.write(cam_deployment_key)
+
+    print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
     #TODO: refactor this to work with more types of deployments
     settings = {
-        'gcp_credentials_file':           SA_KEY_PATH,
+        'gcp_credentials_file':           GCP_SA_KEY_PATH,
         'gcp_project_id':                 PROJECT_ID,
         'gcp_service_account':            sa_email,
         'kms_cryptokey_id':               key_name,
