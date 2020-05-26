@@ -115,7 +115,7 @@ resource "google_compute_firewall" "allow-dns" {
 }
 
 resource "google_compute_subnetwork" "dc-subnet" {
-  name          = "${local.prefix}subnet-dc"
+  name          = "${local.prefix}${var.dc_subnet_name}"
   ip_cidr_range = var.dc_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }

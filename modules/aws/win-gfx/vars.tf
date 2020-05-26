@@ -10,7 +10,7 @@ variable "prefix" {
   default     = ""
 }
 
-variable "name" {
+variable "instance_name" {
   description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
   default     = "gwin"
 }

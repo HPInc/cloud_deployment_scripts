@@ -166,7 +166,7 @@ resource "google_compute_firewall" "allow-google-dns" {
 }
 
 resource "google_compute_subnetwork" "dc-subnet" {
-  name          = "${local.prefix}subnet-dc"
+  name          = "${local.prefix}${var.dc_subnet_name}"
   ip_cidr_range = var.dc_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
@@ -174,14 +174,14 @@ resource "google_compute_subnetwork" "dc-subnet" {
 resource "google_compute_subnetwork" "cac-subnets" {
   count = length(var.cac_region_list)
 
-  name          = "${local.prefix}subnet-cac-${var.cac_region_list[count.index]}"
+  name          = "${local.prefix}${var.cac_subnet_name}-${var.cac_region_list[count.index]}"
   region        = var.cac_region_list[count.index]
   ip_cidr_range = var.cac_subnet_cidr_list[count.index]
   network       = google_compute_network.vpc.self_link
 }
 
 resource "google_compute_subnetwork" "ws-subnet" {
-  name          = "${local.prefix}subnet-ws"
+  name          = "${local.prefix}${var.ws_subnet_name}"
   ip_cidr_range = var.ws_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }

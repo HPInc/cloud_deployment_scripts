@@ -38,13 +38,18 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
 }
 
 variable "vpc_cidr" {
   description = "CIDR for the VPC containing the CAS deployment"
   default     = "10.0.0.0/16" 
+}
+
+variable "dc_subnet_name" {
+  description = "Name for subnet containing the Domain Controller"
+  default     = "subnet-dc"
 }
 
 variable "dc_subnet_cidr" {
@@ -74,7 +79,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.04.15"
+  default     = "Windows_Server-2019-English-Full-Base-2020.05.13"
 }
 
 variable "domain_name" {
@@ -113,8 +118,13 @@ variable "cac_zone_list" {
   type        = list(string)
 }
 
+variable "cac_subnet_name" {
+  description = "Name for subnets containing the Cloud Access Connector"
+  default     = "subnet-cac"
+}
+
 variable "cac_subnet_cidr_list" {
-  description = "CIDRs for subnet containing the Cloud Access Connector"
+  description = "CIDRs for subnets containing the Cloud Access Connector"
   type        = list(string)
 }
 
@@ -140,7 +150,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200408"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200430"
 }
 
 variable "admin_ssh_key_name" {
@@ -178,6 +188,11 @@ variable "cam_url" {
   default     = "https://cam.teradici.com"
 }
 
+variable "ws_subnet_name" {
+  description = "Name for subnet containing Remote Workstations"
+  default     = "subnet-ws"
+}
+
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
   default     = "10.0.2.0/24"
@@ -191,6 +206,11 @@ variable "enable_workstation_public_ip" {
 variable "win_gfx_instance_count" {
   description = "Number of Windows Graphics Workstations"
   default     = 0
+}
+
+variable "win_gfx_instance_name" {
+  description = "Name for Windows Graphics Workstations"
+  default     = "gwin"
 }
 
 # G4s are Tesla T4s
@@ -212,12 +232,17 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.04.15"
+  default     = "Windows_Server-2019-English-Full-Base-2020.05.13"
 }
 
 variable "win_std_instance_count" {
   description = "Number of Windows Standard Workstations"
   default     = 0
+}
+
+variable "win_std_instance_name" {
+  description = "Name for Windows Standard Workstations"
+  default     = "swin"
 }
 
 variable "win_std_instance_type" {
@@ -237,12 +262,17 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.04.15"
+  default     = "Windows_Server-2019-English-Full-Base-2020.05.13"
 }
 
 variable "centos_gfx_instance_count" {
   description = "Number of CentOS Graphics Workstations"
   default     = 0
+}
+
+variable "centos_gfx_instance_name" {
+  description = "Name for CentOS Graphics Workstations"
+  default     = "gcent"
 }
 
 # G4s are Tesla T4s
@@ -275,6 +305,11 @@ variable "centos_gfx_ami_name" {
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0
+}
+
+variable "centos_std_instance_name" {
+  description = "Name for CentOS Standard Workstations"
+  default     = "scent"
 }
 
 variable "centos_std_instance_type" {

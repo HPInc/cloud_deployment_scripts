@@ -43,8 +43,13 @@ variable "allowed_admin_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
+}
+
+variable "dc_subnet_name" {
+  description = "Name for subnet containing the Domain Controller"
+  default     = "subnet-dc"
 }
 
 variable "dc_subnet_cidr" {
@@ -69,7 +74,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 }
 
 variable "dc_admin_password" {

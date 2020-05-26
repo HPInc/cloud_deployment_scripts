@@ -10,7 +10,7 @@ locals {
 
   # Windows computer names must be <= 15 characters, minus 4 chars for "-xyz"
   # where xyz is number of instances (0-999)
-  host_name = substr("${local.prefix}${var.name}", 0, 11)
+  host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
 
   enable_public_ip = var.enable_public_ip ? [true] : []
   provisioning_script = "win-std-provisioning.ps1"

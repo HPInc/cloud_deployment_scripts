@@ -48,8 +48,13 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name of VPC to create"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
+}
+
+variable "dc_subnet_name" {
+  description = "Name for subnet containing the Domain Controller"
+  default     = "subnet-dc"
 }
 
 variable "dc_subnet_cidr" {
@@ -74,12 +79,17 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 }
 
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+}
+
+variable "cac_subnet_name" {
+  description = "Name for subnet containing the Cloud Access Connector"
+  default     = "subnet-cac"
 }
 
 variable "cac_subnet_cidr" {
@@ -104,7 +114,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200430"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200521"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -154,6 +164,11 @@ variable "domain_users_list" {
   default     = ""
 }
 
+variable "ws_subnet_name" {
+  description = "Name for subnet containing Remote Workstations"
+  default     = "subnet-ws"
+}
+
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
   default     = "10.0.2.0/24"
@@ -195,8 +210,13 @@ variable "minutes_cpu_polling_interval" {
 }
 
 variable "win_gfx_instance_count" {
-  description = "Number of Windows Grpahics Workstations"
+  description = "Number of Windows Graphics Workstations"
   default     = 0
+}
+
+variable "win_gfx_instance_name" {
+  description = "Name for Windows Graphics Workstations"
+  default     = "gwin"
 }
 
 variable "win_gfx_machine_type" {
@@ -221,12 +241,17 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 }
 
 variable "win_std_instance_count" {
   description = "Number of Windows Standard Workstations"
   default     = 0
+}
+
+variable "win_std_instance_name" {
+  description = "Name for Windows Standard Workstations"
+  default     = "swin"
 }
 
 variable "win_std_machine_type" {
@@ -241,12 +266,17 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 }
 
 variable "centos_gfx_instance_count" {
-  description = "Number of CentOS Grpahics Workstations"
+  description = "Number of CentOS Graphics Workstations"
   default     = 0
+}
+
+variable "centos_gfx_instance_name" {
+  description = "Name for CentOS Graphics Workstations"
+  default     = "gcent"
 }
 
 variable "centos_gfx_machine_type" {
@@ -271,12 +301,17 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200429"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200521"
 }
 
 variable "centos_std_instance_count" {
   description = "Number of CentOS Standard Workstations"
   default     = 0
+}
+
+variable "centos_std_instance_name" {
+  description = "Name for CentOS Standard Workstations"
+  default     = "scent"
 }
 
 variable "centos_std_machine_type" {
@@ -291,7 +326,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200429"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200521"
 }
 
 variable "centos_admin_user" {

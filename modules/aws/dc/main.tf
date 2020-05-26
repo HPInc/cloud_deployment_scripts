@@ -219,7 +219,7 @@ resource "null_resource" "upload-domain-users-list" {
   }
 
   provisioner "file" {
-    source      = "domain_users_list.csv"
+    source      = var.domain_users_list
     destination = local.domain_users_list_file
   }
 }
