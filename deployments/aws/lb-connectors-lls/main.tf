@@ -212,7 +212,7 @@ module "cac" {
   admin_ssh_key_name = local.admin_ssh_key_name
 }
 
-resource "aws_lb_target_group_attachment" "cac-tg-attachement" {
+resource "aws_lb_target_group_attachment" "cac-tg-attachment" {
   count            = length(module.cac.instance-id)
 
   target_group_arn = aws_lb_target_group.cac-tg.arn
