@@ -10,7 +10,7 @@ locals {
 
   # Windows computer names must be <= 15 characters
   host_name                  = substr("${local.prefix}vm-dc", 0, 15)
-  provisioning_file                 = "C:/Temp/provisioning.ps1"
+  provisioning_file          = "C:/Temp/provisioning.ps1"
   new_domain_admin_user_file = "C:/Temp/new_domain_admin_user.ps1"
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
