@@ -1,5 +1,6 @@
 # Commented out lines represent defaults that can be changed.
-# On Windows systems, the default backslash \ path separator must be changed to forward slash / for any path variables.
+# On Windows systems, the default backslash \ path separator must be changed 
+# to forward slash / for any path variables.
 # Example: aws_credentials_file = "C:/path/to/aws_key"
 
 # Path to an AWS Credentials File. Please see
@@ -80,8 +81,8 @@ centos_std_instance_count = 0
 # For option 1, leave "customer_master_key_id" commented out and enter the
 # plaintext passwords as strings in the variables below. Note that plaintext
 # passwords may show in Terraform logs and .tfstate files, appear unencrypted
-# in the storage bucket holding the provisioning scripts, as well as in the provisioning
-# scripts once downloaded by the VMs.
+# in the storage bucket holding the provisioning scripts, as well as in the 
+# provisioning scripts once downloaded by the VMs.
 #
 # For option 2, a user encrypts the secrets independent of these Terraform
 # scripts. Once the secrets are encrypted with an AWS KMS customer managed
