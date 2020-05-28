@@ -6,10 +6,30 @@
  */
 
 locals {
-  prefix            = var.prefix != "" ? "${var.prefix}-" : ""
-  provisioning_script    = "cac-provisioning.sh"
+  prefix = var.prefix != "" ? "${var.prefix}-" : ""
+
+  provisioning_script  = "cac-provisioning.sh"
+  cam_script           = "cac-cam.py"
+  cam_deployment_sa_file = "cam-cred.json"
+  
   ssl_key_filename  = var.ssl_key == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+}
+
+resource "google_storage_bucket_object" "cam-deployment-sa-file" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  bucket  = var.bucket_name
+  name    = local.cam_deployment_sa_file
+  source  = var.cam_deployment_sa_file
+}
+
+resource "google_storage_bucket_object" "cac-cam-script" {
+  count = tonumber(var.instance_count) == 0 ? 0 : 1
+
+  bucket  = var.bucket_name
+  name   = local.cam_script
+  source = "${path.module}/${local.cam_script}"
 }
 
 resource "google_storage_bucket_object" "ssl-key" {
@@ -31,11 +51,6 @@ resource "google_storage_bucket_object" "ssl-cert" {
 resource "google_storage_bucket_object" "cac-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  depends_on = [
-    google_storage_bucket_object.ssl-key,
-    google_storage_bucket_object.ssl-cert,
-  ]
-
   bucket  = var.bucket_name
   name    = local.provisioning_script
   content = templatefile(
@@ -44,7 +59,8 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
       cac_installer_url           = var.cac_installer_url,
-      cac_token                   = var.cac_token,
+      cam_deployment_sa_file      = local.cam_deployment_sa_file,
+      cam_script                  = local.cam_script,
       pcoip_registration_code     = var.pcoip_registration_code,
 
       domain_controller_ip        = var.domain_controller_ip,
@@ -62,6 +78,15 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
 
 resource "google_compute_instance" "cac" {
   count = var.instance_count
+
+  depends_on = [
+    google_storage_bucket_object.ssl-key,
+    google_storage_bucket_object.ssl-cert,
+    google_storage_bucket_object.cam-deployment-sa-file,
+    google_storage_bucket_object.cac-cam-script,
+    # Provisioning script dependency should be inferred by Terraform
+    # google_storage_bucket_object.cac-provisioning-script,
+  ]
 
   provider     = google
   name         = "${local.prefix}${var.host_name}-${count.index}"

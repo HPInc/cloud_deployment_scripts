@@ -48,6 +48,22 @@ class CloudAccessManager:
         )
         resp.raise_for_status()
 
+    def deployment_key_create(self, deployment, name='sa-key-1'):
+        key_details = {
+            'deploymentId': deployment['deploymentId'],
+            'keyName': name
+        }
+
+        # this is the deployment service account endpoint
+        resp = requests.post(
+            self.url + '/api/v1/auth/keys',
+            headers = self.header,
+            json = key_details
+        )
+        resp.raise_for_status()
+
+        return resp.json()['data']
+
     def connector_create(self, name, deployment):
         connector_details = {
             'createdBy':     deployment['createdBy'],
