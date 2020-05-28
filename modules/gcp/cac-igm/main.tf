@@ -86,6 +86,13 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
 resource "google_compute_instance_template" "cac-template" {
   count = local.num_regions
 
+  depends_on = [
+    google_storage_bucket_object.cam-deployment-sa-file,
+    google_storage_bucket_object.cac-cam-script,
+    # Provisioning script dependency should be inferred by Terraform
+    # google_storage_bucket_object.cac-provisioning-script,
+  ]
+
   name_prefix = "${local.prefix}template-cac-${var.gcp_zone_list[count.index]}"
 
   machine_type = var.machine_type

@@ -16,7 +16,7 @@ locals {
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
 }
 
-resource "google_storage_bucket_object" "cam-credentials-file" {
+resource "google_storage_bucket_object" "cam-deployment-sa-file" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   bucket  = var.bucket_name
@@ -51,11 +51,6 @@ resource "google_storage_bucket_object" "ssl-cert" {
 resource "google_storage_bucket_object" "cac-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  depends_on = [
-    google_storage_bucket_object.ssl-key,
-    google_storage_bucket_object.ssl-cert,
-  ]
-
   bucket  = var.bucket_name
   name    = local.provisioning_script
   content = templatefile(
@@ -83,6 +78,15 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
 
 resource "google_compute_instance" "cac" {
   count = var.instance_count
+
+  depends_on = [
+    google_storage_bucket_object.ssl-key,
+    google_storage_bucket_object.ssl-cert,
+    google_storage_bucket_object.cam-deployment-sa-file,
+    google_storage_bucket_object.cac-cam-script,
+    # Provisioning script dependency should be inferred by Terraform
+    # google_storage_bucket_object.cac-provisioning-script,
+  ]
 
   provider     = google
   name         = "${local.prefix}${var.host_name}-${count.index}"
