@@ -8,7 +8,6 @@
 import base64
 import datetime
 import getpass
-import googleapiclient.discovery
 import json
 import os
 import shutil
@@ -43,8 +42,12 @@ CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
 
-CFG_FILE_PATH    = 'gcp-cloudshell-quickstart.cfg'
-DEPLOYMENT_PATH  = 'deployments/gcp/single-connector'
+HOME               = os.path.expanduser('~')
+TERRAFORM_BIN_DIR  = f'{HOME}/bin'
+TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
+CFG_FILE_PATH      = 'gcp-cloudshell-quickstart.cfg'
+DEPLOYMENT_PATH    = 'deployments/gcp/single-connector'
+
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
@@ -101,6 +104,25 @@ def check_requirements():
         print('See: https://cloud.google.com/sdk/gcloud/reference/config/set')
         print('')
         sys.exit(1)
+
+    path = shutil.which('terraform')
+    if not path:
+        install_permission = input("Terraform is not installed, proceed with installation (y/N)? ").strip().lower()
+        if install_permission not in ('y', 'yes'):
+            print('Terraform is required for deployment. Exiting...')
+            sys.exit(1)
+
+    try:
+        import googleapiclient.discovery
+        from google.cloud import kms_v1
+        from google.cloud.kms_v1 import enums
+        from google.api_core import exceptions as google_exc
+
+    except ImportError as err:
+        install_permission = input("Google Cloud module is not installed, proceed with installation (y/N)? ").strip().lower()
+        if install_permission not in ('y', 'yes'):
+            print('Google Cloud modules are required for deployment. Exiting...')
+            sys.exit(1)
 
 
 def quickstart_config_read(cfg_file):
@@ -164,7 +186,7 @@ def service_account_create(email):
 
     service_account = service_account_find(email)
     if service_account:
-        print('  Service account {} already exist.'.format(email))
+        print('  Service account {} already exists.'.format(email))
         return service_account
 
     service_account = iam_service.projects().serviceAccounts().create(
@@ -247,9 +269,9 @@ def ssh_key_create(path):
 def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     if os.path.exists(tfvar_file_path):
-        overwrite = input("Found an existing .tfvar file, overwrite (y/N)?").strip().lower()
+        overwrite = input("Found an existing .tfvar file, overwrite (y/N)? ").strip().lower()
         if overwrite not in ('y', 'yes'):
-            print('{} already exist. Exiting...'.format(tfvar_file_path))
+            print('{} already exists. Exiting...'.format(tfvar_file_path))
             sys.exit(1)
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
@@ -275,15 +297,28 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
 
 def terraform_install():
-    # Don't attempt to install unless needed, since it requires sudo
-    if not shutil.which('terraform'):
-        install_cmd = 'sudo python3 install-terraform.py'
-        subprocess.run(install_cmd.split(' '), check=True)
 
+    path = shutil.which('terraform')
+    if path:
+        print('Terraform already installed in ' + path)
+        TERRAFORM_BIN_PATH = path
+        return
 
-def kms_python_client_install():
-    install_cmd = 'sudo pip3 install google-cloud-kms'
+    # Don't attempt to install unless needed
+    install_cmd = f'python3 install-terraform.py {TERRAFORM_BIN_DIR}'
     subprocess.run(install_cmd.split(' '), check=True)
+
+
+def google_python_modules_install():
+    install_cmd = 'pip3 install google-cloud-kms --user'
+    subprocess.run(install_cmd.split(' '), check=True)
+
+    install_cmd = 'pip3 install google-cloud --user'
+    subprocess.run(install_cmd.split(' '), check=True)
+
+    install_cmd = 'pip3 install google-api-core --user'
+    subprocess.run(install_cmd.split(' '), check=True)
+
 
 if __name__ == '__main__':
     check_requirements()
@@ -294,7 +329,7 @@ if __name__ == '__main__':
 
     print('Preparing local requirements...')
     terraform_install()
-    kms_python_client_install()
+    google_python_modules_install()
     os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
     # Paths passed into terraform.tfvars should be absolute paths
@@ -304,13 +339,14 @@ if __name__ == '__main__':
         print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
         os.mkdir(SECRETS_DIR, 0o700)
     except FileExistsError:
-        print('Directory {} already exist.'.format(SECRETS_DIR))
+        print('Directory {} already exists.'.format(SECRETS_DIR))
 
     ssh_key_create(SSH_KEY_PATH)
 
     print('Local requirements setup complete.\n')
 
     print('Setting GCP project...')
+    import googleapiclient.discovery
     sa_email = '{}@{}.iam.gserviceaccount.com'.format(SA_ID, PROJECT_ID)
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
@@ -410,13 +446,13 @@ if __name__ == '__main__':
     # update tfvar
     tf_vars_create(TF_VARS_REF_PATH, TF_VARS_PATH, settings)
 
-    tf_cmd = 'terraform init'
+    tf_cmd = f'{TERRAFORM_BIN_PATH} init'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    tf_cmd = 'terraform apply -auto-approve'
+    tf_cmd = f'{TERRAFORM_BIN_PATH} apply -auto-approve'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    comp_proc = subprocess.run(['terraform','output','cac-public-ip'],
+    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','cac-public-ip'],
                                check=True,
                                stdout=subprocess.PIPE)
     cac_public_ip = comp_proc.stdout.decode().split('"')[1]

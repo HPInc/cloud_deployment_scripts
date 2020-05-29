@@ -3,18 +3,24 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import os
+import pathlib
 import shutil
 import sys
 import urllib.request
 import zipfile
 
+
 TEMP_DIR           = '/tmp'
 TERRAFORM_VERSION  = '0.12.3'
-TERRAFORM_BIN_DIR  = '/usr/local/bin'
+HOME               = os.path.expanduser('~')
+TERRAFORM_BIN_DIR  = f'{HOME}/bin'
 TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
 
+
 def terraform_install(version=TERRAFORM_VERSION):
+
     zip_filename = 'terraform_{}_linux_amd64.zip'.format(version)
     download_url = 'https://releases.hashicorp.com/terraform/{}/{}'.format(version, zip_filename)
     local_zip_file = TEMP_DIR + '/' + zip_filename
@@ -23,6 +29,7 @@ def terraform_install(version=TERRAFORM_VERSION):
     urllib.request.urlretrieve(download_url, local_zip_file)
 
     print('Extracting to {}...'.format(TERRAFORM_BIN_DIR))
+    pathlib.Path(TERRAFORM_BIN_DIR).mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(local_zip_file) as tf_zip_file:
         tf_zip_file.extractall(TERRAFORM_BIN_DIR)
 
@@ -35,14 +42,19 @@ def terraform_install(version=TERRAFORM_VERSION):
 
 
 if __name__ == '__main__':
+    # Set up argparse
+    parser_description = ('Installs Terraform in the specified directory.')
 
+    parser = argparse.ArgumentParser(description=parser_description)
+    parser.add_argument('dir', help='specify the directory to install Terraform')
+    args = parser.parse_args()
+
+    TERRAFORM_BIN_DIR = args.dir
+
+    # Don't attempt to install unless needed
     path = shutil.which('terraform')
     if path:
         print('Terraform already installed in ' + path)
         sys.exit()
-
-    if os.geteuid() != 0:
-        print('Must run as root to install Terraform.')
-        sys.exit(1)
 
     terraform_install()
