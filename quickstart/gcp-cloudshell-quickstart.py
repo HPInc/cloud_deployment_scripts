@@ -91,8 +91,10 @@ Next steps:
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
-  2. In GCP cloudshell, change directory using the command "cd ~/cloud_deployment_scripts/{deployment_path}"
+  2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{deployment_path}"
   3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
+     Note: If Terraform was installed using this quickstart script, execute the following command instead.
+     "~/bin/terraform destroy"
   4. Log in to https://cam.teradici.com and delete the deployment named
      "quickstart_deployment_<timestamp>"
 """
