@@ -133,7 +133,7 @@ join_domain() {
         yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python
 
         log "--> Joining the domain '${domain_name}'..."
-        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" >&2
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" >&2
 
         exitCode=$?
         if [[ $exitCode -eq 0 ]]

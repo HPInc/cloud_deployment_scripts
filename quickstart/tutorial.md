@@ -94,7 +94,7 @@ The script should take approximately 25 minutes to run.
 Region:                   "us-west2"
 Zone:                     "us-west2-b"
 Network:                  "vpc-cas"
-Subnetowrk:               "subnet-ws"
+Subnetwork:               "subnet-ws"
 Domain name:              "example.com"
 Domain service account:   "cam_admin"
 Service account password: <set by you at start of script>

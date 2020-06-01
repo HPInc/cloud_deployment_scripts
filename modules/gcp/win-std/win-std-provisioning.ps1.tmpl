@@ -206,7 +206,7 @@ function Install-Idle-Shutdown {
     $cpuPollingIntervalRegKeyName = "PollingIntervalMinutes"
 
     if (!(Test-Path $idleShutdownRegKeyPath)) {
-        New-Item -Path $idleTimerRegKeyPath -Force
+        New-Item -Path $idleShutdownRegKeyPath -Force
     }
     New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
     New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $CPU_POLLING_INTERVAL -PropertyType DWORD -Force
