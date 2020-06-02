@@ -1,5 +1,6 @@
-# Commented out lines represents defaults that can be changed
-# On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
+# Commented out lines represent defaults that can be changed.
+# On Windows systems, the default backslash \ path separator must be changed 
+# to forward slash / for any path variables.
 # Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
 gcp_credentials_file = "/path/to/gcp_cred.json"

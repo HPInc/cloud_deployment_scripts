@@ -15,6 +15,7 @@ $DATA.Add("account_password", "${account_password}")
 
 function Decrypt-Credentials {
     try {
+        "--> Decrypting account_password..."
         $ByteAry = [System.Convert]::FromBase64String("${account_password}")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream 
@@ -22,7 +23,7 @@ function Decrypt-Credentials {
         $DATA."account_password" = $StreamRead.ReadToEnd()
     }
     catch {
-        "Error decrypting credentials: $_"
+        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -30,27 +31,26 @@ function Decrypt-Credentials {
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
 if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
-    "Not using encryption"
+    "--> Script is not using encryption for secrets."
 } else {
-    "Using encryption key ${customer_master_key_id}"
+    "--> Script is using encryption key ${customer_master_key_id} for secrets."
     Decrypt-Credentials
 }
 
-Write-Output "================================================================"
-Write-Output "Creating new AD Domain Admin account ${account_name}..."
-Write-Output "================================================================"
-
+"================================================================"
+"Creating new AD Domain Admin account ${account_name}..."
+"================================================================"
 do {
     Try {
         $Retry = $false
         New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force) -Enabled $True -PasswordNeverExpires $True
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
-        $_.Exception.Message
+        "--> $($_.Exception.Message)"
 
         if ($Elapsed -ge $Timeout) {
-            Write-Output "Error: Timed out trying to create new AD acccount."
-            exit
+            "--> ERROR: Timed out trying to create new AD acccount, exiting..."
+            exit 1
         }
 
         "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"

@@ -31,7 +31,7 @@ if (rpm -q pcoip-agent-graphics); then
     exit
 fi
 
-# download startup script if first run
+# download provisioning script if first run
 if [[ ! -f "$INST_LOG_FILE" ]]
 then
     yum -y update
