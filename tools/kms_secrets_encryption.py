@@ -10,17 +10,18 @@ import base64
 import importlib
 import os
 import subprocess
+import sys
 
 
 SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
 
 
-def import_or_install_module(pip_package, module_name = None):
+def import_or_install_module(pip_package_name, module_name = None):
     """A function that imports a Python top-level package or module. 
     If the required package is not installed, it will install the package before importing it again.
 
     Args:
-        pip_package (str): the name of the pip package to be installed
+        pip_package_name (str): the name of the pip package to be installed
         module_name (str): the import name of the module if it is different than the pip package name
 
     Returns:
@@ -28,16 +29,28 @@ def import_or_install_module(pip_package, module_name = None):
     """
 
     if module_name is None:
-        module_name = pip_package
+        module_name = pip_package_name
 
     try:
         module = importlib.import_module(module_name)
         print(f"Successfully imported {module_name}.")
 
     except ImportError:
-        install_cmd = f"pip3 install {pip_package} --user"
-        subprocess.run(install_cmd.split(' '), check=True)
-        print(f"Successfully installed {pip_package}.")
+        install_permission = input(
+            f"This script requires {pip_package_name} but it is not installed.\n"
+            f"Proceed to install this package by running 'python3 -m pip install {pip_package_name} --user' (y/N)? ").strip().lower()
+
+        if install_permission not in ('y', 'yes'):
+            print(f"{pip_package_name} is not installed. Exiting...")
+            sys.exit(1)
+
+        install_cmd = f'{sys.executable} -m pip install {pip_package_name} --user'
+        subprocess.check_call(install_cmd.split(' '))
+
+        print(f"Successfully installed {pip_package_name}.")
+
+        # Recommended to clear cache after installing python packages for dynamic imports
+        importlib.invalidate_caches()
 
         module = importlib.import_module(module_name)
         print(f"Successfully imported {module_name}.")
@@ -89,7 +102,7 @@ class Tfvars_Encryptor_GCP:
         """Tfvars_Encryptor_GCP Class Constructor to initialize the object.
         
         Args: 
-            tfvars_path (str):      a full path to the terraform.tfvars file
+            tfvars_path (str): a full path to the terraform.tfvars file
         """
 
         # Read tfvars data and secrets into dictionaries
@@ -217,7 +230,7 @@ class Tfvars_Encryptor_GCP:
         This method contains the logic for handling the decryption of the secrets 
         and any file paths associated with it using GCP KMS. Once decrypted, it calls 
         write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
-        """    
+        """
 
         # Set crypto key path to use kms_cryptokey_id
         self.crypto_key_path = self.tfvars_data.get("kms_cryptokey_id")
@@ -554,4 +567,3 @@ if __name__ == '__main__':
     service_account = import_or_install_module("google_oauth2_tool", "google.oauth2.service_account")
 
     main()
-

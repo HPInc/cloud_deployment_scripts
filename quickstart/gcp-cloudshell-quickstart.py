@@ -8,6 +8,7 @@
 import base64
 import datetime
 import getpass
+import importlib
 import json
 import os
 import shutil
@@ -38,6 +39,10 @@ REQUIRED_APIS = [
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
 CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
+
+# Install flags
+INSTALL_TERRAFORM        = False
+INSTALL_GOOGLE_LIBRARIES = False
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
@@ -93,13 +98,12 @@ Next steps:
      properly destroy resources it created.
   2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{deployment_path}"
   3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
-     Note: If Terraform was installed using this quickstart script, execute the following command instead.
-     "~/bin/terraform destroy"
+     "{terraform_path} destroy"
   4. Log in to https://cam.teradici.com and delete the deployment named
      "quickstart_deployment_<timestamp>"
 """
 
-def check_requirements():
+def ensure_requirements():
     if not PROJECT_ID:
         print('The PROJECT property has not been set.')
         print('Please run "gcloud config set project [PROJECT_ID]" to set the project.')
@@ -107,24 +111,94 @@ def check_requirements():
         print('')
         sys.exit(1)
 
+    ensure_google_libraries()
+    ensure_terraform()
+
+
+def ensure_google_libraries():
+    """A function that ensures Google libraries are installed. 
+
+    The function first tries to import the required Google libraries and if the required packages
+    are not installed, it will prompt the user to install these packages in the user's home directory. 
+    """
+
+    global INSTALL_GOOGLE_LIBRARIES
+
+    google_libraries_import = """
+import googleapiclient.discovery
+from google.cloud import kms_v1
+from google.cloud.kms_v1 import enums
+from google.api_core import exceptions as google_exc
+"""
+
+    try:
+        exec(google_libraries_import, globals())
+        print('Successfully imported Google libraries.\n')
+
+    except ImportError as err:
+        INSTALL_GOOGLE_LIBRARIES = True
+
+    if INSTALL_GOOGLE_LIBRARIES:
+        google_libraries = 'google-api-python-client grpc-google-iam-v1 google-cloud google-cloud-kms'
+
+        install_permission = input(
+            'One or more of the following Python packages are missing:\n'
+            f'  {google_libraries}\n\n'
+            'The script can install these packages in the user\'s home directory using the following command:\n' 
+            f'  (i.e. {sys.executable} -m pip install {google_libraries} --user)\n'
+            'Proceed? (y/n)? ').strip().lower()
+
+        if install_permission not in ('y', 'yes'):
+            print('Google libraries are required for deployment. Exiting...')
+            sys.exit(1)
+
+        install_cmd = f'{sys.executable} -m pip install {google_libraries} --user'
+        subprocess.check_call(install_cmd.split(' '))
+
+        # Recommended to clear cache after installing python packages for dynamic imports
+        importlib.invalidate_caches()
+
+        exec(google_libraries_import, globals())
+
+
+def ensure_terraform():
+    """A function that ensures Terraform version >= 0.12 is installed. 
+
+    The function first checks if Terraform is installed in the user's system and if Terraform
+    is not installed, or it is not version >= 0.12, it will prompt the user to install Terraform
+    in the user's home directory. 
+    """
+
+    global INSTALL_TERRAFORM
+    global TERRAFORM_BIN_PATH
+
     path = shutil.which('terraform')
-    if not path:
-        install_permission = input("Terraform is not installed, proceed with installation (y/N)? ").strip().lower()
+
+    if path:
+        cmd = 'terraform -v'
+        # Run the command 'terraform -v' and use the first line as the Terraform version
+        terraform_version = subprocess.run(cmd.split(' '),  stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()[0]
+        
+        print(f'Found {terraform_version} in {path}.\n')
+
+        if 'v0.12.' not in terraform_version:
+            INSTALL_TERRAFORM = True
+        else:
+            TERRAFORM_BIN_PATH = path
+    else:
+        INSTALL_TERRAFORM = True
+
+    if INSTALL_TERRAFORM:
+        install_permission = input(
+            'This system is missing Terraform version >= 0.12.\n'
+            f'Proceed to download and install Terraform in {TERRAFORM_BIN_DIR} (y/n)? ').strip().lower()
+
         if install_permission not in ('y', 'yes'):
             print('Terraform is required for deployment. Exiting...')
             sys.exit(1)
 
-    try:
-        import googleapiclient.discovery
-        from google.cloud import kms_v1
-        from google.cloud.kms_v1 import enums
-        from google.api_core import exceptions as google_exc
-
-    except ImportError as err:
-        install_permission = input("Google Cloud module is not installed, proceed with installation (y/N)? ").strip().lower()
-        if install_permission not in ('y', 'yes'):
-            print('Google Cloud modules are required for deployment. Exiting...')
-            sys.exit(1)
+        install_cmd = f'python3 install-terraform.py {TERRAFORM_BIN_DIR}'
+        subprocess.run(install_cmd.split(' '), check=True)
 
 
 def quickstart_config_read(cfg_file):
@@ -143,18 +217,18 @@ def quickstart_config_read(cfg_file):
 
 def ad_password_get():
     txt = r'''
-    Please enter a password for the Active Directory Administrator.
+Please enter a password for the Active Directory Administrator.
 
-    Note Windows password complexity requirements:
-    1. Must not contain user's account name or display name
-    2. Must have 3 of the following categories:
-       - A-Z
-       - a-z
-       - 0-9
-       - special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
-       - unicode characters
+Note Windows password complexity requirements:
+1. Must not contain user's account name or display name
+2. Must have 3 of the following categories:
+- A-Z
+- a-z
+- 0-9
+- special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+- unicode characters
 
-    See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
     '''
     print(txt)
     while True:
@@ -271,7 +345,7 @@ def ssh_key_create(path):
 def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     if os.path.exists(tfvar_file_path):
-        overwrite = input("Found an existing .tfvar file, overwrite (y/N)? ").strip().lower()
+        overwrite = input("Found an existing .tfvar file, overwrite (y/n)? ").strip().lower()
         if overwrite not in ('y', 'yes'):
             print('{} already exists. Exiting...'.format(tfvar_file_path))
             sys.exit(1)
@@ -298,40 +372,14 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
                 sys.exit(1)
 
 
-def terraform_install():
-
-    path = shutil.which('terraform')
-    if path:
-        print('Terraform already installed in ' + path)
-        TERRAFORM_BIN_PATH = path
-        return
-
-    # Don't attempt to install unless needed
-    install_cmd = f'python3 install-terraform.py {TERRAFORM_BIN_DIR}'
-    subprocess.run(install_cmd.split(' '), check=True)
-
-
-def google_python_modules_install():
-    install_cmd = 'pip3 install google-cloud-kms --user'
-    subprocess.run(install_cmd.split(' '), check=True)
-
-    install_cmd = 'pip3 install google-cloud --user'
-    subprocess.run(install_cmd.split(' '), check=True)
-
-    install_cmd = 'pip3 install google-api-core --user'
-    subprocess.run(install_cmd.split(' '), check=True)
-
-
 if __name__ == '__main__':
-    check_requirements()
+    ensure_requirements()
 
     cfg_data = quickstart_config_read(CFG_FILE_PATH)
 
     password = ad_password_get()
 
     print('Preparing local requirements...')
-    terraform_install()
-    google_python_modules_install()
     os.chdir('../')
     os.chdir(DEPLOYMENT_PATH)
     # Paths passed into terraform.tfvars should be absolute paths
@@ -348,7 +396,6 @@ if __name__ == '__main__':
     print('Local requirements setup complete.\n')
 
     print('Setting GCP project...')
-    import googleapiclient.discovery
     sa_email = '{}@{}.iam.gserviceaccount.com'.format(SA_ID, PROJECT_ID)
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
@@ -373,10 +420,6 @@ if __name__ == '__main__':
     print('Cloud Access Manager setup complete.\n')
 
     print('Encrypting secrets...')
-    from google.cloud import kms_v1
-    from google.cloud.kms_v1 import enums
-    from google.api_core import exceptions as google_exc
-
     days90 = 7776000
 
     kms_client = kms_v1.KeyManagementServiceClient()
@@ -442,7 +485,7 @@ if __name__ == '__main__':
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cam_deployment_sa_file':         CAM_DEPLOYMENT_SA_KEY_PATH
+        'cam_deployment_sa_file':         cwd + CAM_DEPLOYMENT_SA_KEY_PATH
     }
 
     # update tfvar
@@ -497,5 +540,6 @@ if __name__ == '__main__':
     print('')
     print(next_steps.format(cac_public_ip=cac_public_ip,
                             entitle_user=ENTITLE_USER,
-                            deployment_path=DEPLOYMENT_PATH))
+                            deployment_path=DEPLOYMENT_PATH,
+                            terraform_path=TERRAFORM_BIN_PATH if INSTALL_TERRAFORM else 'terraform'))
     print('')
