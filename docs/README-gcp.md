@@ -152,9 +152,11 @@ These workstations are automatically domain-joined and have the PCoIP Agent inst
 
 #### Note: Due to recent changes in how Google Load Balancer process headers, your current Zero Client or Software Client version may need to be updated.  Please contact the maintainer (see below) for help if you have trouble connecting through the Load Balancer. A temporary workaround is to connect to the public IP of the Cloud Access Connector directly, bypassing the Load Balancer.
 
-The difference between single-connector and multi-region deployments is that instead of creating only one Cloud Access Connector, the multi-region deployment creates Cloud Access Connectors in managed instance groups, in one or more GCP regions, behind a single GCP HTTPS Load Balancer. In this setup, a client initiates a PCoIP session with the public IP of the HTTPS Load Balancer, and the Load Balancer will select one of the Cloud Access Connectors from a region closest to the client to establish the connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the HTTPS Load Balancer.
+The difference between single-connector and multi-region deployments is that instead of creating only one Cloud Access Connector, the multi-region deployment creates Cloud Access Connectors in managed instance groups, in one or more GCP regions, behind a single GCP HTTPS Load Balancer. Also, instead of creating workstations in one region, multi-region deployments support deploying workstations to multiple regions.
 
-The regions and number of Cloud Access Connectors for each region are specified by the ```cac_region_list``` and ```cac_instance_count_list``` variables, respectively. At least one region and one Cloud Access Connector instance must be specified.
+In this deployment, a client initiates a PCoIP session with the public IP of the HTTPS Load Balancer, and the Load Balancer will select one of the Cloud Access Connectors from a region closest to the client to establish the connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the HTTPS Load Balancer.
+
+For both the Cloud Access Connectors and workstations, the user must provide a list of regions and zones to create the compute instances in, the CIDRs of subnets for these instances, and the number of instances to create. At least one region and one Cloud Access Connector instance must be specified. Please refer to terraform.tfvars.sample for details.
 
 The following diagram shows a deployment when only a single region is specified by the user.
 

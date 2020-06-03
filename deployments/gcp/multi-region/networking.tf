@@ -52,7 +52,11 @@ resource "google_compute_firewall" "allow-internal" {
     ports    = ["1-65535"]
   }
 
-  source_ranges = concat([var.dc_subnet_cidr, var.ws_subnet_cidr], var.cac_subnet_cidr_list)
+  source_ranges = concat(
+    [var.dc_subnet_cidr],
+    var.cac_subnet_cidr_list,
+    var.ws_subnet_cidr_list
+  )
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -180,9 +184,12 @@ resource "google_compute_subnetwork" "cac-subnets" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "ws-subnet" {
-  name          = "${local.prefix}${var.ws_subnet_name}"
-  ip_cidr_range = var.ws_subnet_cidr
+resource "google_compute_subnetwork" "ws-subnets" {
+  count = length(var.ws_region_list)
+
+  name          = "${local.prefix}${var.ws_subnet_name}-${var.ws_region_list[count.index]}"
+  region        = var.ws_region_list[count.index]
+  ip_cidr_range = var.ws_subnet_cidr_list[count.index]
   network       = google_compute_network.vpc.self_link
 }
 
@@ -194,8 +201,10 @@ resource "google_compute_address" "dc-internal-ip" {
 }
 
 resource "google_compute_router" "router" {
-  name    = "${local.prefix}router"
-  region  = var.gcp_region
+  count = length(var.ws_region_list)
+
+  name    = "${local.prefix}router-${var.ws_region_list[count.index]}"
+  region  = var.ws_region_list[count.index]
   network = google_compute_network.vpc.self_link
 
   bgp {
@@ -204,15 +213,17 @@ resource "google_compute_router" "router" {
 }
 
 resource "google_compute_router_nat" "nat" {
-  name                               = "${local.prefix}nat"
-  router                             = google_compute_router.router.name
-  region                             = var.gcp_region
+  count = length(var.ws_region_list)
+
+  name                               = "${local.prefix}nat-${var.ws_region_list[count.index]}"
+  router                             = google_compute_router.router[count.index].name
+  region                             = var.ws_region_list[count.index]
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   min_ports_per_vm                   = 2048
 
   subnetwork {
-    name                    = google_compute_subnetwork.ws-subnet.self_link
+    name                    = google_compute_subnetwork.ws-subnets[count.index].self_link
     source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
   }
 }
