@@ -162,7 +162,7 @@ The following diagram shows a deployment when only a single region is specified 
 
 ![multi-connector diagram](single-region.png)
 
-Specifying multiple regions creates a deployment with Cloud Access Connectors in multiple regions, but workstations in only one region. A user initiating a PCoIP session with the public IP of the GCP HTTPS Load Balancer will connect to one of the closest Cloud Access Connectors and use GCP's global network to connect to the workstation.
+The next diagram shows a deployment with Cloud Access Connectors and workstations specified for 3 regions. A user initiating a PCoIP session with the public IP of the GCP HTTPS Load Balancer will connect to one of the closest Cloud Access Connectors and use GCP's global network to connect to the workstation selected.
 
 ![multi-region diagram](multi-region.png)
 
