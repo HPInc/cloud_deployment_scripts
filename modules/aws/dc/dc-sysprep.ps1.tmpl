@@ -10,6 +10,7 @@ $DATA.Add("admin_password", "${admin_password}")
 
 function Decrypt-Credentials {
     try {
+        "--> Decrypting admin_password..."
         $ByteAry = [System.Convert]::FromBase64String("${admin_password}")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
@@ -17,7 +18,7 @@ function Decrypt-Credentials {
         $DATA."admin_password" = $StreamRead.ReadToEnd()
     }
     catch {
-        "Error decrypting credentials: $_"
+        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -25,27 +26,27 @@ function Decrypt-Credentials {
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
 if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
-    "Not using encryption"
+    "--> Script is not using encryption for secrets."
 } else {
-    "Using encryption key ${customer_master_key_id}"
+    "--> Script is using encryption key ${customer_master_key_id} for secrets."
     Decrypt-Credentials
 }
 
-"Setting Administrator password ..."
+"--> Setting Administrator password..."
 net user Administrator $DATA."admin_password" /active:yes
 
-"Enabling WinRM ..."
+"--> Enabling WinRM..."
 Enable-PSRemoting -Force
 winrm set winrm/config/service/auth '@{Basic="true"}'
 
 # Create Certificate to support WinRM over HTTPS. hostname doesn't matter since
 # we will ignore certificate check when connecting from Terraform
-"Generating Self-signed certificate for HTTPS ..."
+"--> Generating Self-signed certificate for HTTPS..."
 $Thumbprint = (New-SelfSignedCertificate -DnsName "${hostname}" -CertStoreLocation Cert:\LocalMachine\My | Where-Object {$_.Subject -match "${hostname}"}).Thumbprint
 
-"Creating the HTTPS listener for WinRM ..."
+"--> Creating the HTTPS listener for WinRM..."
 winrm create winrm/config/Listener?Address=*+Transport=HTTPS "@{CertificateThumbprint=`"$Thumbprint`"}"
 
 # Open Firewall
-"Adding firewall rule for TCP/5986 for WinRM over HTTPS ..."
+"--> Adding firewall rule for TCP/5986 for WinRM over HTTPS..."
 New-NetFirewallRule -DisplayName "WinRM HTTPS Created by Teradici Terraform" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow

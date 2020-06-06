@@ -17,6 +17,7 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 ### Requirements
 - the user must have owner permissions to a GCP project
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a Cloud Access Manager Deployment Service Account is needed. Please see the Cloud Access Manager Setup section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
@@ -32,59 +33,80 @@ With a new GCP project:
     - Cloud Resource Manager
     - Compute Engine
     - Google Cloud DNS
-- (Optional) For better security, create a Google KMS Key Ring and Crypto Key to encrypt secrets. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
+- (Optional) For better security, create a Google KMS key ring and crypto key to encrypt secrets. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
 
 ### Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
+
 1. create a new deployment and submit the credentials for the GCP service account created above.
-1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
-
-### (Optional) Encrypting Secrets
-Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
-
-The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under tools.
-
-#### Manual Encryption
-To encrypt secrets using the KMS crypto key created above, follow the instructions here: https://cloud.google.com/kms/docs/encrypt-decrypt. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in GCP Cloud Shell:
-
-```echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64```
-
-#### Encryption Using Python Script
-Alternatively, the kms_secrets_encryption.py Python 3 script under the tools directory can be used to automate the KMS encryption process. 
-
-1. Open the terraform.tfvars file and enter all the secrets in plaintext located under the line "# <-- Start of secrets section, do not edit this line. -->".
-1. Save the file.
-1. Run the script by executing the following command inside the tools directory: ```./kms_secrets_encryption.py </path/to/terraform.tfvars>```
-
-The script will replace all the plaintext inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
-
-The script can also reverse the encryption by running with the '-d' flag. See script's documentation for details (--help).
+2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM Deployment Service Account.
+3. click on "Download JSON file" to download the CAM Deployment Service Account credentials file which will be used in terraform.tfvars.
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
 
 Note that all path variables in terraform.tfvars depend on the host platform: 
-- On Linux systems, the forward slash / is used as the path segment separator. ```gcp_credentials_file = "/path/to/cred.json"```
-- On Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```gcp_credentials_file = "C:/path/to/cred.json"```
+- on Linux systems, the forward slash / is used as the path segment separator. ```gcp_credentials_file = "/path/to/cred.json"```
+- on Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```gcp_credentials_file = "C:/path/to/cred.json"```
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
-If secrets are KMS-encrypted, fill in the ```kms_cryptokey_id``` variable with the crypto key used to encode the secrets, then paste the base64-encoded ciphertext for the following variables:
-- ```dc_admin_password```
-- ```safe_mode_admin_password```
-- ```ad_service_account_password```
-- ```pcoip_registration_code```
-- ```cac_token```
+### (Optional) Encrypting Secrets
+terraform.tfvars variables includes senstive information such as Active Directory passwords, PCoIP registration key and the CAM Deployment Service Account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
-Be sure to remove any spaces in the ciphertext.
+To enhance security, the Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under the tools directory.
 
-If secrets are in plaintext, make sure ```kms_cryptokey_id``` is commented out, and fill in the rest of the variables as plaintext.
+#### Encryption Using Python Script
+The easiest way to encrypt secrets is to use the kms_secrets_encryption.py Python script under the tools/ directory, which automates the KMS encryption process. 
+
+1. ensure the `kms_cryptokey_id` variable in terraform.tfvars is commented out, as this script will attempt to create the crypto key used to encrypt the secrets:
+   ```
+   # kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
+   ```
+2. run the following command inside the tools directory:
+   ```
+   ./kms_secrets_encryption.py </path/to/terraform.tfvars>
+   ```
+
+The script will replace all the plaintext inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
+
+The script can also reverse the encryption by executing it with the '-d' flag. See script's documentation for details (--help).
+
+#### Manual Encryption
+Alernatively, the secrets can be manually encrypted. To encrypt secrets using the Google KMS crypto key created in the 'GCP Setup' section above, refer to https://cloud.google.com/kms/docs/encrypt-decrypt. Note that ciphertext must be base64 encoded before being used in terraform.tfvars. 
+
+1. create a KMS key ring and crypto key. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
+2. in terraform.tfvars, ensure that the `kms_cryptokey_id` variable is uncommented and is set to the resource path of the KMS key used to encrypt the secrets:
+   ```
+   kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
+   ```
+3. run the following command in GCP Cloud Shell or a Linux shell with gcloud installed to encrypt a plaintext secret:
+   ```
+   echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64
+   ```
+   Encrypt and replace the values of the following variables in terraform.tfvars with the ciphertext generated. `<ciphertext`> should be replaced with the actual ciphertext generated - do not include < and >.
+   ```
+   dc_admin_password           = "<ciphertext>"
+   safe_mode_admin_password    = "<ciphertext>"
+   ad_service_account_password = "<ciphertext>"
+   pcoip_registration_code     = "<ciphertext>"
+   ```
+4. run the following command in GCP Cloud Shell or a Linux shell with gcloud installed to encrypt the CAM Deployment Service Account JSON credentials file:
+   ```
+   gcloud kms encrypt --location <location> --keyring <keyring-name> --key <key-name> --plaintext-file </path/to/cloud-access-manager-service-account.json> --ciphertext-file - | base64 > </path/to/cloud-access-manager-service-account.json.encrypted>"
+   ```
+   Replace the value of the `cam_deployment_sa_file` variable in terraform.tfvars with the absolute path to the encrypted file generated.
+   ```
+   cam_deployment_sa_file = "/path/to/cloud-access-manager-service-account.json.encrypted"
+   ```
 
 ### Creating the deployment
-With the terraform.tfvars file customized
+With the terraform.tfvars file customized:
+
 1. run ```terraform init``` to initialize the deployment
-1. run ```terraform apply``` to display the resources that will be created by Terraform
-1. answer ```yes``` to start creating the deployment
+2. run ```terraform apply``` to display the resources that will be created by Terraform
+3. answer ```yes``` to start creating the deployment
+
 A typical deployment should take 15 to 30 minutes. When finished, the scripts will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Connectors should register themselves with the CAM service and show up in the CAM Admin Console.
 
 ### Add Workstations in Cloud Access Manager
@@ -114,7 +136,7 @@ Firewall rules are created to allow wide-open access within the VPC, and selecte
 
 A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: ```Administrator``` and ```cam_admin``` (default). Domain Users are also created if a ```domain_users_list``` CSV file is specified. The Domain Controller is given a static IP (configurable).
 
-A Cloud Access Connector is created and registers itself with the CAM service with the given Token and PCoIP Registration code.
+A Cloud Access Connector is created and registers itself with the CAM service with the given CAM Deployment Service Account credentials and PCoIP Registration code.
 
 Domain-joined workstations are optionally created, specified by the following parameters:
 - ```win_gfx_instance_count```: Windows Graphics workstation,
@@ -130,15 +152,17 @@ These workstations are automatically domain-joined and have the PCoIP Agent inst
 
 #### Note: Due to recent changes in how Google Load Balancer process headers, your current Zero Client or Software Client version may need to be updated.  Please contact the maintainer (see below) for help if you have trouble connecting through the Load Balancer. A temporary workaround is to connect to the public IP of the Cloud Access Connector directly, bypassing the Load Balancer.
 
-The difference between single-connector and multi-region deployments is that instead of creating only one Cloud Access Connector, the multi-region deployment creates Cloud Access Connectors in managed instance groups, in one or more GCP regions, behind a single GCP HTTPS Load Balancer. In this setup, a client initiates a PCoIP session with the public IP of the HTTPS Load Balancer, and the Load Balancer will select one of the Cloud Access Connectors from a region closest to the client to establish the connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the HTTPS Load Balancer.
+The difference between single-connector and multi-region deployments is that instead of creating only one Cloud Access Connector, the multi-region deployment creates Cloud Access Connectors in managed instance groups, in one or more GCP regions, behind a single GCP HTTPS Load Balancer. Also, instead of creating workstations in one region, multi-region deployments support deploying workstations to multiple regions.
 
-The regions and number of Cloud Access Connectors for each region are specified by the ```cac_region_list``` and ```cac_instance_count_list``` variables, respectively. At least one region and one Cloud Access Connector instance must be specified.
+In this deployment, a client initiates a PCoIP session with the public IP of the HTTPS Load Balancer, and the Load Balancer will select one of the Cloud Access Connectors from a region closest to the client to establish the connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the HTTPS Load Balancer.
+
+For both the Cloud Access Connectors and workstations, the user must provide a list of regions and zones to create the compute instances in, the CIDRs of subnets for these instances, and the number of instances to create. At least one region and one Cloud Access Connector instance must be specified. Please refer to terraform.tfvars.sample for details.
 
 The following diagram shows a deployment when only a single region is specified by the user.
 
 ![multi-connector diagram](single-region.png)
 
-Specifying multiple regions creates a deployment with Cloud Access Connectors in multiple regions, but workstations in only one region. A user initiating a PCoIP session with the public IP of the GCP HTTPS Load Balancer will connect to one of the closest Cloud Access Connectors and use GCP's global network to connect to the workstation.
+The next diagram shows a deployment with Cloud Access Connectors and workstations specified for 3 regions. A user initiating a PCoIP session with the public IP of the GCP HTTPS Load Balancer will connect to one of the closest Cloud Access Connectors and use GCP's global network to connect to the workstation selected.
 
 ![multi-region diagram](multi-region.png)
 

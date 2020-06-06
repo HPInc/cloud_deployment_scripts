@@ -11,13 +11,22 @@ locals {
   # Windows computer names must be <= 15 characters, minus 4 chars for "-xyz"
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
-
+  instance_info_list = flatten(
+    [ for i in range(length(var.zone_list)):
+      [ for j in range(var.instance_count_list[i]):
+        {
+          zone   = var.zone_list[i],
+          subnet = var.subnet_list[i],
+        }
+      ]
+    ]
+  )
   enable_public_ip = var.enable_public_ip ? [true] : []
   provisioning_script = "centos-gfx-provisioning.sh"
 }
 
 resource "google_storage_bucket_object" "centos-gfx-provisioning-script" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = length(local.instance_info_list) == 0 ? 0 : 1
 
   name    = local.provisioning_script
   bucket  = var.bucket_name
@@ -42,11 +51,11 @@ resource "google_storage_bucket_object" "centos-gfx-provisioning-script" {
 }
 
 resource "google_compute_instance" "centos-gfx" {
-  count = var.instance_count
+  count = length(local.instance_info_list)
 
   provider     = google
   name         = "${local.host_name}-${count.index}"
-  zone         = var.gcp_zone
+  zone         = local.instance_info_list[count.index].zone
   machine_type = var.machine_type
 
   guest_accelerator {
@@ -68,7 +77,7 @@ resource "google_compute_instance" "centos-gfx" {
   }
 
   network_interface {
-    subnetwork = var.subnet
+    subnetwork = local.instance_info_list[count.index].subnet
 
     dynamic access_config {
       for_each = local.enable_public_ip

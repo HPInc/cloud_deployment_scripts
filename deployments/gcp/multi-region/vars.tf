@@ -150,7 +150,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200521"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200529"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -184,29 +184,39 @@ variable "ssl_cert" {
   default     = ""
 }
 
+variable "ws_region_list" {
+  description = "Regions in which to deploy Workstations"
+  type        = list(string)
+}
+
+variable "ws_zone_list" {
+  description = "Zones in which to deploy Workstations"
+  type        = list(string)
+}
+
 variable "ws_subnet_name" {
   description = "Name for subnet containing Remote Workstations"
   default     = "subnet-ws"
 }
 
-variable "ws_subnet_cidr" {
-  description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.2.0/24"
+variable "ws_subnet_cidr_list" {
+  description = "CIDR for subnets containing Remote Workstations"
+  type        = list(string)
 }
 
-variable "cac_token" {
-  description = "Connector Token from CAM Service"
+variable "cam_url" {
+  description = "cam server url."
+  default     = "https://cam.teradici.com"
+}
+
+variable "cam_deployment_sa_file" {
+  description = "Location of CAM Deployment Service Account account JSON file"
   type        = string
 }
 
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
-}
-
-variable "cam_url" {
-  description = "cam server url."
-  default     = "https://cam.teradici.com"
 }
 
 variable "enable_workstation_public_ip" {
@@ -229,9 +239,9 @@ variable "minutes_cpu_polling_interval" {
   default     = 15
 }
 
-variable "win_gfx_instance_count" {
-  description = "Number of Windows Graphics Workstations"
-  default     = 0
+variable "win_gfx_instance_count_list" {
+  description = "Number of Windows Graphics Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "win_gfx_instance_name" {
@@ -264,9 +274,9 @@ variable "win_gfx_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 }
 
-variable "win_std_instance_count" {
-  description = "Number of Windows Standard Workstations"
-  default     = 0
+variable "win_std_instance_count_list" {
+  description = "Number of Windows Standard Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "win_std_instance_name" {
@@ -289,9 +299,9 @@ variable "win_std_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 }
 
-variable "centos_gfx_instance_count" {
-  description = "Number of CentOS Graphics Workstations"
-  default     = 0
+variable "centos_gfx_instance_count_list" {
+  description = "Number of CentOS Graphics Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "centos_gfx_instance_name" {
@@ -321,12 +331,12 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200521"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200603"
 }
 
-variable "centos_std_instance_count" {
-  description = "Number of CentOS Standard Workstations"
-  default     = 0
+variable "centos_std_instance_count_list" {
+  description = "Number of CentOS Standard Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "centos_std_instance_name" {
@@ -346,7 +356,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200521"
+  default     = "projects/centos-cloud/global/images/centos-7-v20200603"
 }
 
 variable "centos_admin_user" {

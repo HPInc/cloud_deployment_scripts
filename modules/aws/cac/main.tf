@@ -7,7 +7,7 @@
 
 locals {
   prefix         = var.prefix != "" ? "${var.prefix}-" : ""
-  startup_script = "cac-startup.sh"
+  provisioning_script = "cac-provisioning.sh"
   instance_info_list = flatten(
     [ for i in range(length(var.zone_list)):
       [ for j in range(var.instance_count_list[i]):
@@ -38,7 +38,7 @@ resource "aws_s3_bucket_object" "ssl-cert" {
   source = var.ssl_cert
 }
 
-resource "aws_s3_bucket_object" "cac-startup-script" {
+resource "aws_s3_bucket_object" "cac-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   depends_on = [
@@ -46,10 +46,10 @@ resource "aws_s3_bucket_object" "cac-startup-script" {
     aws_s3_bucket_object.ssl-cert,
   ]
 
-  key     = local.startup_script
+  key     = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
       aws_region               = var.aws_region, 
       customer_master_key_id   = var.customer_master_key_id,
@@ -76,7 +76,7 @@ data "template_file" "user-data" {
 
   vars = {
     bucket_name = var.bucket_name,
-    file_name   = local.startup_script,
+    file_name   = local.provisioning_script,
     ssl_key     = local.ssl_key_filename,
     ssl_cert    = local.ssl_cert_filename,
   }
@@ -120,7 +120,7 @@ data "aws_kms_key" "encryption-key" {
 data "aws_iam_policy_document" "cac-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
   }
 

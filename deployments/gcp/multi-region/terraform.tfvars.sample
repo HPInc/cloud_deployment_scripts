@@ -1,8 +1,9 @@
-# Commented out lines represents defaults that can be changed
-# On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
-# Example: gcp_credentials_file = "C:/path/to/cred.json"
+# Commented out lines represent defaults that can be changed.
+# On Windows systems, the default backslash \ path separator must be changed 
+# to forward slash / for any path variables.
+# Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
-gcp_credentials_file = "/path/to/cred.json"
+gcp_credentials_file = "/path/to/gcp_cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west2"
@@ -32,8 +33,7 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 # ssl_cert = "/path/to/fullchain.pem"
 
 # Specify the regions, zones, subnet CIDRs and number of connectors to create
-# per region.
-# For example:
+# per region. For example:
 #   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
 #   cac_zone_list           = ["us-west2-b",  "europe-west4-b", "asia-southeast1-b"]
 #   cac_subnet_cidr_list    = ["10.0.1.0/24", "10.1.1.0/24",    "10.2.1.0/24"]
@@ -46,33 +46,47 @@ cac_instance_count_list = []
 
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
-# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200521"
+# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200529"
 
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
-win_gfx_instance_count = 0
+# Specify the regions, zones, subnet CIDRs and number of workstations to create
+# per region. For example:
+# ws_region_list                  = ["us-west2",    "europe-west4",   "asia-southeast1"]
+# ws_zone_list                    = ["us-west2-b",  "europe-west4-b", "asia-southeast1-b"]
+# ws_subnet_cidr_list             = ["10.0.2.0/24", "10.1.2.0/24",    "10.2.2.0/24"]
+# win_gfx_instance_count_list     = [0,             10,               0]
+# win_std_instance_count_list     = [1,             1,                1]
+# centos_gfx_instance_count_list  = [0,             0,                10]
+# centos_std_instance_count_list  = [2,             2,                2]
+
+ws_region_list                 = []
+ws_zone_list                   = []
+ws_subnet_cidr_list            = []
+win_gfx_instance_count_list    = []
+win_std_instance_count_list    = []
+centos_gfx_instance_count_list = []
+centos_std_instance_count_list = []
+
 # win_gfx_machine_type = "n1-standard-4"
 # win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # win_gfx_accelerator_count = 1
 # win_gfx_disk_size_gb = 50
 # win_gfx_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 
-win_std_instance_count = 0
 # win_std_machine_type = "n1-standard-4"
 # win_std_disk_size_gb = 50
 # win_std_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200512"
 
-centos_gfx_instance_count = 0
 # centos_gfx_machine_type = "n1-standard-2"
 # centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1
 # centos_gfx_disk_size_gb = 50
-# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20200521"
+# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20200603"
 
-centos_std_instance_count = 0
 # centos_std_machine_type = "n1-standard-2"
 # centos_std_disk_size_gb = 50
-# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20200521"
+# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20200603"
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -114,4 +128,4 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cac_token                   = "token from Cloud Access Manager for the connector"
+cam_deployment_sa_file      = "/path/to/cloud-access-manager-service-account.json"

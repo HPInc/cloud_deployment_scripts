@@ -13,16 +13,16 @@ locals {
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
 
   enable_public_ip = var.enable_public_ip ? [true] : []
-  startup_script = "win-gfx-startup.ps1"
+  provisioning_script = "win-gfx-provisioning.ps1"
 }
 
-resource "aws_s3_bucket_object" "win-gfx-startup-script" {
+resource "aws_s3_bucket_object" "win-gfx-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  key     = local.startup_script
+  key     = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
-    "${path.module}/${local.startup_script}.tmpl",
+    "${path.module}/${local.provisioning_script}.tmpl",
     {
       customer_master_key_id      = var.customer_master_key_id,
       pcoip_registration_code     = var.pcoip_registration_code,
@@ -43,7 +43,7 @@ data "template_file" "user-data" {
 
   vars = {
     bucket_name = var.bucket_name,
-    file_name   = local.startup_script,
+    file_name   = local.provisioning_script,
   }
 }
 
@@ -91,7 +91,7 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.startup_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
   }
 

@@ -60,9 +60,9 @@ module "cac" {
   gcp_service_account     = var.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
+  cam_deployment_sa_file  = var.cam_deployment_sa_file
   pcoip_registration_code = var.pcoip_registration_code
-  cac_token               = var.cac_token
-
+  
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
@@ -106,8 +106,8 @@ module "win-gfx" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  zone_list        = [var.gcp_zone]
+  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -119,13 +119,13 @@ module "win-gfx" {
     "${google_compute_firewall.allow-rdp.name}",
   ]
 
-  instance_count    = var.win_gfx_instance_count
-  instance_name     = var.win_gfx_instance_name
-  machine_type      = var.win_gfx_machine_type
-  accelerator_type  = var.win_gfx_accelerator_type
-  accelerator_count = var.win_gfx_accelerator_count
-  disk_size_gb      = var.win_gfx_disk_size_gb
-  disk_image        = var.win_gfx_disk_image
+  instance_count_list = [var.win_gfx_instance_count]
+  instance_name       = var.win_gfx_instance_name
+  machine_type        = var.win_gfx_machine_type
+  accelerator_type    = var.win_gfx_accelerator_type
+  accelerator_count   = var.win_gfx_accelerator_count
+  disk_size_gb        = var.win_gfx_disk_size_gb
+  disk_image          = var.win_gfx_disk_image
 
   depends_on_hack = [google_compute_router_nat.nat.id]
 }
@@ -146,8 +146,8 @@ module "win-std" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  zone_list        = [var.gcp_zone]
+  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -159,11 +159,11 @@ module "win-std" {
     "${google_compute_firewall.allow-rdp.name}",
   ]
 
-  instance_count    = var.win_std_instance_count
-  instance_name     = var.win_std_instance_name
-  machine_type      = var.win_std_machine_type
-  disk_size_gb      = var.win_std_disk_size_gb
-  disk_image        = var.win_std_disk_image
+  instance_count_list = [var.win_std_instance_count]
+  instance_name       = var.win_std_instance_name
+  machine_type        = var.win_std_machine_type
+  disk_size_gb        = var.win_std_disk_size_gb
+  disk_image          = var.win_std_disk_image
 
   depends_on_hack = [google_compute_router_nat.nat.id]
 }
@@ -184,8 +184,8 @@ module "centos-gfx" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  zone_list        = [var.gcp_zone]
+  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -197,13 +197,13 @@ module "centos-gfx" {
     "${google_compute_firewall.allow-ssh.name}",
   ]
 
-  instance_count    = var.centos_gfx_instance_count
-  instance_name     = var.centos_gfx_instance_name
-  machine_type      = var.centos_gfx_machine_type
-  accelerator_type  = var.centos_gfx_accelerator_type
-  accelerator_count = var.centos_gfx_accelerator_count
-  disk_size_gb      = var.centos_gfx_disk_size_gb
-  disk_image        = var.centos_gfx_disk_image
+  instance_count_list = [var.centos_gfx_instance_count]
+  instance_name       = var.centos_gfx_instance_name
+  machine_type        = var.centos_gfx_machine_type
+  accelerator_type    = var.centos_gfx_accelerator_type
+  accelerator_count   = var.centos_gfx_accelerator_count
+  disk_size_gb        = var.centos_gfx_disk_size_gb
+  disk_image          = var.centos_gfx_disk_image
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
@@ -227,8 +227,8 @@ module "centos-std" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  gcp_zone         = var.gcp_zone
-  subnet           = google_compute_subnetwork.ws-subnet.self_link
+  zone_list        = [var.gcp_zone]
+  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -240,11 +240,11 @@ module "centos-std" {
     "${google_compute_firewall.allow-ssh.name}",
   ]
 
-  instance_count = var.centos_std_instance_count
-  instance_name  = var.centos_std_instance_name
-  machine_type   = var.centos_std_machine_type
-  disk_size_gb   = var.centos_std_disk_size_gb
-  disk_image     = var.centos_std_disk_image
+  instance_count_list = [var.centos_std_instance_count]
+  instance_name       = var.centos_std_instance_name
+  machine_type        = var.centos_std_machine_type
+  disk_size_gb        = var.centos_std_disk_size_gb
+  disk_image          = var.centos_std_disk_image
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file

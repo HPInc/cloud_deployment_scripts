@@ -1,8 +1,9 @@
-# Commented out lines represents defaults that can be changed
-# On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
-# Example: gcp_credentials_file = "C:/path/to/cred.json"
+# Commented out lines represent defaults that can be changed.
+# On Windows systems, the default backslash \ path separator must be changed 
+# to forward slash / for any path variables.
+# Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
-gcp_credentials_file = "/path/to/cred.json"
+gcp_credentials_file = "/path/to/gcp_cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west2"

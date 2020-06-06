@@ -49,8 +49,9 @@ DEPLOYMENT_PATH  = 'deployments/gcp/single-connector'
 TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
 SECRETS_DIR      = 'secrets'
-SA_KEY_PATH      = SECRETS_DIR + '/gcp_service_account_key.json'
+GCP_SA_KEY_PATH  = SECRETS_DIR + '/gcp_service_account_key.json'
 SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
+CAM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cam_deployment_sa_key.json.encrypted'
 
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
@@ -315,7 +316,7 @@ if __name__ == '__main__':
     apis_enable(REQUIRED_APIS)
     sa = service_account_create(sa_email)
     iam_policy_update(sa, SA_ROLES)
-    sa_key = service_account_create_key(sa, SA_KEY_PATH)
+    sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
     print('GCP project setup complete.\n')
 
@@ -326,8 +327,8 @@ if __name__ == '__main__':
     deployment = mycam.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
     mycam.deployment_add_gcp_account(sa_key, deployment)
 
-    print('Creating connector {}...'.format(CONNECTOR_NAME))
-    connector = mycam.connector_create(CONNECTOR_NAME, deployment)
+    print('Creating CAM API key...')
+    cam_deployment_key = mycam.deployment_key_create(deployment)
 
     print('Cloud Access Manager setup complete.\n')
 
@@ -373,14 +374,20 @@ if __name__ == '__main__':
 
     password = kms_encode(key_name, password)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'))
-    connector['token'] = kms_encode(key_name, connector['token'])
+    cam_deployment_key = kms_encode(key_name, json.dumps(cam_deployment_key))
 
     print('Done encrypting secrets.')
+
+    print('Creating CAM Deployment Service Account Key...')
+    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
+        keyfile.write(cam_deployment_key)
+
+    print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
     #TODO: refactor this to work with more types of deployments
     settings = {
-        'gcp_credentials_file':           SA_KEY_PATH,
+        'gcp_credentials_file':           GCP_SA_KEY_PATH,
         'gcp_project_id':                 PROJECT_ID,
         'gcp_service_account':            sa_email,
         'kms_cryptokey_id':               key_name,
@@ -394,7 +401,7 @@ if __name__ == '__main__':
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cac_token':                      connector['token'],
+        'cam_deployment_sa_file':         CAM_DEPLOYMENT_SA_KEY_PATH
     }
 
     # update tfvar

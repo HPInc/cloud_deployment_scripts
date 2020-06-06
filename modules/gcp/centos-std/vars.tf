@@ -50,14 +50,14 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "gcp_zone" {
-  description = "Zone to deploy the Workstation"
-  default     = "us-west2-b"
+variable "zone_list" {
+  description = "GCP zones to deploy the Workstations"
+  type        = list(string)
 }
 
-variable "subnet" {
-  description = "Subnet to deploy the Workstation"
-  type        = string
+variable "subnet_list" {
+  description = "Subnets to deploy the Workstations"
+  type        = list(string)
 }
 
 variable "enable_public_ip" {
@@ -85,9 +85,9 @@ variable "network_tags" {
   type        = list(string)
 }
 
-variable "instance_count" {
-  description = "Number of CentOS Standard Workstations to deploy"
-  default     = 1
+variable "instance_count_list" {
+  description = "Number of Workstations to deploy in each zone"
+  type        = list(number)
 }
 
 variable "machine_type" {

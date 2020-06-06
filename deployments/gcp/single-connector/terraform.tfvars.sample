@@ -1,8 +1,9 @@
-# Commented out lines represents defaults that can be changed
-# On Windows systems, the default backslash \ path separator must be changed to forward slash for any path variables.
-# Example: gcp_credentials_file = "C:/path/to/cred.json"
+# Commented out lines represent defaults that can be changed.
+# On Windows systems, the default backslash \ path separator must be changed 
+# to forward slash / for any path variables.
+# Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
-gcp_credentials_file = "/path/to/cred.json"
+gcp_credentials_file = "/path/to/gcp_cred.json"
 gcp_project_id       = "your-project-1234"
 gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west2"
@@ -29,7 +30,7 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
-# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200521"
+# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200529"
 
 # Optional: Specify SSL certificate for Connector
 # ssl_key  = "/path/to/privkey.pem"
@@ -54,12 +55,12 @@ centos_gfx_instance_count = 0
 # centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1
 # centos_gfx_disk_size_gb = 50
-# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20200521"
+# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20200603"
 
 centos_std_instance_count = 0
 # centos_std_machine_type = "n1-standard-2"
 # centos_std_disk_size_gb = 50
-# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20200521"
+# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20200603"
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -101,4 +102,4 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cac_token                   = "token from Cloud Access Manager for the connector"
+cam_deployment_sa_file      = "/path/to/cloud-access-manager-service-account.json"
