@@ -20,7 +20,6 @@ TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
 
 
 def terraform_install(version=TERRAFORM_VERSION):
-
     zip_filename = 'terraform_{}_linux_amd64.zip'.format(version)
     download_url = 'https://releases.hashicorp.com/terraform/{}/{}'.format(version, zip_filename)
     local_zip_file = TEMP_DIR + '/' + zip_filename
@@ -55,6 +54,6 @@ if __name__ == '__main__':
     path = shutil.which('terraform')
     if path:
         print('Terraform already installed in ' + path)
-        sys.exit()
+        sys.exit(1)
 
     terraform_install()

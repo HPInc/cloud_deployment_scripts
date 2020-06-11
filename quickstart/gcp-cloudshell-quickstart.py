@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import sys
+import textwrap
 import time
 
 import cam
@@ -39,10 +40,6 @@ REQUIRED_APIS = [
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
 CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
-
-# Install flags
-INSTALL_TERRAFORM        = False
-INSTALL_GOOGLE_LIBRARIES = False
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
@@ -118,58 +115,55 @@ def ensure_requirements():
 def ensure_google_libraries():
     """A function that ensures Google libraries are installed. 
 
-    The function first tries to import the required Google libraries and if the required packages
-    are not installed, it will prompt the user to install these packages in the user's home directory. 
+    The function first tries to import the required Google libraries and 
+    if the required PyPI packages are not installed, it will prompt the 
+    user to install the required packages in the user's home directory. 
     """
 
-    global INSTALL_GOOGLE_LIBRARIES
-
-    google_libraries_import = """
-import googleapiclient.discovery
-from google.cloud import kms_v1
-from google.cloud.kms_v1 import enums
-from google.api_core import exceptions as google_exc
-"""
+    # Global calls for import statements are required to avoid module not found error
+    import_google_libraries = '''\
+    import googleapiclient.discovery
+    from google.cloud import kms_v1
+    from google.cloud.kms_v1 import enums
+    from google.api_core import exceptions as google_exc
+    '''
 
     try:
-        exec(google_libraries_import, globals())
-        print('Successfully imported Google libraries.\n')
+        exec(textwrap.dedent(import_google_libraries), globals())
+        print('Successfully imported Google libraries.')
 
     except ImportError as err:
-        INSTALL_GOOGLE_LIBRARIES = True
-
-    if INSTALL_GOOGLE_LIBRARIES:
-        google_libraries = 'google-api-python-client grpc-google-iam-v1 google-cloud google-cloud-kms'
+        required_google_libraries = 'google-api-python-client grpc-google-iam-v1 google-cloud google-cloud-kms'
 
         install_permission = input(
             'One or more of the following Python packages are missing:\n'
-            f'  {google_libraries}\n\n'
+            f'  {required_google_libraries}\n\n'
             'The script can install these packages in the user\'s home directory using the following command:\n' 
-            f'  (i.e. {sys.executable} -m pip install {google_libraries} --user)\n'
+            f'  (i.e. {sys.executable} -m pip install {required_google_libraries} --user)\n'
             'Proceed? (y/n)? ').strip().lower()
 
         if install_permission not in ('y', 'yes'):
             print('Google libraries are required for deployment. Exiting...')
             sys.exit(1)
 
-        install_cmd = f'{sys.executable} -m pip install {google_libraries} --user'
+        install_cmd = f'{sys.executable} -m pip install {required_google_libraries} --user'
         subprocess.check_call(install_cmd.split(' '))
 
         # Recommended to clear cache after installing python packages for dynamic imports
         importlib.invalidate_caches()
 
-        exec(google_libraries_import, globals())
+        exec(textwrap.dedent(import_google_libraries), globals())
+        print('Successfully imported Google libraries.')
 
 
 def ensure_terraform():
     """A function that ensures Terraform version >= 0.12 is installed. 
 
-    The function first checks if Terraform is installed in the user's system and if Terraform
-    is not installed, or it is not version >= 0.12, it will prompt the user to install Terraform
-    in the user's home directory. 
+    The function first checks if Terraform is installed in the user's 
+    system and if Terraform is not installed, or it is not version >= 0.12, 
+    it will prompt the user to install Terraform in the user's home directory. 
     """
 
-    global INSTALL_TERRAFORM
     global TERRAFORM_BIN_PATH
 
     path = shutil.which('terraform')
@@ -179,26 +173,22 @@ def ensure_terraform():
         # Run the command 'terraform -v' and use the first line as the Terraform version
         terraform_version = subprocess.run(cmd.split(' '),  stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()[0]
         
-        print(f'Found {terraform_version} in {path}.\n')
+        print(f'Found {terraform_version} in {path}.')
 
-        if 'v0.12.' not in terraform_version:
-            INSTALL_TERRAFORM = True
-        else:
+        if 'v0.12.' in terraform_version:
             TERRAFORM_BIN_PATH = path
-    else:
-        INSTALL_TERRAFORM = True
+            return
 
-    if INSTALL_TERRAFORM:
-        install_permission = input(
-            'This system is missing Terraform version >= 0.12.\n'
-            f'Proceed to download and install Terraform in {TERRAFORM_BIN_DIR} (y/n)? ').strip().lower()
+    install_permission = input(
+        'This system is missing Terraform version >= 0.12.\n'
+        f'Proceed to download and install Terraform in {TERRAFORM_BIN_DIR} (y/n)? ').strip().lower()
 
-        if install_permission not in ('y', 'yes'):
-            print('Terraform is required for deployment. Exiting...')
-            sys.exit(1)
+    if install_permission not in ('y', 'yes'):
+        print('Terraform is required for deployment. Exiting...')
+        sys.exit(1)
 
-        install_cmd = f'python3 install-terraform.py {TERRAFORM_BIN_DIR}'
-        subprocess.run(install_cmd.split(' '), check=True)
+    install_cmd = f'{sys.executable} install-terraform.py {TERRAFORM_BIN_DIR}'
+    subprocess.run(install_cmd.split(' '), check=True)
 
 
 def quickstart_config_read(cfg_file):
@@ -217,20 +207,20 @@ def quickstart_config_read(cfg_file):
 
 def ad_password_get():
     txt = r'''
-Please enter a password for the Active Directory Administrator.
+    Please enter a password for the Active Directory Administrator.
 
-Note Windows password complexity requirements:
-1. Must not contain user's account name or display name
-2. Must have 3 of the following categories:
-- A-Z
-- a-z
-- 0-9
-- special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
-- unicode characters
+    Note Windows password complexity requirements:
+    1. Must not contain user's account name or display name
+    2. Must have 3 of the following categories:
+    - A-Z
+    - a-z
+    - 0-9
+    - special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+    - unicode characters
 
-See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+    See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
     '''
-    print(txt)
+    print(textwrap.dedent(txt))
     while True:
         password1 = getpass.getpass('Enter a password: ').strip()
         password2 = getpass.getpass('Re-enter the password: ').strip()
@@ -541,5 +531,7 @@ if __name__ == '__main__':
     print(next_steps.format(cac_public_ip=cac_public_ip,
                             entitle_user=ENTITLE_USER,
                             deployment_path=DEPLOYMENT_PATH,
-                            terraform_path=TERRAFORM_BIN_PATH if INSTALL_TERRAFORM else 'terraform'))
+                            terraform_path=('terraform'
+                            if TERRAFORM_BIN_PATH == shutil.which('terraform') 
+                            else TERRAFORM_BIN_PATH)))
     print('')
