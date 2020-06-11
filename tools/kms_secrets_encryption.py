@@ -16,20 +16,20 @@ import sys
 SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
 
 
-def import_or_install_module(pip_package_name, module_name = None):
+def import_or_install_module(pypi_package_name, module_name = None):
     """A function that imports a Python top-level package or module. 
     If the required package is not installed, it will install the package before importing it again.
 
     Args:
-        pip_package_name (str): the name of the pip package to be installed
-        module_name (str): the import name of the module if it is different than the pip package name
+        pypi_package_name (str): the name of the PyPI package to be installed
+        module_name (str): the import name of the module if it is different than the PyPI package name
 
     Returns:
         module: the top-level package or module
     """
 
     if module_name is None:
-        module_name = pip_package_name
+        module_name = pypi_package_name
 
     try:
         module = importlib.import_module(module_name)
@@ -37,17 +37,17 @@ def import_or_install_module(pip_package_name, module_name = None):
 
     except ImportError:
         install_permission = input(
-            f"This script requires {pip_package_name} but it is not installed.\n"
-            f"Proceed to install this package by running 'python3 -m pip install {pip_package_name} --user' (y/N)? ").strip().lower()
+            f"This script requires {pypi_package_name} but it is not installed.\n"
+            f"Proceed to install this package by running '{sys.executable} -m pip install {pypi_package_name} --user' (y/n)? ").strip().lower()
 
         if install_permission not in ('y', 'yes'):
-            print(f"{pip_package_name} is not installed. Exiting...")
+            print(f"{pypi_package_name} is not installed. Exiting...")
             sys.exit(1)
 
-        install_cmd = f'{sys.executable} -m pip install {pip_package_name} --user'
+        install_cmd = f'{sys.executable} -m pip install {pypi_package_name} --user'
         subprocess.check_call(install_cmd.split(' '))
 
-        print(f"Successfully installed {pip_package_name}.")
+        print(f"Successfully installed {pypi_package_name}.")
 
         # Recommended to clear cache after installing python packages for dynamic imports
         importlib.invalidate_caches()
