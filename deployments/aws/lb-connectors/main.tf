@@ -85,7 +85,14 @@ resource "aws_lb_target_group" "cac-tg" {
     type = "lb_cookie"
   }
 
-  #TODO add health check
+  health_check {
+    path     = var.cac_health_check["path"]
+    protocol = var.cac_health_check["protocol"]
+    port     = var.cac_health_check["port"]
+    interval = var.cac_health_check["interval_sec"]
+    timeout  = var.cac_health_check["timeout_sec"]
+    matcher  = "200"
+  }
 }
 
 resource "tls_private_key" "tls-key" {

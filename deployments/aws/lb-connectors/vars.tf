@@ -163,6 +163,20 @@ variable "admin_ssh_pub_key_file" {
   type        = string
 }
 
+# Note the following limits for health check:
+# interval_sec: min 5, max 300, default 30
+# timeout_sec:  min 2, max 120, default 5
+variable "cac_health_check" {
+  description = "Health check configuration for Cloud Access Connector"
+  default = {
+    path         = "/pcoip-broker/xml"
+    protocol     = "HTTPS"
+    port         = 443
+    interval_sec = 30
+    timeout_sec  = 5
+  }
+}
+
 variable "ssl_key" {
   description = "SSL private key for the Connector in PEM format"
   default     = ""
