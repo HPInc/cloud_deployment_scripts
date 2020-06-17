@@ -77,8 +77,6 @@ data "template_file" "user-data" {
   vars = {
     bucket_name = var.bucket_name,
     file_name   = local.provisioning_script,
-    ssl_key     = local.ssl_key_filename,
-    ssl_cert    = local.ssl_cert_filename,
   }
 }
 
