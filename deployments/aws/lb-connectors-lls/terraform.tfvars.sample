@@ -1,0 +1,129 @@
+# Commented out lines represent defaults that can be changed.
+# On Windows systems, the default backslash \ path separator must be changed 
+# to forward slash / for any path variables.
+# Example: aws_credentials_file = "C:/path/to/aws_key"
+
+# Path to an AWS Credentials File. Please see
+# https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
+# for details on file format.
+aws_credentials_file = "/path/to/aws_key"
+# aws_region = "us-west-1"
+
+# Prefix to add to resources' names, max 5 characters to avoid cropping of
+# workstation hostnames.
+# prefix = ""
+
+# By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
+# Define allowed_admin_cidrs to open the VPC firewall to additional IP addresses
+# or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
+# allowed_admin_cidrs = []
+
+# By default, PCoIP clients are allowed from any IP (0.0.0.0/0). Define
+# allowed_client_cidrs to restrict IP addresses from which PCoIP clients can
+# connect to remote workstations. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
+# allowed_client_cidrs = ["0.0.0.0/0"]
+
+# domain_name = "example.com"
+
+# Optional: additional AD users to create
+# domain_users_list = "/path/to/domain_users_list.csv"
+
+# Number of PCoIP licenses to activate
+lls_license_count = 0
+
+# SSL Private Key & Certificate for Load Balancer. Note: AWS requires CN to be
+# a domain name. e.g. "example.com"
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
+
+# Specify the zones (min. 2 zones, ensure the zones are available in your AWS
+# account), subnet CIDRs and number of connectors to create per zone.
+# For example:
+# cac_zone_list           = ["us-west-1a",  "us-west-1c"]
+# cac_subnet_cidr_list    = ["10.0.1.0/25", "10.0.1.128/25"]
+# cac_instance_count_list = [1,             1]
+
+cac_zone_list           = []
+cac_subnet_cidr_list    = []
+cac_instance_count_list = []
+
+# cac_instance_type = "t2.xlarge"
+# cac_disk_size_gb  = "50"
+# cac_ami_owner     = "099720109477"
+# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200611"
+
+admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+
+win_gfx_instance_count = 0
+# win_gfx_instance_type = "g4dn.xlarge"
+# win_gfx_disk_size_gb  = 50
+# win_std_ami_owner     = "amazon"
+# win_std_ami_name      = "Windows_Server-2019-English-Full-Base-2020.06.10"
+
+win_std_instance_count = 0
+# win_std_instance_type = "t2.xlarge"
+# win_std_disk_size_gb  = 50
+# win_std_ami_owner     = "amazon"
+# win_std_ami_name      = "Windows_Server-2019-English-Full-Base-2020.06.10"
+
+# REQUIRED: ensure the AWS account used has subscribed to the "CentOS 7 (x86_64)
+# - with Updates HVM" image using the AWS dashboard at
+# https://aws.amazon.com/marketplace/pp/B00O7WM7QW
+centos_gfx_instance_count = 0
+# centos_gfx_instance_type    = "g4dn.xlarge"
+# centos_gfx_disk_size_gb     = 50
+# centos_gfx_ami_owner        = "aws-marketplace"
+# centos_gfx_ami_product_code = "aw0evgkw8e5c1q413zgy5pjce"
+# centos_gfx_ami_name         = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+
+# REQUIRED: ensure the AWS account used has subscribed to the "CentOS 7 (x86_64)
+# - with Updates HVM" image using the AWS dashboard at
+# https://aws.amazon.com/marketplace/pp/B00O7WM7QW
+centos_std_instance_count = 0
+# centos_std_instance_type    = "t2.xlarge"
+# centos_std_disk_size_gb     = 50
+# centos_std_ami_owner        = "aws-marketplace"
+# centos_std_ami_product_code = "aw0evgkw8e5c1q413zgy5pjce"
+# centos_std_ami_name         = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+
+###############
+#   Secrets   #
+###############
+# The secrets below may be supplied in 2 formats:
+#   1. plain text
+#   2. AWS KMS encrypted, base64 encoded
+#
+# For option 1, leave "customer_master_key_id" commented out and enter the
+# plaintext passwords as strings in the variables below. Note that plaintext
+# passwords may show in Terraform logs and .tfstate files, appear unencrypted
+# in the storage bucket holding the provisioning scripts, as well as in the 
+# provisioning scripts once downloaded by the VMs.
+#
+# For option 2, a user encrypts the secrets independent of these Terraform
+# scripts. Once the secrets are encrypted with an AWS KMS customer managed
+# Customer Master Key (CMK), set "customer_master_key_id" to key ID used to
+# encrypt the secrets, and enter the base64-encoded ciphertext as strings in the
+# variables below. The AWS IAM account corresponding to the
+# "aws_credentials_file" above must have admin permissions to manage the CMK
+# specified.
+#
+# Note Windows password complexity requirements:
+# 1. Must not contain user's account name or display name
+# 2. Must have 3 of the following categories:
+#    a. a-z
+#    b. A-Z
+#    c. 0-9,
+#    d. (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+#    3. unicode characters
+# See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+
+# Uncomment and enter the Customer Master Key ID if using encryption.
+# customer_master_key_id = "<key-id-uuid>"
+
+dc_admin_password           = "SecuRe_pwd1"
+safe_mode_admin_password    = "SecuRe_pwd2"
+ad_service_account_password = "SecuRe_pwd3"
+lls_admin_password          = "SecuRe_pwd4"
+lls_activation_code         = "0123-4567-89AB-CDEF"
+pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+cac_token                   = "token from Cloud Access Manager for the connector"

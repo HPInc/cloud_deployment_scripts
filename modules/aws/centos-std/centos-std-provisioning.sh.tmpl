@@ -21,26 +21,23 @@ get_credentials() {
     if [[ -z "${customer_master_key_id}" ]]; then
         log "--> Script is not using encryption for secrets."
 
-        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-        AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
+        PCOIP_REGISTRATION_CODE="${pcoip_registration_code}"
+        AD_SERVICE_ACCOUNT_PASSWORD="${ad_service_account_password}"
 
     else
         log "--> Script is using encryption key: '${customer_master_key_id}'."
 
-        log "--> Decrypting pcoip_registration_code..."
-        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
-        
+        if [[ "${pcoip_registration_code}" ]]; then
+            log "--> Decrypting pcoip_registration_code..."
+            PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+        fi
+
         log "--> Decrypting ad_service_account_password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
 }
 
 check_required_vars() {
-    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
-        log "--> ERROR: Missing PCoIP Registration Code."
-        missing_vars="true"
-    fi
-
     if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
         log "--> ERROR: Missing Active Directory Service Account Password."
         missing_vars="true"
@@ -88,21 +85,26 @@ install_pcoip_agent() {
         fi
         log "--> PCoIP agent installed successfully."
 
-        log "--> Registering PCoIP agent license..."
-        n=0
-        while true; do
-            /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
-            n=$[$n+1]
+        if [[ "${pcoip_registration_code}" ]]; then
+            log "--> Registering PCoIP agent license..."
+            n=0
+            while true; do
+                /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
+                n=$[$n+1]
 
-            if [ $n -ge 10 ]; then
-                log "--> ERROR: Failed to register PCoIP agent after $n tries."
-                exit 1
-            fi
+                if [ $n -ge 10 ]; then
+                    log "--> ERROR: Failed to register PCoIP agent after $n tries."
+                    exit 1
+                fi
 
-            log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
-            sleep 10
-        done
-        log "--> PCoIP agent registered successfully."
+                log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
+                sleep 10
+            done
+            log "--> PCoIP agent registered successfully."
+
+        else
+            log "--> No PCoIP Registration Code provided. Skipping PCoIP agent registration..."
+        fi
     fi
 }
 

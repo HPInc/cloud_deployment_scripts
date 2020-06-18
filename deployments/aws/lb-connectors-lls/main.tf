@@ -56,6 +56,38 @@ module "dc" {
   ami_name  = var.dc_ami_name
 }
 
+module "lls" {
+  source = "../../../modules/aws/lls"
+
+  instance_count = var.lls_instance_count
+
+  prefix = var.prefix
+
+  customer_master_key_id = var.customer_master_key_id
+  lls_admin_password     = var.lls_admin_password
+  lls_activation_code    = var.lls_activation_code
+  lls_license_count      = var.lls_license_count
+
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.lls-subnet.id
+  security_group_ids = [
+    data.aws_security_group.default.id,
+    aws_security_group.allow-icmp.id,
+    aws_security_group.allow-ssh.id,
+  ]
+
+  instance_type = var.lls_instance_type
+  disk_size_gb  = var.lls_disk_size_gb
+
+  ami_owner        = var.lls_ami_owner
+  ami_product_code = var.lls_ami_product_code
+  ami_name         = var.lls_ami_name
+
+  admin_ssh_key_name = local.admin_ssh_key_name
+
+  depends_on_hack = [aws_nat_gateway.nat.id]
+}
+
 resource "aws_key_pair" "cam_admin" {
   key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
@@ -157,6 +189,8 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
+  lls_ip = module.lls.internal-ip[0]
+
   zone_list           = aws_subnet.cac-subnets[*].availability_zone
   subnet_list         = aws_subnet.cac-subnets[*].id
   instance_count_list = var.cac_instance_count_list
@@ -193,7 +227,7 @@ module "win-gfx" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = var.pcoip_registration_code
+  pcoip_registration_code = ""
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -211,8 +245,8 @@ module "win-gfx" {
 
   instance_count = var.win_gfx_instance_count
   instance_name  = var.win_gfx_instance_name
-  instance_type  = var.win_gfx_instance_type
-  disk_size_gb   = var.win_gfx_disk_size_gb
+  instance_type     = var.win_gfx_instance_type
+  disk_size_gb      = var.win_gfx_disk_size_gb
 
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
@@ -227,7 +261,7 @@ module "win-std" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = var.pcoip_registration_code
+  pcoip_registration_code = ""
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -245,8 +279,8 @@ module "win-std" {
 
   instance_count = var.win_std_instance_count
   instance_name  = var.win_std_instance_name
-  instance_type  = var.win_std_instance_type
-  disk_size_gb   = var.win_std_disk_size_gb
+  instance_type     = var.win_std_instance_type
+  disk_size_gb      = var.win_std_disk_size_gb
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
@@ -261,7 +295,7 @@ module "centos-gfx" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = var.pcoip_registration_code
+  pcoip_registration_code = ""
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -279,8 +313,8 @@ module "centos-gfx" {
 
   instance_count = var.centos_gfx_instance_count
   instance_name  = var.centos_gfx_instance_name
-  instance_type  = var.centos_gfx_instance_type
-  disk_size_gb   = var.centos_gfx_disk_size_gb
+  instance_type     = var.centos_gfx_instance_type
+  disk_size_gb      = var.centos_gfx_disk_size_gb
 
   ami_owner        = var.centos_gfx_ami_owner
   ami_product_code = var.centos_gfx_ami_product_code
@@ -298,7 +332,7 @@ module "centos-std" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = var.pcoip_registration_code
+  pcoip_registration_code = ""
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -316,8 +350,8 @@ module "centos-std" {
 
   instance_count = var.centos_std_instance_count
   instance_name  = var.centos_std_instance_name
-  instance_type  = var.centos_std_instance_type
-  disk_size_gb   = var.centos_std_disk_size_gb
+  instance_type     = var.centos_std_instance_type
+  disk_size_gb      = var.centos_std_disk_size_gb
 
   ami_owner        = var.centos_std_ami_owner
   ami_product_code = var.centos_std_ami_product_code
