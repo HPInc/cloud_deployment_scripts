@@ -19,22 +19,35 @@ log() {
 get_credentials() {
     if [[ -z "${customer_master_key_id}" ]]
     then
-        log "Not using encryption"
+        log "--> Script is not using encryption for secrets."
 
         LLS_ADMIN_PASSWORD=${lls_admin_password}
         LLS_ACTIVATION_CODE=${lls_activation_code}
 
     else
-        log "Using encryption key ${customer_master_key_id}"
+        log "--> Script is using encryption key: ${customer_master_key_id}"
 
+        log "--> Decrypting LLS Administrator Password..."
         LLS_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting LLS Activation Code..."
         LL_ACTIVATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_activation_code}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
+}
 
-    # Exit if any of the required variables are missing
-    if [[ -z "$LLS_ADMIN_PASSWORD" || -z "$LLS_ACTIVATION_CODE" ]]
-    then
-        log "Missing required parameters:"
+check_required_vars() {
+    if [[ -z "$LLS_ADMIN_PASSWORD" ]]; then
+        log "--> ERROR: Missing LLS Administrator Password."
+        missing_vars="true"
+    fi
+
+    if [[ -z "$LLS_ACTIVATION_CODE" ]]; then
+        log "--> ERROR: Missing LLS Activation Code."
+        missing_vars="true"
+    fi
+
+    if [[ "$missing_vars" = "true" ]]; then
+        log "--> Exiting..."
         exit 1
     fi
 }
@@ -59,6 +72,8 @@ yum update -y
 yum install -y wget yum-utils
 
 get_credentials
+
+check_required_vars
 
 yum install -y ${lls_repo_url}
 yum install -y $LLS_YUM_PKG
