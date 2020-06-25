@@ -166,6 +166,21 @@ wait_for_dc() {
     done
 }
 
+wait_for_lls() {
+    log "--> Ensure lls ${lls_ip} port 7070 is reacheable..."
+    TIMEOUT=1200
+    until netcat -vz ${lls_ip} 7070; do
+        if [ $TIMEOUT -le 0 ]; then
+            log "--> ERROR: Timed out trying to contact ${lls_ip}:7070. Continuing..."
+            break
+        else
+            log "--> Trying to contact ${lls_ip}:7070. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
+        fi
+        TIMEOUT=$((TIMEOUT-10))
+        sleep 10
+    done
+}
+
 install_cac() {
     log "--> Installing Cloud Access Connector..."
     RETRIES=3
@@ -223,6 +238,7 @@ install_cac() {
 
         if [ $RETRIES -eq 0 ]
         then
+            log "--> ERROR: No retries remaining, exiting provisioning script..."
             exit 1
         fi
 
@@ -252,6 +268,11 @@ config_network
 download_cac
 
 wait_for_dc
+
+if [ "${lls_ip}" ]
+then
+    wait_for_lls
+fi
 
 install_cac
 
