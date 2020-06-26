@@ -113,6 +113,61 @@ variable "domain_users_list" {
   default     = ""
 }
 
+variable "lls_subnet_name" {
+  description = "Name for subnet containing the PCoIP License Servers"
+  default     = "subnet-lls"
+}
+
+variable "lls_subnet_cidr" {
+  description = "CIDR for subnet containing the PCoIP License Servers"
+  default     = "10.0.3.0/24"
+}
+
+variable "lls_instance_count" {
+  description = "Number of PCoIP License Servers"
+  default     = 1
+}
+
+variable "lls_instance_type" {
+  description = "Instance type for the PCoIP License Server"
+  default     = "t2.medium"
+}
+
+variable "lls_disk_size_gb" {
+  description = "Disk size (GB) of the PCoIP License Server"
+  default     = "10"
+}
+
+variable "lls_ami_owner" {
+  description = "Owner of AMI for the PCoIP License Server"
+  default     = "aws-marketplace"
+}
+
+variable "lls_ami_product_code" {
+  description = "Product Code of the AMI for the PCoIP License Server"
+  default     = "aw0evgkw8e5c1q413zgy5pjce"
+}
+
+variable "lls_ami_name" {
+  description = "Name of the CentOS AMI to run PCoIP License Server on"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+}
+
+variable "lls_admin_password" {
+  description = "Administrative password for the Teradici License Server"
+  default     = ""
+}
+
+variable "lls_activation_code" {
+  description = "Activation Code for PCoIP session licenses"
+  default     = ""
+}
+
+variable "lls_license_count" {
+  description = "Number of PCoIP session licenses to activate"
+  default     = 0
+}
+
 variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
   type        = list(string)

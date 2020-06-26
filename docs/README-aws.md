@@ -5,6 +5,7 @@
 ### Requirements
 - the user must have Administrator permissions in an AWS account
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a PCoIP License Server Activation Code is needed for Local License Server (LLS) based deployments.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
@@ -54,6 +55,8 @@ If secrets are KMS CMK encrypted, fill in the ```customer_master_key_id``` varia
 - ```dc_admin_password```
 - ```safe_mode_admin_password```
 - ```ad_service_account_password```
+- ```lls_admin_password``` (lb-connectors-lls only)
+- ```lls_activation_code``` (lb-connectors-lls only)
 - ```pcoip_registration_code```
 - ```cac_token```
 
@@ -81,6 +84,9 @@ Note that changes involving creating or recreating Cloud Access Connectors requi
 
 ### Deleting the deployment
 Run ```terraform destroy``` to remove all resources created by Terraform.
+
+**Note for the lb-connectors-lls deployment**
+Be sure to SSH into the Local License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the activated PCoIP licenses will be lost.
 
 ## Architectures
 This section describes the different types of deployment scenarios supported by Terraform scripts in this repository.
@@ -117,3 +123,13 @@ The AZs and number of Cloud Access Connectors for each AZs are specified by the 
 The following diagram shows what a lb-connectors deployment looks like with 2 AZs specified:
 
 ![aws-lb-connectors diagram](aws-lb-connectors.png)
+
+### lb-connectors-lls
+This deployment is similar to the lb-connectors deployment, except the workstations will use a PCoIP License Server, also known as a Local License Server (LLS), to obtain PCoIP licenses instead of reaching out to the internet to validate the PCoIP Registration Code witha Cloud License Server when establishing a PCoIP session. To use this deployment, a user must supply an Activation Code which is used by the LLS to "check out" PCoIP licenses, in addition to a PCoIP registration code.
+
+**Note when destroying this deployment**
+Be sure to SSH into the Local License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the "checked out" PCoIP licenses will be lost.
+
+For more information on the PCoIP License Server, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
+
+![aws-lb-connectors-lls diagram](aws-lb-connectors-lls.png)

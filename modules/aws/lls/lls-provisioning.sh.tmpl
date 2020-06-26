@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+
+LLS_YUM_PKG="pcoip-license-server"
+
+log() {
+    local message="$1"
+    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+}
+
+get_credentials() {
+    if [[ -z "${customer_master_key_id}" ]]
+    then
+        log "--> Script is not using encryption for secrets."
+
+        LLS_ADMIN_PASSWORD=${lls_admin_password}
+        LLS_ACTIVATION_CODE=${lls_activation_code}
+
+    else
+        log "--> Script is using encryption key: ${customer_master_key_id}"
+
+        log "--> Decrypting LLS Administrator Password..."
+        LLS_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting LLS Activation Code..."
+        LL_ACTIVATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_activation_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+    fi
+}
+
+check_required_vars() {
+    if [[ -z "$LLS_ADMIN_PASSWORD" ]]; then
+        log "--> ERROR: Missing LLS Administrator Password."
+        missing_vars="true"
+    fi
+
+    if [[ -z "$LLS_ACTIVATION_CODE" ]]; then
+        log "--> ERROR: Missing LLS Activation Code."
+        missing_vars="true"
+    fi
+
+    if [[ "$missing_vars" = "true" ]]; then
+        log "--> Exiting..."
+        exit 1
+    fi
+}
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $${LOG_FILE})"
+    touch "$LOG_FILE"
+    chmod 600 "$LOG_FILE"
+fi
+
+yum info $LLS_YUM_PKG
+if [[ $? -eq 0 ]]
+then
+    log "PCoIP licence Server already installed. Skipping startup script."
+    exit 0
+fi
+
+log "$(date)"
+
+yum update -y
+yum install -y wget yum-utils
+
+get_credentials
+
+check_required_vars
+
+yum install -y ${lls_repo_url}
+yum install -y $LLS_YUM_PKG
+
+pcoip-set-password -p "1P@ssw0rd!" -n "$LLS_ADMIN_PASSWORD"
+
+pcoip-activate-online-license -a "$LLS_ACTIVATION_CODE" -c ${lls_license_count} -p "$LLS_ADMIN_PASSWORD"
