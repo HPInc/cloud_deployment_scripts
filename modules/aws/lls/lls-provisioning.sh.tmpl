@@ -31,7 +31,7 @@ get_credentials() {
         LLS_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting LLS Activation Code..."
-        LL_ACTIVATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_activation_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+        LLS_ACTIVATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_activation_code}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
 }
 
