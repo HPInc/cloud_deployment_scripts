@@ -20,6 +20,28 @@ log() {
     echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    until $command
+    do
+        if [ $timeout -le 0 ]
+        then
+            log $err_message
+            break
+        fi
+
+        log "$log_message Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
+}
+
 get_credentials() {
     if [[ -z "${customer_master_key_id}" ]]; then
         log "--> Script is not using encryption for secrets."
@@ -98,40 +120,40 @@ download_cac() {
 }
 
 wait_for_dc() {
+    local timeout=25
+    local interval=5
+
     # Wait for service account to be added. Do this last because it takes
     # a while for new AD user to be added in a new Domain Controller.
     # Note: using the domain controller IP instead of the domain name for
     #       the host is more resilient.
-    log "--> Installing ldap_utils..."
-    RETRIES=5
-    while true; do
-        apt-get -qq update
-        apt-get -qq install ldap-utils
-        RC=$?
-        if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then
-            break
-        fi
+    log "--> Updating apt-get package list..."
+    retry $timeout \
+          $interval \
+          "apt-get -qq update" \
+          "--> Updating apt-get package list..." \
+          "--> ERROR: Failed to update apt-get package list."
 
-        log "--> ERROR: Failed to install ldap-utils. $RETRIES retries remaining..."
-        RETRIES=$((RETRIES-1))
-        sleep 5
-    done
+    log "--> Installing ldap_utils..."
+    retry $timeout \
+          $interval \
+          "apt-get -qq install ldap-utils" \
+          "--> Installing ldap_utils..." \
+          "--> ERROR: Failed to install ldap-utils."
+
+    timeout=1200
+    interval=10
 
     log "--> Ensure AD account is available..."
-    TIMEOUT=1200
-    until ldapwhoami \
-        -H ldap://${domain_controller_ip} \
-        -D ${ad_service_account_username}@${domain_name} \
-        -w $AD_SERVICE_ACCOUNT_PASSWORD \
-        -o nettimeout=1; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
-            break
-        fi
-        log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "ldapwhoami \
+            -H ldap://${domain_controller_ip} \
+            -D ${ad_service_account_username}@${domain_name} \
+            -w $AD_SERVICE_ACCOUNT_PASSWORD \
+            -o nettimeout=1" \
+          "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available." \
+          "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
 
     # Check that the domain name can be resolved and that the LDAP port is accepting
     # connections. This could have been all done with the ldapwhoami command, but
@@ -139,48 +161,32 @@ wait_for_dc() {
     # controller unreachable" or "DNS error occurred" errors, check these explicitly
     # for logging and debug purposes.
     log "--> Ensure domain ${domain_name} can be resolved..."
-    TIMEOUT=1200
-    until host ${domain_name}; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
-            break
-        fi
-        log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "host ${domain_name}" \
+          "--> Trying to resolve ${domain_name}." \
+          "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
 
     log "--> Ensure domain ${domain_name} port 636 is reacheable..."
-    TIMEOUT=1200
-    until netcat -vz ${domain_name} 636; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
-            break
-        fi
-        log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "netcat -vz ${domain_name} 636" \
+          "--> Trying to contact ${domain_name}:636." \
+          "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
 }
 
 wait_for_lls() {
-    TIMEOUT=1200
+    local timeout=1200
+    local interval=10
     local lls_health_check_url="http://${lls_ip}:7070/api/1.0/health"
 
     log "--> Performing LLS health check using endpoint $lls_health_check_url..."
-
-    # Need to escape Terraform template directive using %%
-    until [ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]
-    do
-        if [ $TIMEOUT -le 0 ]
-        then
-            log "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
-            break
-        fi
-        log "--> Performing LLS health check using endpoint $lls_health_check_url... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          # Need to escape Terraform template directive using %%
+          "[ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]" \
+          "--> Performing LLS health check using endpoint $lls_health_check_url..." \
+          "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
 }
 
 install_cac() {

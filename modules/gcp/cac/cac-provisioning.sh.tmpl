@@ -24,6 +24,28 @@ log() {
     echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
+retry() {
+    local timeout=$1
+    local interval=$2
+    local command=$3
+    local log_message=$4
+    local err_message=$5
+
+    until $command
+    do
+        if [ $timeout -le 0 ]
+        then
+            log $err_message
+            break
+        fi
+
+        log "$log_message Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
+}
+
 install_python() {
     log "--> Installing Python3..."
     apt-get -qq update
@@ -142,43 +164,41 @@ download_cac() {
 }
 
 wait_for_dc() {
+    local timeout=25
+    local interval=5
+
     # Wait for service account to be added. Do this last because it takes
     # a while for new AD user to be added in a new Domain Controller.
     # Note: using the domain controller IP instead of the domain name for
     #       the host is more resilient.
+
+    log "--> Updating apt-get package list..."
+    retry $timeout \
+          $interval \
+          "apt-get -qq update" \
+          "--> Updating apt-get package list..." \
+          "--> ERROR: Failed to update apt-get package list."
+
     log "--> Installing ldap_utils..."
-    local retries=5
+    retry $timeout \
+          $interval \
+          "apt-get -qq install ldap-utils" \
+          "--> Installing ldap_utils..." \
+          "--> ERROR: Failed to install ldap-utils."
 
-    while true; do
-        apt-get -qq update
-        apt-get -qq install ldap-utils
-
-        local rc=$?
-        if [ $rc -eq 0 ] || [ $retries -eq 0 ]; then
-            break
-        fi
-
-        log "--> ERROR: Failed to install ldap-utils. $retries retries remaining..."
-        retries=$((retries-1))
-        sleep 5
-    done
+    timeout=1200
+    interval=10
 
     log "--> Ensure AD account is available..."
-    TIMEOUT=1200
-    until ldapwhoami \
-        -H ldap://${domain_controller_ip} \
-        -D ${ad_service_account_username}@${domain_name} \
-        -w $AD_SERVICE_ACCOUNT_PASSWORD \
-        -o nettimeout=1; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
-            break
-        else
-            log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        fi
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "ldapwhoami \
+            -H ldap://${domain_controller_ip} \
+            -D ${ad_service_account_username}@${domain_name} \
+            -w $AD_SERVICE_ACCOUNT_PASSWORD \
+            -o nettimeout=1" \
+          "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available." \
+          "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
 
     # Check that the domain name can be resolved and that the LDAP port is accepting
     # connections. This could have been all done with the ldapwhoami command, but
@@ -186,30 +206,18 @@ wait_for_dc() {
     # controller unreachable" or "DNS error occurred" errors, check these explicitly
     # for logging and debug purposes.
     log "--> Ensure domain ${domain_name} can be resolved..."
-    TIMEOUT=1200
-    until host ${domain_name}; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
-            break
-        else
-            log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        fi
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "host ${domain_name}" \
+          "--> Trying to resolve ${domain_name}." \
+          "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
 
     log "--> Ensure domain ${domain_name} port 636 is reacheable..."
-    TIMEOUT=1200
-    until netcat -vz ${domain_name} 636; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
-            break
-        else
-            log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        fi
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "netcat -vz ${domain_name} 636" \
+          "--> Trying to contact ${domain_name}:636." \
+          "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
 }
 
 install_cac() {
@@ -329,3 +337,5 @@ wait_for_dc
 install_cac
 
 docker service ls
+
+log "--> Provisioning script completed successfully. "
