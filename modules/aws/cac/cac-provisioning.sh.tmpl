@@ -191,7 +191,7 @@ wait_for_lls() {
 
 install_cac() {
     log "--> Installing Cloud Access Connector..."
-    RETRIES=3
+    local retries=10
     export CAM_BASE_URI=${cam_url}
 
     log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
@@ -235,23 +235,23 @@ install_cac() {
             --reg-code $PCOIP_REGISTRATION_CODE \
             --sync-interval 5 \
             $args \
-            2>&1 | tee -a $INSTALL_LOG
+            2>&1 | tee -a $CAC_INSTALL_LOG
 
-        RC=$?
-        if [ $RC -eq 0 ]
+        local rc=$?
+        if [ $rc -eq 0 ]
         then
             log "--> Successfully installed Cloud Access Connector."
             break
         fi
 
-        if [ $RETRIES -eq 0 ]
+        if [ $retries -eq 0 ]
         then
             log "--> ERROR: No retries remaining, exiting provisioning script..."
             exit 1
         fi
 
-        log "--> ERROR: Failed to install Cloud Access Connector. $RETRIES retries remaining..."
-        RETRIES=$((RETRIES-1))
+        log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
+        retries=$((retries-1))
         sleep 60
     done
 }
