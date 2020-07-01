@@ -19,7 +19,7 @@ CPU_POLLING_INTERVAL=${minutes_cpu_polling_interval}
 
 log() {
     local message="$1"
-    echo "[$(date)] $message" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message"
 }
 
 retry() {
@@ -70,6 +70,8 @@ get_credentials() {
 }
 
 check_required_vars() {
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
@@ -79,6 +81,7 @@ check_required_vars() {
         log "--> ERROR: Missing Active Directory Service Account Password."
         missing_vars="true"
     fi
+    set -x
 
     if [[ "$missing_vars" = "true" ]]; then
         log "--> Exiting..."
@@ -194,6 +197,7 @@ install_pcoip_agent() {
 
         log "--> Registering PCoIP agent license..."
         n=0
+        set +x
         while true; do
             /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
             n=$[$n+1]
@@ -206,6 +210,7 @@ install_pcoip_agent() {
             log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
             sleep 10
         done
+        set -x
         log "--> PCoIP agent registered successfully."
     fi
 }
@@ -252,11 +257,13 @@ join_domain() {
         # Wait for AD service account to be set up
         yum -y install openldap-clients
         log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to be available..."
+        set +x
         until ldapwhoami -H ldap://${domain_controller_ip} -D ${ad_service_account_username}@${domain_name} -w "$AD_SERVICE_ACCOUNT_PASSWORD" -o nettimeout=1 > /dev/null 2>&1
         do
             log "--> ${ad_service_account_username}@${domain_name} not available yet, retrying in 10 seconds..."
             sleep 10
         done
+        set -x
 
         # Join domain
         log "--> Installing required packages to join domain..."
@@ -265,6 +272,7 @@ join_domain() {
         log "--> Joining the domain '${domain_name}'..."
         local retries=10
 
+        set +x
         while true
         do
             echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" --verbose >&2
@@ -286,6 +294,7 @@ join_domain() {
             retries=$((retries-1))
             sleep 60
         done
+        set -x
 
         log "--> Configuring settings..."
         sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf
@@ -313,7 +322,9 @@ join_domain() {
         log "--> Registering with DNS..."
         DOMAIN_UPPER=$(echo "${domain_name}" | tr '[:lower:]' '[:upper:]')
         IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
+        set +x
         echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "${ad_service_account_username}"@"$DOMAIN_UPPER"
+        set -x
         touch "$dns_record_file"
         echo "server ${domain_controller_ip}" > "$dns_record_file"
         echo "update add $VM_NAME.${domain_name} 600 a $IP_ADDRESS" >> "$dns_record_file"
@@ -339,6 +350,12 @@ else
 fi
 
 log "$(date)"
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
 
 get_credentials
 

@@ -17,7 +17,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 log() {
     local message="$1"
-    echo "[$(date)] $message" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message"
 }
 
 retry() {
@@ -43,6 +43,8 @@ retry() {
 }
 
 get_credentials() {
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
     if [[ -z "${customer_master_key_id}" ]]; then
         log "--> Script is not using encryption for secrets."
 
@@ -64,9 +66,11 @@ get_credentials() {
         log "--> Decrypting CAC token..."
         CAC_TOKEN=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cac_token}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
+    set -x
 }
 
 check_required_vars() {
+    set +x
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
@@ -81,6 +85,7 @@ check_required_vars() {
         log "--> ERROR: Missing Cloud Access Connector Token."
         missing_vars="true"
     fi
+    set -x
 
     if [[ "$missing_vars" = "true" ]]; then
         log "--> Exiting..."
@@ -144,6 +149,7 @@ wait_for_dc() {
     timeout=1200
     interval=10
 
+    set +x
     log "--> Ensure AD account is available..."
     retry $timeout \
           $interval \
@@ -154,7 +160,7 @@ wait_for_dc() {
             -o nettimeout=1" \
           "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available." \
           "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
-
+    set -x
     # Check that the domain name can be resolved and that the LDAP port is accepting
     # connections. This could have been all done with the ldapwhoami command, but
     # due to a number of occasional cac-installation issues, such as "domain
@@ -223,6 +229,7 @@ install_cac() {
         args=$args"--local-license-server-url http://${lls_ip}:7070/request "
     fi
 
+    set +x
     while true
     do
         $INSTALL_DIR/cloud-access-connector install \
@@ -254,6 +261,7 @@ install_cac() {
         retries=$((retries-1))
         sleep 60
     done
+    set -x
 }
 
 if [[ ! -f "$LOG_FILE" ]]
@@ -264,6 +272,12 @@ then
 fi
 
 log "$(date)"
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
 
 get_credentials
 
