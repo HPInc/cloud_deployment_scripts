@@ -194,7 +194,7 @@ def ensure_terraform():
             return
 
     install_permission = input(
-        'This system is missing Terraform version >= 0.12.\n'
+        f'This system is missing Terraform version >= {required_version}.\n'
         f'Proceed to download and install Terraform in {TERRAFORM_BIN_DIR} (y/n)? ').strip().lower()
 
     if install_permission not in ('y', 'yes'):

@@ -36,15 +36,16 @@ def import_or_install_module(pypi_package_name, module_name = None):
         print(f"Successfully imported {module_name}.")
 
     except ImportError:
+        install_cmd = f'{sys.executable} -m pip install {pypi_package_name} --user'
+
         install_permission = input(
             f"This script requires {pypi_package_name} but it is not installed.\n"
-            f"Proceed to install this package by running '{sys.executable} -m pip install {pypi_package_name} --user' (y/n)? ").strip().lower()
+            f"Proceed to install this package by running '{install_cmd}' (y/n)? ").strip().lower()
 
         if install_permission not in ('y', 'yes'):
             print(f"{pypi_package_name} is not installed. Exiting...")
             sys.exit(1)
 
-        install_cmd = f'{sys.executable} -m pip install {pypi_package_name} --user'
         subprocess.check_call(install_cmd.split(' '))
 
         print(f"Successfully installed {pypi_package_name}.")
