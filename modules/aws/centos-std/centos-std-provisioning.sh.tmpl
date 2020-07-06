@@ -139,7 +139,7 @@ join_domain() {
 
         while true
         do
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}" "${domain_name}" --verbose >&2
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" --verbose >&2
 
             local rc=$?
             if [[ $rc -eq 0 ]]
