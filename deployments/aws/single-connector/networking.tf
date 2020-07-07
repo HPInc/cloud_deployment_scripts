@@ -10,8 +10,8 @@ data "http" "myip" {
 }
 
 data "aws_availability_zones" "available_az" {
-  state                = "available"
-  blacklisted_zone_ids = var.az_id_blacklist
+  state            = "available"
+  exclude_zone_ids = var.az_id_exclude_list
 }
 
 locals {
