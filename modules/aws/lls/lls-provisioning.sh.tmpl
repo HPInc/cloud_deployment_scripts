@@ -13,7 +13,7 @@ LLS_YUM_PKG="pcoip-license-server"
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
 get_credentials() {
@@ -54,7 +54,7 @@ check_required_vars() {
 
 if [[ ! -f "$LOG_FILE" ]]
 then
-    mkdir -p "$(dirname $${LOG_FILE})"
+    mkdir -p "$(dirname $LOG_FILE)"
     touch "$LOG_FILE"
     chmod 600 "$LOG_FILE"
 fi

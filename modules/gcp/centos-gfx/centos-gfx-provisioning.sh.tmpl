@@ -19,7 +19,7 @@ CPU_POLLING_INTERVAL=${minutes_cpu_polling_interval}
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
 retry() {
@@ -30,7 +30,7 @@ retry() {
     # Break if command succeeds, or log the retry if command fails.
         $@ && break || {
 
-            log "--> Failed to run command. $${@}"
+            log "--> Failed to run command. $@"
             log "--> Retries left... $(( $max_retries - $retries ))"
             ((retries++))
             sleep 10;
@@ -218,13 +218,13 @@ install_idle_shutdown() {
     
     awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
 
-    log "--> Setting auto shutdown idle timer to $${AUTO_SHUTDOWN_IDLE_TIMER} minutes..."
-    INSTALL_OPTS="--idle-timer $${AUTO_SHUTDOWN_IDLE_TIMER}"
-    if [[ "$${ENABLE_AUTO_SHUTDOWN}" = "false" ]]; then
-        INSTALL_OPTS="$${INSTALL_OPTS} --disabled"
+    log "--> Setting auto shutdown idle timer to $AUTO_SHUTDOWN_IDLE_TIMER minutes..."
+    INSTALL_OPTS="--idle-timer $AUTO_SHUTDOWN_IDLE_TIMER"
+    if [[ "$ENABLE_AUTO_SHUTDOWN" = "false" ]]; then
+        INSTALL_OPTS="$INSTALL_OPTS --disabled"
     fi
     
-    retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $${INSTALL_OPTS}
+    retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS
 
     exitCode=$?
     if [[ $exitCode -ne 0 ]]; then
@@ -233,7 +233,7 @@ install_idle_shutdown() {
     fi
 
     if [[ $CPU_POLLING_INTERVAL -ne 15 ]]; then
-        log "--> Setting CPU polling interval to $${CPU_POLLING_INTERVAL} minutes..."
+        log "--> Setting CPU polling interval to $CPU_POLLING_INTERVAL minutes..."
         sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${CPU_POLLING_INTERVAL}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
         systemctl daemon-reload
     fi

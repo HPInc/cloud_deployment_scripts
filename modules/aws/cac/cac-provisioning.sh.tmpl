@@ -17,7 +17,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
 get_credentials() {

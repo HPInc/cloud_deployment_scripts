@@ -14,7 +14,7 @@ PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
 get_credentials() {
