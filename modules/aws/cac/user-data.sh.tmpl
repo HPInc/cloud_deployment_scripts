@@ -5,7 +5,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 apt-get -qq update
-apt install -y awscli dos2unix
+apt install -y awscli dos2unix python3
 aws s3 cp s3://${bucket_name}/${file_name} .
 chmod +x ${file_name}
 dos2unix ${file_name}
