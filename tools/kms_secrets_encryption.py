@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2020 Teradici Corporation
 #
@@ -7,12 +7,61 @@
 
 import argparse
 import base64
+import importlib
 import os
-from google.cloud    import kms_v1
-from google.oauth2   import service_account
+import subprocess
+import sys
 
 
 SECRETS_START_FLAG = "# <-- Start of secrets section, do not edit this line. -->"
+
+
+def import_or_install_module(pypi_package_name, module_name = None):
+    """A function that imports a Python top-level package or module. 
+    If the required package is not installed, it will install the package before importing it again.
+
+    Args:
+        pypi_package_name (str): the name of the PyPI package to be installed
+        module_name (str): the import name of the module if it is different than the PyPI package name
+
+    Returns:
+        module: the top-level package or module
+    """
+
+    if module_name is None:
+        module_name = pypi_package_name
+
+    try:
+        module = importlib.import_module(module_name)
+        print(f"Successfully imported {module_name}.")
+
+    except ImportError:
+        install_cmd = f'{sys.executable} -m pip install {pypi_package_name} --user'
+
+        install_permission = input(
+            f"This script requires {pypi_package_name} but it is not installed.\n"
+            f"Proceed to install this package by running '{install_cmd}' (y/n)? ").strip().lower()
+
+        if install_permission not in ('y', 'yes'):
+            print(f"{pypi_package_name} is not installed. Exiting...")
+            sys.exit(1)
+
+        subprocess.check_call(install_cmd.split(' '))
+
+        print(f"Successfully installed {pypi_package_name}.")
+
+        # Recommended to clear cache after installing python packages for dynamic imports
+        importlib.invalidate_caches()
+
+        module = importlib.import_module(module_name)
+        print(f"Successfully imported {module_name}.")
+
+    except Exception as err:
+        print(f"An exception occurred importing {module_name}.\n")
+        raise SystemExit(err)
+
+    return module
+
 
 class Tfvars_Encryptor_GCP:
     """Tfvars_Encryptor_GCP is used to automate the encryption or decryption of secrets in a terraform 
@@ -54,7 +103,7 @@ class Tfvars_Encryptor_GCP:
         """Tfvars_Encryptor_GCP Class Constructor to initialize the object.
         
         Args: 
-            tfvars_path (str):      a full path to the terraform.tfvars file
+            tfvars_path (str): a full path to the terraform.tfvars file
         """
 
         # Read tfvars data and secrets into dictionaries
@@ -156,7 +205,7 @@ class Tfvars_Encryptor_GCP:
         """
 
         try:
-            print("Decrypting file: {}...".format(file_path))
+            print(f"Decrypting file: {file_path}...")
 
             with open(file_path) as f:
                 f_ciphertext = f.read()
@@ -164,15 +213,14 @@ class Tfvars_Encryptor_GCP:
             f_plaintext = self.decrypt_ciphertext(f_ciphertext)
 
             # Removes the .encrypted appended using this encryptor
-            file_path_decrypted = "{}.decrypted".format(file_path).replace(".encrypted", "")
+            file_path_decrypted = f"{file_path}.decrypted".replace(".encrypted", "")
 
             with open(file_path_decrypted, "w") as f:
                 f.write(f_plaintext)
 
         except Exception as err:
-            print("An exception occurred decrypting file.")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred decrypting file.\n")
+            raise SystemExit(err)
         
         return file_path_decrypted
 
@@ -183,7 +231,7 @@ class Tfvars_Encryptor_GCP:
         This method contains the logic for handling the decryption of the secrets 
         and any file paths associated with it using GCP KMS. Once decrypted, it calls 
         write_new_tfvars() to write all secrets to a new terraform.tfvars file. 
-        """    
+        """
 
         # Set crypto key path to use kms_cryptokey_id
         self.crypto_key_path = self.tfvars_data.get("kms_cryptokey_id")
@@ -195,7 +243,7 @@ class Tfvars_Encryptor_GCP:
                 if os.path.isfile(self.tfvars_secrets.get(secret)):
                     self.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_secrets.get(secret))
                 else:
-                    print("Decrypting {}...".format(secret))
+                    print(f"Decrypting {secret}...")
                     self.tfvars_secrets[secret] = self.decrypt_ciphertext(self.tfvars_secrets.get(secret))
             
             # Write encrypted secrets into new terraform.tfvars file
@@ -203,9 +251,8 @@ class Tfvars_Encryptor_GCP:
             print("\nSuccessfully decrypted all secrets!\n")
 
         except Exception as err:
-            print("An exception occurred decrypting secrets:")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred decrypting secrets:\n")
+            raise SystemExit(err)
 
 
     def encrypt_file(self, file_path):
@@ -221,21 +268,20 @@ class Tfvars_Encryptor_GCP:
         """
 
         try:
-            print("Encrypting file: {}...".format(file_path))
+            print(f"Encrypting file: {file_path}...")
             
             with open(file_path) as f:
                 f_string = f.read()
 
             f_encrypted_string = self.encrypt_plaintext(f_string)
-            file_path_encrypted = "{}.encrypted".format(file_path).replace(".decrypted", "")
+            file_path_encrypted = f"{file_path}.encrypted".replace(".decrypted", "")
             
             with open(file_path_encrypted, "w") as f:
                 f.write(f_encrypted_string)
 
         except Exception as err:
-            print("An exception occurred encrypting the file:")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred encrypting the file:\n")
+            raise SystemExit(err)
         
         return file_path_encrypted
 
@@ -276,7 +322,7 @@ class Tfvars_Encryptor_GCP:
                 if os.path.isfile(self.tfvars_secrets.get(secret)):
                     self.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_secrets.get(secret))
                 else:
-                    print("Encrypting {}...".format(secret))
+                    print(f"Encrypting {secret}...")
                     self.tfvars_secrets[secret] = self.encrypt_plaintext(self.tfvars_secrets.get(secret))
 
             # Write encrypted secrets into new terraform.tfvars file
@@ -284,9 +330,8 @@ class Tfvars_Encryptor_GCP:
             print("\nSuccessfully encrypted all secrets!\n")
 
         except Exception as err:
-            print("An exception occurred encrypting secrets:")
-            print("{}\n".format(err))
-            raise SystemExit()
+            print("An exception occurred encrypting secrets:\n")
+            raise SystemExit(err)
 
 
     def initialize_cryptokey(self, crypto_key_id):
@@ -308,14 +353,13 @@ class Tfvars_Encryptor_GCP:
         if crypto_key_id not in crypto_keys_list:
             try:
                 self.create_crypto_key(crypto_key_id)
-                print("Created key: {}\n".format(crypto_key_id))
+                print(f"Created key: {crypto_key_id}\n")
                 
             except Exception as err:
-                print("An exception occurred creating new crypto key:")
-                print("{}".format(err))
-                raise SystemExit()
+                print("An exception occurred creating new crypto key:\n")
+                raise SystemExit(err)
         else:
-            print("Using existing crypto key: {}\n".format(crypto_key_id))
+            print(f"Using existing crypto key: {crypto_key_id}\n")
         
         return crypto_key_id
 
@@ -338,14 +382,13 @@ class Tfvars_Encryptor_GCP:
         if key_ring_id not in key_rings_list:
             try:
                 self.create_key_ring(key_ring_id)
-                print("Created key ring: {}\n".format(key_ring_id))
+                print(f"Created key ring: {key_ring_id}\n")
         
             except Exception as err:
-                print("An exception occurred creating new key ring:")
-                print("{}".format(err))
-                raise SystemExit()
+                print("An exception occurred creating new key ring:\n")
+                raise SystemExit(err)
         else: 
-            print("Using existing key ring: {}\n".format(key_ring_id))
+            print(f"Using existing key ring: {key_ring_id}\n")
 
         return key_ring_id
 
@@ -452,9 +495,9 @@ class Tfvars_Encryptor_GCP:
                 # Append the crypto key path to kms_cryptokey_id line
                 if "kms_cryptokey_id =" in line:
                     if not self.tfvars_data.get("kms_cryptokey_id"):
-                        lines.append("{} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                        lines.append(f"kms_cryptokey_id = \"{self.crypto_key_path}\"")
                     else:
-                        lines.append("# {} = \"{}\"".format("kms_cryptokey_id", self.crypto_key_path))
+                        lines.append(f"# kms_cryptokey_id = \"{self.crypto_key_path}\"")
                     continue
 
                 # Blank lines and comments are unchanged
@@ -468,13 +511,13 @@ class Tfvars_Encryptor_GCP:
 
                 if key in self.tfvars_secrets.keys():
                     # Left justify all the secrets with space as padding on the right
-                    lines.append("{} = \"{}\"".format(key.ljust(self.max_key_length, " "), self.tfvars_secrets.get(key)))
+                    lines.append(f"{key.ljust(self.max_key_length, ' ')} = \"{self.tfvars_secrets.get(key)}\"")
                 else:
                     lines.append(line)
 
         # Add .backup postfix to the original tfvars file
         print("Creating backup of terraform.tfvars...")
-        os.rename(self.tfvars_path, "{}.backup".format(self.tfvars_path))
+        os.rename(self.tfvars_path, f"{self.tfvars_path}.backup")
 
         # Rewrite the existing terraform.tfvars
         print("Writing new terraform.tfvars...")
@@ -520,5 +563,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # Install and import the required packages and modules
+    kms_v1 = import_or_install_module("google-cloud-kms", "google.cloud.kms_v1")
+    service_account = import_or_install_module("google_oauth2_tool", "google.oauth2.service_account")
 
+    main()

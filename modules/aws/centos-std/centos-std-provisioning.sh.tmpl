@@ -14,7 +14,7 @@ PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
 get_credentials() {
@@ -135,16 +135,30 @@ join_domain() {
         yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python
 
         log "--> Joining the domain '${domain_name}'..."
-        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" >&2
+        local retries=10
 
-        exitCode=$?
-        if [[ $exitCode -eq 0 ]]
-        then
-            log "--> Joined domain '${domain_name}'."
-        else
-            log "--> Failed to join domain '${domain_name}'."
-            return 106
-        fi
+        while true
+        do
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" --verbose >&2
+
+            local rc=$?
+            if [[ $rc -eq 0 ]]
+            then
+                log "--> Successfully joined domain '${domain_name}'."
+                break
+            fi
+
+            if [ $retries -eq 0 ]
+            then
+                log "--> ERROR: Failed to join domain '${domain_name}'."
+                return 106
+            fi
+
+            log "--> ERROR: Failed to join domain '${domain_name}'. $retries retries remaining..."
+            retries=$((retries-1))
+            sleep 60
+        done
+
 
         log "--> Configuring settings..."
         sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf

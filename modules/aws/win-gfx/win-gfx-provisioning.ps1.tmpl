@@ -34,7 +34,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
           Throw
       }
   
-      Write-Information "Attempt $Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+      Write-Information "Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
       Start-Sleep -Seconds $Interval
     }
 }
@@ -253,7 +253,7 @@ function Join-Domain {
 
             # Sometimes domain join is successful but renaming the computer fails
             if ($PSItem.FullyQualifiedErrorId -match "FailToRenameAfterJoinDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                Retry -Action {Rename-Computer -NewName "$host_name" -DomainCredential $cred}
+                Retry -Action {Rename-Computer -NewName "$host_name" -DomainCredential $cred -ErrorAction Stop}
                 break
             }
 

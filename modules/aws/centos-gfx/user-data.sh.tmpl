@@ -24,7 +24,7 @@ Content-Disposition: attachment; filename="userdata.txt"
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-INST_LOG_FILE="/var/log/teradici/agent/install.log"
+LOG_FILE="/var/log/teradici/provisioning.log"
 
 # exit if PCoIP agent is already installed
 if (rpm -q pcoip-agent-graphics); then
@@ -32,10 +32,20 @@ if (rpm -q pcoip-agent-graphics); then
 fi
 
 # download provisioning script if first run
-if [[ ! -f "$INST_LOG_FILE" ]]
+if [[ ! -f "$LOG_FILE" ]]
 then
     yum -y update
     yum -y install awscli dos2unix
+
+    # wait until we have IAM credentials
+    # successful command returns a string "access_key ****************XXXX iam-role"
+    # missing access key or IAM credentials returns an empty string ""
+    until [ ! -z "$(aws configure list | grep access_key | grep iam-role)" ]
+    do 
+        echo 'Checking for IAM credentials...' 
+        sleep 5
+    done
+
     aws s3 cp s3://${bucket_name}/${file_name} .
     chmod +x ${file_name}
     dos2unix ${file_name}

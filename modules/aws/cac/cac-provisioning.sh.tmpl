@@ -17,7 +17,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 log() {
     local message="$1"
-    echo "[$(date)] $${message}" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message" | tee -a "$LOG_FILE"
 }
 
 get_credentials() {
@@ -127,9 +127,8 @@ wait_for_dc() {
         if [ $TIMEOUT -le 0 ]; then
             log "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
             break
-        else
-            log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         fi
+        log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         TIMEOUT=$((TIMEOUT-10))
         sleep 10
     done
@@ -145,9 +144,8 @@ wait_for_dc() {
         if [ $TIMEOUT -le 0 ]; then
             log "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
             break
-        else
-            log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         fi
+        log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         TIMEOUT=$((TIMEOUT-10))
         sleep 10
     done
@@ -158,24 +156,28 @@ wait_for_dc() {
         if [ $TIMEOUT -le 0 ]; then
             log "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
             break
-        else
-            log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         fi
+        log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         TIMEOUT=$((TIMEOUT-10))
         sleep 10
     done
 }
 
 wait_for_lls() {
-    log "--> Ensure lls ${lls_ip} port 7070 is reacheable..."
     TIMEOUT=1200
-    until netcat -vz ${lls_ip} 7070; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to contact ${lls_ip}:7070. Continuing..."
+    local lls_health_check_url="http://${lls_ip}:7070/api/1.0/health"
+
+    log "--> Performing LLS health check using endpoint $lls_health_check_url..."
+
+    # Need to escape Terraform template directive using %%
+    until [ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]
+    do
+        if [ $TIMEOUT -le 0 ]
+        then
+            log "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
             break
-        else
-            log "--> Trying to contact ${lls_ip}:7070. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
         fi
+        log "--> Performing LLS health check using endpoint $lls_health_check_url... (Timeout in $TIMEOUT seconds)"
         TIMEOUT=$((TIMEOUT-10))
         sleep 10
     done
@@ -277,3 +279,5 @@ fi
 install_cac
 
 docker service ls
+
+log "--> Provisioning script completed successfully. "

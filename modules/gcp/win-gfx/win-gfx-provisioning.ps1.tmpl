@@ -46,7 +46,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
         Throw
     }
 
-    Write-Information "--> Attempt $Attempt failed. Retrying in $Interval seconds..." -InformationAction Continue
+    Write-Information "--> Attempt $Current_Attempt failed. Retrying in $Interval seconds..." -InformationAction Continue
     Start-Sleep -Seconds $Interval
   }
 }

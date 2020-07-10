@@ -17,8 +17,8 @@ variable "aws_region" {
 
 # "usw2-az4" failed to provision t2.xlarge EC2 instances in April 2020
 # "use1-az3" failed to provision g4dn.xlarge Windows EC2 instances in April 2020
-variable "az_id_blacklist" {
-  description = "List of blacklisted availability zone IDs."
+variable "az_id_exclude_list" {
+  description = "List of Availability Zone IDs to exclude."
   default     = ["usw2-az4", "use1-az3"]
 }
 
