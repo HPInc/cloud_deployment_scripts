@@ -1,12 +1,35 @@
 # Amazon Web Services Deployments
 
-## Running Terraform Scripts
+## Table of Contents
+1. [Getting Started](#getting-started)
+    1. [Requirements](#requirements)
+    2. [AWS Setup](#aws-setup)
+    3. [Cloud Access Manager Setup](#cloud-access-manager-setup)
+2. [Running Terraform Scripts](#running-terraform-scripts)
+    1. [(Optional) Encrypting Secrets](#(optional)-encrypting-secrets)
+    2. [Customizing terraform.tfvars](#customizing-terraform.tfvars)
+    3. [Creating the deployment](#creating-the-deployment)
+    4. [Add Workstations in Cloud Access Manager](#add-workstations-in-cloud-access-manager)
+    5. [Start PCoIP Session](#start-pcoip-session)
+    6. [Changing the deployment](#changing-the-deployment)
+    7. [Deleting the deployment](#deleting-the-deployment)
+3. [Architectures](#architectures)
+    1. [single-connector](#single-connector)
+    2. [lb-connectors](#lb-connectors)
+    3. [lb-connectors-lls](#lb-connectors-lls)
+4. [Troubleshooting](#troubleshooting)
+    1. [Connecting to VMs Using SSH/RDP](#connecting-to-vms-using-ssh/rdp)
+    2. [Location of System and Provisioning Logs](#location-of-system-and-provisioning-logs)
+
+---
+
+## Getting Started
 
 ### Requirements
 - the user must have Administrator permissions in an AWS account
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - a PCoIP License Server Activation Code is needed for Local License Server (LLS) based deployments.
-- an SSH private / public key pair is required for Terraform to log into Linux hosts.
+- an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
@@ -29,6 +52,8 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 1. create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
 1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
 
+## Running Terraform Scripts
+
 ### (Optional) Encrypting Secrets
 Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket. Secrets may also show up in Terraform logs.
 
@@ -45,7 +70,7 @@ The following command can be used to decrypt the ciphertext:
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
 
-Note that all path variables in terraform.tfvars should be absolute paths and they depend on the host platform: 
+Path variables in terraform.tfvars must be absolute and are dependent on the host platform:
 - On Linux systems, the forward slash / is used as the path segment separator. ```aws_credentials_file = "/path/to/aws_key"```
 - On Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```aws_credentials_file = "C:/path/to/aws_key"```
 
@@ -133,3 +158,11 @@ Be sure to SSH into the Local License Server (LLS), possibly using a Cloud Acces
 For more information on the PCoIP License Server, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
 
 ![aws-lb-connectors-lls diagram](aws-lb-connectors-lls.png)
+
+## Troubleshooting
+
+### Connecting to VMs Using SSH/RDP
+Please visit [Connecting to VMs Using SSH/RDP](/docs/debugging.md#connecting-to-vms-using-ssh/rdp) for instructions on connecting to VMs.
+
+### Location of System and Provisioning Logs
+Please visit [VM Log Locations](/docs/debugging.md#vm-log-locations) for the log locations of the VMs used in various deployments. 

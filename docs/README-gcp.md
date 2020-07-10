@@ -1,8 +1,37 @@
 # Google Cloud Platform Deployments
 
+## Table of Contents
+1. [Introduction](#introduction)
+2. [GCP Quickstart Tutorial](#gcp-quickstart-tutorial)
+3. [Getting Started](#getting-started)
+    1. [Requirements](#requirements)
+    2. [GCP Setup](#gcp-setup)
+    3. [Cloud Access Manager Setup](#cloud-access-manager-setup)
+4. [Running Terraform Scripts](#running-terraform-scripts)
+    1. [Customizing terraform.tfvars](#customizing-terraform.tfvars)
+    2. [(Optional) Encrypting Secrets](#(optional)-encrypting-secrets)
+        1. [Encryption Using Python Script](#encryption-using-python-script)
+        2. [Manual Encryption](#manual-encryption)
+    3. [Creating the deployment](#creating-the-deployment)
+    4. [Add Workstations in Cloud Access Manager](#add-workstations-in-cloud-access-manager)
+    5. [Start PCoIP Session](#start-pcoip-session)
+    6. [Changing the deployment](#changing-the-deployment)
+    7. [Deleting the deployment](#deleting-the-deployment)
+5. [Architectures](#architectures)
+    1. [single-connector](#single-connector)
+    2. [multi-region](#multi-region)
+    3. [dc-only](#dc-only)
+6. [Troubleshooting](#troubleshooting)
+    1. [Connecting to VMs Using SSH/RDP](#connecting-to-vms-using-ssh/rdp)
+    2. [Location of Logs](#location-of-logs)
+
+---
+
+## Introduction
+
 There are two ways to create a Cloud Access Software deployment using this repository:
-- __GCP Quickstart Tutorial__: for those who have less experience with the Command Line Interface (CLI) and Terraform, use this tutorial to get a deployment running with the least amount of effort. The quickstart will prepare most of the requirements for the user and call a script to deploy the _single-connector_ deployment using Terraform.
-- __Running Terraform scripts__: for those who are experienced with the CLI and Terraform, this is the primary way this repository is meant to be used. A user can choose between different types of deployments, variables can be customized, and deployment architecture can be modified to suit the user's needs.
+- [__GCP Quickstart Tutorial__](#gcp-quickstart-tutorial): for those who have less experience with the Command Line Interface (CLI) and Terraform, use this tutorial to get a deployment running with the least amount of effort. The quickstart will prepare most of the requirements for the user and call a script to deploy the _single-connector_ deployment using Terraform.
+- [__Running Terraform Scripts__](#running-terraform-scripts): for those who are experienced with the CLI and Terraform, this is the primary way this repository is meant to be used. A user can choose between different types of deployments, variables can be customized, and deployment architecture can be modified to suit the user's needs.
 
 ## GCP Quickstart Tutorial
 
@@ -12,13 +41,13 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 
 [![Open in Google Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/teradici/cloud_deployment_scripts&open_in_editor=quickstart/gcp-cloudshell-quickstart.cfg&tutorial=quickstart/tutorial.md)
 
-## Running Terraform Scripts
+## Getting Started
 
 ### Requirements
 - the user must have owner permissions to a GCP project
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - a Cloud Access Manager Deployment Service Account is needed. Please see the Cloud Access Manager Setup section below.
-- an SSH private / public key pair is required for Terraform to log into Linux hosts.
+- an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
@@ -42,17 +71,19 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM Deployment Service Account.
 3. click on "Download JSON file" to download the CAM Deployment Service Account credentials file which will be used in terraform.tfvars.
 
+## Running Terraform Scripts
+
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
 
-Note that all path variables in terraform.tfvars depend on the host platform: 
+Path variables in terraform.tfvars must be absolute and are dependent on the host platform:
 - on Linux systems, the forward slash / is used as the path segment separator. ```gcp_credentials_file = "/path/to/cred.json"```
 - on Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```gcp_credentials_file = "C:/path/to/cred.json"```
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
 ### (Optional) Encrypting Secrets
-terraform.tfvars variables includes senstive information such as Active Directory passwords, PCoIP registration key and the CAM Deployment Service Account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
+terraform.tfvars variables include sensitive information such as Active Directory passwords, PCoIP registration key and the CAM Deployment Service Account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
 To enhance security, the Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under the tools directory.
 
@@ -172,3 +203,11 @@ A simple deployment of one Domain Controller, intended for testing Domain Contro
 Creates one VPC, one subnet and a single Domain Controller with ports opened
 for ICMP, RDP and WinRM.  Domain Controller is configured with Acitve
 Directory, DNS, LDAP-S.  One AD Service Account is also created.
+
+## Troubleshooting
+
+### Connecting to VMs Using SSH/RDP
+Please visit [Connecting to VMs Using SSH/RDP](/docs/debugging.md#connecting-to-vms-using-ssh/rdp) for instructions on connecting to VMs.
+
+### Location of System and Provisioning Logs
+Please visit [VM Log Locations](/docs/debugging.md#vm-log-locations) for the log locations of the VMs used in various deployments. 
