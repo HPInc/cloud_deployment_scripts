@@ -50,7 +50,7 @@ cac_instance_count_list = []
 # cac_instance_type = "t2.xlarge"
 # cac_disk_size_gb  = "50"
 # cac_ami_owner     = "099720109477"
-# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200611"
+# cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200708.1"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
