@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import datetime
 import json
 import os
 import requests
@@ -25,6 +26,7 @@ def create_connector_name():
 
     metadata_url = "http://metadata.google.internal/computeMetadata/v1/instance/"
     headers      = {"Metadata-Flavor": "Google"}
+    iso_time     = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 
     response_zone = requests.get(metadata_url + "zone", headers = headers)
     response_name = requests.get(metadata_url + "name", headers = headers)
@@ -32,7 +34,7 @@ def create_connector_name():
     zone = response_zone.text.rpartition('/')[2]
     name = response_name.text
 
-    connector_name = "{}-{}".format(zone, name)
+    connector_name = f"{zone}-{name}-{iso_time}"
 
     return connector_name
 
@@ -59,7 +61,7 @@ def get_auth_token(filepath):
     request_body = dict(username = cam_credentials.get('username'), 
                         password = cam_credentials.get('apiKey'))
 
-    response = requests.post("{}/auth/signin".format(API_URL), json = request_body)
+    response = requests.post(f"{API_URL}/auth/signin", json = request_body)
 
     if not response.status_code == 200:
         raise Exception(response.text)
@@ -111,7 +113,7 @@ def get_cac_token(auth_token, deployment_id, connector_name):
     body = dict(deploymentId  = deployment_id, 
                 connectorName = connector_name)
 
-    response = session.post("{}/auth/tokens/connector".format(API_URL), json=body)
+    response = session.post(f"{API_URL}/auth/tokens/connector", json=body)
 
     if not response.status_code == 200:
         raise Exception(response.text)
