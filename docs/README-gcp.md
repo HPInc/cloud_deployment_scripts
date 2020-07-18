@@ -22,8 +22,6 @@
     2. [multi-region](#multi-region)
     3. [dc-only](#dc-only)
 6. [Troubleshooting](#troubleshooting)
-    1. [Connecting to VMs Using SSH/RDP](#connecting-to-vms-using-ssh/rdp)
-    2. [Location of Logs](#location-of-logs)
 
 ---
 
@@ -205,9 +203,4 @@ for ICMP, RDP and WinRM.  Domain Controller is configured with Acitve
 Directory, DNS, LDAP-S.  One AD Service Account is also created.
 
 ## Troubleshooting
-
-### Connecting to VMs Using SSH/RDP
-Please visit [Connecting to VMs Using SSH/RDP](/docs/debugging.md#connecting-to-vms-using-ssh/rdp) for instructions on connecting to VMs.
-
-### Location of System and Provisioning Logs
-Please visit [VM Log Locations](/docs/debugging.md#vm-log-locations) for the log locations of the VMs used in various deployments. 
+Please visit the [Troubleshooting](/docs/troubleshooting) page for further instructions.

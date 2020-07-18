@@ -18,8 +18,6 @@
     2. [lb-connectors](#lb-connectors)
     3. [lb-connectors-lls](#lb-connectors-lls)
 4. [Troubleshooting](#troubleshooting)
-    1. [Connecting to VMs Using SSH/RDP](#connecting-to-vms-using-ssh/rdp)
-    2. [Location of System and Provisioning Logs](#location-of-system-and-provisioning-logs)
 
 ---
 
@@ -160,9 +158,4 @@ For more information on the PCoIP License Server, please visit https://www.terad
 ![aws-lb-connectors-lls diagram](aws-lb-connectors-lls.png)
 
 ## Troubleshooting
-
-### Connecting to VMs Using SSH/RDP
-Please visit [Connecting to VMs Using SSH/RDP](/docs/debugging.md#connecting-to-vms-using-ssh/rdp) for instructions on connecting to VMs.
-
-### Location of System and Provisioning Logs
-Please visit [VM Log Locations](/docs/debugging.md#vm-log-locations) for the log locations of the VMs used in various deployments. 
+Please visit the [Troubleshooting](/docs/troubleshooting) page for further instructions.
