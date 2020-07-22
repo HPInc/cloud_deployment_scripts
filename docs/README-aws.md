@@ -158,4 +158,4 @@ For more information on the PCoIP License Server, please visit https://www.terad
 ![aws-lb-connectors-lls diagram](aws-lb-connectors-lls.png)
 
 ## Troubleshooting
-Please visit the [Troubleshooting](/docs/troubleshooting) page for further instructions.
+Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.

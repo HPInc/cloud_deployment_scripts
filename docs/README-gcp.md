@@ -203,4 +203,4 @@ for ICMP, RDP and WinRM.  Domain Controller is configured with Acitve
 Directory, DNS, LDAP-S.  One AD Service Account is also created.
 
 ## Troubleshooting
-Please visit the [Troubleshooting](/docs/troubleshooting) page for further instructions.
+Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.
