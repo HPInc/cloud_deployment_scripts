@@ -91,7 +91,7 @@ get_credentials() {
         data=$(echo "{ \"ciphertext\": \"$cam_cred_encrypted\" }")
         b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
         CAM_CREDENTIALS=$(echo "$b64_data" | base64 --decode)
-        echo $CAM_CREDENTIALS | tee $INSTALL_DIR/${cam_deployment_sa_file}
+        echo $CAM_CREDENTIALS > $INSTALL_DIR/${cam_deployment_sa_file}
     fi
     set -x
 }

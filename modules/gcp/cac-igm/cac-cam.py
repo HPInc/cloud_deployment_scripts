@@ -55,8 +55,8 @@ def get_auth_token(filepath):
             cam_credentials = json.load(f)
 
     except Exception as err:
-        print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n{}".format(err))
-        raise err
+        print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n")
+        raise SystemExit(err)
 
     request_body = dict(username = cam_credentials.get('username'), 
                         password = cam_credentials.get('apiKey'))
@@ -88,8 +88,8 @@ def get_deployment_id(filepath):
             cam_credentials = json.load(f)
 
     except Exception as err:
-        print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n{}".format(err))
-        raise err
+        print("Exception occurred opening CAM Deployment Service Account JSON file. Exiting CAM script...\n")
+        raise SystemExit(err)
 
     return cam_credentials.get('deploymentId')
 

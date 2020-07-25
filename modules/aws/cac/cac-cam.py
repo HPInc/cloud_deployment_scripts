@@ -170,4 +170,4 @@ if __name__ == '__main__':
 
     except:
         # Prevent bash from interpreting any error messages
-        sys.exit(0)
+        sys.exit(1)
