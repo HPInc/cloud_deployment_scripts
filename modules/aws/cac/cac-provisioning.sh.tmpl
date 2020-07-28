@@ -78,6 +78,10 @@ get_cac_token() {
     aws s3 cp s3://${bucket_name}/${cam_script} $INSTALL_DIR
     chmod +x $INSTALL_DIR/${cam_script}
 
+    # Ensure line endings are in Unix format
+    dos2unix $INSTALL_DIR/${cam_script}
+    dos2unix $INSTALL_DIR/${cam_deployment_sa_file}
+
     # Set CAC_TOKEN variable using the script's output
     CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file}`
 
@@ -321,4 +325,4 @@ install_cac
 
 docker service ls
 
-log "--> Provisioning script completed successfully. "
+log "--> Provisioning script completed successfully."

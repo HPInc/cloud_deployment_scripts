@@ -46,13 +46,13 @@ retry() {
     done
 }
 
-install_python() {
-    log "--> Installing Python3..."
+install_prereqs() {
+    log "--> Installing dos2unix, python3..."
     apt-get -qq update
-    apt install -y python3
+    apt install -y dos2unix python3
 
     if [ $? -ne 0 ]; then
-        log "--> ERROR: Failed to install Python3. Exiting provisioning script..."
+        log "--> ERROR: Failed to install dos2unix, python3. Exiting provisioning script..."
         exit 1
     fi
 }
@@ -102,6 +102,10 @@ get_cac_token() {
     log "--> Downloading CAM python script from the bucket..."
     gsutil cp gs://${bucket_name}/${cam_script} $INSTALL_DIR
     chmod +x $INSTALL_DIR/${cam_script}
+
+    # Ensure line endings are in Unix format
+    dos2unix $INSTALL_DIR/${cam_script}
+    dos2unix $INSTALL_DIR/${cam_deployment_sa_file}
 
     # Set CAC_TOKEN variable using the script's output
     CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file}`
@@ -332,7 +336,7 @@ set -x
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-install_python
+install_prereqs
 
 get_credentials
 
@@ -352,4 +356,4 @@ install_cac
 
 docker service ls
 
-log "--> Provisioning script completed successfully. "
+log "--> Provisioning script completed successfully."
