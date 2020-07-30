@@ -45,8 +45,6 @@ retry() {
 get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
-    log "--> Downloading CAM credentials JSON file from the bucket..."
-    aws s3 cp s3://${bucket_name}/${cam_deployment_sa_file} $INSTALL_DIR
 
     if [[ -z "${customer_master_key_id}" ]]; then
         log "--> Script is not using encryption for secrets."
@@ -73,14 +71,6 @@ get_credentials() {
 
 get_cac_token() {
     log "--> Retrieving connector token before CAC install..."
-
-    log "--> Downloading CAM python script from the bucket..."
-    aws s3 cp s3://${bucket_name}/${cam_script} $INSTALL_DIR
-    chmod +x $INSTALL_DIR/${cam_script}
-
-    # Ensure line endings are in Unix format
-    dos2unix $INSTALL_DIR/${cam_script}
-    dos2unix $INSTALL_DIR/${cam_deployment_sa_file}
 
     # Set CAC_TOKEN variable using the script's output
     CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file}`
