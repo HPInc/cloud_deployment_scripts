@@ -17,7 +17,6 @@ resource "random_id" "bucket-name" {
 
 resource "aws_s3_bucket" "scripts" {
   bucket        = local.bucket_name
-  region        = var.aws_region
   acl           = "private"
   force_destroy = true
 
