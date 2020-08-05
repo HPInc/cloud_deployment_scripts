@@ -7,7 +7,11 @@
 
 locals {
   prefix         = var.prefix != "" ? "${var.prefix}-" : ""
-  provisioning_script = "cac-provisioning.sh"
+
+  provisioning_script    = "cac-provisioning.sh"
+  cam_script             = "cac-cam.py"
+  cam_deployment_sa_file = "cam-cred.json"
+
   instance_info_list = flatten(
     [ for i in range(length(var.zone_list)):
       [ for j in range(var.instance_count_list[i]):
@@ -20,6 +24,22 @@ locals {
   )
   ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+}
+
+resource "aws_s3_bucket_object" "cam-deployment-sa-file" {
+  count = length(local.instance_info_list) == 0 ? 0 : 1
+
+  bucket = var.bucket_name
+  key    = local.cam_deployment_sa_file
+  source = var.cam_deployment_sa_file
+}
+
+resource "aws_s3_bucket_object" "cac-cam-script" {
+  count = length(local.instance_info_list) == 0 ? 0 : 1
+
+  bucket = var.bucket_name
+  key    = local.cam_script
+  source = "${path.module}/${local.cam_script}"
 }
 
 resource "aws_s3_bucket_object" "ssl-key" {
@@ -41,11 +61,6 @@ resource "aws_s3_bucket_object" "ssl-cert" {
 resource "aws_s3_bucket_object" "cac-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  depends_on = [
-    aws_s3_bucket_object.ssl-key,
-    aws_s3_bucket_object.ssl-cert,
-  ]
-
   key     = local.provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
@@ -55,7 +70,8 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       customer_master_key_id   = var.customer_master_key_id,
       cam_url                  = var.cam_url,
       cac_installer_url        = var.cac_installer_url,
-      cac_token                = var.cac_token,
+      cam_deployment_sa_file   = local.cam_deployment_sa_file,
+      cam_script               = local.cam_script,
       pcoip_registration_code  = var.pcoip_registration_code,
 
       domain_controller_ip        = var.domain_controller_ip,
@@ -77,8 +93,10 @@ data "template_file" "user-data" {
   template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
-    bucket_name = var.bucket_name,
-    file_name   = local.provisioning_script,
+    bucket_name            = var.bucket_name,
+    provisioning_script    = local.provisioning_script,
+    cam_script             = local.cam_script,
+    cam_deployment_sa_file = local.cam_deployment_sa_file,
   }
 }
 
@@ -121,6 +139,24 @@ data "aws_iam_policy_document" "cac-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_deployment_sa_file}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
     effect    = "Allow"
   }
 
@@ -172,6 +208,15 @@ resource "aws_iam_instance_profile" "cac-instance-profile" {
 
 resource "aws_instance" "cac" {
   count = length(local.instance_info_list)
+
+  depends_on = [
+    aws_s3_bucket_object.ssl-key,
+    aws_s3_bucket_object.ssl-cert,
+    aws_s3_bucket_object.cam-deployment-sa-file,
+    aws_s3_bucket_object.cac-cam-script,
+    # Provisioning script dependency should be inferred by Terraform
+    # aws_s3_bucket_object.cac-provisioning-script,
+  ]
 
   availability_zone = local.instance_info_list[count.index].zone
   subnet_id         = local.instance_info_list[count.index].subnet

@@ -10,9 +10,11 @@ import datetime
 import json
 import os
 import requests
+import subprocess
 import sys
 
 API_URL = None
+METADATA_URL = "http://169.254.169.254/latest/meta-data/"
 
 
 def create_connector_name():
@@ -24,19 +26,37 @@ def create_connector_name():
         string: a string for the connector name
     """
 
-    metadata_url = "http://metadata.google.internal/computeMetadata/v1/instance/"
-    headers      = {"Metadata-Flavor": "Google"}
-    iso_time     = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
-
-    response_zone = requests.get(metadata_url + "zone", headers = headers)
-    response_name = requests.get(metadata_url + "name", headers = headers)
-
-    zone = response_zone.text.rpartition('/')[2]
-    name = response_name.text
+    zone     = requests.get(METADATA_URL + "placement/availability-zone").text
+    name     = get_instance_name(zone[:-1])
+    iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 
     connector_name = f"{zone}-{name}-{iso_time}"
 
     return connector_name
+
+
+def get_instance_name(region):
+    """A function to get the current EC2 instance name
+    
+    Uses AWS CLI 'describe-tags' to retrieve the current EC2 instance name.
+    
+    Args:
+        region (str): the AWS region to perform 'describe-tags' using AWS CLI
+    Returns:
+        string: a string for the EC2 instance name
+    """
+
+    instance_id   = requests.get(METADATA_URL + "instance-id").text
+    filter_string = f"Name=resource-id,Values={instance_id}"
+
+    cmd = f'aws ec2 describe-tags --region {region} --filters {filter_string}'
+
+    instance_tags = subprocess.run(cmd.split(' '),  stdout=subprocess.PIPE).stdout.decode('utf-8')
+    instance_tags = json.loads(instance_tags)
+
+    instance_name = instance_tags.get('Tags')[0].get('Value')
+
+    return instance_name
 
 
 def get_auth_token(filepath):

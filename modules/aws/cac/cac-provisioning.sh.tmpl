@@ -17,34 +17,73 @@ export DEBIAN_FRONTEND=noninteractive
 
 log() {
     local message="$1"
-    echo "[$(date)] $message" | tee -a "$LOG_FILE"
+    echo "[$(date)] $message"
+}
+
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    until $command
+    do
+        if [ $timeout -le 0 ]
+        then
+            log $err_message
+            break
+        fi
+
+        log "$log_message Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
 }
 
 get_credentials() {
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
+
     if [[ -z "${customer_master_key_id}" ]]; then
         log "--> Script is not using encryption for secrets."
 
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
         AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
-        CAC_TOKEN=${cac_token}
 
     else
         log "--> Script is using encryption key: ${customer_master_key_id}"
-
-        apt install -y awscli
 
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
         
         log "--> Decrypting AD service account password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
-        
-        log "--> Decrypting CAC token..."
-        CAC_TOKEN=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cac_token}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting CAM Deployment Service Account JSON file..."
+        cam_cred_encrypted=$(cat $INSTALL_DIR/${cam_deployment_sa_file})
+        CAM_CREDENTIALS=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "$cam_cred_encrypted" | base64 -d) --output text --query Plaintext | base64 -d)
+        echo $CAM_CREDENTIALS > $INSTALL_DIR/${cam_deployment_sa_file}
+    fi
+    set -x
+}
+
+get_cac_token() {
+    log "--> Retrieving connector token before CAC install..."
+
+    # Set CAC_TOKEN variable using the script's output
+    CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file}`
+
+    # Check and exit provisioning script if retrieving connector token failed
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to retrieve connector token using CAM script. Exiting provisioning script..."
+        exit 1
     fi
 }
 
 check_required_vars() {
+    set +x
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
@@ -59,6 +98,7 @@ check_required_vars() {
         log "--> ERROR: Missing Cloud Access Connector Token."
         missing_vars="true"
     fi
+    set -x
 
     if [[ "$missing_vars" = "true" ]]; then
         log "--> Exiting..."
@@ -98,94 +138,79 @@ download_cac() {
 }
 
 wait_for_dc() {
+    local timeout=25
+    local interval=5
+
     # Wait for service account to be added. Do this last because it takes
     # a while for new AD user to be added in a new Domain Controller.
     # Note: using the domain controller IP instead of the domain name for
     #       the host is more resilient.
+    log "--> Updating apt-get package list..."
+    retry $timeout \
+          $interval \
+          "apt-get -qq update" \
+          "--> Updating apt-get package list..." \
+          "--> ERROR: Failed to update apt-get package list."
+
     log "--> Installing ldap_utils..."
-    RETRIES=5
-    while true; do
-        apt-get -qq update
-        apt-get -qq install ldap-utils
-        RC=$?
-        if [ $RC -eq 0 ] || [ $RETRIES -eq 0 ]; then
-            break
-        fi
+    retry $timeout \
+          $interval \
+          "apt-get -qq install ldap-utils" \
+          "--> Installing ldap_utils..." \
+          "--> ERROR: Failed to install ldap-utils."
 
-        log "--> ERROR: Failed to install ldap-utils. $RETRIES retries remaining..."
-        RETRIES=$((RETRIES-1))
-        sleep 5
-    done
+    timeout=1200
+    interval=10
 
+    set +x
     log "--> Ensure AD account is available..."
-    TIMEOUT=1200
-    until ldapwhoami \
-        -H ldap://${domain_controller_ip} \
-        -D ${ad_service_account_username}@${domain_name} \
-        -w $AD_SERVICE_ACCOUNT_PASSWORD \
-        -o nettimeout=1; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
-            break
-        fi
-        log "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
-
+    retry $timeout \
+          $interval \
+          "ldapwhoami \
+            -H ldap://${domain_controller_ip} \
+            -D ${ad_service_account_username}@${domain_name} \
+            -w $AD_SERVICE_ACCOUNT_PASSWORD \
+            -o nettimeout=1" \
+          "--> Waiting for AD account ${ad_service_account_username}@${domain_name} to become available." \
+          "--> ERROR: Timed out waiting for AD account ${ad_service_account_username}@${domain_name} to become available. Continuing..."
+    set -x
     # Check that the domain name can be resolved and that the LDAP port is accepting
     # connections. This could have been all done with the ldapwhoami command, but
     # due to a number of occasional cac-installation issues, such as "domain
     # controller unreachable" or "DNS error occurred" errors, check these explicitly
     # for logging and debug purposes.
     log "--> Ensure domain ${domain_name} can be resolved..."
-    TIMEOUT=1200
-    until host ${domain_name}; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
-            break
-        fi
-        log "--> Trying to resolve ${domain_name}. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "host ${domain_name}" \
+          "--> Trying to resolve ${domain_name}." \
+          "--> ERROR: Timed out trying to resolve ${domain_name}. Continuing..."
 
     log "--> Ensure domain ${domain_name} port 636 is reacheable..."
-    TIMEOUT=1200
-    until netcat -vz ${domain_name} 636; do
-        if [ $TIMEOUT -le 0 ]; then
-            log "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
-            break
-        fi
-        log "--> Trying to contact ${domain_name}:636. Retrying in 10 seconds... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          "netcat -vz ${domain_name} 636" \
+          "--> Trying to contact ${domain_name}:636." \
+          "--> ERROR: Timed out trying to contact ${domain_name}:636. Continuing..."
 }
 
 wait_for_lls() {
-    TIMEOUT=1200
+    local timeout=1200
+    local interval=10
     local lls_health_check_url="http://${lls_ip}:7070/api/1.0/health"
 
     log "--> Performing LLS health check using endpoint $lls_health_check_url..."
-
-    # Need to escape Terraform template directive using %%
-    until [ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]
-    do
-        if [ $TIMEOUT -le 0 ]
-        then
-            log "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
-            break
-        fi
-        log "--> Performing LLS health check using endpoint $lls_health_check_url... (Timeout in $TIMEOUT seconds)"
-        TIMEOUT=$((TIMEOUT-10))
-        sleep 10
-    done
+    retry $timeout \
+          $interval \
+          # Need to escape Terraform template directive using %%
+          "[ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]" \
+          "--> Performing LLS health check using endpoint $lls_health_check_url..." \
+          "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
 }
 
 install_cac() {
     log "--> Installing Cloud Access Connector..."
-    RETRIES=3
+    local retries=10
     export CAM_BASE_URI=${cam_url}
 
     log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
@@ -217,6 +242,7 @@ install_cac() {
         args=$args"--local-license-server-url http://${lls_ip}:7070/request "
     fi
 
+    set +x
     while true
     do
         $INSTALL_DIR/cloud-access-connector install \
@@ -229,25 +255,26 @@ install_cac() {
             --reg-code $PCOIP_REGISTRATION_CODE \
             --sync-interval 5 \
             $args \
-            2>&1 | tee -a $INSTALL_LOG
+            2>&1 | tee -a $CAC_INSTALL_LOG
 
-        RC=$?
-        if [ $RC -eq 0 ]
+        local rc=$?
+        if [ $rc -eq 0 ]
         then
             log "--> Successfully installed Cloud Access Connector."
             break
         fi
 
-        if [ $RETRIES -eq 0 ]
+        if [ $retries -eq 0 ]
         then
             log "--> ERROR: No retries remaining, exiting provisioning script..."
             exit 1
         fi
 
-        log "--> ERROR: Failed to install Cloud Access Connector. $RETRIES retries remaining..."
-        RETRIES=$((RETRIES-1))
+        log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
+        retries=$((retries-1))
         sleep 60
     done
+    set -x
 }
 
 if [[ ! -f "$LOG_FILE" ]]
@@ -259,7 +286,15 @@ fi
 
 log "$(date)"
 
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
 get_credentials
+
+get_cac_token
 
 check_required_vars
 
@@ -280,4 +315,4 @@ install_cac
 
 docker service ls
 
-log "--> Provisioning script completed successfully. "
+log "--> Provisioning script completed successfully."

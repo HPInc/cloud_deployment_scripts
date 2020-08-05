@@ -1,12 +1,35 @@
 # Amazon Web Services Deployments
 
-## Running Terraform Scripts
+## Table of Contents
+1. [Getting Started](#getting-started)
+    1. [Requirements](#requirements)
+    2. [AWS Setup](#aws-setup)
+    3. [Cloud Access Manager Setup](#cloud-access-manager-setup)
+2. [Running Terraform Scripts](#running-terraform-scripts)
+    1. [Customizing terraform.tfvars](#customizing-terraform.tfvars)
+    2. [(Optional) Encrypting Secrets](#(optional)-encrypting-secrets)
+        1. [Manual Encryption](#manual-encryption)
+    3. [Creating the deployment](#creating-the-deployment)
+    4. [Add Workstations in Cloud Access Manager](#add-workstations-in-cloud-access-manager)
+    5. [Start PCoIP Session](#start-pcoip-session)
+    6. [Changing the deployment](#changing-the-deployment)
+    7. [Deleting the deployment](#deleting-the-deployment)
+3. [Architectures](#architectures)
+    1. [single-connector](#single-connector)
+    2. [lb-connectors](#lb-connectors)
+    3. [lb-connectors-lls](#lb-connectors-lls)
+4. [Troubleshooting](#troubleshooting)
+
+---
+
+## Getting Started
 
 ### Requirements
 - the user must have Administrator permissions in an AWS account
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a Cloud Access Manager Deployment Service Account is needed. Please see the Cloud Access Manager Setup section below.
 - a PCoIP License Server Activation Code is needed for Local License Server (LLS) based deployments.
-- an SSH private / public key pair is required for Terraform to log into Linux hosts.
+- an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
@@ -26,49 +49,67 @@ aws_secret_access_key = <your_key>
 
 ### Cloud Access Manager Setup
 Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
+
 1. create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
-1. create a Connector in the new deployment. A connector token will be generated to be used in terraform.tfvars.
-
-### (Optional) Encrypting Secrets
-Secrets required as input to the Terraform scripts include Active Directory passwords, PCoIP registration key and the connector token. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket. Secrets may also show up in Terraform logs.
-
-The Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended that secrets are first encrypted before being entered into terraform.tfvars.
-
-To encrypt secrets using the KMS CMK created above, follow the instructions here: https://docs.aws.amazon.com/cli/latest/reference/kms/encrypt.html. Base64 encode the ciphertext before copying and pasting it into terraform.tfvars. For example, execute the following command in a Linux shell to get the base64-encoded ciphertext:
-
-```aws kms encrypt --key-id <cmk-id> --plaintext <secret> --output text --query CiphertextBlob```
-
-The following command can be used to decrypt the ciphertext:
-
-```aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d```
+2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM Deployment Service Account.
+3. click on "Download JSON file" to download the CAM Deployment Service Account credentials file which will be used in terraform.tfvars.
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
 
-Note that all path variables in terraform.tfvars should be absolute paths and they depend on the host platform: 
+Path variables in terraform.tfvars must be absolute and are dependent on the host platform:
 - On Linux systems, the forward slash / is used as the path segment separator. ```aws_credentials_file = "/path/to/aws_key"```
 - On Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```aws_credentials_file = "C:/path/to/aws_key"```
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
-If secrets are KMS CMK encrypted, fill in the ```customer_master_key_id``` variable with the customer master key id used to encode the secrets, then paste the base64-encoded ciphertext for the following variables:
-- ```dc_admin_password```
-- ```safe_mode_admin_password```
-- ```ad_service_account_password```
-- ```lls_admin_password``` (lb-connectors-lls only)
-- ```lls_activation_code``` (lb-connectors-lls only)
-- ```pcoip_registration_code```
-- ```cac_token```
+### (Optional) Encrypting Secrets
+terraform.tfvars variables include sensitive information such as Active Directory passwords, PCoIP registration key and the CAM Deployment Service Account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket.
 
-Be sure to remove any spaces in the ciphertext.
+To enhance security, the Terraform scripts are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in the terraform.tfvars file before deploying. Secrets can be encrypted manually first before being entered into terraform.tfvars, or they can be encrypted using a python script located under the tools directory.
 
-If secrets are in plaintext, make sure ```customer_master_key_id``` is commented out, and fill in the rest of the variables as plaintext.
+#### Manual Encryption
+To encrypt secrets using the KMS CMK created in the 'AWS Setup' section above, follow the instructions here: https://docs.aws.amazon.com/cli/latest/reference/kms/encrypt.html. Note that ciphertext must be base64 encoded before being used in terraform.tfvars.  
+
+1. create a KMS CMK. Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create keys.
+2. in terraform.tfvars, ensure that the `customer_master_key_id` variable is uncommented and is set to the resource path of the KMS key used to encrypt the secrets:
+   ```
+   customer_master_key_id = "<key-id-uuid>"
+   ```
+3. run the following command in a Linux shell with aws installed to encrypt a plaintext secret:
+   ```
+   aws kms encrypt --key-id <cmk-id> --plaintext <secret> --output text --query CiphertextBlob
+   ```
+   Encrypt and replace the values of the following variables in terraform.tfvars with the ciphertext generated. `<ciphertext`> should be replaced with the actual ciphertext generated - do not include < and >.
+   ```
+   dc_admin_password           = "<ciphertext>"
+   safe_mode_admin_password    = "<ciphertext>"
+   ad_service_account_password = "<ciphertext>"
+   pcoip_registration_code     = "<ciphertext>"
+   ```
+4. run the following command in a Linux shell with aws installed to encrypt the CAM Deployment Service Account JSON credentials file:
+   ```
+    aws kms encrypt \
+        --key-id <key-id-uuid> \
+        --plaintext fileb://</path/to/cloud-access-manager-service-account.json> \
+        --output text \
+        --query CiphertextBlob > </path/to/cloud-access-manager-service-account.json.encrypted>
+   ```
+    Replace the value of the `cam_deployment_sa_file` variable in terraform.tfvars with the absolute path to the encrypted file generated.
+   ```
+   cam_deployment_sa_file = "/path/to/cloud-access-manager-service-account.json.encrypted"
+   ```
+
+The following command can be used to decrypt the ciphertext:
+   ```
+   aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d
+   ```
 
 ### Creating the deployment
 With the terraform.tfvars file customized
 1. run ```terraform init``` to initialize the deployment
-1. run ```terraform apply``` to display the resources that will be created by Terraform
-1. answer ```yes``` to start creating the deployment
+2. run ```terraform apply``` to display the resources that will be created by Terraform
+3. answer ```yes``` to start creating the deployment
 A typical deployment should take 15 to 30 minutes. When finished, the scripts will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Connectors should register themselves with the CAM service and show up in the CAM Admin Console.
 
 ### Add Workstations in Cloud Access Manager
@@ -103,7 +144,7 @@ Security Group rules are created to allow wide-open access within the VPC, and s
 
 A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: ```Administrator``` and ```cam_admin``` (default). Domain Users are also created if a ```domain_users_list``` CSV file is specified. The Domain Controller is given a static IP (configurable).
 
-A Cloud Access Connector is created and registers itself with the CAM service with the given Token and PCoIP Registration code.
+A Cloud Access Connector is created and registers itself with the CAM service with the given CAM Deployment Service Account credentials and PCoIP Registration code.
 
 Domain-joined workstations are optionally created, specified by the following parameters:
 - ```win_gfx_instance_count```: Windows Graphics workstation,
@@ -133,3 +174,6 @@ Be sure to SSH into the Local License Server (LLS), possibly using a Cloud Acces
 For more information on the PCoIP License Server, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
 
 ![aws-lb-connectors-lls diagram](aws-lb-connectors-lls.png)
+
+## Troubleshooting
+Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.

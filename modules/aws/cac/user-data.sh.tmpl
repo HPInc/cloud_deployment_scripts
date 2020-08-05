@@ -4,9 +4,25 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+INSTALL_DIR="/root"
+
 apt-get -qq update
-apt install -y awscli dos2unix
-aws s3 cp s3://${bucket_name}/${file_name} .
-chmod +x ${file_name}
-dos2unix ${file_name}
-. ${file_name}
+apt install -y awscli dos2unix python3
+
+echo "--> Downloading required files from the bucket..."
+aws s3 cp s3://${bucket_name}/${provisioning_script} $INSTALL_DIR
+aws s3 cp s3://${bucket_name}/${cam_script} $INSTALL_DIR
+aws s3 cp s3://${bucket_name}/${cam_deployment_sa_file} $INSTALL_DIR
+
+echo "--> Allowing scripts to be executable files..."
+chmod +x $INSTALL_DIR/${provisioning_script}
+chmod +x $INSTALL_DIR/${cam_script}
+
+echo "--> Ensuring line endings for downloaded files are in Unix format..."
+dos2unix $INSTALL_DIR/${provisioning_script}
+dos2unix $INSTALL_DIR/${cam_script}
+dos2unix $INSTALL_DIR/${cam_deployment_sa_file}
+
+echo "--> Executing provisioning script..."
+$INSTALL_DIR/${provisioning_script}

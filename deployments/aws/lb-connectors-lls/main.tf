@@ -180,8 +180,8 @@ module "cac" {
   aws_region              = var.aws_region
   customer_master_key_id  = var.customer_master_key_id
   cam_url                 = var.cam_url
+  cam_deployment_sa_file  = var.cam_deployment_sa_file
   pcoip_registration_code = var.pcoip_registration_code
-  cac_token               = var.cac_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip

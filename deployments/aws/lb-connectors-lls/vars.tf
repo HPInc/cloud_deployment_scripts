@@ -79,7 +79,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.06.10"
+  default     = "Windows_Server-2019-English-Full-Base-2020.07.15"
 }
 
 variable "domain_name" {
@@ -205,7 +205,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200611"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200716"
 }
 
 variable "admin_ssh_key_name" {
@@ -242,19 +242,19 @@ variable "ssl_cert" {
   default     = ""
 }
 
-variable "cac_token" {
-  description = "Connector Token from CAM Service"
+variable "cam_url" {
+  description = "cam server url."
+  default     = "https://cam.teradici.com"
+}
+
+variable "cam_deployment_sa_file" {
+  description = "Location of CAM Deployment Service Account JSON file"
   type        = string
 }
 
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
-}
-
-variable "cam_url" {
-  description = "cam server url."
-  default     = "https://cam.teradici.com"
 }
 
 variable "ws_subnet_name" {
@@ -301,7 +301,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.06.10"
+  default     = "Windows_Server-2019-English-Full-Base-2020.07.15"
 }
 
 variable "win_std_instance_count" {
@@ -331,7 +331,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.06.10"
+  default     = "Windows_Server-2019-English-Full-Base-2020.07.15"
 }
 
 variable "centos_gfx_instance_count" {
