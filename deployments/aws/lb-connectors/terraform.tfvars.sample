@@ -117,6 +117,7 @@ centos_std_instance_count = 0
 # Uncomment and enter the Customer Master Key ID if using encryption.
 # customer_master_key_id = "<key-id-uuid>"
 
+# <-- Start of secrets section, do not edit this line. -->
 dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
