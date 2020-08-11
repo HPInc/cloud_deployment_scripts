@@ -20,6 +20,12 @@ import time
 
 import cam
 
+REQUIRED_PACKAGES = {
+    'google-api-python-client': None, 
+    'grpc-google-iam-v1': None, 
+    'google-cloud-kms': "2.0.0"
+}
+
 # Service Account ID of the service account to create
 SA_ID       = 'cloud-access-manager'
 SA_ROLES    = [
@@ -110,52 +116,73 @@ def ensure_requirements():
         print('')
         sys.exit(1)
 
-    ensure_google_libraries()
+    ensure_required_packages()
+    import_modules()
     ensure_terraform()
 
 
-def ensure_google_libraries():
-    """A function that ensures Google libraries are installed. 
+def ensure_required_packages():
+    """A function that ensures the correct version of Python packages are installed. 
 
-    The function first tries to import the required Google libraries and 
-    if the required PyPI packages are not installed, it will prompt the 
-    user to install the required packages in the user's home directory. 
+    The function first checks if the required packages are installed. If a package is 
+    installed, the required version number will then be checked. It will next prompt 
+    the user to update or install the required packages.
+    """
+
+    packages_to_install_list = []
+
+    for package, required_version in REQUIRED_PACKAGES.items():
+        check_cmd = f'{sys.executable} -m pip show {package}'
+        output = subprocess.run(check_cmd.split(' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+        # If a package is not found, skip version checking and simply install the latest package
+        if output and required_version is not None:
+            # Second line outputs the version of the specified package
+            current_version = output.splitlines()[1].split(' ')[-1]
+
+            # Convert the string into a tuple of numbers for comparison
+            current_version_tuple  = tuple( map(int, current_version.split('.')) )
+            required_version_tuple = tuple( map(int, required_version.split('.')) )
+
+            if current_version_tuple < required_version_tuple:
+                packages_to_install_list.append(package)
+        else:
+            packages_to_install_list.append(package)
+
+    # Convert the list to a string of packages delimited by a space
+    packages_to_install = " ".join(packages_to_install_list)
+    install_cmd = f'{sys.executable} -m pip install --upgrade {packages_to_install} --user'
+
+    install_permission = input(
+        'One or more of the following Python packages are outdated or missing:\n'
+        f'  {packages_to_install}\n\n'
+        'The script can install these packages in the user\'s home directory using the following command:\n' 
+        f'  {install_cmd}\n'
+        'Proceed? (y/n)? ').strip().lower()
+
+    if install_permission not in ('y', 'yes'):
+        print('Python packages are required for deployment. Exiting...')
+        sys.exit(1)
+
+    subprocess.check_call(install_cmd.split(' '))
+
+
+def import_modules():
+    """A function that dynamically imports required Python packages.
     """
 
     # Global calls for import statements are required to avoid module not found error
-    import_google_libraries = '''\
+    import_required_packages = '''\
     import googleapiclient.discovery
-    from google.cloud import kms_v1
-    from google.cloud.kms_v1 import enums
+    from google.cloud import kms
     from google.api_core import exceptions as google_exc
     '''
 
-    try:
-        exec(textwrap.dedent(import_google_libraries), globals())
-        print('Successfully imported Google libraries.')
+    # Recommended to clear cache after installing python packages for dynamic imports
+    importlib.invalidate_caches()
 
-    except ImportError as err:
-        required_google_libraries = 'google-api-python-client grpc-google-iam-v1 google-cloud google-cloud-kms'
-
-        install_permission = input(
-            'One or more of the following Python packages are missing:\n'
-            f'  {required_google_libraries}\n\n'
-            'The script can install these packages in the user\'s home directory using the following command:\n' 
-            f'  (i.e. {sys.executable} -m pip install {required_google_libraries} --user)\n'
-            'Proceed? (y/n)? ').strip().lower()
-
-        if install_permission not in ('y', 'yes'):
-            print('Google libraries are required for deployment. Exiting...')
-            sys.exit(1)
-
-        install_cmd = f'{sys.executable} -m pip install {required_google_libraries} --user'
-        subprocess.check_call(install_cmd.split(' '))
-
-        # Recommended to clear cache after installing python packages for dynamic imports
-        importlib.invalidate_caches()
-
-        exec(textwrap.dedent(import_google_libraries), globals())
-        print('Successfully imported Google libraries.')
+    exec(textwrap.dedent(import_required_packages), globals())
+    print('Successfully imported required Python packages.')
 
 
 def ensure_terraform():
@@ -426,14 +453,14 @@ if __name__ == '__main__':
     print('Encrypting secrets...')
     days90 = 7776000
 
-    kms_client = kms_v1.KeyManagementServiceClient()
+    kms_client = kms.KeyManagementServiceClient()
 
-    parent = kms_client.location_path(PROJECT_ID, GCP_REGION)
+    parent = f'projects/{PROJECT_ID}/locations/{GCP_REGION}'
     key_ring_id = 'cloud_deployment_scripts'
     key_ring_init = {}
 
     try:
-        key_ring = kms_client.create_key_ring(parent, key_ring_id, key_ring_init)
+        key_ring = kms_client.create_key_ring(request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring_init})
         print('Created Key Ring {}'.format(key_ring.name))
     except google_exc.AlreadyExists:
         print('Key Ring {} already exists. Using it...'.format(key_ring_id))
@@ -441,21 +468,21 @@ if __name__ == '__main__':
     parent = kms_client.key_ring_path(PROJECT_ID, GCP_REGION, key_ring_id)
     crypto_key_id = 'quickstart_key'
     crypto_key_init = {
-        'purpose': enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
+        'purpose': kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
         'rotation_period': {'seconds': days90},
         'next_rotation_time': {'seconds': int(time.time()) + days90},
     }
 
     try:
-        crypto_key = kms_client.create_crypto_key(parent, crypto_key_id, crypto_key_init)
+        crypto_key = kms_client.create_crypto_key(request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key_init})
         print('Created Crypto Key {}'.format(crypto_key.name))
     except google_exc.AlreadyExists:
         print('Crypto Key {} already exists. Using it...'.format(crypto_key_id))
 
-    key_name = kms_client.crypto_key_path_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
+    key_name = kms_client.crypto_key_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
 
     def kms_encode(key, text):
-        encrypted = kms_client.encrypt(key, text.encode('utf-8'))
+        encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
 
         return base64.b64encode(encrypted.ciphertext).decode('utf-8')
 
