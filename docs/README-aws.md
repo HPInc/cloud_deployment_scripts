@@ -81,7 +81,7 @@ The easiest way to encrypt secrets is to use the kms_secrets_encryption.py Pytho
    ./kms_secrets_encryption.py </path/to/terraform.tfvars>
    ```
 
-The script will replace all the plaintext inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
+The script will replace all plaintext secrets inside of terraform.tfvars with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
 
 The script can also reverse the encryption by executing it with the '-d' flag. See script's documentation for details (--help).
 

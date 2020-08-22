@@ -35,5 +35,5 @@ To encrypt:
 
 To decrypt:
 ```
-./kms_secrets_encryption.py <path/to/terraform.tfvars> -d
+./kms_secrets_encryption.py -d <path/to/terraform.tfvars>
 ```

@@ -482,14 +482,14 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
 
         # Create a client for the KMS API using the provided GCP service account
         self.gcp_credentials = service_account.Credentials.from_service_account_file(self.credentials_file)
-        self.kms_client      = kms_v1.KeyManagementServiceClient(credentials = self.gcp_credentials)
+        self.kms_client      = kms.KeyManagementServiceClient(credentials = self.gcp_credentials)
 
         # GCP KMS resource variables
         self.project_id      = self.tfvars_parser.tfvars_data.get("gcp_project_id")
         self.location        = "global"
         self.key_ring_id     = self.initialize_keyring("cas_keyring")
         self.crypto_key_id   = self.initialize_cryptokey("cas_key")
-        self.crypto_key_path = self.kms_client.crypto_key_path_path(self.project_id, self.location, self.key_ring_id, self.crypto_key_id)
+        self.crypto_key_path = self.kms_client.crypto_key_path(self.project_id, self.location, self.key_ring_id, self.crypto_key_id)
 
 
     def create_crypto_key(self, crypto_key_id):
@@ -502,19 +502,23 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
 
         Returns
         -------
-        response.name : str 
+        created_crypto_key.name : str 
             name of the crypto key created.
         """
 
          # Create the crypto key object template
-        purpose    = kms_v1.enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
+        purpose    = kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
         crypto_key = { "purpose": purpose }
 
         # Create a crypto key for the given key ring
-        parent   = self.kms_client.key_ring_path(self.project_id, self.location, self.key_ring_id)
-        response = self.kms_client.create_crypto_key(parent, crypto_key_id, crypto_key)
+        parent             = self.kms_client.key_ring_path(self.project_id, self.location, self.key_ring_id)
+        created_crypto_key = self.kms_client.create_crypto_key(
+            request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key}
+        )
 
-        return response.name
+        print(f"Created key ring: {created_crypto_key.name}\n")
+
+        return created_crypto_key.name
 
 
     def decrypt_ciphertext(self, ciphertext):
@@ -538,7 +542,9 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
 
         # Use the KMS API to decrypt the data
-        response = self.kms_client.decrypt(self.crypto_key_path, ciphertext)
+        response = self.kms_client.decrypt(
+            request={'name': self.crypto_key_path, 'ciphertext': ciphertext}
+        )
 
         # Decode Base64 plaintext
         plaintext = response.plaintext.decode("utf-8")
@@ -564,7 +570,9 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         """
 
         # Use the KMS API to encrypt the data.
-        response = self.kms_client.encrypt(self.crypto_key_path, plaintext.encode("utf-8"))
+        response = self.kms_client.encrypt(
+            request={'name': self.crypto_key_path, 'plaintext': plaintext.encode('utf-8')}
+        )
 
         # Base64 encoding of ciphertext
         ciphertext = base64.b64encode(response.ciphertext).decode("utf-8")
@@ -589,7 +597,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         """
 
         parent   = self.kms_client.key_ring_path(self.project_id, self.location, key_ring_id)
-        response = self.kms_client.list_crypto_keys(parent)
+        response = self.kms_client.list_crypto_keys(request={'parent': parent})
 
         # Access the name property and split string from the right. [2] to get the string after the separator
         # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring/cryptoKeys/cas_key"
@@ -610,8 +618,8 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
             a list of all the key rings.
         """
 
-        parent   = self.kms_client.location_path(self.project_id, self.location)
-        response = self.kms_client.list_key_rings(parent)
+        parent   = f'projects/{self.project_id}/locations/{self.location}'
+        response = self.kms_client.list_key_rings(request={'parent': parent})
 
         # Access the name property and split string from the right. [2] to get the string after the separator
         # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring"
@@ -651,7 +659,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
                 raise SystemExit(err)
         else:
             print(f"Using existing crypto key: {crypto_key_id}\n")
-        
+
         return crypto_key_id
 
 
@@ -677,7 +685,11 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         # Create the key ring only if it doesn't exist
         if key_ring_id not in key_rings_list:
             try:
-                self.create_key_ring(key_ring_id)
+                parent   = f'projects/{self.project_id}/locations/{self.location}'
+                key_ring = {}
+                created_key_ring = self.kms_client.create_key_ring(
+                    request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring}
+                )
                 print(f"Created key ring: {key_ring_id}\n")
 
             except Exception as err:
@@ -958,11 +970,11 @@ def main():
 
     # Instantiate a GCP_Tfvars_Encryptor or AWS_Tfvars_Encryptor
     if tfvars_parser.tfvars_data.get("gcp_credentials_file"):
-        global kms_v1
+        global kms
         global service_account
 
         # Install and import the required GCP libraries
-        kms_v1 = import_or_install_module("google-cloud-kms", "google.cloud.kms_v1")
+        kms = import_or_install_module("google-cloud-kms", "google.cloud.kms")
         service_account = import_or_install_module("google_oauth2_tool", "google.oauth2.service_account")
 
         tfvars_encryptor = GCP_Tfvars_Encryptor(tfvars_parser)
