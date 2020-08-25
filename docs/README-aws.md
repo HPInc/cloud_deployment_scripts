@@ -32,7 +32,7 @@
 - a PCoIP License Server Activation Code is needed for Local License Server (LLS) based deployments.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
-- Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
+- Terraform v0.12.x or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### AWS Setup
 Although it is possible to create deployments in existing and currently in-use accounts, it is recommended to create them in new accounts to reduce chances of name collisions and interfering with operations of existing resources.
@@ -54,6 +54,8 @@ Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a 
 1. create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
 2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM Deployment Service Account.
 3. click on "Download JSON file" to download the CAM Deployment Service Account credentials file which will be used in terraform.tfvars.
+
+## Running Terraform Scripts
 
 ### Customizing terraform.tfvars
 terraform.tfvars is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
