@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+INSTALL_DIR="/root"
+NCAT_PORT=7072
+
+log() {
+    echo "[$(date)] $1"
+}
+
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    while true
+    do
+        log "$log_message"
+        eval $command && break
+
+        if [ $timeout -le 0 ]
+        then
+            log "$err_message"
+            exit 1
+        fi
+
+        log "Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
+}
+
+# Downloads a file from S3 with retry. Converts using dos2unix and
+# make it executable if specified.
+s3_get() {
+    local src="$1"
+    local dst="$2"
+    local executable="$3"
+
+    retry 300 10 \
+        "aws s3 cp s3://$src $dst" \
+        "Downloading s3://$src to $dst..." \
+        "ERROR: Failed to download s3://$src."
+
+    dos2unix $dst
+    [ $executable ] && chmod +x $dst
+}
+
+# Wait for a message using ncat
+get_msg_from() {
+    local peer="$1"
+
+    local msg=$(nc --recv-only --listen --allow $peer $NCAT_PORT)
+
+    if [ $? != 0 ]
+    then
+        log "ERROR: Failed to receive message from $peer."
+        exit 1
+    fi
+
+    echo $msg
+}
+
+wait_for_lls() {
+    log "Waiting for main PCoIP License Server to be ready before proceeding..."
+    local message=$(get_msg_from ${lls_main_ip})
+    if [ ! $message == "START_HAPROXY" ]
+    then
+        log "ERROR: unexpected command from main PCoIP License Server: $command"
+        exit 1
+    fi
+}
+#####   "curl --max-time 1 http://${lls_main_ip}:7070/api/1.0/health" \
+
+setup_haproxy() {
+    local cfg_file="/etc/haproxy/haproxy.cfg"
+
+    # download config file from S3 bucket
+    cp $cfg_file $cfg_file.backup
+    s3_get ${bucket_name}/${haproxy_config} $cfg_file
+    
+    # Update config file with IPs
+    sed -i "s/\$${lls_main_ip}/${lls_main_ip}/" $cfg_file
+    sed -i "s/\$${lls_backup_ip}/${lls_backup_ip}/" $cfg_file
+
+    # This command allows haproxy to work
+    setsebool -P haproxy_connect_any 1
+    
+    # turn off selinux as notify-master.sh is not executed
+    # TODO: fine tune selinux instead of disabling it
+    setenforce 0
+    sed -i "s/^SELINUX=enforcing/SELINUX=disabled/" /etc/selinux/config
+
+    systemctl enable --now haproxy
+}
+
+setup_keepalived() {
+    local cfg_file="/etc/keepalived/keepalived.conf"
+    local notify_master="/etc/keepalived/notify_master.sh"
+
+    # download notify_master script from S3 bucket and render script
+    s3_get ${bucket_name}/${notify_master} $notify_master true
+    sed -i "s/\$${vip}/${haproxy_vip}/" $notify_master
+
+    # download config file from S3 bucket
+    cp $cfg_file $cfg_file.backup
+    s3_get ${bucket_name}/${keepalived_config} $cfg_file
+    
+    # Update config file
+    sed -i "s/\$${state}/$${KA_STATE}/" $cfg_file
+    sed -i "s/\$${priority}/$${KA_PRIORITY}/" $cfg_file
+    sed -i "s/\$${peer_ip}/$${KA_PEER_IP}/" $cfg_file
+    sed -i "s:\$${vip_cidr}:${haproxy_vip_cidr}:" $cfg_file
+
+    systemctl enable --now keepalived
+}
+
+set -x
+
+if [[ -f "$LOG_FILE" ]]
+then
+    log "Provisioning script already run."
+    exit 0
+fi
+
+mkdir -p "$(dirname $LOG_FILE)"
+touch "$LOG_FILE"
+chmod 600 "$LOG_FILE"
+
+exec &>> $LOG_FILE
+
+log "Running $0 as $(whoami)..."
+
+cd $INSTALL_DIR
+
+yum update -y
+yum install -y haproxy keepalived nc
+
+# Figure out if this instance is master or backup
+MYIP=$(hostname -I)
+
+if [ $MYIP == "${haproxy_master_ip}" ]
+then
+    log "Setting up master HAProxy Server..."
+    KA_STATE="master"
+    KA_PRIORITY="101"
+    KA_PEER_IP="${haproxy_backup_ip}"
+elif [ $MYIP == "${haproxy_backup_ip}" ]
+then
+    log "Setting up backup HAProxy Server..."
+    KA_STATE="backup"
+    KA_PRIORITY="100"
+    KA_PEER_IP="${haproxy_master_ip}"
+else
+    log "ERROR: IP address of this instance $MYIP doesn't match Terraform configuration."
+    exit 1
+fi
+
+# Need to wait for the main LLS to be up before running HAProxy, otherwise
+# HAProxy sees the main LLS down and it would not fail back to main LLS
+# even after it comes back up (by design)
+wait_for_lls
+
+setup_haproxy
+
+setup_keepalived
+
+log "$0 finished."

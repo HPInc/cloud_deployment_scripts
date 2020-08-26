@@ -1,0 +1,276 @@
+#!/bin/bash
+
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+LLS_CONFIG_FILE="/opt/flexnetls/TERADICI/local-configuration.yaml"
+FLEXNETLSADMIN="/opt/flexnetls/TERADICI/admintools/flexnetlsadmin.sh"
+INSTALL_DIR="/root"
+LLS_YUM_PKG="pcoip-license-server"
+NCAT_PORT=7072
+
+log() {
+    echo "[$(date)] $1"
+}
+
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    while true
+    do
+        log "$log_message"
+        eval $command && break
+
+        if [ $timeout -le 0 ]
+        then
+            log "$err_message"
+            exit 1
+        fi
+
+        log "Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
+}
+
+get_credentials() {
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
+    if [[ -z "${customer_master_key_id}" ]]
+    then
+        log "--> Script is not using encryption for secrets."
+
+        LLS_ADMIN_PASSWORD=${lls_admin_password}
+        LLS_ACTIVATION_CODE=${lls_activation_code}
+
+    else
+        log "--> Script is using encryption key: ${customer_master_key_id}"
+
+        log "--> Decrypting LLS Administrator Password..."
+        LLS_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting LLS Activation Code..."
+        LLS_ACTIVATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_activation_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+    fi
+    set -x
+}
+
+check_required_vars() {
+    set +x
+    if [[ -z "$LLS_ADMIN_PASSWORD" ]]; then
+        log "--> ERROR: Missing LLS Administrator Password."
+        missing_vars="true"
+    fi
+
+    if [[ -z "$LLS_ACTIVATION_CODE" ]]; then
+        log "--> ERROR: Missing LLS Activation Code."
+        missing_vars="true"
+    fi
+    set -x
+
+    if [[ "$missing_vars" = "true" ]]; then
+        log "--> Exiting..."
+        exit 1
+    fi
+}
+
+install_pcoip_license_server() {
+    yum install -y ${lls_repo_url}
+    yum install -y $LLS_YUM_PKG
+
+    set +x
+    pcoip-set-password -p "1P@ssw0rd!" -n "$LLS_ADMIN_PASSWORD"
+    set -x
+}
+
+# Send a message using ncat
+send_msg_to() {
+    local peer="$1"
+    local msg="$2"
+
+    retry 600 10 \
+        "echo $msg | nc --send-only $peer $NCAT_PORT" \
+        "Sending message to $peer..." \
+        "ERROR: Failed to send message to $peer."
+}
+
+# Wait for a message using ncat
+get_msg_from() {
+    local peer="$1"
+
+    local msg=$(nc --recv-only --listen --allow $peer $NCAT_PORT)
+
+    if [ $? != 0 ]
+    then
+        log "ERROR: Failed to receive message from $peer."
+        exit 1
+    fi
+
+    echo $msg
+}
+
+setup_main_lls() {
+    log "Setting up main PCoIP License Server..."
+
+    # "Steps" here refer to official documentation:
+    # https://www.teradici.com/web-help/pcoip_license_server/20.04/online/documentation/using-failover/#3-register-the-pcoip-license-servers
+
+    # Step 2
+    # Not needed since it is already started
+    # systemctl start flexnetls-TERADICI
+
+    local backup_server_id=$(get_msg_from ${lls_backup_ip})
+
+    cp $LLS_CONFIG_FILE $LLS_CONFIG_FILE.backup
+    chmod 644 $LLS_CONFIG_FILE
+    sed -i "s/#backup-hostid:/backup-hostid: $backup_server_id\/VM_UUID/" $LLS_CONFIG_FILE
+
+    # Not needed since we'll be doing a restart
+    # systemctl stop flexnetls-TERADICI
+
+    # Step 3
+    time systemctl restart flexnetls-TERADICI
+
+    set +x
+    pcoip-list-licenses -p $LLS_ADMIN_PASSWORD
+    set -x
+
+    # Not needed as the backup LLS will be restarted later
+    #send_msg_to ${lls_backup_ip} START_LLS
+
+    # Step 4 (No-op)
+
+    # Step 5 (Optional)
+    set +x
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set licensing.backup.uri=http://${lls_backup_ip}:7070/fne/bin/capability
+
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set licensing.main.uri=http://${lls_main_ip}:7070/fne/bin/capability
+    set -x
+
+    # Step 6
+    local command=$(get_msg_from ${lls_backup_ip})
+    if [ ! $command == "ACTIVATE_LICENSES" ]
+    then
+        log "ERROR: unexpected command from Backup PCoIP License Server: $command"
+        exit 1
+    fi
+
+    set +x
+    pcoip-activate-online-license -a "$LLS_ACTIVATION_CODE" -c ${lls_license_count} -p "$LLS_ADMIN_PASSWORD"
+    set -x
+    
+    # Signal Backup to restart to sync the new licenses
+    send_msg_to ${lls_backup_ip} RESTART_LLS
+
+    # Signal HAProxy to start
+    send_msg_to ${haproxy_master_ip} START_HAPROXY
+    send_msg_to ${haproxy_backup_ip} START_HAPROXY
+}
+
+setup_backup_lls() {
+    log "Setting up backup PCoIP License Server..."
+    # "Steps" here refer to official documentation:
+    # https://www.teradici.com/web-help/pcoip_license_server/20.04/online/documentation/using-failover/#3-register-the-pcoip-license-servers
+
+    # Step 2
+    # Not needed since it is already started
+    # systemctl start flexnetls-TERADICI
+
+    set +x
+    local server_id=$(pcoip-get-license-server-id -p "$LLS_ADMIN_PASSWORD")
+    set -x
+    # get the id part of result like "VM_UUID (i-0961ea1fe15e6b6ee)"
+    server_id=$(echo $server_id | sed -r "s/VM_UUID \((.*)\)/\1/")
+
+    send_msg_to ${lls_main_ip} $server_id
+
+    # Not needed since we will restart service later after license activation
+    # systemctl stop flexnetls-TERADICI
+
+    # Step 3
+    # Not needed since we will restart service later after license activation
+    #local command=$(get_msg_from ${lls_main_ip})
+    #if [ ! $command == "START_LLS" ]
+    #then
+    #    log "ERROR: unexpected command from Main PCoIP License Server: $command"
+    #    exit 1
+    #fi
+
+    #time systemctl restart flexnetls-TERADICI
+    
+    # Step 4
+    set +x
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set fne.syncTo.mainUri=http://${lls_main_ip}:7070/fne/bin/capability
+
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set fne.syncTo.enabled=true
+    set -x
+
+    # Step 5 (No-op)
+
+    # Step 6
+    send_msg_to ${lls_main_ip} "ACTIVATE_LICENSES"
+
+    command=$(get_msg_from ${lls_main_ip})
+    if [ ! $command == "RESTART_LLS" ]
+    then
+        log "ERROR: unexpected command from Main PCoIP License Server: $command"
+        exit 1
+    fi
+
+    time systemctl restart flexnetls-TERADICI
+}
+
+set -x
+
+if [[ -f "$LOG_FILE" ]]
+then
+    log "Provisioning script already run."
+    exit 0
+fi
+
+mkdir -p "$(dirname $LOG_FILE)"
+touch "$LOG_FILE"
+chmod 600 "$LOG_FILE"
+
+exec &>> $LOG_FILE
+
+log "Running $0 as $(whoami)..."
+
+cd $INSTALL_DIR
+
+yum update -y
+yum install -y nc wget yum-utils
+
+get_credentials
+
+check_required_vars
+
+install_pcoip_license_server
+
+# Figure out if this instance is master or backup
+MYIP=$(hostname -I)
+
+if [ $MYIP == "${lls_main_ip}" ]
+then
+    setup_main_lls
+elif [ $MYIP == "${lls_backup_ip}" ]
+then
+    setup_backup_lls
+else
+    log "ERROR: IP address of this instance $MYIP doesn't match Terraform configuration."
+    exit 1
+fi
+
+set +x
+$FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -status
+set -x
+
+log "$0 finished."

@@ -79,7 +79,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.07.15"
+  default     = "Windows_Server-2019-English-Full-Base-2020.08.12"
 }
 
 variable "domain_name" {
@@ -123,9 +123,36 @@ variable "lls_subnet_cidr" {
   default     = "10.0.3.0/24"
 }
 
-variable "lls_instance_count" {
-  description = "Number of PCoIP License Servers"
-  default     = 1
+variable "lls_subnet_ips" {
+  description = "IP addresses used in the PCoIP License Server subnet"
+  default = {
+    haproxy_vip    = "10.0.3.100"
+    haproxy_master = "10.0.3.101"
+    haproxy_backup = "10.0.3.102"
+    lls_main       = "10.0.3.201"
+    lls_backup     = "10.0.3.202"
+    subnet_mask    = "/24"
+  }
+}
+
+variable "haproxy_instance_type" {
+  description = "Instance type for the HAProxy"
+  default     = "t2.medium"
+}
+
+variable "haproxy_disk_size_gb" {
+  description = "Disk size (GB) of the HAProxy"
+  default     = "10"
+}
+
+variable "haproxy_ami_owner" {
+  description = "Owner of AMI for the HAProxy"
+  default     = "125523088429"
+}
+
+variable "haproxy_ami_name" {
+  description = "Name of the CentOS AMI to run HAProxy on"
+  default     = "CentOS 8.2.2004 x86_64"
 }
 
 variable "lls_instance_type" {
@@ -141,11 +168,6 @@ variable "lls_disk_size_gb" {
 variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
   default     = "aws-marketplace"
-}
-
-variable "lls_ami_product_code" {
-  description = "Product Code of the AMI for the PCoIP License Server"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
 }
 
 variable "lls_ami_name" {
@@ -205,7 +227,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200716"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200821.1"
 }
 
 variable "admin_ssh_key_name" {
@@ -301,7 +323,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.07.15"
+  default     = "Windows_Server-2019-English-Full-Base-2020.08.12"
 }
 
 variable "win_std_instance_count" {
@@ -331,7 +353,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.07.15"
+  default     = "Windows_Server-2019-English-Full-Base-2020.08.12"
 }
 
 variable "centos_gfx_instance_count" {

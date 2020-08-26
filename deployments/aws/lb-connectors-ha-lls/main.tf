@@ -55,10 +55,8 @@ module "dc" {
   ami_name  = var.dc_ami_name
 }
 
-module "lls" {
-  source = "../../../modules/aws/lls"
-
-  instance_count = var.lls_instance_count
+module "ha-lls" {
+  source = "../../../modules/aws/ha-lls"
 
   prefix = var.prefix
 
@@ -69,18 +67,24 @@ module "lls" {
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.lls-subnet.id
+  assigned_ips       = var.lls_subnet_ips
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
 
-  instance_type = var.lls_instance_type
-  disk_size_gb  = var.lls_disk_size_gb
+  haproxy_instance_type = var.haproxy_instance_type
+  haproxy_disk_size_gb  = var.haproxy_disk_size_gb
 
-  ami_owner        = var.lls_ami_owner
-  ami_product_code = var.lls_ami_product_code
-  ami_name         = var.lls_ami_name
+  lls_instance_type = var.haproxy_instance_type
+  lls_disk_size_gb  = var.haproxy_disk_size_gb
+
+  haproxy_ami_owner        = var.haproxy_ami_owner
+  haproxy_ami_name         = var.haproxy_ami_name
+
+  lls_ami_owner        = var.lls_ami_owner
+  lls_ami_name         = var.lls_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
@@ -188,7 +192,7 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  lls_ip = module.lls.internal-ip[0]
+  lls_ip = var.lls_subnet_ips["haproxy_vip"]
 
   zone_list           = aws_subnet.cac-subnets[*].availability_zone
   subnet_list         = aws_subnet.cac-subnets[*].id
