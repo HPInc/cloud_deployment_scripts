@@ -51,12 +51,12 @@ variable "ami_owner" {
 }
 
 variable "ami_product_code" {
-  description = "Product Code of the AMI for the Workstation"
+  description = "Product Code of the AMI for the PCoIP License Server"
   default     = "aw0evgkw8e5c1q413zgy5pjce"
 }
 
 variable "ami_name" {
-  description = "Name of the AMI to create Workstation from"
+  description = "Name of the AMI to create PCoIP License Server from"
   default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
 }
 
