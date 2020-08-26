@@ -136,7 +136,10 @@ def ensure_required_packages():
         output = subprocess.run(check_cmd.split(' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
 
         # If a package is not found, skip version checking and simply install the latest package
-        if output and required_version is not None:
+        if not output:
+            packages_to_install_list.append(package)
+
+        elif required_version is not None:
             # Second line outputs the version of the specified package
             current_version = output.splitlines()[1].split(' ')[-1]
 
@@ -146,25 +149,24 @@ def ensure_required_packages():
 
             if current_version_tuple < required_version_tuple:
                 packages_to_install_list.append(package)
-        else:
-            packages_to_install_list.append(package)
 
-    # Convert the list to a string of packages delimited by a space
-    packages_to_install = " ".join(packages_to_install_list)
-    install_cmd = f'{sys.executable} -m pip install --upgrade {packages_to_install} --user'
+    if packages_to_install_list:
+        # Convert the list to a string of packages delimited by a space
+        packages_to_install = " ".join(packages_to_install_list)
+        install_cmd = f'{sys.executable} -m pip install --upgrade {packages_to_install} --user'
 
-    install_permission = input(
-        'One or more of the following Python packages are outdated or missing:\n'
-        f'  {packages_to_install}\n\n'
-        'The script can install these packages in the user\'s home directory using the following command:\n' 
-        f'  {install_cmd}\n'
-        'Proceed? (y/n)? ').strip().lower()
+        install_permission = input(
+            'One or more of the following Python packages are outdated or missing:\n'
+            f'  {packages_to_install}\n\n'
+            'The script can install these packages in the user\'s home directory using the following command:\n' 
+            f'  {install_cmd}\n'
+            'Proceed? (y/n)? ').strip().lower()
 
-    if install_permission not in ('y', 'yes'):
-        print('Python packages are required for deployment. Exiting...')
-        sys.exit(1)
+        if install_permission not in ('y', 'yes'):
+            print('Python packages are required for deployment. Exiting...')
+            sys.exit(1)
 
-    subprocess.check_call(install_cmd.split(' '))
+        subprocess.check_call(install_cmd.split(' '))
 
 
 def import_modules():

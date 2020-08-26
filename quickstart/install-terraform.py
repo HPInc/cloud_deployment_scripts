@@ -16,25 +16,25 @@ TEMP_DIR           = '/tmp'
 TERRAFORM_VERSION  = '0.12.3'
 
 
-def terraform_install(terraform_bin_dir, version=TERRAFORM_VERSION):
-    zip_filename = 'terraform_{}_linux_amd64.zip'.format(version)
-    download_url = 'https://releases.hashicorp.com/terraform/{}/{}'.format(version, zip_filename)
+def terraform_install(terraform_bin_dir, version):
+    zip_filename = f'terraform_{version}_linux_amd64.zip'
+    download_url = f'https://releases.hashicorp.com/terraform/{version}/{zip_filename}'
     local_zip_file = TEMP_DIR + '/' + zip_filename
 
-    print('Downloading from {} to {}...'.format(download_url, local_zip_file))
+    print(f'Downloading from {download_url} to {local_zip_file}...')
     urllib.request.urlretrieve(download_url, local_zip_file)
 
-    print('Extracting to {}...'.format(terraform_bin_dir))
+    print(f'Extracting to {terraform_bin_dir}...')
     pathlib.Path(terraform_bin_dir).mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(local_zip_file) as tf_zip_file:
         tf_zip_file.extractall(terraform_bin_dir)
 
     os.chmod(terraform_bin_dir + '/terraform', 0o775)
 
-    print('Deleting {}...'.format(local_zip_file))
+    print(f'Deleting {local_zip_file}...')
     os.remove(local_zip_file)
 
-    print('Terraform version {} installed.'.format(version))
+    print(f'Terraform version {version} installed.')
 
 
 if __name__ == '__main__':
@@ -43,12 +43,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=parser_description)
     parser.add_argument('dir', help='specify the directory to install Terraform')
+    parser.add_argument('ver', nargs='?', default=TERRAFORM_VERSION, help='specify the version of Terraform to install')
     args = parser.parse_args()
 
-    # Don't attempt to install unless needed
-    path = shutil.which('terraform')
-    if path:
-        print('Terraform already installed in ' + path)
-        sys.exit(1)
-
-    terraform_install(args.dir)
+    terraform_install(args.dir, args.ver)
