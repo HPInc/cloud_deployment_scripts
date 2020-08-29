@@ -28,14 +28,29 @@ aws_credentials_file = "/path/to/aws_key"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
+# Number of PCoIP licenses to activate
+lls_license_count = 0
+
+# SSL Private Key & Certificate for Load Balancer. Note: AWS requires CN to be
+# a domain name. e.g. "example.com"
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
+
+# Specify the zones (min. 2 zones, ensure the zones are available in your AWS
+# account), subnet CIDRs and number of connectors to create per zone.
+# For example:
+# cac_zone_list           = ["us-west-1a",  "us-west-1c"]
+# cac_subnet_cidr_list    = ["10.0.1.0/25", "10.0.1.128/25"]
+# cac_instance_count_list = [1,             1]
+
+cac_zone_list           = []
+cac_subnet_cidr_list    = []
+cac_instance_count_list = []
+
 # cac_instance_type = "t2.xlarge"
 # cac_disk_size_gb  = "50"
 # cac_ami_owner     = "099720109477"
 # cac_ami_name      = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200821.1"
-
-# Optional: Specify SSL certificate for Connector
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -105,9 +120,10 @@ centos_std_instance_count = 0
 # Uncomment and enter the Customer Master Key ID if using encryption.
 # customer_master_key_id = "<key-id-uuid>"
 
-# <-- Start of secrets section, do not edit this line. -->
 dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
+lls_admin_password          = "SecuRe_pwd4"
+lls_activation_code         = "0123-4567-89AB-CDEF"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
 cam_deployment_sa_file      = "/path/to/cloud-access-manager-service-account.json"

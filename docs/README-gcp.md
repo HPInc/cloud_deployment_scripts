@@ -47,7 +47,7 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 - a Cloud Access Manager Deployment Service Account is needed. Please see the Cloud Access Manager Setup section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
-- Terraform v0.12.x must be installed. Please download Terraform from https://www.terraform.io/downloads.html
+- Terraform v0.12.x or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### GCP Setup
 Although it is possible to create deployments in existing and currently in-use projects, it is recommended to create them in new projects to reduce chances of name collisions and interfering with operations of existing resources.

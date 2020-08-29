@@ -6,7 +6,7 @@
  */
 
 data "http" "myip" {
-  url = "https://ipinfo.io/ip"
+  url = "https://ifconfig.co/ip"
 }
 
 data "aws_availability_zones" "available_az" {

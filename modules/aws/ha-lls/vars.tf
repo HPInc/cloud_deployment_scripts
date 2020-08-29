@@ -30,34 +30,44 @@ variable "security_group_ids" {
   type        = list(string)
 }
 
-variable "instance_count" {
-  description = "Number of PCoIP License Server to deploy"
-  default     = 1
+variable "haproxy_instance_type" {
+  description = "Instance type for the HAProxy"
+  default     = "t2.medium"
 }
 
-variable "instance_type" {
+variable "haproxy_disk_size_gb" {
+  description = "Disk size (GB) of the HAProxy"
+  default     = "10"
+}
+
+variable "lls_instance_type" {
   description = "Instance type for the PCoIP License Server"
   default     = "t2.medium"
 }
 
-variable "disk_size_gb" {
+variable "lls_disk_size_gb" {
   description = "Disk size (GB) of the PCoIP License Server"
   default     = "10"
 }
 
-variable "ami_owner" {
+variable "haproxy_ami_owner" {
+  description = "Owner of AMI for the HAProxy"
+  default     = "125523088429"
+}
+
+variable "haproxy_ami_name" {
+  description = "Name of the AMI to create HAProxy from"
+  default     = "CentOS 8.2.2004 x86_64"
+}
+
+variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
+  default     = "125523088429"
 }
 
-variable "ami_product_code" {
-  description = "Product Code of the AMI for the PCoIP License Server"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
-}
-
-variable "ami_name" {
+variable "lls_ami_name" {
   description = "Name of the AMI to create PCoIP License Server from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 8.2.2004 x86_64"
 }
 
 variable "host_name" {
@@ -98,4 +108,16 @@ variable "depends_on_hack" {
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
+}
+
+variable "assigned_ips" {
+  description = "IP addresses used in the PCoIP License Server subnet"
+  default = {
+    haproxy_vip    = "10.0.3.100"
+    haproxy_master = "10.0.3.101"
+    haproxy_backup = "10.0.3.102"
+    lls_main       = "10.0.3.201"
+    lls_backup     = "10.0.3.202"
+    subnet_mask    = "/24"
+  }
 }
