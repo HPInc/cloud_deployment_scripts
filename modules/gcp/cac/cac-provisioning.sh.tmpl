@@ -260,6 +260,7 @@ install_cac() {
                 --domain ${domain_name} \
                 --domain-group "${domain_group}" \
                 --reg-code $PCOIP_REGISTRATION_CODE \
+                --retrieve-agent-state true \
                 --sync-interval 5 \
                 2>&1 | tee -a $CAC_INSTALL_LOG
 
@@ -297,6 +298,7 @@ install_cac() {
                 --domain ${domain_name} \
                 --domain-group "${domain_group}" \
                 --reg-code $PCOIP_REGISTRATION_CODE \
+                --retrieve-agent-state true \
                 --sync-interval 5 \
                 2>&1 | tee -a $CAC_INSTALL_LOG
 
