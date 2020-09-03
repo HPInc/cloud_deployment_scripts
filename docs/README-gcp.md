@@ -39,7 +39,11 @@ Click on the button below to clone this repository in your GCP Cloud Shell and l
 
 [![Open in Google Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/teradici/cloud_deployment_scripts&open_in_editor=quickstart/gcp-cloudshell-quickstart.cfg&tutorial=quickstart/tutorial.md)
 
+[This video](https://www.youtube.com/watch?v=lN2GesgvLKA) is also available to guide the viewer through the GCP Quickstart deployment process.
+
 ## Getting Started
+
+Before starting, consider watching [this video](https://www.youtube.com/watch?v=ESzon04cW4Y) on how to use this repo to deploy a single-connector deployment on GCP from a Linux environment. The video guides the viewer through the entire deployment process from set up to tear down. It also shows how the deployment can be managed through Cloud Access Manager (CAM) and how end-users can connect to their machines using a PCoIP client. While the video shows the single-connector deployment, the process of creating other deployments is very similar. For deployment from a Windows environment, please see the relevant portions of our [AWS video](https://www.youtube.com/watch?v=hwEOoG4pmMQ).
 
 ### Requirements
 - the user must have owner permissions to a GCP project
