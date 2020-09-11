@@ -17,7 +17,7 @@ locals {
 }
 
 resource "google_storage_bucket_object" "win-gfx-provisioning-script" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = 1
 
   name    = local.provisioning_script
   bucket  = var.bucket_name
