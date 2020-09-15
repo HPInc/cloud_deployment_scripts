@@ -19,6 +19,7 @@
     1. [single-connector](#single-connector)
     2. [lb-connectors](#lb-connectors)
     3. [lb-connectors-lls](#lb-connectors-lls)
+    4. [lb-connectors-ha-lls](#lb-connectors-ha-lls)
 4. [Troubleshooting](#troubleshooting)
 
 ---
@@ -178,7 +179,7 @@ These workstations are automatically domain-joined and have the PCoIP Agent inst
 ![single-connector diagram](./single-connector-aws.png)
 
 ### lb-connectors
-The difference between single-connector and lb-connectors deployments is that instead of creating only one Cloud Access Connector, the lb-connectors deployment creates a group of Cloud Access Connectors in two or more availability zones (AZs) within an AWS region behind an AWS Application Load Balancer (ALB). In this setup, a client initiates a PCoIP session with the public DNS name of the ALB, and the ALB will select one of the Cloud Access Connectors to establish the PCoIP connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the ALB.
+The difference between [single-connector](#single-connector) and lb-connectors deployments is that instead of creating only one Cloud Access Connector, the lb-connectors deployment creates a group of Cloud Access Connectors in two or more availability zones (AZs) within an AWS region behind an AWS Application Load Balancer (ALB). In this setup, a client initiates a PCoIP session with the public DNS name of the ALB, and the ALB will select one of the Cloud Access Connectors to establish the PCoIP connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the ALB.
 
 The AZs and number of Cloud Access Connectors for each AZs are specified by the ```cac_zone_list``` and ```cac_instance_count_list``` variables, respectively. At least two AZ and one Cloud Access Connector instance must be specified.
 
@@ -187,14 +188,29 @@ The following diagram shows what a lb-connectors deployment looks like with 2 AZ
 ![aws-lb-connectors diagram](aws-lb-connectors.png)
 
 ### lb-connectors-lls
-This deployment is similar to the lb-connectors deployment, except the workstations will use a PCoIP License Server, also known as a Local License Server (LLS), to obtain PCoIP licenses instead of reaching out to the internet to validate the PCoIP Registration Code witha Cloud License Server when establishing a PCoIP session. To use this deployment, a user must supply an Activation Code which is used by the LLS to "check out" PCoIP licenses, in addition to a PCoIP registration code.
+This deployment is similar to the [lb-connectors](#lb-connectors) deployment, except the workstations will use a PCoIP License Server, also known as a Local License Server (LLS), to obtain PCoIP licenses instead of reaching out to the internet to validate the PCoIP Registration Code witha Cloud License Server (CLS) when establishing a PCoIP session. To use this deployment, a user must supply an Activation Code which is used by the LLS to "check out" PCoIP licenses, in addition to a PCoIP registration code.
 
 **Note when destroying this deployment**
 Be sure to SSH into the Local License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the "checked out" PCoIP licenses will be lost.
 
-For more information on the PCoIP License Server, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
+For more information on the LLS, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
 
 ![aws-lb-connectors-lls diagram](aws-lb-connectors-lls.png)
+
+### lb-connectors-ha-lls
+This deployment is the same as [lb-connectors-lls](#lb-connectors-lls), except for the LLS component where it is now implemented as a highly available LLS subsystem. Instead of running in a single EC2 instance deployed in the ```subnet-lls``` subnet, there are now a Main and a Backup LLS, along with an HAProxy pair running keepalived, to ensure PCoIP Licenses continue to be served should any one of the EC2 instances in the LLS subsystem fails. During normal operation, the main LLS periodically synchronizes its database to the backup LLS. This synchronization is unidirectional; the backup LLS does not synchronize back to the main LLS.
+
+**Failover Behavior**
+The LLS Failover documentation [here](https://www.teradici.com/web-help/pcoip_license_server/current/online/documentation/using-failover/) explains that PCoIP agents do not automatically switch to the backup LLS when the main LLS fails. However, this is not the case with this aws-lb-connectors-ha-lls AWS deployment - the HAProxy is configured for automatic failover to the backup LLS when the main LLS fails. However, HAProxy is also purposefully configured not to failback to the main LLS when it comes back online after a failure; the switchover from backup to main LLS must be done manually by restarting both HAProxy servers. This is done so that the failback can happen at a scheduled time to ensure the LLS databases of both LLS servers are properly synchronized.
+
+**Note when destroying this deployment**
+Be sure to SSH into the main LLS, possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the "checked out" PCoIP licenses will be lost. This only needs to be performed on the main LLS and not on the backup LLS.
+
+For more information on setting up a Failover LLS, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/documentation/using-failover/
+
+The following diagram shows the LLS subsystem in ```subnet-lls``` that replaces the single EC2 instance in the [lb-connectors-lls](#lb-connectors-lls) deployment.
+
+![aws-lb-connectors-ha-lls diagram](aws-lb-connectors-ha-lls.png)
 
 ## Troubleshooting
 Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.
