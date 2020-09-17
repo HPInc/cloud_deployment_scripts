@@ -73,7 +73,7 @@ get_cac_token() {
     log "--> Retrieving connector token before CAC install..."
 
     # Set CAC_TOKEN variable using the script's output
-    CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file}`
+    CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file} --url ${cam_url}/api/v1`
 
     # Check and exit provisioning script if retrieving connector token failed
     if [ $? -ne 0 ]; then
