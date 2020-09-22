@@ -60,14 +60,14 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "gcp_zone" {
-  description = "Zone to deploy the Cloud Access Connector"
-  default     = "us-west2-b"
+variable "gcp_region_list" {
+  description = "GCP Regions to deploy the Cloud Access Connectors"
+  type        = list(string)
 }
 
-variable "subnet" {
-  description = "Subnet to deploy the Cloud Access Connector"
-  type        = string
+variable "subnet_list" {
+  description = "Subnets to deploy the Cloud Access Connectors"
+  type        = list(string)
 }
 
 variable "network_tags" {
@@ -75,9 +75,9 @@ variable "network_tags" {
   type        = list(string)
 }
 
-variable "instance_count" {
-  description = "Number of Cloud Access Connectors to deploy"
-  default     = 1
+variable "instance_count_list" {
+  description = "Number of Cloud Access Connector instances to deploy in each zone"
+  type        = list(number)
 }
 
 variable "host_name" {

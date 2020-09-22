@@ -68,18 +68,18 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name  = google_storage_bucket.scripts.name
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.cac-subnet.self_link
-  network_tags = [
+  bucket_name     = google_storage_bucket.scripts.name
+  gcp_region_list = [var.gcp_region]
+  subnet_list     = [google_compute_subnetwork.cac-subnet.self_link]
+  network_tags    = [
     "${google_compute_firewall.allow-ssh.name}",
     "${google_compute_firewall.allow-icmp.name}",
     "${google_compute_firewall.allow-pcoip.name}",
   ]
 
-  instance_count = var.cac_instance_count
-  machine_type   = var.cac_machine_type
-  disk_size_gb   = var.cac_disk_size_gb
+  instance_count_list = [var.cac_instance_count]
+  machine_type        = var.cac_machine_type
+  disk_size_gb        = var.cac_disk_size_gb
 
   disk_image = var.cac_disk_image
 

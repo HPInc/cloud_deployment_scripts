@@ -8,16 +8,29 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  provisioning_script  = "cac-provisioning.sh"
-  cam_script           = "cac-cam.py"
+  provisioning_script    = "cac-provisioning.sh"
+  cam_script             = "cac-cam.py"
   cam_deployment_sa_file = "cam-cred.json"
   
-  ssl_key_filename  = var.ssl_key == "" ? "" : basename(var.ssl_key)
+  num_regions        = length(var.gcp_region_list)
+  num_cacs           = length(local.instance_info_list)
+  instance_info_list = flatten(
+    [ for i in range(local.num_regions):
+      [ for j in range(var.instance_count_list[i]):
+        {
+          zone   = random_shuffle.zone[i].result[j]
+          subnet = var.subnet_list[i],
+        }
+      ]
+    ]
+  )
+
+  ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
 }
 
 resource "google_storage_bucket_object" "cam-deployment-sa-file" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = local.num_cacs == 0 ? 0 : 1
 
   bucket  = var.bucket_name
   name    = local.cam_deployment_sa_file
@@ -25,7 +38,7 @@ resource "google_storage_bucket_object" "cam-deployment-sa-file" {
 }
 
 resource "google_storage_bucket_object" "cac-cam-script" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = local.num_cacs == 0 ? 0 : 1
 
   bucket  = var.bucket_name
   name   = local.cam_script
@@ -33,7 +46,7 @@ resource "google_storage_bucket_object" "cac-cam-script" {
 }
 
 resource "google_storage_bucket_object" "ssl-key" {
-  count = tonumber(var.instance_count) == 0 ? 0 : var.ssl_key == "" ? 0 : 1
+  count = local.num_cacs == 0 ? 0 : var.ssl_key == "" ? 0 : 1
 
   bucket = var.bucket_name
   name   = local.ssl_key_filename
@@ -41,7 +54,7 @@ resource "google_storage_bucket_object" "ssl-key" {
 }
 
 resource "google_storage_bucket_object" "ssl-cert" {
-  count = tonumber(var.instance_count) == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
+  count = local.num_cacs == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
 
   bucket = var.bucket_name
   name   = local.ssl_cert_filename
@@ -49,7 +62,7 @@ resource "google_storage_bucket_object" "ssl-cert" {
 }
 
 resource "google_storage_bucket_object" "cac-provisioning-script" {
-  count = tonumber(var.instance_count) == 0 ? 0 : 1
+  count = local.num_cacs == 0 ? 0 : 1
 
   bucket  = var.bucket_name
   name    = local.provisioning_script
@@ -76,8 +89,22 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
   )
 }
 
+data "google_compute_zones" "available" {
+  count  = local.num_regions
+
+  region = var.gcp_region_list[count.index]
+  status = "UP"
+}
+
+resource "random_shuffle" "zone" {
+  count = local.num_regions
+
+  input        = data.google_compute_zones.available[count.index].names
+  result_count = var.instance_count_list[count.index]
+}
+
 resource "google_compute_instance" "cac" {
-  count = var.instance_count
+  count = local.num_cacs
 
   depends_on = [
     google_storage_bucket_object.ssl-key,
@@ -90,7 +117,7 @@ resource "google_compute_instance" "cac" {
 
   provider     = google
   name         = "${local.prefix}${var.host_name}-${count.index}"
-  zone         = var.gcp_zone
+  zone         = local.instance_info_list[count.index].zone
   machine_type = var.machine_type
 
   allow_stopping_for_update = true
@@ -104,7 +131,7 @@ resource "google_compute_instance" "cac" {
   }
 
   network_interface {
-    subnetwork = var.subnet
+    subnetwork = local.instance_info_list[count.index].subnet
     access_config {
     }
   }
