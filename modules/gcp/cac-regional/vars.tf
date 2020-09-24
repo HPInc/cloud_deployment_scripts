@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Teradici Corporation
+ * Copyright (c) 2020 Teradici Corporation
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -60,19 +60,19 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "gcp_region_list" {
-  description = "GCP Regions to deploy the Cloud Access Connectors"
-  type        = list(string)
+variable "gcp_region" {
+  description = "GCP Region to deploy the Cloud Access Connectors"
+  type        = string
 }
 
-variable "subnet_list" {
-  description = "Subnets to deploy the Cloud Access Connectors"
-  type        = list(string)
+variable "subnet" {
+  description = "Subnet to deploy the Cloud Access Connectors"
+  type        = string
 }
 
-variable "external_pcoip_ip_list" {
-  description = "List of external IP addresses to use to connect to the Cloud Access Connectors, one per region"
-  default     = []
+variable "external_pcoip_ip" {
+  description = "External IP addresses to use to connect to the Cloud Access Connectors."
+  default     = ""
 }
 
 variable "network_tags" {
@@ -80,9 +80,9 @@ variable "network_tags" {
   type        = list(string)
 }
 
-variable "instance_count_list" {
-  description = "Number of Cloud Access Connector instances to deploy in each zone"
-  type        = list(number)
+variable "instance_count" {
+  description = "Number of Cloud Access Connector instances to deploy"
+  default     = 1
 }
 
 variable "host_name" {
@@ -133,4 +133,19 @@ variable "ssl_cert" {
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
+}
+
+variable "cam_script" {
+  description = "Name of script to interact with Cloud Access Manager"
+  type        = string
+}
+
+variable "ssl_key_filename" {
+  description = "SSL private key for the Connector"
+  type        = string
+}
+
+variable "ssl_cert_filename" {
+  description = "SSL certificate for the Connector"
+  type        = string
 }

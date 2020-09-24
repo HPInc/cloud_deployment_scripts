@@ -13,10 +13,6 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
-output "cac-internal-ip" {
-  value = module.cac.internal-ip
-}
-
 output "cac-public-ip" {
   value = module.cac.public-ip
 }

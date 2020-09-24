@@ -5,14 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-output "internal-ip" {
-  value = [google_compute_instance.cac[*].network_interface[0].network_ip]
-}
-
 output "public-ip" {
-  value = [google_compute_instance.cac[*].network_interface[0].access_config[0].nat_ip]
+  value = module.cac-regional[*].public-ip
 }
 
-output "instance-self-links" {
-  value = [google_compute_instance.cac[*].self_link]
+output "instance-self-link-list" {
+  value = module.cac-regional[*].instance-self-link-list
 }
