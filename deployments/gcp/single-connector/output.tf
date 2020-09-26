@@ -14,7 +14,7 @@ output "domain-controller-public-ip" {
 }
 
 output "cac-public-ip" {
-  value = module.cac.public-ip
+  value = module.cac.public-ip[0]
 }
 
 output "win-gfx-internal-ip" {
