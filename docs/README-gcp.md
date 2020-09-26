@@ -20,7 +20,8 @@
 5. [Architectures](#architectures)
     1. [single-connector](#single-connector)
     2. [multi-region](#multi-region)
-    3. [dc-only](#dc-only)
+    3. [nlb-multi-region](#nlb-multi-region)
+    4. [dc-only](#dc-only)
 6. [Troubleshooting](#troubleshooting)
 
 ---
@@ -198,6 +199,16 @@ The following diagram shows a deployment when only a single region is specified 
 The next diagram shows a deployment with Cloud Access Connectors and workstations specified for 3 regions. A user initiating a PCoIP session with the public IP of the GCP HTTPS Load Balancer will connect to one of the closest Cloud Access Connectors and use GCP's global network to connect to the workstation selected.
 
 ![multi-region diagram](multi-region.png)
+
+### nlb-multi-region
+
+The Network load-balanced (NLB) multi-region deployment creates workstations and Cloud Access Connectors in one or more GCP regions. Unlike other deployments, the Cloud Access Connectors in this deployment will not be assigned public IP addresses; instead, clients will connect to their workstations via the public IP address of a regional network load balancer.
+
+Note that this deployment is ideal for clients from different public IP addresses (e.g. in a work from home scenario). This deployment does not scale well for many clients connecting from the same IP address (e.g. employees from the same site) because the load balancer session affinity is based on source IP - which means clients connecting from the same public IP address will be handled by the same instance of Cloud Access Connector.
+
+The user can specify which zones to deploy workstations and which regions to deploy Cloud Access Connectors. Cloud Access Connectors within a region will be spread out across available zones in the region, and will form a target pool behind a GCP external Network Load Balancer with a public IP.
+
+![nlb-multi-region diagram](nlb-multi-region.png)
 
 ### dc-only
 A simple deployment of one Domain Controller, intended for testing Domain Controller operations.
