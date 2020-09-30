@@ -144,8 +144,9 @@ resource "tls_self_signed_cert" "tls-cert" {
   validity_period_hours = 8760
 
   allowed_uses = [
-    "key_encipherment",
     "cert_signing",
+    "digital_signature",
+    "key_encipherment",
   ]
 }
 
