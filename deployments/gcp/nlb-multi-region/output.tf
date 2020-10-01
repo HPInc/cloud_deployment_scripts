@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+
 output "domain-controller-internal-ip" {
   value = module.dc.internal-ip
 }
@@ -13,8 +14,11 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
-output "cac-public-ip" {
-  value = module.cac.public-ip[0]
+output "cac-load-balancer-ip" {
+  value = {
+    for i in range(length(var.cac_region_list)):
+      var.cac_region_list[i] =>  google_compute_address.nlb-ip[i].address
+  }
 }
 
 output "win-gfx-internal-ip" {

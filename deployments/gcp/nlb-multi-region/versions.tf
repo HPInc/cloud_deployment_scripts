@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-output "public-ip" {
-  value = module.cac-regional[*].public-ip
-}
-
-output "instance-self-link-list" {
-  value = module.cac-regional[*].instance-self-link-list
+terraform {
+  required_version = ">= 0.13"
 }
