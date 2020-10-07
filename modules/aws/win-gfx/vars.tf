@@ -107,10 +107,10 @@ variable "pcoip_agent_filename" {
   default     = ""
 }
 
-variable "depends_on_hack" {
-  description = "Workaround for Terraform Modules not supporting depends_on"
-  default     = []
-}
+# variable "depends_on_hack" {
+#   description = "Workaround for Terraform Modules not supporting depends_on"
+#   default     = []
+# }
 
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"

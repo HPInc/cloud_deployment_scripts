@@ -131,7 +131,7 @@ module "win-gfx" {
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
 
-  depends_on_hack = [aws_nat_gateway.nat.id]
+  depends_on = [aws_nat_gateway.nat]
 }
 
 module "win-std" {
@@ -165,7 +165,7 @@ module "win-std" {
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
 
-  depends_on_hack = [aws_nat_gateway.nat.id]
+  depends_on = [aws_nat_gateway.nat]
 }
 
 module "centos-gfx" {
@@ -202,7 +202,7 @@ module "centos-gfx" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  depends_on_hack = [aws_nat_gateway.nat.id]
+  depends_on = [aws_nat_gateway.nat]
 }
 
 module "centos-std" {
@@ -239,5 +239,5 @@ module "centos-std" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  depends_on_hack = [aws_nat_gateway.nat.id]
+  depends_on = [aws_nat_gateway.nat]
 }
