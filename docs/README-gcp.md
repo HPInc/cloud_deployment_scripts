@@ -127,7 +127,7 @@ Alernatively, the secrets can be manually encrypted. To encrypt secrets using th
    ```
 4. run the following command in GCP Cloud Shell or a Linux shell with gcloud installed to encrypt the CAM Deployment Service Account JSON credentials file:
    ```
-   gcloud kms encrypt --location <location> --keyring <keyring-name> --key <key-name> --plaintext-file </path/to/cloud-access-manager-service-account.json> --ciphertext-file - | base64 > </path/to/cloud-access-manager-service-account.json.encrypted>"
+   gcloud kms encrypt --location <location> --keyring <keyring-name> --key <key-name> --plaintext-file </path/to/cloud-access-manager-service-account.json> --ciphertext-file </path/to/cloud-access-manager-service-account.json.encrypted>"
    ```
    Replace the value of the `cam_deployment_sa_file` variable in terraform.tfvars with the absolute path to the encrypted file generated.
    ```
