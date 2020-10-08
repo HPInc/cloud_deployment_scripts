@@ -115,11 +115,6 @@ variable "nvidia_driver_url" {
   default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/g4/grid-9.3/NVIDIA-Linux-x86_64-430.83-grid-aws.run"
 }
 
-# variable "depends_on_hack" {
-#   description = "Workaround for Terraform Modules not supporting depends_on"
-#   default     = []
-# }
-
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""

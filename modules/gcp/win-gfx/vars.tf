@@ -135,11 +135,6 @@ variable "pcoip_agent_filename" {
   default     = ""
 }
 
-# variable "depends_on_hack" {
-#   description = "Workaround for Terraform Modules not supporting depends_on"
-#   default     = []
-# }
-
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
