@@ -100,7 +100,6 @@ variable "lls_license_count" {
   default     = 0
 }
 
-
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""

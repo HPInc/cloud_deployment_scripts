@@ -191,7 +191,7 @@ module "win-gfx" {
   disk_size_gb        = var.win_gfx_disk_size_gb
   disk_image          = var.win_gfx_disk_image
 
-  depends_on = values(google_compute_router_nat.nat)[*].id
+  depends_on = [google_compute_router_nat.nat]
 }
 
 module "win-std" {
@@ -229,7 +229,7 @@ module "win-std" {
   disk_size_gb        = var.win_std_disk_size_gb
   disk_image          = var.win_std_disk_image
 
-  depends_on = values(google_compute_router_nat.nat)[*].id
+  depends_on = [google_compute_router_nat.nat]
 }
 
 module "centos-gfx" {
@@ -272,7 +272,7 @@ module "centos-gfx" {
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
 
-  depends_on = values(google_compute_router_nat.nat)[*].id
+  depends_on = [google_compute_router_nat.nat]
 }
 
 module "centos-std" {
@@ -313,5 +313,5 @@ module "centos-std" {
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
 
-  depends_on = values(google_compute_router_nat.nat)[*].id
+  depends_on = [google_compute_router_nat.nat]
 }
