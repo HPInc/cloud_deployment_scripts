@@ -13,6 +13,7 @@ import json
 import os
 import re
 import shutil
+import site
 import subprocess
 import sys
 import textwrap
@@ -167,6 +168,9 @@ def ensure_required_packages():
             sys.exit(1)
 
         subprocess.check_call(install_cmd.split(' '))
+
+        # Refresh sys.path to detect new modules in user's home directory.
+        importlib.reload(site)
 
 
 def import_modules():
