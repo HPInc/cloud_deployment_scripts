@@ -487,13 +487,15 @@ if __name__ == '__main__':
 
     key_name = kms_client.crypto_key_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
 
-    def kms_encode(key, text):
+    def kms_encode(key, text, base64_encoded=False):
         encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
 
-        return base64.b64encode(encrypted.ciphertext).decode('utf-8')
+        if base64_encoded:
+            return base64.b64encode(encrypted.ciphertext).decode('utf-8')
+        return encrypted.ciphertext
 
-    password = kms_encode(key_name, password)
-    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'))
+    password = kms_encode(key_name, password, True)
+    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
     cam_deployment_key = kms_encode(key_name, json.dumps(cam_deployment_key))
 
     print('Done encrypting secrets.')
