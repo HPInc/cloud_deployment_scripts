@@ -127,6 +127,11 @@ The following command can be used to decrypt the ciphertext:
    aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d
    ```
 
+The following command can be used to decrypt the encrypted CAM Deployment Service Account JSON credentials file:
+   ```
+   aws kms decrypt --ciphertext-blob fileb://</path/to/cloud-access-manager-service-account.json.encrypted> --output text --query Plaintext | base64 -d
+   ```
+
 ### Creating the deployment
 With the terraform.tfvars file customized
 1. run ```terraform init``` to initialize the deployment
