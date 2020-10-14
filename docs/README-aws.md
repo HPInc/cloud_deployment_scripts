@@ -115,7 +115,7 @@ To encrypt secrets using the KMS CMK created in the 'AWS Setup' section above, f
         --key-id <key-id-uuid> \
         --plaintext fileb://</path/to/cloud-access-manager-service-account.json> \
         --output text \
-        --query CiphertextBlob > </path/to/cloud-access-manager-service-account.json.encrypted>
+        --query CiphertextBlob | base64 -d > </path/to/cloud-access-manager-service-account.json.encrypted>
    ```
     Replace the value of the `cam_deployment_sa_file` variable in terraform.tfvars with the absolute path to the encrypted file generated.
    ```
@@ -129,7 +129,7 @@ The following command can be used to decrypt the ciphertext:
 
 The following command can be used to decrypt the encrypted CAM Deployment Service Account JSON credentials file:
    ```
-   aws kms decrypt --ciphertext-blob fileb://</path/to/cloud-access-manager-service-account.json.encrypted> --output text --query Plaintext | base64 -d
+   aws kms decrypt --ciphertext-blob fileb://</path/to/cloud-access-manager-service-account.json.encrypted> --output text --query Plaintext | base64 -d > </path/to/cloud-access-manager-service-account.json>
    ```
 
 ### Creating the deployment
