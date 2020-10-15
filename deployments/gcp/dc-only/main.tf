@@ -40,10 +40,10 @@ module "dc" {
   subnet       = google_compute_subnetwork.dc-subnet.self_link
   private_ip   = var.dc_private_ip
   network_tags = [
-    "${google_compute_firewall.allow-dns.name}",
-    "${google_compute_firewall.allow-rdp.name}",
-    "${google_compute_firewall.allow-winrm.name}",
-    "${google_compute_firewall.allow-icmp.name}",
+    google_compute_firewall.allow-dns.name,
+    google_compute_firewall.allow-rdp.name,
+    google_compute_firewall.allow-winrm.name,
+    google_compute_firewall.allow-icmp.name,
   ]
 
   machine_type = var.dc_machine_type
