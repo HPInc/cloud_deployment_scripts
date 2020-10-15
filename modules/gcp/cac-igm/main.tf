@@ -133,7 +133,7 @@ resource "google_compute_instance_group_manager" "cac-igm" {
   name = "${local.prefix}igm-cac"
 
   # TODO: makes more sense to use regional IGM
-  #region = "${var.gcp_region}"
+  #region = var.gcp_region
   zone = var.gcp_zone_list[count.index]
 
   base_instance_name = "${local.prefix}cac"

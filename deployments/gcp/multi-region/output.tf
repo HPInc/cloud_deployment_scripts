@@ -14,7 +14,7 @@ output "domain-controller-public-ip" {
 }
 
 output "cac-load-balancer-ip" {
-  #value = "${data.google_compute_forwarding_rule.cac-fwdrule.ip_address}"
+  #value = data.google_compute_forwarding_rule.cac-fwdrule.ip_address
   value = google_compute_global_forwarding_rule.cac-fwdrule.ip_address
 }
 
