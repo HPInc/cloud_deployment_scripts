@@ -501,7 +501,7 @@ if __name__ == '__main__':
     print('Done encrypting secrets.')
 
     print('Creating CAM Deployment Service Account Key...')
-    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
+    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
         keyfile.write(cam_deployment_key)
 
     print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)
