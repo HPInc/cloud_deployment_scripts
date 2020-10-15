@@ -13,7 +13,7 @@ import zipfile
 
 
 TEMP_DIR           = '/tmp'
-TERRAFORM_VERSION  = '0.13.3'
+TERRAFORM_VERSION  = '0.13.4'
 
 
 def terraform_install(terraform_bin_dir, version):
