@@ -36,6 +36,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
 - Terraform v0.13.4 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
+- Terraform must be run in either the Command Prompt in a Windows environment or bash shell in a Linux environment. Note that PowerShell is not supported.
 
 ### AWS Setup
 Although it is possible to create deployments in existing and currently in-use accounts, it is recommended to create them in new accounts to reduce chances of name collisions and interfering with operations of existing resources.
