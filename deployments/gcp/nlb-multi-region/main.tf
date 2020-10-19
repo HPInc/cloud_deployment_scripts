@@ -42,10 +42,10 @@ module "dc" {
   subnet       = google_compute_subnetwork.dc-subnet.self_link
   private_ip   = var.dc_private_ip
   network_tags = [
-    "${google_compute_firewall.allow-google-dns.name}",
-    "${google_compute_firewall.allow-rdp.name}",
-    "${google_compute_firewall.allow-winrm.name}",
-    "${google_compute_firewall.allow-icmp.name}",
+    google_compute_firewall.allow-google-dns.name,
+    google_compute_firewall.allow-rdp.name,
+    google_compute_firewall.allow-winrm.name,
+    google_compute_firewall.allow-icmp.name,
   ]
 
   machine_type = var.dc_machine_type
@@ -76,9 +76,9 @@ module "cac" {
   subnet_list            = google_compute_subnetwork.cac-subnets[*].self_link
   external_pcoip_ip_list = google_compute_address.nlb-ip[*].address
   network_tags      = [
-    "${google_compute_firewall.allow-ssh.name}",
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-pcoip.name}",
+    google_compute_firewall.allow-ssh.name,
+    google_compute_firewall.allow-icmp.name,
+    google_compute_firewall.allow-pcoip.name,
   ]
 
   instance_count_list = var.cac_instance_count_list
@@ -179,8 +179,8 @@ module "win-gfx" {
   minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-rdp.name}",
+    google_compute_firewall.allow-icmp.name,
+    google_compute_firewall.allow-rdp.name,
   ]
 
   instance_count_list = var.win_gfx_instance_count_list
@@ -219,8 +219,8 @@ module "win-std" {
   minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-rdp.name}",
+    google_compute_firewall.allow-icmp.name,
+    google_compute_firewall.allow-rdp.name,
   ]
 
   instance_count_list = var.win_std_instance_count_list
@@ -257,8 +257,8 @@ module "centos-gfx" {
   minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-ssh.name}",
+    google_compute_firewall.allow-icmp.name,
+    google_compute_firewall.allow-ssh.name,
   ]
 
   instance_count_list = var.centos_gfx_instance_count_list
@@ -300,8 +300,8 @@ module "centos-std" {
   minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
 
   network_tags     = [
-    "${google_compute_firewall.allow-icmp.name}",
-    "${google_compute_firewall.allow-ssh.name}",
+    google_compute_firewall.allow-icmp.name,
+    google_compute_firewall.allow-ssh.name,
   ]
 
   instance_count_list = var.centos_std_instance_count_list

@@ -79,7 +79,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.09.09"
+  default     = "Windows_Server-2019-English-Full-Base-2020.10.14"
 }
 
 variable "domain_name" {
@@ -227,7 +227,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20200923"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20201014"
 }
 
 variable "admin_ssh_key_name" {
@@ -323,7 +323,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.09.09"
+  default     = "Windows_Server-2019-English-Full-Base-2020.10.14"
 }
 
 variable "win_std_instance_count" {
@@ -353,7 +353,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.09.09"
+  default     = "Windows_Server-2019-English-Full-Base-2020.10.14"
 }
 
 variable "centos_gfx_instance_count" {

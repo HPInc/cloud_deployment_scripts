@@ -188,8 +188,8 @@ class Tfvars_Encryptor(ABC):
     Abstract methods:
         __init__(tfvars_parser)
         create_crypto_key(crypto_key_id) 
-        decrypt_ciphertext(ciphertext)
-        encrypt_plaintext(plaintext)
+        decrypt_ciphertext(ciphertext, base64_encoded)
+        encrypt_plaintext(plaintext, base64_encoded)
         get_crypto_keys()
         initialize_cryptokey(crypto_key_id)
     
@@ -221,11 +221,11 @@ class Tfvars_Encryptor(ABC):
 
 
     @abstractmethod
-    def decrypt_ciphertext(self, ciphertext): pass
+    def decrypt_ciphertext(self, ciphertext, base64_encoded): pass
 
 
     @abstractmethod
-    def encrypt_plaintext(self, plaintext): pass
+    def encrypt_plaintext(self, plaintext, base64_encoded): pass
 
 
     @abstractmethod
@@ -252,7 +252,8 @@ class Tfvars_Encryptor(ABC):
         try:
             print(f"Decrypting file: {file_path}...")
 
-            with open(file_path) as f:
+            # read binary file
+            with open(file_path, 'rb') as f:
                 f_ciphertext = f.read()
 
             f_plaintext = self.decrypt_ciphertext(f_ciphertext)
@@ -293,7 +294,7 @@ class Tfvars_Encryptor(ABC):
                     self.tfvars_parser.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_parser.tfvars_secrets.get(secret))
                 else:
                     print(f"Decrypting {secret}...")
-                    self.tfvars_parser.tfvars_secrets[secret] = self.decrypt_ciphertext(self.tfvars_parser.tfvars_secrets.get(secret))
+                    self.tfvars_parser.tfvars_secrets[secret] = self.decrypt_ciphertext(self.tfvars_parser.tfvars_secrets.get(secret), True)
 
             # Write encrypted secrets into new terraform.tfvars file
             self.write_new_tfvars()
@@ -330,7 +331,8 @@ class Tfvars_Encryptor(ABC):
             f_encrypted_string = self.encrypt_plaintext(f_string)
             file_path_encrypted = f"{file_path}.encrypted".replace(".decrypted", "")
             
-            with open(file_path_encrypted, "w") as f:
+            # write byte string into file
+            with open(file_path_encrypted, "wb") as f:
                 f.write(f_encrypted_string)
 
         except Exception as err:
@@ -356,7 +358,7 @@ class Tfvars_Encryptor(ABC):
                     self.tfvars_parser.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_parser.tfvars_secrets.get(secret))
                 else:
                     print(f"Encrypting {secret}...")
-                    self.tfvars_parser.tfvars_secrets[secret] = self.encrypt_plaintext(self.tfvars_parser.tfvars_secrets.get(secret))
+                    self.tfvars_parser.tfvars_secrets[secret] = self.encrypt_plaintext(self.tfvars_parser.tfvars_secrets.get(secret), True)
 
             # Write encrypted secrets into new terraform.tfvars file
             self.write_new_tfvars()
@@ -458,8 +460,8 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
     -------
         __init__(tfvars_parser)
         create_crypto_key(crypto_key_id)
-        decrypt_ciphertext(ciphertext)
-        encrypt_plaintext(plaintext)
+        decrypt_ciphertext(ciphertext, base64_encoded)
+        encrypt_plaintext(plaintext, base64_encoded)
         get_crypto_keys(key_ring_id)
         get_key_rings()
         initialize_cryptokey(crypto_key_id)
@@ -521,7 +523,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         return created_crypto_key.name
 
 
-    def decrypt_ciphertext(self, ciphertext):
+    def decrypt_ciphertext(self, ciphertext, base64_encoded=False):
         """A method that decrypts ciphertext.
 
         Uses GCP KMS to decrypt ciphertext back to plaintext using the provided
@@ -532,6 +534,9 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         ciphertext : str
             the ciphertext being decrypted.
 
+        base64_encoded : boolean
+            the boolean param shows whether the ciphertext is base64 encoded.
+
         Returns
         -------
         plaintext : str
@@ -539,7 +544,8 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         """
 
         # Convert ciphertext string to a byte string, then Base64 decode it
-        ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
+        if base64_encoded:
+            ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
 
         # Use the KMS API to decrypt the data
         response = self.kms_client.decrypt(
@@ -552,7 +558,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         return plaintext
 
 
-    def encrypt_plaintext(self, plaintext):
+    def encrypt_plaintext(self, plaintext, base64_encoded=False):
         """A method that encrypts plaintext.
 
         Uses GCP KMS to encrypt plaintext to ciphertext using the provided
@@ -560,8 +566,11 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
 
         Args
         ----
-        ciphertext : str 
+        plaintext : str 
             the plainttext being encrypted.
+
+        base64_encoded : boolean
+            the boolean param shows whether the returned ciphertext need base64 encode.
 
         Returns
         -------
@@ -575,7 +584,10 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         )
 
         # Base64 encoding of ciphertext
-        ciphertext = base64.b64encode(response.ciphertext).decode("utf-8")
+        if base64_encoded:
+            ciphertext = base64.b64encode(response.ciphertext).decode("utf-8")
+        else:
+            ciphertext = response.ciphertext
 
         return ciphertext
 
@@ -718,8 +730,8 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
     -------
         __init__(tfvars_parser)
         create_crypto_key(crypto_key_alias)
-        decrypt_ciphertext(ciphertext)
-        encrypt_plaintext(plaintext)
+        decrypt_ciphertext(ciphertext, base64_encoded)
+        encrypt_plaintext(plaintext, base64_encoded)
         initialize_aws_credentials(path)
         initialize_cryptokey(crypto_key_alias_name)
         get_crypto_keys()
@@ -764,20 +776,19 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
 
         # Use KMS client to create key and store the returned KeyId
         customer_master_key_id = self.kms_client.create_key().get("KeyMetadata").get("KeyId")
-        
         # Give this KeyId an alias name
         self.kms_client.create_alias(
             # The alias to create. Aliases must begin with "alias/".
-            AliasName = f"alias/{crypto_key_alias_name}",
+            AliasName = f"alias/{crypto_key_alias}",
             TargetKeyId = customer_master_key_id
         )
-        
-        print(f"Created {crypto_key_alias_name}: {customer_master_key_id}\n")
+
+        print(f"Created {crypto_key_alias}: {customer_master_key_id}\n")
 
         return customer_master_key_id
 
 
-    def decrypt_ciphertext(self, ciphertext):
+    def decrypt_ciphertext(self, ciphertext, base64_encoded=False):
         """A method that decrypts ciphertext.
 
         Uses AWS KMS to decrypt ciphertext back to plaintext using the provided
@@ -788,6 +799,9 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         ciphertext : str
             the ciphertext being decrypted.
 
+        base64_encoded : boolean
+            the boolean param shows whether the ciphertext is base64 encoded.
+
         Returns
         -------
         plaintext : str
@@ -795,7 +809,8 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         """
 
         # Convert ciphertext string to a byte string, then Base64 decode it
-        ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
+        if base64_encoded:
+            ciphertext = base64.b64decode(ciphertext.encode("utf-8"))
 
         # Use the KMS API to decrypt the data
         response = self.kms_client.decrypt(
@@ -809,7 +824,7 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         return plaintext
 
 
-    def encrypt_plaintext(self, plaintext):
+    def encrypt_plaintext(self, plaintext, base64_encoded=False):
         """A method that encrypts plaintext.
 
         Uses AWS KMS to encrypt plaintext to ciphertext using the provided
@@ -819,6 +834,9 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         ----
         ciphertext : str 
             the plainttext being encrypted.
+
+        base64_encoded : boolean
+            the boolean param shows whether the returned ciphertext need base64 encode.
 
         Returns
         -------
@@ -833,8 +851,11 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
                     )
 
         # Base64 encoding of ciphertext
-        ciphertext = base64.b64encode(response.get("CiphertextBlob")).decode("utf-8")
-        
+        if base64_encoded:
+            ciphertext = base64.b64encode(response.get("CiphertextBlob")).decode("utf-8")
+        else:
+            ciphertext = response.get("CiphertextBlob")
+
         return ciphertext
 
 

@@ -13,6 +13,7 @@ import json
 import os
 import re
 import shutil
+import site
 import subprocess
 import sys
 import textwrap
@@ -167,6 +168,9 @@ def ensure_required_packages():
             sys.exit(1)
 
         subprocess.check_call(install_cmd.split(' '))
+
+        # Refresh sys.path to detect new modules in user's home directory.
+        importlib.reload(site)
 
 
 def import_modules():
@@ -483,19 +487,21 @@ if __name__ == '__main__':
 
     key_name = kms_client.crypto_key_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
 
-    def kms_encode(key, text):
+    def kms_encode(key, text, base64_encoded=False):
         encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
 
-        return base64.b64encode(encrypted.ciphertext).decode('utf-8')
+        if base64_encoded:
+            return base64.b64encode(encrypted.ciphertext).decode('utf-8')
+        return encrypted.ciphertext
 
-    password = kms_encode(key_name, password)
-    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'))
+    password = kms_encode(key_name, password, True)
+    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
     cam_deployment_key = kms_encode(key_name, json.dumps(cam_deployment_key))
 
     print('Done encrypting secrets.')
 
     print('Creating CAM Deployment Service Account Key...')
-    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
+    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
         keyfile.write(cam_deployment_key)
 
     print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)

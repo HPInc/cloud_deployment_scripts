@@ -79,7 +79,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200908"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
 }
 
 variable "dc_admin_password" {
@@ -150,7 +150,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20200923"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20201014"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -271,7 +271,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200908"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
 }
 
 variable "win_std_instance_count_list" {
@@ -296,7 +296,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20200908"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
 }
 
 variable "centos_gfx_instance_count_list" {
@@ -331,7 +331,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200910"
+  default     = "projects/centos-cloud/global/images/centos-7-v20201014"
 }
 
 variable "centos_std_instance_count_list" {
@@ -356,7 +356,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20200910"
+  default     = "projects/centos-cloud/global/images/centos-7-v20201014"
 }
 
 variable "centos_admin_user" {

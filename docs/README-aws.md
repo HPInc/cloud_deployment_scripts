@@ -35,7 +35,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - a PCoIP License Server Activation Code is needed for Local License Server (LLS) based deployments.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
-- Terraform v0.13 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
+- Terraform v0.13.4 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### AWS Setup
 Although it is possible to create deployments in existing and currently in-use accounts, it is recommended to create them in new accounts to reduce chances of name collisions and interfering with operations of existing resources.
@@ -115,7 +115,7 @@ To encrypt secrets using the KMS CMK created in the 'AWS Setup' section above, f
         --key-id <key-id-uuid> \
         --plaintext fileb://</path/to/cloud-access-manager-service-account.json> \
         --output text \
-        --query CiphertextBlob > </path/to/cloud-access-manager-service-account.json.encrypted>
+        --query CiphertextBlob | base64 -d > </path/to/cloud-access-manager-service-account.json.encrypted>
    ```
     Replace the value of the `cam_deployment_sa_file` variable in terraform.tfvars with the absolute path to the encrypted file generated.
    ```
@@ -125,6 +125,11 @@ To encrypt secrets using the KMS CMK created in the 'AWS Setup' section above, f
 The following command can be used to decrypt the ciphertext:
    ```
    aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d
+   ```
+
+The following command can be used to decrypt the encrypted CAM Deployment Service Account JSON credentials file:
+   ```
+   aws kms decrypt --ciphertext-blob fileb://</path/to/cloud-access-manager-service-account.json.encrypted> --output text --query Plaintext | base64 -d > </path/to/cloud-access-manager-service-account.json>
    ```
 
 ### Creating the deployment

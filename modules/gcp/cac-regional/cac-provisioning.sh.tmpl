@@ -13,7 +13,6 @@ cd $INSTALL_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
-DECRYPT_URI="https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
 PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
 
@@ -72,26 +71,20 @@ get_credentials() {
     else
         log "--> Script is using encryption key: ${kms_cryptokey_id}"
 
-        # Gets access token attribute of response json object
-        token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
+        # Gets key informations needed for decode from kms_cryptokey_id
+        # kms_cryptokey_id: projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>
+        local kms_location="$(echo ${kms_cryptokey_id} | cut -d'/' -f4)"
+        local kms_keyring="$(echo ${kms_cryptokey_id} | cut -d'/' -f6)"
+        local kms_key="$(echo ${kms_cryptokey_id} | cut -d'/' -f8)"
 
-        # Gets data using access token and decodes it
         log "--> Decrypting PCoIP registration code..."
-        data=$(echo "{ \"ciphertext\": \"${pcoip_registration_code}\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
-        PCOIP_REGISTRATION_CODE=$(echo "$b64_data" | base64 --decode)
+        PCOIP_REGISTRATION_CODE=$(echo -n ${pcoip_registration_code} | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
 
         log "--> Decrypting AD service account password..."
-        data=$(echo "{ \"ciphertext\": \"${ad_service_account_password}\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
-        AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
+        AD_SERVICE_ACCOUNT_PASSWORD=$(echo -n ${ad_service_account_password} | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
 
         log "--> Decrypting CAM Deployment Service Account JSON file..."
-        cam_cred_encrypted=$(cat $INSTALL_DIR/${cam_deployment_sa_file})
-        data=$(echo "{ \"ciphertext\": \"$cam_cred_encrypted\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python3 -c "import sys, json; print(json.load(sys.stdin)['plaintext'])")
-        CAM_CREDENTIALS=$(echo "$b64_data" | base64 --decode)
-        echo $CAM_CREDENTIALS > $INSTALL_DIR/${cam_deployment_sa_file}
+        cat $INSTALL_DIR/${cam_deployment_sa_file} | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file $INSTALL_DIR/${cam_deployment_sa_file}
     fi
     set -x
 }
