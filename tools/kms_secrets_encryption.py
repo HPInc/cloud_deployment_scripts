@@ -9,6 +9,7 @@ import argparse
 import base64
 import importlib
 import os
+import site
 import subprocess
 import sys
 import textwrap
@@ -52,8 +53,8 @@ def import_or_install_module(pypi_package_name, module_name = None):
 
         print(f"Successfully installed {pypi_package_name}.")
 
-        # Recommended to clear cache after installing python packages for dynamic imports
-        importlib.invalidate_caches()
+        # Refresh sys.path to detect new modules in user's home directory.
+        importlib.reload(site)
 
         module = importlib.import_module(module_name)
         print(f"Successfully imported {module_name}.")
@@ -479,6 +480,12 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
 
         super().__init__(tfvars_parser)
 
+        # Install and import the required GCP modules
+        global kms
+        global service_account
+        kms = import_or_install_module("google-cloud-kms", "google.cloud.kms")
+        service_account = import_or_install_module("google_oauth2_tool", "google.oauth2.service_account")
+
         # Set GCP credentials instance variable from tfvars_data
         self.credentials_file = self.tfvars_parser.tfvars_data.get("gcp_credentials_file")
 
@@ -748,13 +755,21 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
 
         super().__init__(tfvars_parser)
 
+        # Install and import the required AWS modules
+        global boto3
+        boto3 = import_or_install_module("boto3")
+
         # Set AWS credentials instance variables from tfvars_data
         self.credentials_file = self.tfvars_parser.tfvars_data.get("aws_credentials_file")
 
         # Create a client for the KMS API using the provided AWS credentials
-        self.aws_credentials = self.initialize_aws_credentials(self.tfvars_parser.tfvars_data.get("aws_credentials_file"))
-        self.kms_client      = boto3.client("kms", aws_access_key_id = self.aws_credentials.get("aws_access_key_id"),
-                                               aws_secret_access_key = self.aws_credentials.get("aws_secret_access_key"))
+        self.aws_credentials = self.initialize_aws_credentials(self.credentials_file)
+
+        self.kms_client = boto3.client(
+            "kms",
+            aws_access_key_id     = self.aws_credentials.get("aws_access_key_id"),
+            aws_secret_access_key = self.aws_credentials.get("aws_secret_access_key")
+        )
 
         # AWS KMS resource variables
         self.customer_master_key_id = self.initialize_cryptokey("cas_key")
@@ -991,21 +1006,9 @@ def main():
 
     # Instantiate a GCP_Tfvars_Encryptor or AWS_Tfvars_Encryptor
     if tfvars_parser.tfvars_data.get("gcp_credentials_file"):
-        global kms
-        global service_account
-
-        # Install and import the required GCP libraries
-        kms = import_or_install_module("google-cloud-kms", "google.cloud.kms")
-        service_account = import_or_install_module("google_oauth2_tool", "google.oauth2.service_account")
-
         tfvars_encryptor = GCP_Tfvars_Encryptor(tfvars_parser)
 
     elif tfvars_parser.tfvars_data.get("aws_credentials_file"):
-        global boto3 
-
-        # Install and import the required AWS libraries
-        boto3 = import_or_install_module("boto3")
-
         tfvars_encryptor = AWS_Tfvars_Encryptor(tfvars_parser)
 
     # Abort the script if credentials is missing
