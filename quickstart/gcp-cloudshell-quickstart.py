@@ -203,6 +203,12 @@ def ensure_terraform():
 
     path = shutil.which('terraform')
 
+    # Reference versions.tf file for the required version
+    with open(TERRAFORM_VER_PATH,"r") as f:
+        data = f.read()
+
+    required_version = re.search(r'\">=\s([\d.]+)\"', data).group(1)
+
     if path:
         cmd = 'terraform -v'
         # Run the command 'terraform -v' and use the first line as the Terraform version
@@ -211,12 +217,6 @@ def ensure_terraform():
 
         # Use regex to parse the version number from string (i.e. 0.12.18)
         current_version = re.search(r'Terraform\s*v([\d.]+)', terraform_version).group(1)
-
-        # Reference versions.tf file for the required version
-        with open(TERRAFORM_VER_PATH,"r") as f:
-            data = f.read()
-        
-        required_version = re.search(r'\">=\s([\d.]+)\"', data).group(1)
 
         # Convert the string into a tuple of numbers for comparison
         current_version_tuple  = tuple( map(int, current_version.split('.')) )
