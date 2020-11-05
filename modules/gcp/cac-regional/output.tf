@@ -6,7 +6,7 @@
  */
 
 output "public-ip" {
-  value = var.external_pcoip_ip == "" ? google_compute_instance.cac[*].network_interface[0].access_config[0].nat_ip : []
+  value = (var.enable_cac_external_ip || var.external_pcoip_ip == "") ? google_compute_instance.cac[*].network_interface[0].access_config[0].nat_ip : []
 }
 
 output "instance-self-link-list" {

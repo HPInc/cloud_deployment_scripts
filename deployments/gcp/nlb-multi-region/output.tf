@@ -21,6 +21,10 @@ output "cac-load-balancer-ip" {
   }
 }
 
+output "cac-public-ip" {
+  value = flatten(module.cac.public-ip[*])
+}
+
 output "win-gfx-internal-ip" {
   value = module.win-gfx.internal-ip
 }
