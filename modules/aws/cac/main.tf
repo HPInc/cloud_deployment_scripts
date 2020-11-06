@@ -214,8 +214,7 @@ resource "aws_instance" "cac" {
     aws_s3_bucket_object.ssl-cert,
     aws_s3_bucket_object.cam-deployment-sa-file,
     aws_s3_bucket_object.cac-cam-script,
-    # Provisioning script dependency should be inferred by Terraform
-    # aws_s3_bucket_object.cac-provisioning-script,
+    aws_s3_bucket_object.cac-provisioning-script,
   ]
 
   availability_zone = local.instance_info_list[count.index].zone

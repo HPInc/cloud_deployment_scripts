@@ -189,10 +189,10 @@ resource "null_resource" "wait-for-reboot" {
   }
 
   provisioner "local-exec" {
-    # This command is written this way to make it work regardless of whether the
-    # user runs Terraform in Windows (where local-exec is the command prompt) or
-    # Linux (where the local-exec is e.g. bash shell).
-    command = "sleep 15 || powershell sleep 15"
+    # This command is written in such a way that it would work if the 
+    # local-exec is either the Command Prompt in Windows or the bash shell 
+    # in Linux. Note that it does not work on PowerShell in Windows.
+    command = "sleep 15 || timeout /nobreak /t 15"
   }
 }
 
