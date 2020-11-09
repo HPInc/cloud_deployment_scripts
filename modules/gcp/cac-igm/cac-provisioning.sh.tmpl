@@ -24,11 +24,11 @@ log() {
 }
 
 retry() {
-    local timeout=$1
-    local interval=$2
-    local command=$3
-    local log_message=$4
-    local err_message=$5
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
 
     until $command
     do
@@ -238,81 +238,52 @@ install_cac() {
     # Set pipefail option to return status of the connector install command
     set -o pipefail
 
-    set +x
-    if [ -z "${ssl_key}" ]; then
-        log "--insecure"
-
-        while true
-        do
-            $INSTALL_DIR/cloud-access-connector install \
-                -t $CAC_TOKEN \
-                --accept-policies \
-                --insecure \
-                --sa-user ${ad_service_account_username} \
-                --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-                --domain ${domain_name} \
-                --domain-group "${domain_group}" \
-                --reg-code $PCOIP_REGISTRATION_CODE \
-                --retrieve-agent-state true \
-                --sync-interval 5 \
-                2>&1 | tee -a $CAC_INSTALL_LOG
-            
-            local rc=$?
-            if [ $rc -eq 0 ]
-            then
-                log "--> Successfully installed Cloud Access Connector."
-                break
-            fi
-
-            if [ $retries -eq 0 ]
-            then
-                log "--> ERROR: Failed to install Cloud Access Connector. No retries remaining."
-                exit 1
-            fi
-
-            log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
-            retries=$((retries-1))
-            sleep 60
-        done
-    else
+    if [ "${ssl_key}" ]
+    then
         log "--ssl-key <ssl_key> --ssl-cert <ssl_cert>"
         gsutil cp gs://${bucket_name}/${ssl_key} $INSTALL_DIR
         gsutil cp gs://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
-        while true
-        do
-            $INSTALL_DIR/cloud-access-connector install \
-                -t $CAC_TOKEN \
-                --accept-policies \
-                --ssl-key $INSTALL_DIR/${ssl_key} \
-                --ssl-cert $INSTALL_DIR/${ssl_cert} \
-                --sa-user ${ad_service_account_username} \
-                --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-                --domain ${domain_name} \
-                --domain-group "${domain_group}" \
-                --reg-code $PCOIP_REGISTRATION_CODE \
-                --retrieve-agent-state true \
-                --sync-interval 5 \
-                2>&1 | tee -a $CAC_INSTALL_LOG
-            
-            local rc=$?
-            if [ $rc -eq 0 ]
-            then
-                log "--> Successfully installed Cloud Access Connector."
-                break
-            fi
-
-            if [ $retries -eq 0 ]
-            then
-                log "--> ERROR: Failed to install Cloud Access Connector. No retries remaining."
-                exit 1
-            fi
-
-            log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
-            retries=$((retries-1))
-            sleep 60
-        done
+        args=$args"--ssl-key $INSTALL_DIR/${ssl_key} "
+        args=$args"--ssl-cert $INSTALL_DIR/${ssl_cert} "
+    else
+        log "--insecure"
+        args=$args"--insecure "
     fi
+
+    set +x
+    while true
+    do
+        $INSTALL_DIR/cloud-access-connector install \
+            -t $CAC_TOKEN \
+            --accept-policies \
+            --sa-user ${ad_service_account_username} \
+            --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
+            --domain ${domain_name} \
+            --domain-group "${domain_group}" \
+            --reg-code $PCOIP_REGISTRATION_CODE \
+            --retrieve-agent-state true \
+            --sync-interval 5 \
+            $args \
+            2>&1 | tee -a $CAC_INSTALL_LOG
+
+        local rc=$?
+        if [ $rc -eq 0 ]
+        then
+            log "--> Successfully installed Cloud Access Connector."
+            break
+        fi
+
+        if [ $retries -eq 0 ]
+        then
+            log "--> ERROR: Failed to install Cloud Access Connector. No retries remaining."
+            exit 1
+        fi
+
+        log "--> ERROR: Failed to install Cloud Access Connector. $retries retries remaining..."
+        retries=$((retries-1))
+        sleep 60
+    done
     set -x
 }
 
@@ -351,4 +322,4 @@ install_cac
 
 docker service ls
 
-log "--> Provisioning script completed successfully. "
+log "--> Provisioning script completed successfully."
