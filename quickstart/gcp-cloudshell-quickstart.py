@@ -70,45 +70,6 @@ CAM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cam_deployment_sa_key.json.encrypte
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
 
-next_steps = """
-Next steps:
-
-- Connect to a workstation:
-  1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
-  2. sign in with the "{entitle_user}" user credentials
-  3. When connecting to a workstation immediately after this script completes,
-     the workstation (especially graphics ones) may still be setting up. You may
-     see "Remote Desktop is restarting..." in the client. Please wait a few
-     minutes or reconnect if it times out.
-
-- Add additional workstations:
-  1. Log in to https://cam.teradici.com
-  2. Click on "Workstations" in the left panel, select "Create new remote
-     workstation" from the "+" button
-  3. Select connector "quickstart_cac_<timestamp>"
-  4. Fill in the form according to your preferences. Note that the following
-     values must be used for their respective fields:
-       Region:                   "us-west2"
-       Zone:                     "us-west2-b"
-       Network:                  "vpc-cas"
-       Subnetowrk:               "subnet-ws"
-       Domain name:              "example.com"
-       Domain service account:   "cam_admin"
-       Service account password: <set by you at start of script>
-  5. Click **Create**
-
-- Clean up:
-  1. Using GCP console, delete all workstations created by Cloud Access Manager
-     web interface and manually created workstations. Resources not created by
-     the Terraform scripts must be manually removed before Terraform can
-     properly destroy resources it created.
-  2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{deployment_path}"
-  3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
-     "{terraform_path} destroy"
-  4. Log in to https://cam.teradici.com and delete the deployment named
-     "quickstart_deployment_<timestamp>"
-"""
-
 def ensure_requirements():
     if not PROJECT_ID:
         print('The PROJECT property has not been set.')
@@ -283,7 +244,7 @@ def ad_password_get():
 
 def service_account_find(email):
     service_accounts = iam_service.projects().serviceAccounts().list(
-        name = 'projects/{}'.format(PROJECT_ID),
+        name = f'projects/{PROJECT_ID}',
     ).execute()
 
     if not service_accounts:
@@ -299,7 +260,7 @@ def service_account_create(email):
 
     service_account = service_account_find(email)
     if service_account:
-        print('  Service account {} already exists.'.format(email))
+        print(f'  Service account {email} already exists.')
         return service_account
 
     service_account = iam_service.projects().serviceAccounts().create(
@@ -319,7 +280,7 @@ def service_account_create(email):
 
 
 def service_account_create_key(service_account, filepath):
-    print('Created key for {}...'.format(service_account['email']))
+    print(f'Created key for {service_account["email"]}...')
 
     key = iam_service.projects().serviceAccounts().keys().create(
         name = 'projects/-/serviceAccounts/' + service_account['email'],
@@ -344,10 +305,10 @@ def iam_policy_update(service_account, roles):
 
     print('Adding roles:')
     for role in roles:
-        print('  {}...'.format(role))
+        print(f'  {role}...')
         binding = {
             'role': role,
-            'members': ['serviceAccount:{}'.format(service_account['email'])],
+            'members': [f'serviceAccount:{service_account["email"]}'],
         }
         policy['bindings'].append(binding)
 
@@ -366,7 +327,7 @@ def apis_enable(apis):
 
     # Using shell command, no Python Google Cloud Client library support
     for api in apis:
-        print('  {}...'.format(api))
+        print(f'  {api}...')
         subprocess.run(['gcloud', 'services', 'enable', api], check=True)
 
 
@@ -374,7 +335,7 @@ def ssh_key_create(path):
     print('Creating SSH key...')
 
     # note the space after '-N' is required
-    ssh_cmd = 'ssh-keygen -f {} -t rsa -q -N '.format(path)
+    ssh_cmd = f'ssh-keygen -f {path} -t rsa -q -N '
     subprocess.run(ssh_cmd.split(' '), check=True)
 
 
@@ -384,14 +345,14 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
     if os.path.exists(tfvar_file_path):
         overwrite = input("Found an existing .tfvar file, overwrite (y/n)? ").strip().lower()
         if overwrite not in ('y', 'yes'):
-            print('{} already exists. Exiting...'.format(tfvar_file_path))
+            print(f'{tfvar_file_path} already exists. Exiting...')
             sys.exit(1)
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
         for line in ref_file:
             # Append the crypto key path to kms_cryptokey_id line since it is commented out in ref_file
             if '# kms_cryptokey_id' in line:
-                out_file.write('{} = \"{}\"'.format('kms_cryptokey_id', settings['kms_cryptokey_id']))
+                out_file.write(f'{"kms_cryptokey_id"} = \"{settings["kms_cryptokey_id"]}\"')
                 continue
 
             # Comments and blank lines are unchanged
@@ -401,11 +362,11 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
             key = line.split('=')[0].strip()
             try:
-                out_file.write('{} = "{}"\n'.format(key, settings[key]))
+                out_file.write(f'{key} = "{settings[key]}"\n')
             except KeyError:
                 # Remove file and error out
                 os.remove(tfvar_file_path)
-                print('Required value for {} missing. tfvars file {} not created.'.format(key, tfvar_file_path))
+                print(f'Required value for {key} missing. tfvars file {tfvar_file_path} not created.')
                 sys.exit(1)
 
 
@@ -423,17 +384,17 @@ if __name__ == '__main__':
     cwd = os.getcwd() + '/'
 
     try:
-        print('Creating directory {} to store secrets...'.format(SECRETS_DIR))
+        print(f'Creating directory {SECRETS_DIR} to store secrets...')
         os.mkdir(SECRETS_DIR, 0o700)
     except FileExistsError:
-        print('Directory {} already exists.'.format(SECRETS_DIR))
+        print(f'Directory {SECRETS_DIR} already exists.')
 
     ssh_key_create(SSH_KEY_PATH)
 
     print('Local requirements setup complete.\n')
 
     print('Setting GCP project...')
-    sa_email = '{}@{}.iam.gserviceaccount.com'.format(SA_ID, PROJECT_ID)
+    sa_email = f'{SA_ID}@{PROJECT_ID}.iam.gserviceaccount.com'
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
 
@@ -447,7 +408,7 @@ if __name__ == '__main__':
     print('Setting Cloud Access Manager...')
     mycam = cam.CloudAccessManager(cfg_data.get('api_token'))
 
-    print('Creating deployment {}...'.format(DEPLOYMENT_NAME))
+    print(f'Creating deployment {DEPLOYMENT_NAME}...')
     deployment = mycam.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
     mycam.deployment_add_gcp_account(sa_key, deployment)
 
@@ -467,9 +428,9 @@ if __name__ == '__main__':
 
     try:
         key_ring = kms_client.create_key_ring(request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring_init})
-        print('Created Key Ring {}'.format(key_ring.name))
+        print(f'Created Key Ring {key_ring.name}')
     except google_exc.AlreadyExists:
-        print('Key Ring {} already exists. Using it...'.format(key_ring_id))
+        print(f'Key Ring {key_ring_id} already exists. Using it...')
 
     parent = kms_client.key_ring_path(PROJECT_ID, GCP_REGION, key_ring_id)
     crypto_key_id = 'quickstart_key'
@@ -481,9 +442,9 @@ if __name__ == '__main__':
 
     try:
         crypto_key = kms_client.create_crypto_key(request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key_init})
-        print('Created Crypto Key {}'.format(crypto_key.name))
+        print(f'Created Crypto Key {crypto_key.name}')
     except google_exc.AlreadyExists:
-        print('Crypto Key {} already exists. Using it...'.format(crypto_key_id))
+        print(f'Crypto Key {crypto_key_id} already exists. Using it...')
 
     key_name = kms_client.crypto_key_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
 
@@ -546,8 +507,8 @@ if __name__ == '__main__':
     # Add existing workstations
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
-            hostname = '{}-{}'.format(t, i)
-            print('Adding "{}" to Cloud Access Manager...'.format(hostname))
+            hostname = f'{t}-{i}'
+            print(f'Adding "{hostname}" to Cloud Access Manager...')
             mycam.machine_add_existing(
                 hostname,
                 PROJECT_ID,
@@ -561,26 +522,56 @@ if __name__ == '__main__':
         if entitle_user:
             break
 
-        print('Waiting for user "{}" to be synced. Retrying in 10 seconds...'
-              .format(ENTITLE_USER))
+        print(f'Waiting for user "{ENTITLE_USER}" to be synced. Retrying in 10 seconds...')
         time.sleep(10)
 
     # Add entitlements for each workstation
     machines_list = mycam.machines_get(deployment)
     for machine in machines_list:
-        print(
-            'Assigning workstation "{}" to user "{}"...'
-            .format(machine['machineName'], ENTITLE_USER)
-        )
+        print(f'Assigning workstation "{machine["machineName"]}" to user "{ENTITLE_USER}"...')
         mycam.entitlement_add(entitle_user, machine)
 
     print('\nQuickstart deployment finished.\n')
 
     print('')
-    print(next_steps.format(cac_public_ip=cac_public_ip,
-                            entitle_user=ENTITLE_USER,
-                            deployment_path=DEPLOYMENT_PATH,
-                            terraform_path=('terraform'
-                            if TERRAFORM_BIN_PATH == shutil.which('terraform') 
-                            else TERRAFORM_BIN_PATH)))
+    next_steps = f"""
+    Next steps:
+
+    - Connect to a workstation:
+    1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
+    2. sign in with the "{ENTITLE_USER}" user credentials
+    3. When connecting to a workstation immediately after this script completes,
+        the workstation (especially graphics ones) may still be setting up. You may
+        see "Remote Desktop is restarting..." in the client. Please wait a few
+        minutes or reconnect if it times out.
+
+    - Add additional workstations:
+    1. Log in to https://cam.teradici.com
+    2. Click on "Workstations" in the left panel, select "Create new remote
+        workstation" from the "+" button
+    3. Select connector "quickstart_cac_<timestamp>"
+    4. Fill in the form according to your preferences. Note that the following
+        values must be used for their respective fields:
+        Region:                   "us-west2"
+        Zone:                     "us-west2-b"
+        Network:                  "vpc-cas"
+        Subnetowrk:               "subnet-ws"
+        Domain name:              "example.com"
+        Domain service account:   "cam_admin"
+        Service account password: <set by you at start of script>
+    5. Click **Create**
+
+    - Clean up:
+    1. Using GCP console, delete all workstations created by Cloud Access Manager
+        web interface and manually created workstations. Resources not created by
+        the Terraform scripts must be manually removed before Terraform can
+        properly destroy resources it created.
+    2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{DEPLOYMENT_PATH}"
+    3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
+        "{'terraform' if TERRAFORM_BIN_PATH == shutil.which('terraform') else TERRAFORM_BIN_PATH} destroy"
+    4. Log in to https://cam.teradici.com and delete the deployment named
+        "quickstart_deployment_<timestamp>"
+    """
+
+    print(next_steps)
     print('')
