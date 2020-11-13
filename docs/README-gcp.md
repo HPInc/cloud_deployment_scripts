@@ -52,7 +52,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - a Cloud Access Manager Deployment Service Account is needed. Please see the Cloud Access Manager Setup section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup](/docs/ssh-key-pair-setup.md) for instructions.
 - if SSL is involved, the SSL key and certificate files are needed in PEM format.
-- Terraform v0.13 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
+- Terraform v0.13.5 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 - Terraform must be run in either the Command Prompt in a Windows environment or bash shell in a Linux environment. Note that PowerShell is not supported.
 
 ### GCP Setup
