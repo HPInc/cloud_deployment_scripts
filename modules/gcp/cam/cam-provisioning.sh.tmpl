@@ -1,0 +1,129 @@
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+#!/bin/bash
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+
+INSTALL_DIR="/root"
+CAM_DEPLOYMENT_KEY_NAME="terraform-key"
+CAM_DEPLOYMENT_NAME="terraform-deployment"
+CAM_INSTALL_LOG="/var/log/teradici/cam-install.log"
+cd $INSTALL_DIR
+
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
+
+install_prereqs() {
+    log "--> Installing dos2unix, python3..."
+    yum update -y
+    yum install -y dos2unix python3
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install prerequisites. Exiting provisioning script..."
+        exit 1
+    fi
+
+    python3 -m pip install requests
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install Python modules. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+add_cam_repo() {
+    log "--> Adding CAM repo..."
+    curl -1sLf '${cam_add_repo_script}' | sudo -E distro=el codename=7 bash
+}
+
+config_selinux() {
+    log "--> Configuring SE Linux..."
+    yum install -y selinux-policy-base container-selinux
+    yum install -y https://rpm.rancher.io/k3s-selinux-0.1.1-rc1.el7.noarch.rpm    
+    yum install -y cloud-access-manager-selinux
+}
+
+install_cam() {
+    log "--> Installing CAM..."
+    # TODO: figure out the /dev/tty error
+    yum install -y cloud-access-manager 2>&1 | tee -a $CAM_INSTALL_LOG
+
+    # Install manually
+    /usr/local/bin/cloud-access-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAM_INSTALL_LOG
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install CAM..."
+        exit 1
+    fi
+}
+
+cam_setup() {
+    log "--> Running CAM setup script..."
+
+    log "--> Downloading CAM python script from the bucket..."
+    gsutil cp gs://${bucket_name}/${cam_setup_script} $INSTALL_DIR
+    chmod +x $INSTALL_DIR/${cam_setup_script}
+
+    # Ensure line endings are in Unix format
+    dos2unix $INSTALL_DIR/${cam_setup_script}
+
+    # Run CAM script to update password
+    $INSTALL_DIR/${cam_setup_script} \
+      --deployment_name $CAM_DEPLOYMENT_NAME \
+      --key_file $INSTALL_DIR/${cam_deployment_sa_file} \
+      --key_name $CAM_DEPLOYMENT_KEY_NAME \
+      --password ${cam_gui_admin_password} \
+      --reg_code ${pcoip_registration_code}
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to run CAM setup script. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+
+upload_dsa_key() {
+    log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
+
+    gsutil cp $INSTALL_DIR/${cam_deployment_sa_file} gs://${bucket_name}/
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to upload CAM deployment service account key to bucket ${bucket_name}. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
+fi
+
+log "$(date)"
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
+install_prereqs
+add_cam_repo
+config_selinux
+install_cam
+cam_setup
+upload_dsa_key
+
+log "--> Provisioning script completed successfully."
