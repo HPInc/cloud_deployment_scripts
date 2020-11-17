@@ -16,8 +16,8 @@ variable "prefix" {
 }
 
 variable "cam_url" {
-  description = "Cloud Access Manager URL"
-  default     = "https://cam.teradici.com"
+  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+  type        = string
 }
 
 variable "cam_deployment_sa_file" {
@@ -81,12 +81,12 @@ variable "instance_count_list" {
 }
 
 variable "machine_type" {
-  description = "Machine type for the Cloud Access Connector"
+  description = "Machine type for the Cloud Access Connector (min 4 GB RAM, 2 vCPUs)"
   default     = "n1-standard-2"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Connector"
+  description = "Disk size (GB) of the Cloud Access Connector (min 12 GB)"
   default     = "50"
 }
 

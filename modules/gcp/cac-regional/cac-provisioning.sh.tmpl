@@ -103,7 +103,7 @@ get_cac_token() {
     # Set CAC_TOKEN variable using the script's output
     CAC_TOKEN=`$INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file} --url ${cam_url}/api/v1`
 
-    # Check and exit startup script if retrieving connector token failed
+    # Check and exit provisioning script if retrieving connector token failed
     if [ $? -ne 0 ]; then
         log "--> ERROR: Failed to retrieve connector token using CAM script. Exiting provisioning script..."
         exit 1
@@ -154,7 +154,7 @@ config_network() {
 			net.ipv4.udp_mem=120000 240000 600000
 			net.core.netdev_max_backlog=2000
 			EOF
-        
+
         sysctl -p $PCOIP_NETWORK_CONF_FILE
     fi
 }
@@ -226,33 +226,40 @@ wait_for_dc() {
 install_cac() {
     log "--> Installing Cloud Access Connector..."
     local retries=10
-    export CAM_BASE_URI=${cam_url}
 
     log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
     log "--> CAC install options:"
-    log "-t <cac_token> --accept-policies"
-    log "--sa-user <ad_service_account_username> --sa-password <ad_service_account_password>"
-    log "--domain ${domain_name} --domain-group ${domain_group}"
-    log "--reg-code <pcoip_registration_code> --sync-interval 5"
+    log "  -t <cac_token>"
+    log "  --accept-policies"
+    log "  --sa-user <ad_service_account_username>"
+    log "  --sa-password <ad_service_account_password>"
+    log "  --domain ${domain_name}"
+    log "  --domain-group ${domain_group}"
+    log "  --reg-code <pcoip_registration_code>"
+    log "  --retrieve-agent-state true"
+    log "  --sync-interval 5"
+    log "  --cam-url ${cam_url}"
 
     # Set pipefail option to return status of the connector install command
     set -o pipefail
 
     if [ "${ssl_key}" ]
     then
-        log "--ssl-key <ssl_key> --ssl-cert <ssl_cert>"
+        log "  --ssl-key <ssl_key>"
+        log "  --ssl-cert <ssl_cert>"
         gsutil cp gs://${bucket_name}/${ssl_key} $INSTALL_DIR
         gsutil cp gs://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
         args=$args"--ssl-key $INSTALL_DIR/${ssl_key} "
         args=$args"--ssl-cert $INSTALL_DIR/${ssl_cert} "
     else
-        log "--insecure"
+        log "  --insecure"
         args=$args"--insecure "
     fi
 
     if [ "${external_pcoip_ip}" ]
     then
+        log "  --external-pcoip-ip ${external_pcoip_ip}"
         args=$args"--external-pcoip-ip ${external_pcoip_ip} "
     fi
 
@@ -269,6 +276,7 @@ install_cac() {
             --reg-code $PCOIP_REGISTRATION_CODE \
             --retrieve-agent-state true \
             --sync-interval 5 \
+            --cam-url ${cam_url} \
             $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
 
