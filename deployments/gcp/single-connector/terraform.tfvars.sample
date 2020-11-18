@@ -30,7 +30,6 @@ gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.co
 
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
-# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20201116"
 
 # Optional: Specify SSL certificate for Connector
 # ssl_key  = "/path/to/privkey.pem"

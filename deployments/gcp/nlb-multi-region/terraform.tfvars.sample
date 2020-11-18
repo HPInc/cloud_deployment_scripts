@@ -44,7 +44,6 @@ cac_instance_count_list = []
 
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
-# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20201116"
 
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
