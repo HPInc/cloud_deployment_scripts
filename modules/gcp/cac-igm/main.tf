@@ -10,7 +10,6 @@ locals {
 
   provisioning_script  = "cac-provisioning.sh"
   cam_script           = "cac-cam.py"
-  cam_deployment_sa_file = "cam-cred.json"
 
   num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_zone_list)
@@ -29,14 +28,6 @@ locals {
       "^projects/${local.disk_image_project}/global/images/([-\\w]+)$",
       var.disk_image
     )[0] : null
-}
-
-resource "google_storage_bucket_object" "cam-deployment-sa-file" {
-  count = local.num_cacs == 0 ? 0 : 1
-
-  bucket = var.bucket_name
-  name   = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
 }
 
 resource "google_storage_bucket_object" "cac-cam-script" {
@@ -66,7 +57,6 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       kms_cryptokey_id            = var.kms_cryptokey_id,
       cam_url                     = var.cam_url,
       cac_installer_url           = var.cac_installer_url,
-      cam_deployment_sa_file      = local.cam_deployment_sa_file,
       cam_script                  = local.cam_script,
       pcoip_registration_code     = var.pcoip_registration_code,
 
@@ -76,7 +66,8 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
 
-      bucket_name = var.bucket_name,
+      bucket_name            = var.bucket_name,
+      cam_deployment_sa_file = var.cam_deployment_sa_file,
       ssl_key     = "",
       ssl_cert    = "",
     }
@@ -87,7 +78,6 @@ resource "google_compute_instance_template" "cac-template" {
   count = local.num_regions
 
   depends_on = [
-    google_storage_bucket_object.cam-deployment-sa-file,
     google_storage_bucket_object.cac-cam-script,
     # Provisioning script dependency should be inferred by Terraform
     # google_storage_bucket_object.cac-provisioning-script,

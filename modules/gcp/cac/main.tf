@@ -9,7 +9,6 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
   cam_script             = "cac-cam.py"
-  cam_deployment_sa_file = "cam-cred.json"
   
   num_regions = length(var.gcp_region_list)
   num_cacs    = length(flatten(
@@ -20,14 +19,6 @@ locals {
 
   ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
-}
-
-resource "google_storage_bucket_object" "cam-deployment-sa-file" {
-  count = local.num_cacs == 0 ? 0 : 1
-
-  bucket  = var.bucket_name
-  name    = local.cam_deployment_sa_file
-  source  = var.cam_deployment_sa_file
 }
 
 resource "google_storage_bucket_object" "cac-cam-script" {
@@ -64,12 +55,12 @@ module "cac-regional" {
   gcp_region     = var.gcp_region_list[count.index]
   instance_count = var.instance_count_list[count.index]
 
-  bucket_name = var.bucket_name
+  bucket_name            = var.bucket_name
+  cam_deployment_sa_file = var.cam_deployment_sa_file
 
   kms_cryptokey_id            = var.kms_cryptokey_id
   cam_url                     = var.cam_url
   cac_installer_url           = var.cac_installer_url
-  cam_deployment_sa_file      = local.cam_deployment_sa_file
   cam_script                  = local.cam_script
   pcoip_registration_code     = var.pcoip_registration_code
 
@@ -94,7 +85,6 @@ module "cac-regional" {
   depends_on = [
     google_storage_bucket_object.ssl-key,
     google_storage_bucket_object.ssl-cert,
-    google_storage_bucket_object.cam-deployment-sa-file,
     google_storage_bucket_object.cac-cam-script,
   ]
 }
