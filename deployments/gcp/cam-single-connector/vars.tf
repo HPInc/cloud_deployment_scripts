@@ -87,6 +87,46 @@ variable "dc_admin_password" {
   type        = string
 }
 
+variable "cam_subnet_name" {
+  description = "Name for subnet containing the Cloud Access Manager"
+  default     = "subnet-cam"
+}
+
+variable "cam_subnet_cidr" {
+  description = "CIDR for subnet containing the Cloud Access Manager"
+  default     = "10.0.1.0/24"
+}
+
+variable "cam_machine_type" {
+  description = "Machine type for Cloud Access Manager"
+  default     = "e2-standard-4"
+}
+
+variable "cam_disk_size_gb" {
+  description = "Disk size (GB) of Cloud Access Manager"
+  default     = 60
+}
+
+variable "cam_disk_image" {
+  description = "Disk image for the Cloud Access Manager"
+  default     = "projects/centos-cloud/global/images/family/centos-8"
+}
+
+variable "cam_admin_user" {
+  description = "Username of Cloud Access Manager Administrator (SSH)"
+  default     = "cam_admin"
+}
+
+variable "cam_admin_ssh_pub_key_file" {
+  description = "SSH public key for Cloud Access Manager Administrator"
+  type        = string
+}
+
+variable "cam_gui_admin_password" {
+  description = "Password for the Administrator of Cloud Access Manager"
+  type        = string
+}
+
 variable "cac_subnet_name" {
   description = "Name for subnet containing the Cloud Access Connector"
   default     = "subnet-cac"
@@ -94,7 +134,7 @@ variable "cac_subnet_name" {
 
 variable "cac_subnet_cidr" {
   description = "CIDR for subnet containing the Cloud Access Connector"
-  default     = "10.0.1.0/24"
+  default     = "10.0.2.0/24"
 }
 
 variable "cac_instance_count" {
@@ -171,17 +211,7 @@ variable "ws_subnet_name" {
 
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.2.0/24"
-}
-
-variable "cam_url" {
-  description = "cam server url."
-  default     = "https://cam.teradici.com"
-}
-
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
-  type        = string
+  default     = "10.0.3.0/24"
 }
 
 variable "pcoip_registration_code" {

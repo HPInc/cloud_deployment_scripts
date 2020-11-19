@@ -13,6 +13,10 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
+output "cam-public-ip" {
+  value = module.cam.public-ip
+}
+
 output "cac-public-ip" {
   value = module.cac.public-ip[0]
 }

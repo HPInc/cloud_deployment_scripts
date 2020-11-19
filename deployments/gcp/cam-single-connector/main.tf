@@ -23,12 +23,6 @@ resource "google_storage_bucket" "scripts" {
   force_destroy = true
 }
 
-resource "google_storage_bucket_object" "cam-deployment-sa-file" {
-  bucket = google_storage_bucket.scripts.name
-  name   = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
-}
-
 module "dc" {
   source = "../../../modules/gcp/dc"
 
@@ -60,6 +54,36 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
+module "cam" {
+  source = "../../../modules/gcp/cam"
+
+  prefix = var.prefix
+
+  gcp_service_account     = var.gcp_service_account
+  pcoip_registration_code = var.pcoip_registration_code
+  cam_gui_admin_password  = var.cam_gui_admin_password
+  
+  bucket_name            = google_storage_bucket.scripts.name
+  cam_deployment_sa_file = local.cam_deployment_sa_file
+
+  gcp_region   = var.gcp_region
+  gcp_zone     = var.gcp_zone
+  subnet       = google_compute_subnetwork.cam-subnet.self_link
+  network_tags = [
+    google_compute_firewall.allow-ssh.name,
+    google_compute_firewall.allow-icmp.name,
+    google_compute_firewall.allow-https.name,
+  ]
+
+  machine_type   = var.cam_machine_type
+  disk_size_gb   = var.cam_disk_size_gb
+
+  disk_image = var.cam_disk_image
+
+  cam_admin_user              = var.cam_admin_user
+  cam_admin_ssh_pub_key_file  = var.cam_admin_ssh_pub_key_file
+}
+
 module "cac" {
   source = "../../../modules/gcp/cac"
 
@@ -67,7 +91,8 @@ module "cac" {
 
   gcp_service_account     = var.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = var.cam_url
+  cam_url                 = "https://${module.cam.internal-ip}"
+  cam_insecure            = true
   pcoip_registration_code = var.pcoip_registration_code
   
   domain_name                 = var.domain_name
