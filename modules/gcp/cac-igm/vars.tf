@@ -20,6 +20,12 @@ variable "cam_url" {
   type        = string
 }
 
+variable "cam_insecure" {
+  description = "Allow unverified SSL access to Cloud Access Manager"
+  type        = bool
+  default     = false
+}
+
 variable "cam_deployment_sa_file" {
   description = "Location of CAM Deployment Service Account JSON file"
   type        = string

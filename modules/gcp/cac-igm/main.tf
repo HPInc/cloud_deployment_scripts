@@ -9,7 +9,7 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
   provisioning_script  = "cac-provisioning.sh"
-  cam_script           = "cac-cam.py"
+  cam_script           = "get-cac-token.py"
 
   num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_zone_list)
@@ -30,7 +30,7 @@ locals {
     )[0] : null
 }
 
-resource "google_storage_bucket_object" "cac-cam-script" {
+resource "google_storage_bucket_object" "get-cac-token-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
   bucket = var.bucket_name
@@ -54,22 +54,21 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id            = var.kms_cryptokey_id,
-      cam_url                     = var.cam_url,
-      cac_installer_url           = var.cac_installer_url,
-      cam_script                  = local.cam_script,
-      pcoip_registration_code     = var.pcoip_registration_code,
-
-      domain_controller_ip        = var.domain_controller_ip,
-      domain_name                 = var.domain_name,
-      domain_group                = var.domain_group,
-      ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
-
-      bucket_name            = var.bucket_name,
-      cam_deployment_sa_file = var.cam_deployment_sa_file,
-      ssl_key     = "",
-      ssl_cert    = "",
+      ad_service_account_username = var.ad_service_account_username,
+      bucket_name                 = var.bucket_name,
+      cac_installer_url           = var.cac_installer_url,
+      cam_deployment_sa_file      = var.cam_deployment_sa_file,
+      cam_insecure                = var.cam_insecure ? "true" : "",
+      cam_script                  = local.cam_script,
+      cam_url                     = var.cam_url,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_group                = var.domain_group,
+      domain_name                 = var.domain_name,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      ssl_key                     = "",
+      ssl_cert                    = "",
     }
   )
 }
@@ -78,7 +77,7 @@ resource "google_compute_instance_template" "cac-template" {
   count = local.num_regions
 
   depends_on = [
-    google_storage_bucket_object.cac-cam-script,
+    google_storage_bucket_object.get-cac-token-script,
     # Provisioning script dependency should be inferred by Terraform
     # google_storage_bucket_object.cac-provisioning-script,
   ]

@@ -16,8 +16,14 @@ variable "prefix" {
 }
 
 variable "cam_url" {
-  description = "Cloud Access Manager URL"
-  default     = "https://cam.teradici.com"
+  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+  type        = string
+}
+
+variable "cam_insecure" {
+  description = "Allow unverified SSL access to Cloud Access Manager"
+  type        = bool
+  default     = false
 }
 
 variable "pcoip_registration_code" {

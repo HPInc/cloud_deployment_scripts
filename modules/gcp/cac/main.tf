@@ -8,7 +8,7 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  cam_script             = "cac-cam.py"
+  cam_script             = "get-cac-token.py"
   
   num_regions = length(var.gcp_region_list)
   num_cacs    = length(flatten(
@@ -21,7 +21,7 @@ locals {
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
 }
 
-resource "google_storage_bucket_object" "cac-cam-script" {
+resource "google_storage_bucket_object" "get-cac-token-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
   bucket  = var.bucket_name
@@ -60,6 +60,7 @@ module "cac-regional" {
 
   kms_cryptokey_id            = var.kms_cryptokey_id
   cam_url                     = var.cam_url
+  cam_insecure                = var.cam_insecure
   cac_installer_url           = var.cac_installer_url
   cam_script                  = local.cam_script
   pcoip_registration_code     = var.pcoip_registration_code
@@ -85,6 +86,6 @@ module "cac-regional" {
   depends_on = [
     google_storage_bucket_object.ssl-key,
     google_storage_bucket_object.ssl-cert,
-    google_storage_bucket_object.cac-cam-script,
+    google_storage_bucket_object.get-cac-token-script,
   ]
 }

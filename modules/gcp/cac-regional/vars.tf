@@ -20,6 +20,12 @@ variable "cam_url" {
   type        = string
 }
 
+variable "cam_insecure" {
+  description = "Allow unverified SSL access to Cloud Access Manager"
+  type        = bool
+  default     = false
+}
+
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
