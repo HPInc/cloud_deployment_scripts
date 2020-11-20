@@ -89,13 +89,13 @@ variable "admin_password" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/g4/grid-10.1/"
+  default     = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/g4/latest/"
 }
 
 variable "nvidia_driver_filename" {
   description = "Filename of NVIDIA GRID driver"
-  default     = "442.49_grid_win10_64bit_international.exe"
-}
+  default     = "451.48_grid_win10_server2016_server2019_64bit_international.exe"
+} 
 
 variable "pcoip_agent_location_url" {
   description = "URL of Teradici PCoIP Graphics Agent"

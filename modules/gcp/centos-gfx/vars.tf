@@ -137,7 +137,7 @@ variable "pcoip_agent_repo_url" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID9.3/NVIDIA-Linux-x86_64-430.83-grid.run"
+  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID11.1/NVIDIA-Linux-x86_64-450.80.02-grid.run"
 }
 
 variable "kms_cryptokey_id" {
