@@ -1,52 +1,73 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
 import datetime
-import os
 import json
+import os
 import re
 import subprocess
-OS_COMMANDS = ['aws ec2 describe-images --owners amazon --filters "Name=name,Values=*Windows_Server-2019-English-Full-Base-*" --query "sort_by(Images, &CreationDate)[].Name"',
-               'aws ec2 describe-images --owners 099720109477 --filters "Name=name,Values=*ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*" --query "sort_by(Images, &CreationDate)[].Name"',
-               'aws ec2 describe-images --owners aws-marketplace --filters "Name=name,Values=*b7ee8a69-ee97-4a49-9e68-afaee216db2e*" --query "sort_by(Images, &CreationDate)[].Description"']
-PATHS = [["single-connector", "vars.tf"],
-         ["lb-connectors", "vars.tf"]]
 
+CMD_ARGS = [{'owner': 'amazon', 'value': '*Windows_Server-2019-English-Full-Base-*', 'os_name': 'Windows'},
+            {'owner': '099720109477', 'value': '*ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*',
+             'os_name': 'ubuntu'},
+            {'owner': 'aws-marketplace', 'value': '*b7ee8a69-ee97-4a49-9e68-afaee216db2e*', 'os_name': 'CentOS'}]
+
+OS_COMMANDS = [f'aws ec2 describe-images --owners {CMD_ARGS[0]["owner"]} --filters "Name=name,Values={CMD_ARGS[0]["value"]}" --query "sort_by(Images, &CreationDate)[].Name"',
+               f'aws ec2 describe-images --owners {CMD_ARGS[1]["owner"]} --filters "Name=name,Values={CMD_ARGS[1]["value"]}" --query "sort_by(Images, &CreationDate)[].Name"',
+               f'aws ec2 describe-images --owners {CMD_ARGS[2]["owner"]} --filters "Name=name,Values={CMD_ARGS[2]["value"]}" --query "sort_by(Images, &CreationDate)[].Description"']
+
+PATHS = [["single-connector", "vars.tf"],
+         ["lb-connectors", "vars.tf"],
+         ["lb-connectors-lls", "vars.tf"],
+         ["lb-connectors-ha-lls", "vars.tf"]]
 
 latest_aws_os = []
 
+
 def get_os():
     """
-        get the latest version from AWS
-        """
+    get the latest version from AWS
+    """
     try:
-        for os in OS_COMMANDS:
-            capture_output=subprocess.run(os,capture_output=True).stdout.decode()
-            recent_os=json.loads(capture_output)
-            latest_aws_os.extend([key for key in map(lambda x: x, recent_os)])
+        for cmd in OS_COMMANDS:
+            capture_output = subprocess.run(cmd, capture_output=True)
+            if capture_output.stderr.decode():
+                print(capture_output.stderr.decode())
+                exit(0)
+            recent_os = json.loads(capture_output.stdout.decode())
+            latest_aws_os.extend(recent_os)
         return latest_aws_os
     except (AttributeError, TypeError, subprocess.CalledProcessError) as ex:
         print("Exception occurred: ", ex)
 
 
-
-def compare_versions(latest_os,line):
-    emp=""
+def compare_versions(latest_os, line):
+    """
+    Compare OS versions available in vars.tf with latest OS in AWS
+    """
+    result = ""
     try:
-        reg=re.compile(r"([a-zA-Z]+)")
-        reg1=re.compile(r"([0-9.])")
+        name_exp = re.compile(r"([a-zA-Z]+)")
+        date_exp = re.compile(r"([0-9.])")
 
         def get_os_name(image_name):
-            match = reg.search(image_name)
+            match = name_exp.search(image_name)
             return match.group(1)
 
         def get_os_date(image_name):
-            match2=reg1.findall(image_name)
+            match2 = date_exp.findall(image_name)
             listtostr = ' '.join(map(str, match2))
-            os_dates=listtostr.replace(" ","").split("/")
+            os_dates = listtostr.replace(" ", "").split("/")
             for os_date in os_dates:
-                if os_name == "Windows":
+                if os_name == CMD_ARGS[0]["os_name"]:
                     return datetime.datetime.strptime(os_date[4:14], "%Y.%m.%d")
-                if os_name == "ubuntu":
+                if os_name == CMD_ARGS[1]["os_name"]:
                     return datetime.datetime.strptime(os_date[7:15], "%Y%m%d")
-                if os_name == "CentOS":
+                if os_name == CMD_ARGS[2]["os_name"]:
                     return datetime.datetime.strptime(os_date[5:9], "%y%m")
             return match2
         os_image_name = line.split("=")[-1]
@@ -57,12 +78,13 @@ def compare_versions(latest_os,line):
         for _os in latest_os:
             if os_name == get_os_name(_os):
                 if get_os_date(os_image_name) < get_os_date(_os):
-                    emp=_os
+                    result = _os
                 else:
-                    emp=""
-        return emp
+                    result = ""
+        return result
     except (AttributeError, TypeError) as ex:
         print("Exception occurred: ", ex)
+
 
 def modify_file_content(file_path, latest_os):
     """
@@ -72,10 +94,10 @@ def modify_file_content(file_path, latest_os):
         updated = False
         with open(file_path, 'r+') as original_file:
             lines = original_file.readlines()
-            result= ""
+            result = ""
             for index, line in enumerate(lines):
                 if "Windows_Server" in line:
-                    result=compare_versions(latest_os, line)
+                    result = compare_versions(latest_os, line)
                 if "ubuntu/images" in line:
                     result = compare_versions(latest_os, line)
                 if "CentOS Linux 7 x86_64 HVM" in line:
@@ -83,8 +105,8 @@ def modify_file_content(file_path, latest_os):
                 if len(result)>0:
                     updated = True
                     print(f"Found old os version at line {index + 1}")
-                    lines[index]=line.replace(line.split("=")[-1], ''.join([' '+'"%s"'%result, '\n']))
-                    result=""
+                    lines[index] = line.replace(line.split("=")[-1], ''.join([' '+'"%s"' % result, '\n']))
+                    result = ""
 
             original_file.seek(0)
             original_file.writelines(lines)
@@ -93,12 +115,15 @@ def modify_file_content(file_path, latest_os):
             else:
                 print("OS versions up-to-date, no changes required.")
     except AttributeError as ex:
-        print("Exception occurred:", ex)
+        print("Exception occurred: ", ex)
 
 
 def main():
     """
-    Actual program execution starts from this function
+    This function helps to call various functions and these will
+        1) checks for latest OS images
+        2) read vars.tf file in AWS deployments
+        3) Updates OS image names in vars.tf with latest OS
     """
     try:
         dir_path = os.path.dirname(os.path.abspath(os.path.dirname(__name__)))
@@ -110,9 +135,8 @@ def main():
             print("Modifying os version in path: ", current_path)
             modify_file_content(current_path, latest_os)
     except (AttributeError, ValueError) as ex:
-        print("Exception occurred:", ex)
+        print("Exception occurred: ", ex)
 
 
 if __name__ == "__main__":
-    # Starting point of script
     main()
