@@ -62,24 +62,6 @@ def deployment_create(name, reg_code):
     return resp.json()['data']
 
 
-def deployment_add_gcp_account(key, deployment):
-    credentials = {
-        'clientEmail': key['client_email'],
-        'privateKey':  ''.join(key['private_key'].split('\n')[1:-2]),
-        'projectId':   key['project_id'],
-    }
-    payload = {
-        'deploymentId': deployment['deploymentId'],
-        'provider':     'gcp',
-        'credential':   credentials,
-    }
-    resp = session.post(
-        f"{CAM_API_URL}/auth/users/cloudServiceAccount",
-        json = payload,
-    )
-    resp.raise_for_status()
-
-
 def deployment_key_create(deployment, name):
     payload = {
         'deploymentId': deployment['deploymentId'],
@@ -99,6 +81,68 @@ def deployment_key_write(deployment_key, path):
         json.dump(deployment_key, f)
 
 
+def get_gcp_sa_key(path):
+    with open(path) as f:
+        key = json.load(f)
+
+    return key
+
+
+def validate_gcp_sa(key):
+    payload = {
+        'provider': 'gcp',
+        'credential': {
+            'clientEmail': key['client_email'],
+            'privateKey':  ''.join(key['private_key'].split('\n')[1:-2]),
+            'projectId':   key['project_id'],
+        },
+    }
+    resp = session.post(
+        f"{CAM_API_URL}/auth/users/cloudServiceAccount/validate",
+        json = payload,
+    )
+
+    try:
+        resp.raise_for_status()
+        return True
+
+    except requests.exceptions.HTTPError as e:
+        # Not failing because GCP service account is optional
+        print("Error validating GCP Service Account key.")
+        print(e)
+
+        if resp.status_code == 400:
+            print("ERROR: GCP Service Account key provided has insufficient permissions.")
+            print(resp.json()['data'])
+
+        return False
+
+
+def deployment_add_gcp_account(key, deployment):
+    credentials = {
+        'clientEmail': key['client_email'],
+        'privateKey':  ''.join(key['private_key'].split('\n')[1:-2]),
+        'projectId':   key['project_id'],
+    }
+    payload = {
+        'deploymentId': deployment['deploymentId'],
+        'provider':     'gcp',
+        'credential':   credentials,
+    }
+    resp = session.post(
+        f"{CAM_API_URL}/auth/users/cloudServiceAccount",
+        json = payload,
+    )
+
+    try:
+        resp.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        # Not failing because GCP service account is optional
+        print("Error adding GCP Service Account to deployment.")
+        print(e)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="This script updates the password for the CAM Admin user.")
 
@@ -107,6 +151,7 @@ if __name__ == '__main__':
     parser.add_argument("--key_name", required=True, help="name of CAM Deployment Service Account key")
     parser.add_argument("--password", required=True, help="new CAM administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
+    parser.add_argument("--gcp_key", help="GCP Service Account credential key path")
 
     args = parser.parse_args()
 
@@ -122,6 +167,17 @@ if __name__ == '__main__':
     print("Creating CAM deployment...")
     cam_login(user, args.password)
     deployment = deployment_create(args.deployment_name, args.reg_code)
-    #deployment_add_gcp_account(sa_key, deployment)
     cam_deployment_key = deployment_key_create(deployment, args.key_name)
     deployment_key_write(cam_deployment_key, args.key_file)
+
+    if args.gcp_key:
+        gcp_sa_key = get_gcp_sa_key(args.gcp_key)
+
+        print("Validating GCP credentials with CAM...")
+        valid = validate_gcp_sa(gcp_sa_key)
+
+        if valid:
+            print("Adding GCP credentials to CAM deployment...")
+            deployment_add_gcp_account(gcp_sa_key, deployment)
+        else:
+            print("WARNING: GCP credentials validation failed. Skip adding GCP credentials to CAM deployment.")

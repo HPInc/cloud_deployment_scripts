@@ -10,6 +10,8 @@ locals {
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
   # Name of CAM deployment service account key file in bucket
   cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of GCP service account key file in bucket
+  gcp_sa_file = "gcp-sa-key.json"
 }
 
 resource "random_id" "bucket-name" {
@@ -21,6 +23,12 @@ resource "google_storage_bucket" "scripts" {
   location      = var.gcp_region
   storage_class = "REGIONAL"
   force_destroy = true
+}
+
+resource "google_storage_bucket_object" "gcp-sa-file" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.gcp_sa_file
+  source = var.gcp_credentials_file
 }
 
 module "dc" {
@@ -65,6 +73,7 @@ module "cam" {
   
   bucket_name            = google_storage_bucket.scripts.name
   cam_deployment_sa_file = local.cam_deployment_sa_file
+  gcp_sa_file            = local.gcp_sa_file
 
   gcp_region   = var.gcp_region
   gcp_zone     = var.gcp_zone

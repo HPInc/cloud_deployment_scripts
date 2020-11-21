@@ -18,6 +18,30 @@ log() {
     echo "[$(date)] $message"
 }
 
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    log "$log_message"
+
+    until $command
+    do
+        if [ $timeout -le 0 ]
+        then
+            log $err_message
+            break
+        fi
+
+        log "$log_message Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
+}
+
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
     yum update -y
@@ -66,22 +90,39 @@ install_cam() {
 }
 
 cam_setup() {
+    local optional_args=""
+
     log "--> Running CAM setup script..."
 
     log "--> Downloading CAM python script from the bucket..."
-    gsutil cp gs://${bucket_name}/${cam_setup_script} $INSTALL_DIR
+    retry 7200 10 \
+          "gsutil cp gs://${bucket_name}/${cam_setup_script} $INSTALL_DIR" \
+          "--> Downloading CAM setup script from bucket ${bucket_name}..." \
+          "--> ERROR: Failed to download CAM setup script from bucket ${bucket_name}."
+
+    dos2unix $INSTALL_DIR/${cam_setup_script}
     chmod +x $INSTALL_DIR/${cam_setup_script}
 
-    # Ensure line endings are in Unix format
-    dos2unix $INSTALL_DIR/${cam_setup_script}
+    if [ ${gcp_sa_file} ]
+    then
+        retry 7200 10 \
+              "gsutil cp gs://${bucket_name}/${gcp_sa_file} $INSTALL_DIR" \
+              "--> Downloading GCP Service Account key from bucket ${bucket_name}..." \
+              "--> ERROR: Failed to download GCP Service Account key from bucket ${bucket_name}."
+
+        dos2unix $INSTALL_DIR/${gcp_sa_file}
+        optional_args=$optional_args"--gcp_key $INSTALL_DIR/${gcp_sa_file} "
+    fi
 
     # Run CAM script to update password
-    $INSTALL_DIR/${cam_setup_script} \
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" \
+      $INSTALL_DIR/${cam_setup_script} \
       --deployment_name $CAM_DEPLOYMENT_NAME \
       --key_file $INSTALL_DIR/${cam_deployment_sa_file} \
       --key_name $CAM_DEPLOYMENT_KEY_NAME \
       --password ${cam_gui_admin_password} \
-      --reg_code ${pcoip_registration_code}
+      --reg_code ${pcoip_registration_code} \
+      $optional_args
 
     if [ $? -ne 0 ]
     then

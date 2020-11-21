@@ -30,6 +30,11 @@ variable "cam_deployment_sa_file" {
   type        = string
 }
 
+variable "gcp_sa_file" {
+  description = "Filename of GCP Service Account JSON key in bucket (Optional)"
+  default     = ""
+}
+
 variable "gcp_region" {
   description = "GCP Region to deploy the Cloud Access Managers"
   type        = string
