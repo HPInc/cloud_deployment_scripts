@@ -28,7 +28,7 @@ resource "google_storage_bucket" "scripts" {
 resource "google_storage_bucket_object" "gcp-sa-file" {
   bucket = google_storage_bucket.scripts.name
   name   = local.gcp_sa_file
-  source = var.gcp_credentials_file
+  source = var.cam_gcp_credentials_file
 }
 
 module "dc" {
@@ -68,6 +68,7 @@ module "cam" {
   prefix = var.prefix
 
   gcp_service_account     = var.gcp_service_account
+  kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
   cam_gui_admin_password  = var.cam_gui_admin_password
   

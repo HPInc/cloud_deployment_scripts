@@ -31,6 +31,7 @@ resource "google_storage_bucket_object" "cam-provisioning-script" {
       cam_gui_admin_password  = var.cam_gui_admin_password,
       cam_setup_script        = local.cam_setup_script,
       gcp_sa_file             = var.gcp_sa_file,
+      kms_cryptokey_id        = var.kms_cryptokey_id,
       pcoip_registration_code = var.pcoip_registration_code,
     }
   )

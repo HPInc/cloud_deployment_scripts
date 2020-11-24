@@ -6,7 +6,7 @@
  */
 
 variable "gcp_credentials_file" {
-  description = "Location of GCP JSON credentials file"
+  description = "Location of GCP Service Account key file to be used by Terraform"
   type        = string
 }
 
@@ -124,6 +124,11 @@ variable "cam_admin_ssh_pub_key_file" {
 
 variable "cam_gui_admin_password" {
   description = "Password for the Administrator of Cloud Access Manager"
+  type        = string
+}
+
+variable "cam_gcp_credentials_file" {
+  description = "Location of GCP Service Account key file to be used by CAM"
   type        = string
 }
 
