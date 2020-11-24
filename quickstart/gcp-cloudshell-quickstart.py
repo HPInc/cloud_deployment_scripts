@@ -472,8 +472,6 @@ if __name__ == '__main__':
     #TODO: refactor this to work with more types of deployments
     settings = {
         'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
-        'gcp_project_id':                 PROJECT_ID,
-        'gcp_service_account':            sa_email,
         'kms_cryptokey_id':               key_name,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,

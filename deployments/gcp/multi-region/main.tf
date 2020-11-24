@@ -10,6 +10,9 @@ locals {
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
   # Name of CAM deployment service account key file in bucket
   cam_deployment_sa_file = "cam-deployment-sa-key.json"
+
+  gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
+  gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
 }
 
 resource "random_id" "bucket-name" {
@@ -34,7 +37,7 @@ module "dc" {
 
   prefix = var.prefix
 
-  gcp_service_account         = var.gcp_service_account
+  gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -65,7 +68,7 @@ module "cac-igm" {
 
   prefix = var.prefix
 
-  gcp_service_account     = var.gcp_service_account
+  gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
   pcoip_registration_code = var.pcoip_registration_code
@@ -184,7 +187,7 @@ module "win-gfx" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -224,7 +227,7 @@ module "win-std" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -262,7 +265,7 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -305,7 +308,7 @@ module "centos-std" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code

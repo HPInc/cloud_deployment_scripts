@@ -4,8 +4,6 @@
 # Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
 gcp_credentials_file = "/path/to/gcp_cred.json"
-gcp_project_id       = "your-project-1234"
-gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west2"
 # gcp_zone             = "us-west2-b"
 
@@ -104,7 +102,7 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # scripts. Once the secrets are encrypted with a KMS key, set "kms_cryptokey_id"
 # to the KMS key used to encrypt the secrets, and enter the base64-encoded
 # ciphertext as strings in the variables below. The GCP service account
-# specified above in "gcp_service_account" must be in the same project and have
+# specified by "gcp_credentials_file" above must be in the same project and have
 # KMS decryptor permissions for this key.
 #
 # Note Windows password complexity requirements:
