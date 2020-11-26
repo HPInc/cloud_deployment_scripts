@@ -54,6 +54,7 @@ resource "google_compute_firewall" "allow-internal" {
 
   source_ranges = concat(
     [var.dc_subnet_cidr],
+    [var.cam_subnet_cidr],
     var.cac_subnet_cidr_list,
     var.ws_subnet_cidr_list
   )
@@ -150,6 +151,19 @@ resource "google_compute_firewall" "allow-pcoip" {
   source_ranges = var.allowed_client_cidrs
 }
 
+resource "google_compute_firewall" "allow-https" {
+  name    = "${local.prefix}fw-allow-https"
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+
+  target_tags   = ["${local.prefix}fw-allow-https"]
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
+}
+
 # Open TCP/UDP/53 for Google Cloud DNS managed zone
 # https://cloud.google.com/dns/zones
 resource "google_compute_firewall" "allow-google-dns" {
@@ -172,6 +186,12 @@ resource "google_compute_firewall" "allow-google-dns" {
 resource "google_compute_subnetwork" "dc-subnet" {
   name          = "${local.prefix}${var.dc_subnet_name}"
   ip_cidr_range = var.dc_subnet_cidr
+  network       = google_compute_network.vpc.self_link
+}
+
+resource "google_compute_subnetwork" "cam-subnet" {
+  name          = "${local.prefix}${var.cam_subnet_name}"
+  ip_cidr_range = var.cam_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 

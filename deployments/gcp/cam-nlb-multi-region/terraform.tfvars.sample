@@ -11,9 +11,10 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # workstation hostnames.
 # prefix = ""
 
-# By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
-# Define allowed_admin_cidrs to open the VPC firewall to additional IP addresses
-# or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
+# By default, ICMP, SSH, RDP and WinRM to the deployed virtual machines are only
+# allowed from the Terraform host. HTTPS/API access to CAM Standalone is also
+# limited by this range. Define allowed_admin_cidrs to open the VPC firewall to
+# additional IP addresses or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_admin_cidrs = []
 
 # By default, PCoIP clients are allowed from any IP (0.0.0.0/0). Define
@@ -21,35 +22,52 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # connect to remote workstations. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_client_cidrs = ["0.0.0.0/0"]
 
+#########################
+#   Domain Controller   #
+#########################
 # domain_name = "example.com"
 
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-# SSL Private Key & Certificate for Load Balancer
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+############################
+#   Cloud Access Manager   #
+############################
+# cam_machine_type = "e2-standard-4"
+# cam_disk_size_gb = 60
 
+cam_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+
+##############################
+#   Cloud Access Connector   #
+##############################
 # Specify the regions, subnet CIDRs and number of connectors to create per
 # region. For example:
 #   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
-#   cac_subnet_cidr_list    = ["10.0.1.0/24", "10.1.1.0/24",    "10.2.1.0/24"]
+#   cac_subnet_cidr_list    = ["10.0.2.0/24", "10.1.2.0/24",    "10.2.2.0/24"]
 #   cac_instance_count_list = [2,             3,                4]
 
 cac_region_list         = []
 cac_subnet_cidr_list    = []
 cac_instance_count_list = []
 
+cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
 
-cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+# SSL Private Key & Certificate for Load Balancer
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
 
+####################
+#   Workstations   #
+####################
 # Specify the regions, zones, subnet CIDRs and number of workstations to create
 # per region. For example:
 # ws_region_list                  = ["us-west2",    "europe-west4",   "asia-southeast1"]
 # ws_zone_list                    = ["us-west2-b",  "europe-west4-b", "asia-southeast1-b"]
-# ws_subnet_cidr_list             = ["10.0.2.0/24", "10.1.2.0/24",    "10.2.2.0/24"]
+# ws_subnet_cidr_list             = ["10.0.3.0/24", "10.1.3.0/24",    "10.2.3.0/24"]
 # win_gfx_instance_count_list     = [0,             10,               0]
 # win_std_instance_count_list     = [1,             1,                1]
 # centos_gfx_instance_count_list  = [0,             0,                10]
@@ -122,5 +140,6 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
+cam_gui_admin_password      = "SecuRe_pwd4"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cam_deployment_sa_file      = "/path/to/cloud-access-manager-service-account.json"
+cam_gcp_credentials_file    = "/path/to/gcp_cred.json"
