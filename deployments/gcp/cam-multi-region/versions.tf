@@ -6,9 +6,25 @@
  */
 
 terraform {
-  required_version = ">= 0.13.5"
+  required_version = ">= 0.13"
 
   required_providers {
-    google = ">= 3.43.0"
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 3.49.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 3.49.0"
+    }
+    http = {
+      source = "hashicorp/http"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+    tls = {
+      source = "hashicorp/tls"
+    }
   }
 }
