@@ -285,6 +285,12 @@ install_cac() {
         args=$args"--cam-insecure "
     fi
 
+    if [ "${external_pcoip_ip}" ]
+    then
+        log "  --external-pcoip-ip ${external_pcoip_ip}"
+        args=$args"--external-pcoip-ip ${external_pcoip_ip} "
+    fi
+
     set +x
     while true
     do

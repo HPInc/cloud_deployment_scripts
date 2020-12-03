@@ -81,10 +81,9 @@ module "cac-igm" {
   bucket_name             = google_storage_bucket.scripts.name
   cam_deployment_sa_file  = local.cam_deployment_sa_file
 
-  #gcp_region   = var.gcp_region
-  gcp_zone_list = var.cac_zone_list
-  subnet_list   = google_compute_subnetwork.cac-subnets[*].self_link
-  network_tags  = [
+  gcp_region_list = var.cac_region_list
+  subnet_list     = google_compute_subnetwork.cac-subnets[*].self_link
+  network_tags    = [
     google_compute_firewall.allow-google-health-check.name,
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
@@ -137,14 +136,14 @@ resource "google_compute_url_map" "cac-urlmap" {
 }
 
 resource "tls_private_key" "tls-key" {
-  count = var.ssl_key == "" ? 1 : 0
+  count = var.glb_ssl_key == "" ? 1 : 0
 
   algorithm = "RSA"
   rsa_bits  = "2048"
 }
 
 resource "tls_self_signed_cert" "tls-cert" {
-  count = var.ssl_cert == "" ? 1 : 0
+  count = var.glb_ssl_cert == "" ? 1 : 0
 
   key_algorithm   = tls_private_key.tls-key[0].algorithm
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
@@ -164,8 +163,8 @@ resource "tls_self_signed_cert" "tls-cert" {
 
 resource "google_compute_ssl_certificate" "ssl-cert" {
   name        = "${local.prefix}ssl-cert"
-  private_key = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
-  certificate = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
+  private_key = var.glb_ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_ssl_key)
+  certificate = var.glb_ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.glb_ssl_cert)
 }
 
 resource "google_compute_target_https_proxy" "cac-proxy" {

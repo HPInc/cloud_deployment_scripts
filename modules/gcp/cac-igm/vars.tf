@@ -66,8 +66,8 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "gcp_zone_list" {
-  description = "GCP Zones to set up the Managed Instance Groups"
+variable "gcp_region_list" {
+  description = "GCP regions to set up the Managed Instance Groups"
   type        = list(string)
 }
 
@@ -82,8 +82,13 @@ variable "network_tags" {
 }
 
 variable "instance_count_list" {
-  description = "Number of Cloud Access Connector instances to deploy in each zone"
+  description = "Number of Cloud Access Connector instances to deploy in each region"
   type        = list(number)
+}
+
+variable "host_name" {
+  description = "Name to give the host"
+  default     = "vm-cac"
 }
 
 variable "machine_type" {
@@ -116,7 +121,22 @@ variable "cac_installer_url" {
   default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
 }
 
+variable "external_pcoip_ip" {
+  description = "External IP addresses to use to connect to the Cloud Access Connectors."
+  default     = ""
+}
+
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
+  default     = ""
+}
+
+variable "ssl_key" {
+  description = "SSL private key for the Connector"
+  default     = ""
+}
+
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector"
   default     = ""
 }

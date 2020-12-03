@@ -108,11 +108,6 @@ variable "cac_region_list" {
   type        = list(string)
 }
 
-variable "cac_zone_list" {
-  description = "Zones in which to deploy Connectors"
-  type        = list(string)
-}
-
 variable "cac_subnet_name" {
   description = "Name for subnets containing the Cloud Access Connector"
   default     = "subnet-cac"
@@ -164,13 +159,13 @@ variable "cac_health_check" {
   }
 }
 
-variable "ssl_key" {
-  description = "SSL private key for the Connector in PEM format"
+variable "glb_ssl_key" {
+  description = "SSL private key for the Global Load Balancer in PEM format"
   default     = ""
 }
 
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector in PEM format"
+variable "glb_ssl_cert" {
+  description = "SSL certificate for the Global Load Balancer in PEM format"
   default     = ""
 }
 
