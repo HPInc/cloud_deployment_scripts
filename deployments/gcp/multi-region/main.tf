@@ -8,6 +8,11 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  # Name of CAM deployment service account key file in bucket
+  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+
+  gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
+  gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
 }
 
 resource "random_id" "bucket-name" {
@@ -21,12 +26,18 @@ resource "google_storage_bucket" "scripts" {
   force_destroy = true
 }
 
+resource "google_storage_bucket_object" "cam-deployment-sa-file" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.cam_deployment_sa_file
+  source = var.cam_deployment_sa_file
+}
+
 module "dc" {
   source = "../../../modules/gcp/dc"
 
   prefix = var.prefix
 
-  gcp_service_account         = var.gcp_service_account
+  gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -57,10 +68,9 @@ module "cac-igm" {
 
   prefix = var.prefix
 
-  gcp_service_account     = var.gcp_service_account
+  gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
-  cam_deployment_sa_file  = var.cam_deployment_sa_file
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name                 = var.domain_name
@@ -68,11 +78,12 @@ module "cac-igm" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  #gcp_region   = var.gcp_region
-  bucket_name   = google_storage_bucket.scripts.name
-  gcp_zone_list = var.cac_zone_list
-  subnet_list   = google_compute_subnetwork.cac-subnets[*].self_link
-  network_tags  = [
+  bucket_name             = google_storage_bucket.scripts.name
+  cam_deployment_sa_file  = local.cam_deployment_sa_file
+
+  gcp_region_list = var.cac_region_list
+  subnet_list     = google_compute_subnetwork.cac-subnets[*].self_link
+  network_tags    = [
     google_compute_firewall.allow-google-health-check.name,
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
@@ -125,14 +136,14 @@ resource "google_compute_url_map" "cac-urlmap" {
 }
 
 resource "tls_private_key" "tls-key" {
-  count = var.ssl_key == "" ? 1 : 0
+  count = var.glb_ssl_key == "" ? 1 : 0
 
   algorithm = "RSA"
   rsa_bits  = "2048"
 }
 
 resource "tls_self_signed_cert" "tls-cert" {
-  count = var.ssl_cert == "" ? 1 : 0
+  count = var.glb_ssl_cert == "" ? 1 : 0
 
   key_algorithm   = tls_private_key.tls-key[0].algorithm
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
@@ -152,8 +163,8 @@ resource "tls_self_signed_cert" "tls-cert" {
 
 resource "google_compute_ssl_certificate" "ssl-cert" {
   name        = "${local.prefix}ssl-cert"
-  private_key = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
-  certificate = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
+  private_key = var.glb_ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_ssl_key)
+  certificate = var.glb_ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.glb_ssl_cert)
 }
 
 resource "google_compute_target_https_proxy" "cac-proxy" {
@@ -175,7 +186,7 @@ module "win-gfx" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -215,7 +226,7 @@ module "win-std" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -253,7 +264,7 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -296,7 +307,7 @@ module "centos-std" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code

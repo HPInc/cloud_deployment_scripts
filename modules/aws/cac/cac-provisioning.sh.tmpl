@@ -57,7 +57,7 @@ get_credentials() {
 
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
-        
+
         log "--> Decrypting AD service account password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
 
@@ -144,6 +144,7 @@ wait_for_dc() {
     # a while for new AD user to be added in a new Domain Controller.
     # Note: using the domain controller IP instead of the domain name for
     #       the host is more resilient.
+
     log "--> Updating apt-get package list..."
     retry $timeout \
           $interval \
@@ -210,34 +211,40 @@ wait_for_lls() {
 install_cac() {
     log "--> Installing Cloud Access Connector..."
     local retries=10
-    export CAM_BASE_URI=${cam_url}
 
     log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
     log "--> CAC install options:"
-    log "-t <cac_token> --accept-policies"
-    log "--sa-user <ad_service_account_username> --sa-password <ad_service_account_password>"
-    log "--domain ${domain_name} --domain-group ${domain_group}"
-    log "--reg-code <pcoip_registration_code> --sync-interval 5"
+    log "  -t <cac_token>"
+    log "  --accept-policies"
+    log "  --sa-user <ad_service_account_username>"
+    log "  --sa-password <ad_service_account_password>"
+    log "  --domain ${domain_name}"
+    log "  --domain-group ${domain_group}"
+    log "  --reg-code <pcoip_registration_code>"
+    log "  --retrieve-agent-state true"
+    log "  --sync-interval 5"
+    log "  --cam-url ${cam_url}"
 
     # Set pipefail option to return status of the connector install command
     set -o pipefail
 
     if [ "${ssl_key}" ]
     then
-        log "--ssl-key <ssl_key> --ssl-cert <ssl_cert>"
+        log "  --ssl-key <ssl_key>"
+        log "  --ssl-cert <ssl_cert>"
         aws s3 cp s3://${bucket_name}/${ssl_key} $INSTALL_DIR
         aws s3 cp s3://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
         args=$args"--ssl-key $INSTALL_DIR/${ssl_key} "
         args=$args"--ssl-cert $INSTALL_DIR/${ssl_cert} "
     else
-        log "--insecure"
+        log "  --insecure"
         args=$args"--insecure "
     fi
 
     if [ "${lls_ip}" ]
     then
-        log "--local-license-server-url http://${lls_ip}:7070/request"
+        log "  --local-license-server-url http://${lls_ip}:7070/request"
         args=$args"--local-license-server-url http://${lls_ip}:7070/request "
     fi
 
@@ -254,6 +261,7 @@ install_cac() {
             --reg-code $PCOIP_REGISTRATION_CODE \
             --retrieve-agent-state true \
             --sync-interval 5 \
+            --cam-url ${cam_url} \
             $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
 
@@ -266,7 +274,7 @@ install_cac() {
 
         if [ $retries -eq 0 ]
         then
-            log "--> ERROR: No retries remaining, exiting provisioning script..."
+            log "--> ERROR: Failed to install Cloud Access Connector. No retries remaining."
             exit 1
         fi
 

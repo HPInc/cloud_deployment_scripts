@@ -10,16 +10,6 @@ variable "gcp_credentials_file" {
   type        = string
 }
 
-variable "gcp_project_id" {
-  description = "GCP Project ID"
-  type        = string
-}
-
-variable "gcp_service_account" {
-  description = "Service Account in the GCP Project"
-  type        = string
-}
-
 variable "gcp_region" {
   description = "GCP region"
   default     = "us-west2"
@@ -79,7 +69,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201110"
 }
 
 variable "dc_admin_password" {
@@ -118,11 +108,6 @@ variable "cac_region_list" {
   type        = list(string)
 }
 
-variable "cac_zone_list" {
-  description = "Zones in which to deploy Connectors"
-  type        = list(string)
-}
-
 variable "cac_subnet_name" {
   description = "Name for subnets containing the Cloud Access Connector"
   default     = "subnet-cac"
@@ -150,7 +135,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20201111"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20201201"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -174,13 +159,13 @@ variable "cac_health_check" {
   }
 }
 
-variable "ssl_key" {
-  description = "SSL private key for the Connector in PEM format"
+variable "glb_ssl_key" {
+  description = "SSL private key for the Global Load Balancer in PEM format"
   default     = ""
 }
 
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector in PEM format"
+variable "glb_ssl_cert" {
+  description = "SSL certificate for the Global Load Balancer in PEM format"
   default     = ""
 }
 
@@ -271,7 +256,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201110"
 }
 
 variable "win_std_instance_count_list" {
@@ -296,7 +281,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201110"
 }
 
 variable "centos_gfx_instance_count_list" {
@@ -331,7 +316,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20201014"
+  default     = "projects/centos-cloud/global/images/centos-7-v20201112"
 }
 
 variable "centos_std_instance_count_list" {
@@ -356,7 +341,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20201014"
+  default     = "projects/centos-cloud/global/images/centos-7-v20201112"
 }
 
 variable "centos_admin_user" {

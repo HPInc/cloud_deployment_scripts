@@ -8,8 +8,13 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  # Name of CAM deployment service account key file in bucket
+  cam_deployment_sa_file = "cam-deployment-sa-key.json"
   all_region_set = setunion(var.cac_region_list, var.ws_region_list)
   num_regions = length(local.all_region_set)
+
+  gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
+  gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
 }
 
 resource "random_id" "bucket-name" {
@@ -23,12 +28,18 @@ resource "google_storage_bucket" "scripts" {
   force_destroy = true
 }
 
+resource "google_storage_bucket_object" "cam-deployment-sa-file" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.cam_deployment_sa_file
+  source = var.cam_deployment_sa_file
+}
+
 module "dc" {
   source = "../../../modules/gcp/dc"
 
   prefix = var.prefix
 
-  gcp_service_account         = var.gcp_service_account
+  gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -59,10 +70,9 @@ module "cac" {
 
   prefix = var.prefix
 
-  gcp_service_account     = var.gcp_service_account
+  gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cam_url                 = var.cam_url
-  cam_deployment_sa_file  = var.cam_deployment_sa_file
   pcoip_registration_code = var.pcoip_registration_code
   
   domain_name                 = var.domain_name
@@ -70,7 +80,8 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name = google_storage_bucket.scripts.name
+  bucket_name            = google_storage_bucket.scripts.name
+  cam_deployment_sa_file = local.cam_deployment_sa_file
 
   gcp_region_list        = var.cac_region_list
   subnet_list            = google_compute_subnetwork.cac-subnets[*].self_link
@@ -159,7 +170,7 @@ module "win-gfx" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -199,7 +210,7 @@ module "win-std" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -237,7 +248,7 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -280,7 +291,7 @@ module "centos-std" {
 
   prefix = var.prefix
 
-  gcp_service_account = var.gcp_service_account
+  gcp_service_account = local.gcp_service_account
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code

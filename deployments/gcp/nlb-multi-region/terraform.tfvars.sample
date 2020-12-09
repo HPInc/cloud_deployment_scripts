@@ -4,8 +4,6 @@
 # Example: gcp_credentials_file = "C:/path/to/gcp_cred.json"
 
 gcp_credentials_file = "/path/to/gcp_cred.json"
-gcp_project_id       = "your-project-1234"
-gcp_service_account  = "service_account_name@<project_id>.iam.gserviceaccount.com"
 # gcp_region           = "us-west2"
 # gcp_zone             = "us-west2-b"
 
@@ -44,7 +42,6 @@ cac_instance_count_list = []
 
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
-# cac_disk_image = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20201111"
 
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -70,21 +67,21 @@ centos_std_instance_count_list = []
 # win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # win_gfx_accelerator_count = 1
 # win_gfx_disk_size_gb = 50
-# win_gfx_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
+# win_gfx_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201110"
 
 # win_std_machine_type = "n1-standard-4"
 # win_std_disk_size_gb = 50
-# win_std_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201013"
+# win_std_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201110"
 
 # centos_gfx_machine_type = "n1-standard-2"
 # centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1
 # centos_gfx_disk_size_gb = 50
-# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20201014"
+# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20201112"
 
 # centos_std_machine_type = "n1-standard-2"
 # centos_std_disk_size_gb = 50
-# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20201014"
+# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20201112"
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -105,7 +102,7 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # scripts. Once the secrets are encrypted with a KMS key, set "kms_cryptokey_id"
 # to the KMS key used to encrypt the secrets, and enter the base64-encoded
 # ciphertext as strings in the variables below. The GCP service account
-# specified above in "gcp_service_account" must be in the same project and have
+# specified by "gcp_credentials_file" above must be in the same project and have
 # KMS decryptor permissions for this key.
 #
 # Note Windows password complexity requirements:

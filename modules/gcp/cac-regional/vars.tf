@@ -16,13 +16,14 @@ variable "prefix" {
 }
 
 variable "cam_url" {
-  description = "Cloud Access Manager URL"
-  default     = "https://cam.teradici.com"
+  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+  type        = string
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
-  type        = string
+variable "cam_insecure" {
+  description = "Allow unverified SSL access to Cloud Access Manager"
+  type        = bool
+  default     = false
 }
 
 variable "pcoip_registration_code" {
@@ -60,6 +61,11 @@ variable "bucket_name" {
   type        = string
 }
 
+variable "cam_deployment_sa_file" {
+  description = "Filename of CAM Deployment Service Account JSON key in bucket"
+  type        = string
+}
+
 variable "gcp_region" {
   description = "GCP Region to deploy the Cloud Access Connectors"
   type        = string
@@ -91,12 +97,12 @@ variable "host_name" {
 }
 
 variable "machine_type" {
-  description = "Machine type for the Cloud Access Connector"
+  description = "Machine type for the Cloud Access Connector (min 4 GB RAM, 2 vCPUs)"
   default     = "n1-standard-2"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Connector"
+  description = "Disk size (GB) of the Cloud Access Connector (min 12 GB)"
   default     = "50"
 }
 

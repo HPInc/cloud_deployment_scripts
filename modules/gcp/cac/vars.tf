@@ -16,13 +16,14 @@ variable "prefix" {
 }
 
 variable "cam_url" {
-  description = "Cloud Access Manager URL"
-  default     = "https://cam.teradici.com"
+  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+  type        = string
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
-  type        = string
+variable "cam_insecure" {
+  description = "Allow unverified SSL access to Cloud Access Manager"
+  type        = bool
+  default     = false
 }
 
 variable "pcoip_registration_code" {
@@ -57,6 +58,11 @@ variable "ad_service_account_password" {
 
 variable "bucket_name" {
   description = "Name of bucket to retrieve provisioning script."
+  type        = string
+}
+
+variable "cam_deployment_sa_file" {
+  description = "Filename of CAM Deployment Service Account JSON key in bucket"
   type        = string
 }
 

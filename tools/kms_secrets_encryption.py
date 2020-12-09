@@ -13,6 +13,7 @@ import site
 import subprocess
 import sys
 import textwrap
+import json
 from abc import ABC, abstractmethod
 
 
@@ -494,7 +495,10 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         self.kms_client      = kms.KeyManagementServiceClient(credentials = self.gcp_credentials)
 
         # GCP KMS resource variables
-        self.project_id      = self.tfvars_parser.tfvars_data.get("gcp_project_id")
+        with open(self.credentials_file) as f:
+            cred_file_json=json.load(f)
+        
+        self.project_id      = cred_file_json["project_id"]
         self.location        = "global"
         self.key_ring_id     = self.initialize_keyring("cas_keyring")
         self.crypto_key_id   = self.initialize_cryptokey("cas_key")

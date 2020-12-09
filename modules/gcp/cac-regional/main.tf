@@ -24,6 +24,7 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       bucket_name                 = var.bucket_name,
       cac_installer_url           = var.cac_installer_url,
       cam_deployment_sa_file      = var.cam_deployment_sa_file,
+      cam_insecure                = var.cam_insecure ? "true" : "", 
       cam_script                  = var.cam_script,
       cam_url                     = var.cam_url,
       domain_controller_ip        = var.domain_controller_ip,

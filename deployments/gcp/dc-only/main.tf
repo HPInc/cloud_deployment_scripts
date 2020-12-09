@@ -8,6 +8,9 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+
+  gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
+  gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
 }
 
 resource "random_id" "bucket-name" {
@@ -26,7 +29,7 @@ module "dc" {
 
   prefix = var.prefix
 
-  gcp_service_account         = var.gcp_service_account
+  gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password

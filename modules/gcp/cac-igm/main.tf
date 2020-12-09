@@ -9,11 +9,12 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
   provisioning_script  = "cac-provisioning.sh"
-  cam_script           = "cac-cam.py"
-  cam_deployment_sa_file = "cam-cred.json"
+  cam_script           = "get-cac-token.py"
 
   num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
-  num_regions = length(var.gcp_zone_list)
+  num_regions = length(var.gcp_region_list)
+
+  enable_public_ip    = var.external_pcoip_ip == "" ? [true] : []
 
   disk_image_project = regex("^projects/([-\\w]+).+$", var.disk_image)[0]
   disk_image_family = length(
@@ -31,15 +32,7 @@ locals {
     )[0] : null
 }
 
-resource "google_storage_bucket_object" "cam-deployment-sa-file" {
-  count = local.num_cacs == 0 ? 0 : 1
-
-  bucket = var.bucket_name
-  name   = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
-}
-
-resource "google_storage_bucket_object" "cac-cam-script" {
+resource "google_storage_bucket_object" "get-cac-token-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
   bucket = var.bucket_name
@@ -63,37 +56,37 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id            = var.kms_cryptokey_id,
-      cam_url                     = var.cam_url,
-      cac_installer_url           = var.cac_installer_url,
-      cam_deployment_sa_file      = local.cam_deployment_sa_file,
-      cam_script                  = local.cam_script,
-      pcoip_registration_code     = var.pcoip_registration_code,
-
-      domain_controller_ip        = var.domain_controller_ip,
-      domain_name                 = var.domain_name,
-      domain_group                = var.domain_group,
-      ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
-
-      bucket_name = var.bucket_name,
-      ssl_key     = "",
-      ssl_cert    = "",
+      ad_service_account_username = var.ad_service_account_username,
+      bucket_name                 = var.bucket_name,
+      cac_installer_url           = var.cac_installer_url,
+      cam_deployment_sa_file      = var.cam_deployment_sa_file,
+      cam_insecure                = var.cam_insecure ? "true" : "",
+      cam_script                  = local.cam_script,
+      cam_url                     = var.cam_url,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_group                = var.domain_group,
+      domain_name                 = var.domain_name,
+      external_pcoip_ip           = var.external_pcoip_ip,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      ssl_cert                    = var.ssl_cert,
+      ssl_key                     = var.ssl_key,
     }
   )
 }
 
+# One template per region because of the different subnets
 resource "google_compute_instance_template" "cac-template" {
   count = local.num_regions
 
   depends_on = [
-    google_storage_bucket_object.cam-deployment-sa-file,
-    google_storage_bucket_object.cac-cam-script,
+    google_storage_bucket_object.get-cac-token-script,
     # Provisioning script dependency should be inferred by Terraform
     # google_storage_bucket_object.cac-provisioning-script,
   ]
 
-  name_prefix = "${local.prefix}template-cac-${var.gcp_zone_list[count.index]}"
+  name_prefix = "${local.prefix}template-cac-${var.gcp_region_list[count.index]}"
 
   machine_type = var.machine_type
 
@@ -106,7 +99,10 @@ resource "google_compute_instance_template" "cac-template" {
 
   network_interface {
     subnetwork = var.subnet_list[count.index]
-    access_config {
+
+    dynamic access_config {
+      for_each = local.enable_public_ip
+      content {}
     }
   }
 
@@ -127,24 +123,27 @@ resource "google_compute_instance_template" "cac-template" {
   }
 }
 
-resource "google_compute_instance_group_manager" "cac-igm" {
+resource "google_compute_region_instance_group_manager" "cac-igm" {
   count = local.num_regions
 
-  name = "${local.prefix}igm-cac"
+  name   = "${local.prefix}igm-cac-${var.gcp_region_list[count.index]}"
+  region = var.gcp_region_list[count.index]
 
-  # TODO: makes more sense to use regional IGM
-  #region = var.gcp_region
-  zone = var.gcp_zone_list[count.index]
-
-  base_instance_name = "${local.prefix}cac"
+  base_instance_name = "${local.prefix}${var.host_name}-${var.gcp_region_list[count.index]}"
 
   version {
-    instance_template = google_compute_instance_template.cac-template[count.index] .self_link
+    instance_template = google_compute_instance_template.cac-template[count.index].self_link
   }
 
   named_port {
     name = "https"
     port = 443
+  }
+
+  # Used by both TCP and UDP backend services
+  named_port {
+    name = "pcoip"
+    port = 4172
   }
 
   # Overridden by autoscaler when autoscaler is enabled
