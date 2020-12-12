@@ -41,22 +41,20 @@ cam_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 ############################################
 #   Cloud Access Connector Load Balancer   #
 ############################################
-# SSL Private Key & Certificate for Load Balancer
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# SSL Private Key & Certificate for Global Load Balancer
+# glb_ssl_key  = "/path/to/privkey.pem"
+# glb_ssl_cert = "/path/to/fullchain.pem"
 
 ##############################
 #   Cloud Access Connector   #
 ##############################
-# Specify the regions, zones, subnet CIDRs and number of connectors to create
+# Specify the regions, subnet CIDRs and number of connectors to create
 # per region. For example:
 #   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
-#   cac_zone_list           = ["us-west2-b",  "europe-west4-b", "asia-southeast1-b"]
 #   cac_subnet_cidr_list    = ["10.0.2.0/24", "10.1.2.0/24",    "10.2.2.0/24"]
 #   cac_instance_count_list = [2,             3,                4]
 
 cac_region_list         = []
-cac_zone_list           = []
 cac_subnet_cidr_list    = []
 cac_instance_count_list = []
 
