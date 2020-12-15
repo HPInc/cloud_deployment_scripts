@@ -182,24 +182,20 @@ resource "null_resource" "run-provisioning-script" {
   }
 }
 
-resource "null_resource" "wait-for-reboot" {
+resource "time_sleep" "wait-for-reboot" {
   depends_on = [null_resource.run-provisioning-script]
   triggers = {
-    instance_id = google_compute_instance.dc.instance_id
+    id = google_compute_instance.dc.instance_id
   }
 
-  provisioner "local-exec" {
-    # This command is written in such a way that it would work if the 
-    # local-exec is either the Command Prompt in Windows or the bash shell 
-    # in Linux. Note that it does not work on PowerShell in Windows.
-    command = "sleep 15 || timeout /nobreak /t 15"
-  }
+  create_duration = "15s"
+
 }
 
 resource "null_resource" "new-domain-admin-user" {
   depends_on = [
     null_resource.upload-scripts,
-    null_resource.wait-for-reboot,
+    time_sleep.wait-for-reboot,
   ]
   triggers = {
     instance_id = google_compute_instance.dc.instance_id
