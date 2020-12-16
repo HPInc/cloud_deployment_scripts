@@ -8,6 +8,8 @@
 locals {
   prefix             = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  # Name of CAM deployment service account key file in bucket
+  cam_deployment_sa_file = "cam-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
 }
 
@@ -23,6 +25,12 @@ resource "aws_s3_bucket" "scripts" {
   tags = {
     Name = local.bucket_name
   }
+}
+
+resource "aws_s3_bucket_object" "cam-deployment-sa-file" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.cam_deployment_sa_file
+  source = var.cam_deployment_sa_file
 }
 
 module "dc" {
@@ -184,7 +192,7 @@ module "cac" {
   aws_region              = var.aws_region
   customer_master_key_id  = var.customer_master_key_id
   cam_url                 = var.cam_url
-  cam_deployment_sa_file  = var.cam_deployment_sa_file
+  cam_deployment_sa_file  = local.cam_deployment_sa_file
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name                 = var.domain_name

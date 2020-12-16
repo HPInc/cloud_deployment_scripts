@@ -9,8 +9,7 @@ locals {
   prefix         = var.prefix != "" ? "${var.prefix}-" : ""
 
   provisioning_script    = "cac-provisioning.sh"
-  cam_script             = "cac-cam.py"
-  cam_deployment_sa_file = "cam-cred.json"
+  cam_script             = "get-cac-token.py"
 
   instance_info_list = flatten(
     [ for i in range(length(var.zone_list)):
@@ -26,15 +25,7 @@ locals {
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
 }
 
-resource "aws_s3_bucket_object" "cam-deployment-sa-file" {
-  count = length(local.instance_info_list) == 0 ? 0 : 1
-
-  bucket = var.bucket_name
-  key    = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
-}
-
-resource "aws_s3_bucket_object" "cac-cam-script" {
+resource "aws_s3_bucket_object" "get-cac-token-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   bucket = var.bucket_name
@@ -66,25 +57,23 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      aws_region               = var.aws_region, 
-      customer_master_key_id   = var.customer_master_key_id,
-      cam_url                  = var.cam_url,
-      cac_installer_url        = var.cac_installer_url,
-      cam_deployment_sa_file   = local.cam_deployment_sa_file,
-      cam_script               = local.cam_script,
-      pcoip_registration_code  = var.pcoip_registration_code,
-
-      domain_controller_ip        = var.domain_controller_ip,
-      domain_name                 = var.domain_name,
-      domain_group                = var.domain_group,
       ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
-
-      lls_ip = var.lls_ip,
-
-      bucket_name = var.bucket_name,
-      ssl_key     = local.ssl_key_filename,
-      ssl_cert    = local.ssl_cert_filename,
+      aws_region                  = var.aws_region,
+      bucket_name                 = var.bucket_name,
+      cac_installer_url           = var.cac_installer_url,
+      cam_deployment_sa_file      = var.cam_deployment_sa_file,
+      cam_insecure                = var.cam_insecure ? "true" : "",
+      cam_script                  = local.cam_script,
+      cam_url                     = var.cam_url,
+      customer_master_key_id      = var.customer_master_key_id,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_group                = var.domain_group,
+      domain_name                 = var.domain_name,
+      lls_ip                      = var.lls_ip,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      ssl_key                     = local.ssl_key_filename,
+      ssl_cert                    = local.ssl_cert_filename,
     }
   )
 }
@@ -95,8 +84,6 @@ data "template_file" "user-data" {
   vars = {
     bucket_name            = var.bucket_name,
     provisioning_script    = local.provisioning_script,
-    cam_script             = local.cam_script,
-    cam_deployment_sa_file = local.cam_deployment_sa_file,
   }
 }
 
@@ -150,7 +137,7 @@ data "aws_iam_policy_document" "cac-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_deployment_sa_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cam_deployment_sa_file}"]
     effect    = "Allow"
   }
 
@@ -212,8 +199,7 @@ resource "aws_instance" "cac" {
   depends_on = [
     aws_s3_bucket_object.ssl-key,
     aws_s3_bucket_object.ssl-cert,
-    aws_s3_bucket_object.cam-deployment-sa-file,
-    aws_s3_bucket_object.cac-cam-script,
+    aws_s3_bucket_object.get-cac-token-script,
     aws_s3_bucket_object.cac-provisioning-script,
   ]
 
