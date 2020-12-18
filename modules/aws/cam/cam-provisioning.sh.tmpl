@@ -1,0 +1,236 @@
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+#!/bin/bash
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+
+CAM_DEPLOYMENT_KEY_NAME="terraform-key"
+CAM_DEPLOYMENT_NAME="terraform-deployment"
+CAM_INSTALL_LOG="/var/log/teradici/cam-install.log"
+
+INSTALL_DIR="/root"
+cd $INSTALL_DIR
+
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
+
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    log "$log_message"
+
+    until $command
+    do
+        if [ $timeout -le 0 ]
+        then
+            log $err_message
+            break
+        fi
+
+        log "$log_message Retrying in $interval seconds... (Timeout in $timeout seconds)"
+
+        timeout=$((timeout-interval))
+        sleep $interval
+    done
+}
+
+install_prereqs() {
+    log "--> Installing dos2unix, python3..."
+    yum update -y
+    yum install -y dos2unix python3
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install prerequisites. Exiting provisioning script..."
+        exit 1
+    fi
+
+    python3 -m pip install requests
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install Python modules. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+get_credentials() {
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
+
+    if [[ -z "${customer_master_key_id}" ]]
+    then
+        log "--> Script is not using encryption for secrets."
+
+        CAM_GUI_ADMIN_PASSWORD=${cam_gui_admin_password}
+        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+
+    else
+        log "--> Script is using encryption key: ${customer_master_key_id}"
+
+        log "--> Decrypting CAM GUI Administrator password..."
+        CAM_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cam_gui_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting PCoIP registration code..."
+        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+    fi
+    set -x
+}
+
+check_required_vars() {
+    set +x
+    
+    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]
+    then
+        log "--> ERROR: Missing PCoIP Registration Code."
+        missing_vars="true"
+    fi
+
+    if [[ -z "$CAM_GUI_ADMIN_PASSWORD" ]]
+    then
+        log "--> ERROR: Missing CAM GUI Administrator Password."
+        missing_vars="true"
+    fi
+    set -x
+
+    if [[ "$missing_vars" = "true" ]]
+    then
+        log "--> Exiting..."
+        exit 1
+    fi
+}
+
+add_cam_repo() {
+    log "--> Adding CAM repo..."
+    curl -1sLf '${cam_add_repo_script}' | sudo -E distro=el codename=7 bash
+}
+
+config_selinux() {
+    log "--> Configuring SE Linux..."
+    yum install -y selinux-policy-base container-selinux
+    yum install -y https://rpm.rancher.io/k3s-selinux-0.1.1-rc1.el7.noarch.rpm    
+    yum install -y cloud-access-manager-selinux
+}
+
+install_cam() {
+    log "--> Installing CAM..."
+    # TODO: figure out the /dev/tty error
+    yum install -y cloud-access-manager 2>&1 | tee -a $CAM_INSTALL_LOG
+
+    # Install manually
+    /usr/local/bin/cloud-access-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAM_INSTALL_LOG
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install CAM..."
+        exit 1
+    fi
+}
+
+cam_setup() {
+    local optional_args=""
+
+    log "--> Running CAM setup script..."
+
+    retry 7200 10 \
+          "aws s3 cp s3://${bucket_name}/${cam_setup_script} $INSTALL_DIR" \
+          "--> Downloading CAM setup script from bucket ${bucket_name}..." \
+          "--> ERROR: Failed to download CAM setup script from bucket ${bucket_name}."
+
+    dos2unix $INSTALL_DIR/${cam_setup_script}
+    chmod +x $INSTALL_DIR/${cam_setup_script}
+
+    log "--> Running CAM setup script with the following options:"
+    log "  --deployment_name $CAM_DEPLOYMENT_NAME"
+    log "  --key_file $INSTALL_DIR/${cam_deployment_sa_file}"
+    log "  --key_name $CAM_DEPLOYMENT_KEY_NAME"
+    log "  --password <CAM GUI Administrator Password"
+    log "  --reg_code <PCoIP Registration Code>"
+    log "  $optional_args"
+
+    set +x
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" \
+      $INSTALL_DIR/${cam_setup_script} \
+      --deployment_name $CAM_DEPLOYMENT_NAME \
+      --key_file $INSTALL_DIR/${cam_deployment_sa_file} \
+      --key_name $CAM_DEPLOYMENT_KEY_NAME \
+      --password $CAM_GUI_ADMIN_PASSWORD \
+      --reg_code $PCOIP_REGISTRATION_CODE \
+      $optional_args
+    set -x
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to run CAM setup script. Exiting provisioning script..."
+        exit 1
+    fi
+
+    if [ ! -f "$INSTALL_DIR/${cam_deployment_sa_file}" ]
+    then
+        log "--> ERROR: CAM Deployment service account key not created. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+upload_dsa_key() {
+    if [[ "${customer_master_key_id}" ]]
+    then
+        log "--> Encrypting Deployment Service Account key with ${customer_master_key_id}"
+
+        mv $INSTALL_DIR/${cam_deployment_sa_file} $INSTALL_DIR/${cam_deployment_sa_file}.orig
+
+        aws kms encrypt \
+            --region ${aws_region} \
+            --key-id ${customer_master_key_id} \
+            --plaintext fileb://$INSTALL_DIR/${cam_deployment_sa_file}.orig \
+            --output text \
+            --query CiphertextBlob | base64 -d > $INSTALL_DIR/${cam_deployment_sa_file}
+    fi
+
+    log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
+
+    aws s3 cp $INSTALL_DIR/${cam_deployment_sa_file} s3://${bucket_name}/
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to upload CAM deployment service account key to bucket ${bucket_name}. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
+fi
+
+log "$(date)"
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
+install_prereqs
+get_credentials
+check_required_vars
+add_cam_repo
+config_selinux
+install_cam
+cam_setup
+upload_dsa_key
+
+log "--> Provisioning script completed successfully."
