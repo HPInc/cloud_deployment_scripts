@@ -7,10 +7,11 @@
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 
-INSTALL_DIR="/root"
-CAC_TOKEN_FILE=$INSTALL_DIR/cac_token
+PROVISIONING_DIR="/root"
+CAC_BIN_PATH="/usr/sbin/cloud-access-connector"
+CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
 CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
-cd $INSTALL_DIR
+cd $PROVISIONING_DIR
 
 PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
 
@@ -64,7 +65,7 @@ get_credentials() {
 
     retry $timeout \
           $interval \
-          "aws s3 cp s3://${bucket_name}/${cam_deployment_sa_file} $INSTALL_DIR" \
+          "aws s3 cp s3://${bucket_name}/${cam_deployment_sa_file} $PROVISIONING_DIR" \
           "--> Downloading CAM Deployment Service Account key from the bucket ${bucket_name}..." \
           "--> ERROR: Failed to download CAM deployment Service Account key from bucket ${bucket_name}."
 
@@ -87,8 +88,8 @@ get_credentials() {
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting CAM Deployment Service Account JSON file..."
-        CAM_CREDENTIALS=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://"$INSTALL_DIR/${cam_deployment_sa_file}" --output text --query Plaintext | base64 -d)
-        echo $CAM_CREDENTIALS > $INSTALL_DIR/${cam_deployment_sa_file}
+        CAM_CREDENTIALS=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://"$PROVISIONING_DIR/${cam_deployment_sa_file}" --output text --query Plaintext | base64 -d)
+        echo $CAM_CREDENTIALS > $PROVISIONING_DIR/${cam_deployment_sa_file}
     fi
     set -x
 }
@@ -99,12 +100,12 @@ get_cac_token() {
     local args=""
 
     log "--> Downloading CAM python script from the bucket..."
-    aws s3 cp s3://${bucket_name}/${cam_script} $INSTALL_DIR
-    chmod +x $INSTALL_DIR/${cam_script}
+    aws s3 cp s3://${bucket_name}/${cam_script} $PROVISIONING_DIR
+    chmod +x $PROVISIONING_DIR/${cam_script}
 
     # Ensure line endings are in Unix format
-    dos2unix $INSTALL_DIR/${cam_script}
-    dos2unix $INSTALL_DIR/${cam_deployment_sa_file}
+    dos2unix $PROVISIONING_DIR/${cam_script}
+    dos2unix $PROVISIONING_DIR/${cam_deployment_sa_file}
 
     # Set CAC_TOKEN variable using the script's output
     if [ "${cam_insecure}" ]
@@ -112,7 +113,7 @@ get_cac_token() {
         args="--insecure"
     fi
 
-    PYTHONWARNINGS="ignore:Unverified HTTPS request" $INSTALL_DIR/${cam_script} $INSTALL_DIR/${cam_deployment_sa_file} --url ${cam_url} --out $CAC_TOKEN_FILE $args
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/${cam_script} $PROVISIONING_DIR/${cam_deployment_sa_file} --url ${cam_url} --out $CAC_TOKEN_FILE $args
     CAC_TOKEN=`cat $CAC_TOKEN_FILE`
     rm $CAC_TOKEN_FILE
 
@@ -148,7 +149,7 @@ check_required_vars() {
 }
 
 check_connector_installed() {
-    if [[ -f "$INSTALL_DIR/cloud-access-connector" ]]; then
+    if [[ -f "$CAC_BIN_PATH" ]]; then
         log "--> Connector already installed. Skipping provisioning script..."
         exit 0
     fi
@@ -174,8 +175,8 @@ config_network() {
 
 download_cac() {
     log "--> Downloading CAC installer..."
-    curl -L ${cac_installer_url} -o $INSTALL_DIR/cloud-access-connector.tar.gz
-    tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz
+    curl -L ${cac_installer_url} -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
+    tar xzvf $PROVISIONING_DIR/cloud-access-connector.tar.gz -C /
 }
 
 wait_for_dc() {
@@ -255,7 +256,7 @@ install_cac() {
     local retries=10
     local args=""
 
-    log "--> Running command: $INSTALL_DIR/cloud-access-connector install"
+    log "--> Running command: $CAC_BIN_PATH install"
     log "--> CAC install options:"
     log "  -t <cac_token>"
     log "  --accept-policies"
@@ -275,11 +276,11 @@ install_cac() {
     then
         log "  --ssl-key <ssl_key>"
         log "  --ssl-cert <ssl_cert>"
-        aws s3 cp s3://${bucket_name}/${ssl_key} $INSTALL_DIR
-        aws s3 cp s3://${bucket_name}/${ssl_cert} $INSTALL_DIR
+        aws s3 cp s3://${bucket_name}/${ssl_key} $PROVISIONING_DIR
+        aws s3 cp s3://${bucket_name}/${ssl_cert} $PROVISIONING_DIR
 
-        args=$args"--ssl-key $INSTALL_DIR/${ssl_key} "
-        args=$args"--ssl-cert $INSTALL_DIR/${ssl_cert} "
+        args=$args"--ssl-key $PROVISIONING_DIR/${ssl_key} "
+        args=$args"--ssl-cert $PROVISIONING_DIR/${ssl_cert} "
     else
         log "  --insecure"
         args=$args"--insecure "
@@ -300,7 +301,7 @@ install_cac() {
     set +x
     while true
     do
-        $INSTALL_DIR/cloud-access-connector install \
+        $CAC_BIN_PATH install \
             -t $CAC_TOKEN \
             --accept-policies \
             --sa-user ${ad_service_account_username} \
