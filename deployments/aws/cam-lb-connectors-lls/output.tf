@@ -21,6 +21,10 @@ output "load-balancer-url" {
   value = aws_lb.cac-alb.dns_name
 }
 
+output "cam-public-ip" {
+  value = module.cam.public-ip
+}
+
 output "cac-internal-ip" {
   value = module.cac.internal-ip
 }

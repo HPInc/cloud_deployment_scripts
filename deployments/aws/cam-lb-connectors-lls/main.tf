@@ -27,10 +27,9 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
-resource "aws_s3_bucket_object" "cam-deployment-sa-file" {
-  bucket = aws_s3_bucket.scripts.id
-  key    = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
+resource "aws_key_pair" "cam_admin" {
+  key_name   = local.admin_ssh_key_name
+  public_key = file(var.admin_ssh_pub_key_file)
 }
 
 module "dc" {
@@ -63,6 +62,36 @@ module "dc" {
   ami_name  = var.dc_ami_name
 }
 
+module "cam" {
+  source = "../../../modules/aws/cam"
+
+  prefix = var.prefix
+
+  customer_master_key_id  = var.customer_master_key_id
+  pcoip_registration_code = var.pcoip_registration_code
+  cam_gui_admin_password  = var.cam_gui_admin_password
+  
+  bucket_name            = aws_s3_bucket.scripts.id
+  cam_deployment_sa_file = local.cam_deployment_sa_file
+
+  aws_region   = var.aws_region
+  subnet       = aws_subnet.cam-subnet.id
+  security_group_ids = [
+    data.aws_security_group.default.id,
+    aws_security_group.allow-http.id,
+    aws_security_group.allow-ssh.id,
+    aws_security_group.allow-icmp.id,
+  ]
+
+  instance_type = var.cam_instance_type
+  disk_size_gb  = var.cam_disk_size_gb
+
+  ami_owner        = var.cam_ami_owner
+  ami_product_code = var.cam_ami_product_code
+
+  admin_ssh_key_name = local.admin_ssh_key_name
+}
+
 module "lls" {
   source = "../../../modules/aws/lls"
 
@@ -93,11 +122,6 @@ module "lls" {
   admin_ssh_key_name = local.admin_ssh_key_name
 
   depends_on = [aws_nat_gateway.nat]
-}
-
-resource "aws_key_pair" "cam_admin" {
-  key_name   = local.admin_ssh_key_name
-  public_key = file(var.admin_ssh_pub_key_file)
 }
 
 resource "aws_lb" "cac-alb" {
@@ -187,7 +211,8 @@ module "cac" {
 
   aws_region              = var.aws_region
   customer_master_key_id  = var.customer_master_key_id
-  cam_url                 = var.cam_url
+  cam_url                 = "https://${module.cam.internal-ip}"
+  cam_insecure            = true
   cam_deployment_sa_file  = local.cam_deployment_sa_file
   pcoip_registration_code = var.pcoip_registration_code
 

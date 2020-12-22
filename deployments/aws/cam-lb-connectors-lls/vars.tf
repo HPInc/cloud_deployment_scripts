@@ -37,6 +37,16 @@ variable "allowed_client_cidrs" {
   default     = ["0.0.0.0/0"]
 }
 
+variable "admin_ssh_key_name" {
+  description = "Name of Admin SSH Key"
+  default     = "cas_admin"
+}
+
+variable "admin_ssh_pub_key_file" {
+  description = "Admin SSH public key file"
+  type        = string
+}
+
 variable "vpc_name" {
   description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
@@ -120,7 +130,7 @@ variable "lls_subnet_name" {
 
 variable "lls_subnet_cidr" {
   description = "CIDR for subnet containing the PCoIP License Servers"
-  default     = "10.0.3.0/24"
+  default     = "10.0.4.0/24"
 }
 
 variable "lls_instance_count" {
@@ -168,6 +178,41 @@ variable "lls_license_count" {
   default     = 0
 }
 
+variable "cam_subnet_name" {
+  description = "Name for subnet containing the Cloud Access Manager"
+  default     = "subnet-cam"
+}
+
+variable "cam_subnet_cidr" {
+  description = "CIDR for subnet containing the Cloud Access Manager"
+  default     = "10.0.1.0/24"
+}
+
+variable "cam_instance_type" {
+  description = "Instance type for the Cloud Access Manager"
+  default     = "t2.xlarge"
+}
+
+variable "cam_disk_size_gb" {
+  description = "Disk size (GB) of the Cloud Access Manager"
+  default     = "60"
+}
+
+variable "cam_ami_owner" {
+  description = "Owner of AMI for the Cloud Access Manager"
+  default     = "aws-marketplace"
+}
+
+variable "cam_ami_product_code" {
+  description = "Product Code of the AMI to create Cloud Access Manager from"
+  default     = "47k9ia2igxpcce2bzo8u3kj03"
+}
+
+variable "cam_gui_admin_password" {
+  description = "Password for the Administrator of Cloud Access Manager"
+  type        = string
+}
+
 variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
   type        = list(string)
@@ -208,16 +253,6 @@ variable "cac_ami_name" {
   default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20201211.1"
 }
 
-variable "admin_ssh_key_name" {
-  description = "Name of Admin SSH Key"
-  default     = "cas_admin"
-}
-
-variable "admin_ssh_pub_key_file" {
-  description = "Admin SSH public key file"
-  type        = string
-}
-
 # Note the following limits for health check:
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5
@@ -242,16 +277,6 @@ variable "ssl_cert" {
   default     = ""
 }
 
-variable "cam_url" {
-  description = "cam server url."
-  default     = "https://cam.teradici.com"
-}
-
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
-  type        = string
-}
-
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
@@ -264,7 +289,7 @@ variable "ws_subnet_name" {
 
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.2.0/24"
+  default     = "10.0.3.0/24"
 }
 
 variable "enable_workstation_public_ip" {
