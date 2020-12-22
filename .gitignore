@@ -1,5 +1,6 @@
 .terraform
-*.tfstate*
-*.tfvars
+*.backup
 *.csv
 *.log
+*.tfstate*
+*.tfvars
