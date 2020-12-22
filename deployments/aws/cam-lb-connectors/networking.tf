@@ -38,6 +38,16 @@ resource "aws_subnet" "dc-subnet" {
   }
 }
 
+resource "aws_subnet" "cam-subnet" {
+  cidr_block        = var.cam_subnet_cidr
+  vpc_id            = aws_vpc.vpc.id
+  availability_zone = data.aws_availability_zones.available_az.names[0]
+
+  tags = {
+    Name = "${local.prefix}${var.cam_subnet_name}"
+  }
+}
+
 resource "aws_subnet" "cac-subnets" {
   count = length(var.cac_subnet_cidr_list)
 
@@ -118,6 +128,11 @@ resource "aws_route_table_association" "rt-dc" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_route_table_association" "rt-cam" {
+  subnet_id      = aws_subnet.cam-subnet.id
+  route_table_id = aws_route_table.public.id
+}
+
 resource "aws_route_table_association" "rt-cac" {
   count = length(var.cac_subnet_cidr_list)
 
@@ -133,6 +148,29 @@ resource "aws_route_table_association" "rt-ws" {
 data "aws_security_group" "default" {
   name   = "default"
   vpc_id = aws_vpc.vpc.id
+}
+
+resource "aws_security_group" "allow-http" {
+  name   = "allow-http"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+  }
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+  }
+
+  tags = {
+    Name = "${local.prefix}secgrp-allow-http"
+  }
 }
 
 resource "aws_security_group" "allow-ssh" {
