@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 INSTALL_DIR="/root"
+CAC_BIN_PATH="/usr/sbin/cloud-access-connector"
 INSTALL_LOG="$INSTALL_DIR/cac-install.log"
 cd $INSTALL_DIR
 
@@ -44,7 +45,7 @@ get_credentials() {
     fi
 }
 
-if [[ -f "$INSTALL_DIR/cloud-access-connector" ]]; then
+if [[ -f "$CAC_BIN_PATH" ]]; then
     log "Connector already installed. Skipping startup script."
     exit 0
 fi
@@ -72,7 +73,7 @@ fi
 
 # download CAC installer
 curl -L ${cac_installer_url} -o $INSTALL_DIR/cloud-access-connector.tar.gz
-tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz
+tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz -C /
 
 
 # Wait for service account to be added
@@ -148,7 +149,7 @@ echo '### Installing Cloud Access Connector ###'
 export CAM_BASE_URI=${cam_url}
 
 if [ -z "${ssl_key}" ]; then
-    $INSTALL_DIR/cloud-access-connector install \
+    $CAC_BIN_PATH install \
         -t $CAC_TOKEN \
         --accept-policies \
         --insecure \
@@ -163,7 +164,7 @@ else
     aws s3 cp s3://${bucket_name}/${ssl_key} $INSTALL_DIR
     aws s3 cp s3://${bucket_name}/${ssl_cert} $INSTALL_DIR
 
-    $INSTALL_DIR/cloud-access-connector install \
+    $CAC_BIN_PATH install \
         -t $CAC_TOKEN \
         --accept-policies \
         --ssl-key $INSTALL_DIR/${ssl_key} \

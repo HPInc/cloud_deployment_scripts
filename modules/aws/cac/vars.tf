@@ -112,7 +112,7 @@ variable "admin_ssh_key_name" {
 
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
-  default     = "https://teradici.bintray.com/cloud-access-connector/cloud-access-connector-0.1.1.tar.gz"
+  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/latest/cloud-access-connector_latest_Linux.tar.gz"
 }
 
 variable "ssl_key" {
