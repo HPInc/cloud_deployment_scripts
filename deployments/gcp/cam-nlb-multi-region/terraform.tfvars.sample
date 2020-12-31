@@ -56,7 +56,7 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
 
-# SSL Private Key & Certificate for Load Balancer
+# Optional: Specify SSL certificate for the Connectors
 # cac_ssl_key  = "/path/to/privkey.pem"
 # cac_ssl_cert = "/path/to/fullchain.pem"
 

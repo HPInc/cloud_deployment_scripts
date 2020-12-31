@@ -21,20 +21,29 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # connect to remote workstations. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_client_cidrs = ["0.0.0.0/0"]
 
+#########################
+#   Domain Controller   #
+#########################
 # domain_name = "example.com"
 
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
+##############################
+#   Cloud Access Connector   #
+##############################
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
+
+cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 # Optional: Specify SSL certificate for Connector
 # cac_ssl_key  = "/path/to/privkey.pem"
 # cac_ssl_cert = "/path/to/fullchain.pem"
 
-cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
-
+####################
+#   Workstations   #
+####################
 win_gfx_instance_count = 0
 # win_gfx_machine_type = "n1-standard-4"
 # win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
