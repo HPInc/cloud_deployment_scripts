@@ -27,8 +27,8 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # domain_users_list = "/path/to/domain_users_list.csv"
 
 # SSL Private Key & Certificate for Load Balancer
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# cac_ssl_key  = "/path/to/privkey.pem"
+# cac_ssl_cert = "/path/to/fullchain.pem"
 
 # Specify the regions, subnet CIDRs and number of connectors to create per
 # region. For example:

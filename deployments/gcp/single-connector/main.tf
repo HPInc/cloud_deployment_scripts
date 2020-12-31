@@ -98,8 +98,8 @@ module "cac" {
   cac_admin_user              = var.cac_admin_user
   cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
 
-  ssl_key  = var.ssl_key
-  ssl_cert = var.ssl_cert
+  ssl_key  = var.cac_ssl_key
+  ssl_cert = var.cac_ssl_cert
 }
 
 module "win-gfx" {

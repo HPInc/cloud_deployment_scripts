@@ -204,12 +204,12 @@ variable "cac_health_check" {
   }
 }
 
-variable "ssl_key" {
+variable "cac_ssl_key" {
   description = "SSL private key for the Connector in PEM format"
   default     = ""
 }
 
-variable "ssl_cert" {
+variable "cac_ssl_cert" {
   description = "SSL certificate for the Connector in PEM format"
   default     = ""
 }

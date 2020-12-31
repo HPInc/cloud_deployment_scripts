@@ -57,8 +57,8 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cac_disk_size_gb = 50
 
 # SSL Private Key & Certificate for Load Balancer
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# cac_ssl_key  = "/path/to/privkey.pem"
+# cac_ssl_cert = "/path/to/fullchain.pem"
 
 ####################
 #   Workstations   #

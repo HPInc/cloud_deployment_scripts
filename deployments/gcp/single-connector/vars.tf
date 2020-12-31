@@ -118,12 +118,12 @@ variable "cac_admin_ssh_pub_key_file" {
   type        = string
 }
 
-variable "ssl_key" {
+variable "cac_ssl_key" {
   description = "SSL private key for the Connector"
   default     = ""
 }
 
-variable "ssl_cert" {
+variable "cac_ssl_cert" {
   description = "SSL certificate for the Connector"
   default     = ""
 }

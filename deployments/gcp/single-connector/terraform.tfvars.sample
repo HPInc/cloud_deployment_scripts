@@ -30,8 +30,8 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # cac_disk_size_gb = 50
 
 # Optional: Specify SSL certificate for Connector
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# cac_ssl_key  = "/path/to/privkey.pem"
+# cac_ssl_cert = "/path/to/fullchain.pem"
 
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 

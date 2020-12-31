@@ -47,8 +47,8 @@ cam_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 # Optional: Specify SSL certificate for Connector
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# cac_ssl_key  = "/path/to/privkey.pem"
+# cac_ssl_cert = "/path/to/fullchain.pem"
 
 ####################
 #   Workstations   #
