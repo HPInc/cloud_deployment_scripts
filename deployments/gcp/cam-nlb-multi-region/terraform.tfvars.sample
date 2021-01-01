@@ -44,7 +44,7 @@ cam_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # Specify the regions, subnet CIDRs and number of connectors to create per
 # region. For example:
 #   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
-#   cac_subnet_cidr_list    = ["10.0.2.0/24", "10.1.2.0/24",    "10.2.2.0/24"]
+#   cac_subnet_cidr_list    = ["10.0.1.0/24", "10.1.1.0/24",    "10.2.1.0/24"]
 #   cac_instance_count_list = [2,             3,                4]
 
 cac_region_list         = []
@@ -67,7 +67,7 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # per region. For example:
 # ws_region_list                  = ["us-west2",    "europe-west4",   "asia-southeast1"]
 # ws_zone_list                    = ["us-west2-b",  "europe-west4-b", "asia-southeast1-b"]
-# ws_subnet_cidr_list             = ["10.0.3.0/24", "10.1.3.0/24",    "10.2.3.0/24"]
+# ws_subnet_cidr_list             = ["10.0.2.0/24", "10.1.2.0/24",    "10.2.2.0/24"]
 # win_gfx_instance_count_list     = [0,             10,               0]
 # win_std_instance_count_list     = [1,             1,                1]
 # centos_gfx_instance_count_list  = [0,             0,                10]
