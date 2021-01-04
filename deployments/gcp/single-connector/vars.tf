@@ -49,12 +49,12 @@ variable "dc_subnet_name" {
 
 variable "dc_subnet_cidr" {
   description = "CIDR for subnet containing the Domain Controller"
-  default     = "10.0.0.0/24"
+  default     = "10.0.0.0/28"
 }
 
 variable "dc_private_ip" {
   description = "Static internal IP address for the Domain Controller"
-  default     = "10.0.0.100"
+  default     = "10.0.0.10"
 }
 
 variable "dc_machine_type" {
@@ -118,12 +118,12 @@ variable "cac_admin_ssh_pub_key_file" {
   type        = string
 }
 
-variable "ssl_key" {
+variable "cac_ssl_key" {
   description = "SSL private key for the Connector"
   default     = ""
 }
 
-variable "ssl_cert" {
+variable "cac_ssl_cert" {
   description = "SSL certificate for the Connector"
   default     = ""
 }
