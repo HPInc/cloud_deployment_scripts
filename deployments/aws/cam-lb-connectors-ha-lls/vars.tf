@@ -64,12 +64,12 @@ variable "dc_subnet_name" {
 
 variable "dc_subnet_cidr" {
   description = "CIDR for subnet containing the Domain Controller"
-  default     = "10.0.0.0/24"
+  default     = "10.0.0.0/28"
 }
 
 variable "dc_private_ip" {
   description = "Static internal IP address for the Domain Controller"
-  default     = "10.0.0.100"
+  default     = "10.0.0.10"
 }
 
 variable "dc_instance_type" {
@@ -130,18 +130,18 @@ variable "lls_subnet_name" {
 
 variable "lls_subnet_cidr" {
   description = "CIDR for subnet containing the PCoIP License Servers"
-  default     = "10.0.4.0/24"
+  default     = "10.0.0.32/28"
 }
 
 variable "lls_subnet_ips" {
   description = "IP addresses used in the PCoIP License Server subnet"
   default = {
-    haproxy_vip    = "10.0.4.100"
-    haproxy_master = "10.0.4.101"
-    haproxy_backup = "10.0.4.102"
-    lls_main       = "10.0.4.201"
-    lls_backup     = "10.0.4.202"
-    subnet_mask    = "/24"
+    haproxy_vip    = "10.0.0.40"
+    haproxy_master = "10.0.0.41"
+    haproxy_backup = "10.0.0.42"
+    lls_main       = "10.0.0.43"
+    lls_backup     = "10.0.0.44"
+    subnet_mask    = "/28"
   }
 }
 
@@ -207,7 +207,7 @@ variable "cam_subnet_name" {
 
 variable "cam_subnet_cidr" {
   description = "CIDR for subnet containing the Cloud Access Manager"
-  default     = "10.0.1.0/24"
+  default     = "10.0.0.16/28"
 }
 
 variable "cam_instance_type" {
@@ -311,7 +311,7 @@ variable "ws_subnet_name" {
 
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.3.0/24"
+  default     = "10.0.2.0/24"
 }
 
 variable "enable_workstation_public_ip" {

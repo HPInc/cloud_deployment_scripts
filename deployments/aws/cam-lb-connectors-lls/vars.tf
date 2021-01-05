@@ -64,12 +64,12 @@ variable "dc_subnet_name" {
 
 variable "dc_subnet_cidr" {
   description = "CIDR for subnet containing the Domain Controller"
-  default     = "10.0.0.0/24"
+  default     = "10.0.0.0/28"
 }
 
 variable "dc_private_ip" {
   description = "Static internal IP address for the Domain Controller"
-  default     = "10.0.0.100"
+  default     = "10.0.0.10"
 }
 
 variable "dc_instance_type" {
@@ -130,7 +130,7 @@ variable "lls_subnet_name" {
 
 variable "lls_subnet_cidr" {
   description = "CIDR for subnet containing the PCoIP License Servers"
-  default     = "10.0.4.0/24"
+  default     = "10.0.0.32/28"
 }
 
 variable "lls_instance_count" {
@@ -185,7 +185,7 @@ variable "cam_subnet_name" {
 
 variable "cam_subnet_cidr" {
   description = "CIDR for subnet containing the Cloud Access Manager"
-  default     = "10.0.1.0/24"
+  default     = "10.0.0.16/28"
 }
 
 variable "cam_instance_type" {
@@ -289,7 +289,7 @@ variable "ws_subnet_name" {
 
 variable "ws_subnet_cidr" {
   description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.3.0/24"
+  default     = "10.0.2.0/24"
 }
 
 variable "enable_workstation_public_ip" {
