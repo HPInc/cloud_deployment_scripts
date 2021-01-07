@@ -73,7 +73,7 @@ fi
 
 # download CAC installer
 curl -L ${cac_installer_url} -o $INSTALL_DIR/cloud-access-connector.tar.gz
-tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz -C /
+tar xzvf $INSTALL_DIR/cloud-access-connector.tar.gz --no-same-owner -C /
 
 
 # Wait for service account to be added
