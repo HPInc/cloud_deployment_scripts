@@ -37,6 +37,16 @@ variable "allowed_client_cidrs" {
   default     = ["0.0.0.0/0"]
 }
 
+variable "admin_ssh_key_name" {
+  description = "Name of Admin SSH Key"
+  default     = "cas_admin"
+}
+
+variable "admin_ssh_pub_key_file" {
+  description = "Admin SSH public key file"
+  type        = string
+}
+
 variable "vpc_name" {
   description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
@@ -113,19 +123,136 @@ variable "domain_users_list" {
   default     = ""
 }
 
+variable "lls_subnet_name" {
+  description = "Name for subnet containing the PCoIP License Servers"
+  default     = "subnet-lls"
+}
+
+variable "lls_subnet_cidr" {
+  description = "CIDR for subnet containing the PCoIP License Servers"
+  default     = "10.0.0.32/28"
+}
+
+variable "lls_subnet_ips" {
+  description = "IP addresses used in the PCoIP License Server subnet"
+  default = {
+    haproxy_vip    = "10.0.0.40"
+    haproxy_master = "10.0.0.41"
+    haproxy_backup = "10.0.0.42"
+    lls_main       = "10.0.0.43"
+    lls_backup     = "10.0.0.44"
+    subnet_mask    = "/28"
+  }
+}
+
+variable "haproxy_instance_type" {
+  description = "Instance type for the HAProxy"
+  default     = "t2.medium"
+}
+
+variable "haproxy_disk_size_gb" {
+  description = "Disk size (GB) of the HAProxy"
+  default     = "10"
+}
+
+variable "haproxy_ami_owner" {
+  description = "Owner of AMI for the HAProxy"
+  default     = "125523088429"
+}
+
+variable "haproxy_ami_name" {
+  description = "Name of the CentOS AMI to run HAProxy on"
+  default     = "CentOS 8.2.2004 x86_64"
+}
+
+variable "lls_instance_type" {
+  description = "Instance type for the PCoIP License Server"
+  default     = "t2.medium"
+}
+
+variable "lls_disk_size_gb" {
+  description = "Disk size (GB) of the PCoIP License Server"
+  default     = "10"
+}
+
+variable "lls_ami_owner" {
+  description = "Owner of AMI for the PCoIP License Server"
+  default     = "aws-marketplace"
+}
+
+variable "lls_ami_name" {
+  description = "Name of the CentOS AMI to run PCoIP License Server on"
+  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+}
+
+variable "lls_admin_password" {
+  description = "Administrative password for the Teradici License Server"
+  default     = ""
+}
+
+variable "lls_activation_code" {
+  description = "Activation Code for PCoIP session licenses"
+  default     = ""
+}
+
+variable "lls_license_count" {
+  description = "Number of PCoIP session licenses to activate"
+  default     = 0
+}
+
+variable "cam_subnet_name" {
+  description = "Name for subnet containing the Cloud Access Manager"
+  default     = "subnet-cam"
+}
+
+variable "cam_subnet_cidr" {
+  description = "CIDR for subnet containing the Cloud Access Manager"
+  default     = "10.0.0.16/28"
+}
+
+variable "cam_instance_type" {
+  description = "Instance type for the Cloud Access Manager"
+  default     = "t2.xlarge"
+}
+
+variable "cam_disk_size_gb" {
+  description = "Disk size (GB) of the Cloud Access Manager"
+  default     = "60"
+}
+
+variable "cam_ami_owner" {
+  description = "Owner of AMI for the Cloud Access Manager"
+  default     = "aws-marketplace"
+}
+
+variable "cam_ami_product_code" {
+  description = "Product Code of the AMI to create Cloud Access Manager from"
+  default     = "47k9ia2igxpcce2bzo8u3kj03"
+}
+
+variable "cam_gui_admin_password" {
+  description = "Password for the Administrator of Cloud Access Manager"
+  type        = string
+}
+
+variable "cac_zone_list" {
+  description = "Zones in which to deploy Connectors"
+  type        = list(string)
+}
+
 variable "cac_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Connector"
+  description = "Name for subnets containing the Cloud Access Connector"
   default     = "subnet-cac"
 }
 
-variable "cac_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Connector"
-  default     = "10.0.1.0/24"
+variable "cac_subnet_cidr_list" {
+  description = "CIDRs for subnets containing the Cloud Access Connector"
+  type        = list(string)
 }
 
-variable "cac_instance_count" {
-  description = "Number of Cloud Access Connector instances"
-  default     = 1
+variable "cac_instance_count_list" {
+  description = "Number of Cloud Access Connector instances to deploy in each region"
+  type        = list(number)
 }
 
 variable "cac_instance_type" {
@@ -148,34 +275,28 @@ variable "cac_ami_name" {
   default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20201211.1"
 }
 
-variable "admin_ssh_key_name" {
-  description = "Name of Admin SSH Key"
-  default     = "cas_admin"
-}
-
-variable "admin_ssh_pub_key_file" {
-  description = "Admin SSH public key file"
-  type        = string
+# Note the following limits for health check:
+# interval_sec: min 5, max 300, default 30
+# timeout_sec:  min 2, max 120, default 5
+variable "cac_health_check" {
+  description = "Health check configuration for Cloud Access Connector"
+  default = {
+    path         = "/pcoip-broker/xml"
+    protocol     = "HTTPS"
+    port         = 443
+    interval_sec = 30
+    timeout_sec  = 5
+  }
 }
 
 variable "ssl_key" {
-  description = "SSL private key for the Connector"
+  description = "SSL private key for the Connector in PEM format"
   default     = ""
 }
 
 variable "ssl_cert" {
-  description = "SSL certificate for the Connector"
+  description = "SSL certificate for the Connector in PEM format"
   default     = ""
-}
-
-variable "cam_url" {
-  description = "cam server url."
-  default     = "https://cam.teradici.com"
-}
-
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
-  type        = string
 }
 
 variable "pcoip_registration_code" {

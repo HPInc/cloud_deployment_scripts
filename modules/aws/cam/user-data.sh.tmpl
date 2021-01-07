@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Copyright (c) 2020 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+INSTALL_DIR="/root"
+LOG_FILE="/var/log/teradici/user-data.log"
+
+mkdir -p `dirname $LOG_FILE`
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
+yum -y update
+yum -y install dos2unix python3
+pip3 install awscli --upgrade
+export PATH=$PATH:/usr/local/bin
+
+# wait until we have IAM credentials
+# successful command returns a string "access_key ****************XXXX iam-role"
+# missing access key or IAM credentials returns an empty string ""
+until [ ! -z "$(aws configure list | grep access_key | grep iam-role)" ]
+do 
+    echo 'Checking for IAM credentials...' 
+    sleep 5
+done
+
+echo "--> Downloading required files from the bucket..."
+aws s3 cp s3://${bucket_name}/${provisioning_script} $INSTALL_DIR
+
+echo "--> Allowing scripts to be executable files..."
+chmod +x $INSTALL_DIR/${provisioning_script}
+
+echo "--> Ensuring line endings for downloaded files are in Unix format..."
+dos2unix $INSTALL_DIR/${provisioning_script}
+
+echo "--> Executing provisioning script..."
+$INSTALL_DIR/${provisioning_script}

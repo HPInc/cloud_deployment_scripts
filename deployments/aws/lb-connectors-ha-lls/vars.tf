@@ -54,12 +54,12 @@ variable "dc_subnet_name" {
 
 variable "dc_subnet_cidr" {
   description = "CIDR for subnet containing the Domain Controller"
-  default     = "10.0.0.0/24"
+  default     = "10.0.0.0/28"
 }
 
 variable "dc_private_ip" {
   description = "Static internal IP address for the Domain Controller"
-  default     = "10.0.0.100"
+  default     = "10.0.0.10"
 }
 
 variable "dc_instance_type" {
@@ -120,18 +120,18 @@ variable "lls_subnet_name" {
 
 variable "lls_subnet_cidr" {
   description = "CIDR for subnet containing the PCoIP License Servers"
-  default     = "10.0.3.0/24"
+  default     = "10.0.0.32/28"
 }
 
 variable "lls_subnet_ips" {
   description = "IP addresses used in the PCoIP License Server subnet"
   default = {
-    haproxy_vip    = "10.0.3.100"
-    haproxy_master = "10.0.3.101"
-    haproxy_backup = "10.0.3.102"
-    lls_main       = "10.0.3.201"
-    lls_backup     = "10.0.3.202"
-    subnet_mask    = "/24"
+    haproxy_vip    = "10.0.0.40"
+    haproxy_master = "10.0.0.41"
+    haproxy_backup = "10.0.0.42"
+    lls_main       = "10.0.0.43"
+    lls_backup     = "10.0.0.44"
+    subnet_mask    = "/28"
   }
 }
 
