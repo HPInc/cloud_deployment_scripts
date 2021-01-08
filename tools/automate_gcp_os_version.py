@@ -12,7 +12,11 @@ COMPUTE_SERVICES_ENABLE = "gcloud services enable compute.googleapis.com"
 OS_COMMAND = "gcloud compute images list"
 PATHS = [["single-connector", "vars.tf"],
          ["multi-region", "vars.tf"],
-         ["dc-only", "vars.tf"]]
+         ["dc-only", "vars.tf"],
+         ["nlb-multi-region", "vars.tf"],
+         ["cam-single-connector", "vars.tf"],
+         ["cam-multi-region", "vars.tf"],
+         ["cam-nlb-multi-region", "vars.tf"]]
 
 
 def get_os():
