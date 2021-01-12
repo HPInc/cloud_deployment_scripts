@@ -149,7 +149,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210105"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210108"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
