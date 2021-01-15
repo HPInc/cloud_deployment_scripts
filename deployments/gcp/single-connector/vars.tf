@@ -69,7 +69,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
 variable "dc_admin_password" {
@@ -231,7 +231,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
 variable "win_std_instance_count" {
@@ -256,7 +256,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
 variable "centos_gfx_instance_count" {
