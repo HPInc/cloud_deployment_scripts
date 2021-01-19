@@ -17,6 +17,30 @@ log() {
     echo "[$(date)] $message"
 }
 
+# Try command until zero exit status or exit(1) when non-zero status after max tries
+retry() {
+    local counter="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+    local count=0
+
+    while [ true ]
+    do
+        ((count=count+1))
+        eval $command && break
+        if [ $count -gt $counter ]
+        then
+            log "$err_message"
+            exit 1
+        else
+            log "$log_message Retrying in $interval seconds"
+            sleep $interval
+        fi
+    done
+}
+
 get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
@@ -108,15 +132,20 @@ install_gpu_driver() {
         log "--> Installing GPU driver..."
 
         local nvidia_driver_filename=$(basename ${nvidia_driver_url})
-        local gpu_installer="/tmp/$nvidia_driver_filename"
+        local gpu_installer="/root/$nvidia_driver_filename"
 
         log "--> Killing X server before installing driver..."
         service gdm stop
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
-        wget --retry-connrefused --tries=3 --waitretry=5 -O "$gpu_installer" ${nvidia_driver_url}
-        chmod u+x "$gpu_installer"
+        retry   3 \ #number of tries
+                5 \ #interval seconds
+                "curl -f -o $gpu_installer ${nvidia_driver_url}" \
+                "--> Non-zero exit status. Retrying in $interval seconds" \
+                "--> ERROR: Failed to download GPU driver installer."
+        log "--> GPU driver installer successfully downloaded"
 
+        chmod u+x "$gpu_installer"
         log "--> Running GPU driver installer..."
         # -s, --silent Run silently; no questions are asked and no output is printed,
         # This option implies '--ui=none --no-questions'.

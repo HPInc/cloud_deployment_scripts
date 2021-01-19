@@ -123,10 +123,10 @@ install_gpu_driver() {
         log "--> Installing GPU driver..."
 
         local nvidia_driver_filename=$(basename ${nvidia_driver_url})
-        local gpu_installer="/tmp/$nvidia_driver_filename"
+        local gpu_installer="/root/$nvidia_driver_filename"
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
-        wget --retry-connrefused --tries=3 --waitretry=5 -O "$gpu_installer" ${nvidia_driver_url}
+        retry "curl -f -o $gpu_installer ${nvidia_driver_url}"
         chmod u+x "$gpu_installer"
         log "--> Running GPU driver installer..."
 
