@@ -9,7 +9,7 @@
     3. [Cloud Access Manager Setup](#cloud-access-manager-setup)
 4. [Running Terraform Scripts](#running-terraform-scripts)
     1. [Customizing terraform.tfvars](#customizing-terraform.tfvars)
-    2. [(Optional) Encrypting Secrets](#(optional)-encrypting-secrets)
+    2. [(Optional) Encrypting Secrets](#optional-encrypting-secrets)
         1. [Encryption Using Python Script](#encryption-using-python-script)
         2. [Manual Encryption](#manual-encryption)
     3. [Creating the deployment](#creating-the-deployment)
@@ -180,7 +180,7 @@ Domain-joined workstations are optionally created, specified by the following pa
 
 These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics driver are also installed.
 
-![single-connector diagram](single-connector-gcp.png)
+![single-connector diagram](single-connector.png)
 
 ### multi-region
 

@@ -64,7 +64,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201110"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
 variable "dc_admin_password" {

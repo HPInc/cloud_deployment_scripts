@@ -6,11 +6,11 @@
  */
 
 output "internal-ip" {
-  value = [aws_instance.cac[*].private_ip]
+  value = aws_instance.cac[*].private_ip
 }
 
 output "public-ip" {
-  value = [aws_instance.cac[*].public_ip]
+  value = aws_instance.cac[*].public_ip
 }
 
 output "instance-id" {

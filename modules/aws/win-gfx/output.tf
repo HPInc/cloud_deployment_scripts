@@ -6,9 +6,9 @@
  */
 
 output "internal-ip" {
-  value = [aws_instance.win-gfx[*].private_ip]
+  value = aws_instance.win-gfx[*].private_ip
 }
 
 output "public-ip" {
-  value = var.enable_public_ip ? [aws_instance.win-gfx[*].public_ip] : []
+  value = var.enable_public_ip ? aws_instance.win-gfx[*].public_ip : []
 }

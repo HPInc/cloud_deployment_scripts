@@ -6,9 +6,9 @@
  */
 
 output "internal-ip" {
-  value = [aws_instance.win-std[*].private_ip]
+  value = aws_instance.win-std[*].private_ip
 }
 
 output "public-ip" {
-  value = var.enable_public_ip ? [aws_instance.win-std[*].public_ip] : []
+  value = var.enable_public_ip ? aws_instance.win-std[*].public_ip : []
 }
