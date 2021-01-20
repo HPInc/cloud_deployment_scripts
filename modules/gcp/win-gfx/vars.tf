@@ -117,12 +117,12 @@ variable "admin_password" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID11.1/"
+  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID11.3/"
 }
 
 variable "nvidia_driver_filename" {
   description = "Filename of NVIDIA GRID driver"
-  default     = "452.39_grid_win10_server2016_server2019_64bit_international.exe"
+  default     = "452.77_grid_win10_server2016_server2019_64bit_international.exe"
 }
 
 variable "pcoip_agent_location_url" {
