@@ -89,7 +89,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.12.09"
+  default     = "Windows_Server-2019-English-Full-Base-2021.01.13"
 }
 
 variable "domain_name" {
@@ -271,7 +271,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.12.09"
+  default     = "Windows_Server-2019-English-Full-Base-2021.01.13"
 }
 
 variable "win_std_instance_count" {
@@ -301,7 +301,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2020.12.09"
+  default     = "Windows_Server-2019-English-Full-Base-2021.01.13"
 }
 
 variable "centos_gfx_instance_count" {
