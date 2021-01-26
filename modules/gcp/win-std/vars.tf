@@ -105,14 +105,14 @@ variable "admin_password" {
   type        = string
 }
 
-variable "pcoip_agent_location_url" {
-  description = "URL of Teradici PCoIP Standard Agent"
-  default     = "https://downloads.teradici.com/win/stable/"
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
-variable "pcoip_agent_filename" {
-  description = "Filename of Teradici PCoIP Standard Agent. Leave blank to download the latest."
-  default     = ""
+variable "pcoip_agent_version" {
+  description = "PCoIP Agent version to install"
+  default     = "latest"
 }
 
 variable "kms_cryptokey_id" {

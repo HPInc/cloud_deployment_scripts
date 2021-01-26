@@ -125,14 +125,14 @@ variable "nvidia_driver_filename" {
   default     = "452.77_grid_win10_server2016_server2019_64bit_international.exe"
 }
 
-variable "pcoip_agent_location_url" {
-  description = "URL of Teradici PCoIP Graphics Agent"
-  default     = "https://downloads.teradici.com/win/stable/"
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
-variable "pcoip_agent_filename" {
-  description = "Filename of Teradici PCoIP Graphics Agent. Leave blank to download the latest."
-  default     = ""
+variable "pcoip_agent_version" {
+  description = "PCoIP Agent version to install"
+  default     = "latest"
 }
 
 variable "kms_cryptokey_id" {

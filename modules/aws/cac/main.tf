@@ -57,8 +57,8 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
+      ad_service_account_username = var.ad_service_account_username,
       aws_region                  = var.aws_region,
       bucket_name                 = var.bucket_name,
       cac_installer_url           = var.cac_installer_url,

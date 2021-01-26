@@ -33,18 +33,18 @@ resource "google_storage_bucket_object" "win-std-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id            = var.kms_cryptokey_id,
-      pcoip_registration_code     = var.pcoip_registration_code,
-      domain_name                 = var.domain_name,
       admin_password              = var.admin_password,
-      ad_service_account_username = var.ad_service_account_username,
       ad_service_account_password = var.ad_service_account_password,
-      pcoip_agent_location_url    = var.pcoip_agent_location_url,
-      pcoip_agent_filename        = var.pcoip_agent_filename,
+      ad_service_account_username = var.ad_service_account_username,
+      domain_name                 = var.domain_name,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_agent_version         = var.pcoip_agent_version,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      teradici_download_token     = var.teradici_download_token,
 
       enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
-      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
       minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval,
+      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
     }
   )
 }

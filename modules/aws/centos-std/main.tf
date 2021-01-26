@@ -23,15 +23,14 @@ resource "aws_s3_bucket_object" "centos-std-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
+      ad_service_account_password = var.ad_service_account_password,
+      ad_service_account_username = var.ad_service_account_username,
       aws_region                  = var.aws_region, 
       customer_master_key_id      = var.customer_master_key_id,
-      pcoip_registration_code     = var.pcoip_registration_code,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
-      ad_service_account_username = var.ad_service_account_username,
-      ad_service_account_password = var.ad_service_account_password,
-      pcoip_agent_repo_pubkey_url = var.pcoip_agent_repo_pubkey_url,
-      pcoip_agent_repo_url        = var.pcoip_agent_repo_url,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      teradici_download_token     = var.teradici_download_token,
     }
   )
 }

@@ -234,6 +234,11 @@ variable "pcoip_registration_code" {
   type        = string
 }
 
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
+}
+
 variable "enable_workstation_public_ip" {
   description = "Enable public IP for Workstations"
   default     = false
@@ -289,6 +294,11 @@ variable "win_gfx_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
+variable "win_gfx_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Windows Graphics Workstations"
+  default     = "latest"
+}
+
 variable "win_std_instance_count_list" {
   description = "Number of Windows Standard Workstations to deploy in each region"
   type        = list(number)
@@ -312,6 +322,11 @@ variable "win_std_disk_size_gb" {
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+}
+
+variable "win_std_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Windows Standard Workstations"
+  default     = "latest"
 }
 
 variable "centos_gfx_instance_count_list" {

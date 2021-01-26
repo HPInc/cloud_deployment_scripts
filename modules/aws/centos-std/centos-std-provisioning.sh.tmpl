@@ -9,12 +9,35 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_IP="http://169.254.169.254"
-PCOIP_AGENT_REPO_PUBKEY_URL=${pcoip_agent_repo_pubkey_url}
-PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
     local message="$1"
     echo "[$(date)] $message"
+}
+
+# Try command until zero exit status or exit(1) when non-zero status after max tries
+retry() {
+    local counter="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+    local count=0
+
+    while [ true ]
+    do
+        ((count=count+1))
+        eval $command && break
+        if [ $count -gt $counter ]
+        then
+            log "$err_message"
+            return 1
+        else
+            log "$log_message Retrying in $interval seconds"
+            sleep $interval
+        fi
+    done
 }
 
 get_credentials() {
@@ -73,19 +96,29 @@ exit_and_restart() {
 install_pcoip_agent() {
     if ! (rpm -q pcoip-agent-standard)
     then
-        log "--> Installing PCoIP agent..."
-        # Get the Teradici pubkey
-        log "--> Getting Teradici pubkey..."
-        rpm --import $PCOIP_AGENT_REPO_PUBKEY_URL
 
-        # Get PCoIP repo
         log "--> Getting Teradici PCoIP agent repo..."
-        wget --retry-connrefused --tries=3 --waitretry=5 -P /etc/yum.repos.d $PCOIP_AGENT_REPO_URL
+        curl --retry 3 --retry-delay 5 -u "token:${teradici_download_token}" -1sLf $TERADICI_REPO_SETUP_SCRIPT_URL | bash
+        if [ $? -ne 0 ]; then
+            log "--> ERROR: Failed to install PCoIP agent repo."
+            exit 1
+        fi
+        log "--> PCoIP agent repo installed successfully."
+
+        log "--> Installing USB dependencies..."
+        retry   3 \
+                5 \
+                "yum install usb-vhci" \
+                "--> Non-zero exit status." \
+                "--> Warning: Failed to install usb-vhci."
 
         log "--> Installing PCoIP standard agent..."
-        yum -y install pcoip-agent-standard
-        if [ $? -ne 0 ]; then
-            log "--> ERROR: Failed to install PCoIP agent."
+        retry   3 \
+                5 \
+                "yum -y install pcoip-agent-standard" \
+                "--> Non-zero exit status." \
+                "--> ERROR: Failed to download PCoIP agent."
+        if [ $? -eq 1 ]; then
             exit 1
         fi
         log "--> PCoIP agent installed successfully."

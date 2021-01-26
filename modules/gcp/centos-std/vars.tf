@@ -120,14 +120,9 @@ variable "ws_admin_ssh_pub_key_file" {
   }
 }
 
-variable "pcoip_agent_repo_pubkey_url" {
-  description = "URL of Teradici repo public key"
-  default     = "https://downloads.teradici.com/rhel/teradici.pub.gpg"
-}
-
-variable "pcoip_agent_repo_url" {
-  description = "URL of Teradici PCoIP Standard Agent"
-  default     = "https://downloads.teradici.com/rhel/pcoip.repo"
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
 variable "kms_cryptokey_id" {

@@ -252,6 +252,11 @@ variable "pcoip_registration_code" {
   type        = string
 }
 
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
+}
+
 variable "ws_subnet_name" {
   description = "Name for subnet containing Remote Workstations"
   default     = "subnet-ws"
@@ -299,6 +304,11 @@ variable "win_gfx_ami_name" {
   default     = "Windows_Server-2019-English-Full-Base-2021.02.10"
 }
 
+variable "win_gfx_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Windows Graphics Workstations"
+  default     = "latest"
+}
+
 variable "win_std_instance_count" {
   description = "Number of Windows Standard Workstations"
   default     = 0
@@ -327,6 +337,11 @@ variable "win_std_ami_owner" {
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
   default     = "Windows_Server-2019-English-Full-Base-2021.02.10"
+}
+
+variable "win_std_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Windows Standard Workstations"
+  default     = "latest"
 }
 
 variable "centos_gfx_instance_count" {
