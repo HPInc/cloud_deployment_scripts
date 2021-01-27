@@ -34,11 +34,6 @@ variable "cam_deployment_sa_file" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
-
-  validation {
-    condition     = can(regex("^[[:alnum:]]{12}@(?:[[:alnum:]]{4}-){3}[[:alnum:]]{4}$", var.pcoip_registration_code))
-    error_message = "Invalid PCoIP Registration code. The format is expected to be xxxxxxxxxxxx@xxxx-xxxx-xxxx-xxxx."
-  }
 }
 
 variable "domain_name" {
