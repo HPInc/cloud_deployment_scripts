@@ -170,7 +170,7 @@ variable "lls_admin_password" {
 
 variable "lls_activation_code" {
   description = "Activation Code for PCoIP session licenses"
-  default     = ""
+  type        = string
 }
 
 variable "lls_license_count" {

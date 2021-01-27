@@ -82,7 +82,12 @@ variable "lls_admin_password" {
 
 variable "lls_activation_code" {
   description = "Activation Code for PCoIP session licenses"
-  default     = ""
+  type        = string
+
+  validation {
+    condition     = can(regex("^(?:[[:alnum:]]{4}-){3}[[:alnum:]]{4}$", var.lls_activation_code))
+    error_message = "Invalid License Server Activation Code. The format is expected to be xxxx-xxxx-xxxx-xxxx."
+  }
 }
 
 variable "lls_license_count" {
