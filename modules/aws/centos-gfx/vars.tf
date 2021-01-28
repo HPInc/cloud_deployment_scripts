@@ -112,7 +112,7 @@ variable "pcoip_agent_repo_url" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/g4/latest/NVIDIA-Linux-x86_64-450.102.04-grid-aws.run"
+  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-11.3/NVIDIA-Linux-x86_64-450.102.04-grid-aws.run"
 }
 
 variable "customer_master_key_id" {

@@ -138,8 +138,8 @@ install_gpu_driver() {
         service gdm stop
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
-        retry   3 \ #number of tries
-                5 \ #interval seconds
+        retry   3 \
+                5 \
                 "curl -f -o $gpu_installer ${nvidia_driver_url}" \
                 "--> Non-zero exit status. Retrying in $interval seconds" \
                 "--> ERROR: Failed to download GPU driver installer."
