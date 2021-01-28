@@ -150,3 +150,8 @@ variable "ssl_cert" {
   description = "SSL certificate for the Connector"
   default     = ""
 }
+
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
+}

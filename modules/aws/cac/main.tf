@@ -61,6 +61,7 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       ad_service_account_username = var.ad_service_account_username,
       aws_region                  = var.aws_region,
       bucket_name                 = var.bucket_name,
+      cac_extra_install_flags     = var.cac_extra_install_flags,
       cac_version                 = var.cac_version,
       cam_deployment_sa_file      = var.cam_deployment_sa_file,
       cam_insecure                = var.cam_insecure ? "true" : "",

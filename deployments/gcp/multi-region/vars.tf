@@ -177,6 +177,10 @@ variable "cac_health_check" {
 variable "cac_version" {
   description = "Version of the Cloud Access Connector to install"
   default     = "latest"
+
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
 }
 
 variable "glb_ssl_key" {
