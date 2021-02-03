@@ -187,6 +187,11 @@ function PCoIP-Agent-Register {
     "--> PCoIP agent registered successfully."
 }
 
+function Cam-Idle-Shutdown-is-Installed {
+    Get-Service "CamIdleShutdown"
+    return $?
+}
+
 function Install-Idle-Shutdown {
     "################################################################"
     "Installing Idle Shutdown..."
@@ -194,12 +199,19 @@ function Install-Idle-Shutdown {
     $path = "C:\Program Files\Teradici\PCoIP Agent\bin"
     cd $path
 
+    # Skip if already installed
+    if (Cam-Idle-Shutdown-is-Installed){  
+        "--> Idle shutdown is already installed. Skipping..."
+        return 
+    }
+
     # Install service and check for success
     $ret = .\IdleShutdownAgent.exe -install
     if( !$? ) {
         "ERROR: failed to install idle shutdown."
         exit 1
     }
+    "--> Idle shutdown is successfully installed."
 
     $idleShutdownRegKeyPath       = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
     $idleTimerRegKeyName          = "MinutesIdleBeforeShutdown"
