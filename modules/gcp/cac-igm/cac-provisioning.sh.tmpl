@@ -184,7 +184,7 @@ config_network() {
 download_cac() {
     log "--> Downloading CAC installer..."
     curl -L ${cac_installer_url} -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
-    tar xzvf $PROVISIONING_DIR/cloud-access-connector.tar.gz --no-same-owner -C /
+    tar xzvf $PROVISIONING_DIR/cloud-access-connector.tar.gz -C /
 }
 
 wait_for_dc() {

@@ -4,3 +4,4 @@
 *.log
 *.tfstate*
 *.tfvars
+*.tfvars.json

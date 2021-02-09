@@ -193,7 +193,7 @@ The following diagram shows what a lb-connectors deployment looks like with 2 AZ
 ![lb-connectors diagram](lb-connectors.png)
 
 ### lb-connectors-lls
-This deployment is similar to the [lb-connectors](#lb-connectors) deployment, except the workstations will use a PCoIP License Server, also known as a Local License Server (LLS), to obtain PCoIP licenses instead of reaching out to the internet to validate the PCoIP Registration Code witha Cloud License Server (CLS) when establishing a PCoIP session. To use this deployment, a user must supply an Activation Code which is used by the LLS to "check out" PCoIP licenses, in addition to a PCoIP registration code.
+This deployment is similar to the [lb-connectors](#lb-connectors) deployment, except the workstations will use a PCoIP License Server, also known as a Local License Server (LLS), to obtain PCoIP licenses instead of reaching out to the internet to validate the PCoIP Registration Code with a Cloud License Server (CLS) when establishing a PCoIP session. To use this deployment, a user must supply an Activation Code which is used by the LLS to "check out" PCoIP licenses, in addition to a PCoIP registration code.
 
 **Note when destroying this deployment**
 Be sure to SSH into the Local License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the "checked out" PCoIP licenses will be lost.
