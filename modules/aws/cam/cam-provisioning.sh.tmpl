@@ -55,7 +55,7 @@ install_prereqs() {
         exit 1
     fi
 
-    python3 -m pip install requests
+    python3 -m pip install requests retry
 
     if [ $? -ne 0 ]
     then
@@ -74,6 +74,8 @@ get_credentials() {
 
         CAM_GUI_ADMIN_PASSWORD=${cam_gui_admin_password}
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+        AWS_KEY_ID=${aws_key_id}
+        AWS_SECRET_KEY=${aws_secret_key}
 
     else
         log "--> Script is using encryption key: ${customer_master_key_id}"
@@ -84,6 +86,9 @@ get_credentials() {
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
 
+        log "--> Decrypting AWS Credentials..."
+        AWS_KEY_ID=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${aws_key_id}" | base64 -d) --output text --query Plaintext | base64 -d)
+        AWS_SECRET_KEY=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${aws_secret_key}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
     set -x
 }
@@ -164,6 +169,8 @@ cam_setup() {
     log "  --key_name $CAM_DEPLOYMENT_KEY_NAME"
     log "  --password <CAM GUI Administrator Password"
     log "  --reg_code <PCoIP Registration Code>"
+    log "  --aws_key_id $AWS_KEY_ID"
+    log "  --aws_secret_key $AWS_SECRET_KEY"
     log "  $optional_args"
 
     set +x
@@ -174,6 +181,8 @@ cam_setup() {
       --key_name $CAM_DEPLOYMENT_KEY_NAME \
       --password $CAM_GUI_ADMIN_PASSWORD \
       --reg_code $PCOIP_REGISTRATION_CODE \
+      --aws_key_id $AWS_KEY_ID \
+      --aws_secret_key $AWS_SECRET_KEY \
       $optional_args
     set -x
 

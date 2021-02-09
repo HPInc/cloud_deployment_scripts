@@ -5,6 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "aws_key_id"{
+  description = "AWS cloud service account credentials access key id"
+  type        = string
+}
+
+variable "aws_secret_key" {
+  description = "AWS cloud service account credentials secret key"
+  type        = string
+}
+
 variable "aws_region" {
   description = "AWS region"
   default     = "us-west-1"

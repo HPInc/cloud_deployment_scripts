@@ -11,6 +11,8 @@ locals {
   # Name of CAM deployment service account key file in bucket
   cam_deployment_sa_file = "cam-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
+  aws_key_id = csvdecode(file(var.cam_aws_credentials_file))[0].access_key_id
+  aws_secret_key = csvdecode(file(var.cam_aws_credentials_file))[0].secret_key
 }
 
 resource "random_id" "bucket-name" {
@@ -74,7 +76,9 @@ module "cam" {
   
   bucket_name            = aws_s3_bucket.scripts.id
   cam_deployment_sa_file = local.cam_deployment_sa_file
-
+  
+  aws_key_id     = local.aws_key_id
+  aws_secret_key = local.aws_secret_key
   aws_region   = var.aws_region
   subnet       = aws_subnet.cam-subnet.id
   security_group_ids = [

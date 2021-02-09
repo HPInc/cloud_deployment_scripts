@@ -55,6 +55,8 @@ lls_license_count = 0
 # cam_instance_type = "t2.xlarge"
 # cam_disk_size_gb  = "50"
 
+cam_aws_credentials_file = "/path/to/cam_aws_key"
+
 ##############################
 #   Cloud Access Connector   #
 ##############################

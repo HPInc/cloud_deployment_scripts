@@ -49,6 +49,8 @@ admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cam_instance_type = "t2.xlarge"
 # cam_disk_size_gb  = "50"
 
+cam_aws_credentials_file = "/path/to/cam_aws_key"
+
 ##############################
 #   Cloud Access Connector   #
 ##############################

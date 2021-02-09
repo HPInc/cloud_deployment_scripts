@@ -8,6 +8,8 @@
 import argparse
 import json 
 import requests
+import retry
+from retry import retry
 
 CAM_API_URL = "https://localhost/api/v1"
 TEMP_CRED_PATH = "/opt/teradici/casm/temp-creds.txt"
@@ -81,67 +83,32 @@ def deployment_key_write(deployment_key, path):
         json.dump(deployment_key, f)
 
 
-def get_gcp_sa_key(path):
-    with open(path) as f:
-        key = json.load(f)
-
-    return key
-
-
-def validate_gcp_sa(key):
+@retry(tries=5,delay=5)
+def register_service_account(user, aws_key_id, aws_secret_key, deployment):
     payload = {
-        'provider': 'gcp',
+        'provider': 'aws',
         'credential': {
-            'clientEmail': key['client_email'],
-            'privateKey':  ''.join(key['private_key'].split('\n')[1:-2]),
-            'projectId':   key['project_id'],
-        },
+            'userName': user,
+            'accessKeyId': aws_key_id,
+            'secretAccessKey': aws_secret_key,
+        }
     }
     resp = session.post(
-        f"{CAM_API_URL}/auth/users/cloudServiceAccount/validate",
+        f"{CAM_API_URL}/deployments/{deployment['deploymentId']}/cloudServiceAccounts",
         json = payload,
     )
+    resp.raise_for_status()
 
+
+def deployment_register_service_account(user, aws_key_id, aws_secret_key, deployment):
+    print("Adding AWS cloud service account to deployment...")
     try:
-        resp.raise_for_status()
-        return True
-
+        register_service_account(user, aws_key_id, aws_secret_key, deployment)
+        print("Successfully added AWS cloud service account to deployment.")
     except requests.exceptions.HTTPError as e:
-        # Not failing because GCP service account is optional
-        print("Error validating GCP Service Account key.")
+        # Not failing because AWS service account is optional
+        print("Warning: error adding AWS cloud service account to deployment.")
         print(e)
-
-        if resp.status_code == 400:
-            print("ERROR: GCP Service Account key provided has insufficient permissions.")
-            print(resp.json()['data'])
-
-        return False
-
-
-def deployment_add_gcp_account(key, deployment):
-    credentials = {
-        'clientEmail': key['client_email'],
-        'privateKey':  ''.join(key['private_key'].split('\n')[1:-2]),
-        'projectId':   key['project_id'],
-    }
-    payload = {
-        'deploymentId': deployment['deploymentId'],
-        'provider':     'gcp',
-        'credential':   credentials,
-    }
-    resp = session.post(
-        f"{CAM_API_URL}/auth/users/cloudServiceAccount",
-        json = payload,
-    )
-
-    try:
-        resp.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        # Not failing because GCP service account is optional
-        print("Error adding GCP Service Account to deployment.")
-        print(e)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="This script updates the password for the CAM Admin user.")
@@ -151,7 +118,8 @@ if __name__ == '__main__':
     parser.add_argument("--key_name", required=True, help="name of CAM Deployment Service Account key")
     parser.add_argument("--password", required=True, help="new CAM administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
-    parser.add_argument("--gcp_key", help="GCP Service Account credential key path")
+    parser.add_argument("--aws_key_id", help="AWS Service Account credential key ID")
+    parser.add_argument("--aws_secret_key", help="AWS Service Account credential secret")
 
     args = parser.parse_args()
 
@@ -170,14 +138,5 @@ if __name__ == '__main__':
     cam_deployment_key = deployment_key_create(deployment, args.key_name)
     deployment_key_write(cam_deployment_key, args.key_file)
 
-    if args.gcp_key:
-        gcp_sa_key = get_gcp_sa_key(args.gcp_key)
-
-        print("Validating GCP credentials with CAM...")
-        valid = validate_gcp_sa(gcp_sa_key)
-
-        if valid:
-            print("Adding GCP credentials to CAM deployment...")
-            deployment_add_gcp_account(gcp_sa_key, deployment)
-        else:
-            print("WARNING: GCP credentials validation failed. Skip adding GCP credentials to CAM deployment.")
+    print("Registering AWS cloud service account to CAM...")
+    deployment_register_service_account("CAM", args.aws_key_id, args.aws_secret_key, deployment)

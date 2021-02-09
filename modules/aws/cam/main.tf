@@ -25,7 +25,9 @@ resource "aws_s3_bucket_object" "cam-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
+      aws_key_id              = var.aws_key_id,
       aws_region              = var.aws_region,
+      aws_secret_key          = var.aws_secret_key,
       bucket_name             = var.bucket_name,
       cam_deployment_sa_file  = var.cam_deployment_sa_file,
       cam_gui_admin_password  = var.cam_gui_admin_password,
