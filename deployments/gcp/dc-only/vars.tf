@@ -8,6 +8,11 @@
 variable "gcp_credentials_file" {
   description = "Location of GCP JSON credentials file"
   type        = string
+
+  validation {
+    condition = fileexists(var.gcp_credentials_file)
+    error_message = "The gcp_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "gcp_region" {
@@ -96,6 +101,11 @@ variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   type        = string
   default     = ""
+
+  validation {
+    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    error_message = "The domain_users_list file specified does not exist. Please check the file path."
+  }
 }
 
 variable "kms_cryptokey_id" {

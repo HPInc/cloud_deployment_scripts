@@ -8,6 +8,11 @@
 variable "gcp_credentials_file" {
   description = "Location of GCP Service Account key file to be used by Terraform"
   type        = string
+
+  validation {
+    condition = fileexists(var.gcp_credentials_file)
+    error_message = "The gcp_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "gcp_region" {
@@ -101,6 +106,11 @@ variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   type        = string
   default     = ""
+
+  validation {
+    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    error_message = "The domain_users_list file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cam_subnet_name" {
@@ -136,6 +146,11 @@ variable "cam_admin_user" {
 variable "cam_admin_ssh_pub_key_file" {
   description = "SSH public key for Cloud Access Manager Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cam_admin_ssh_pub_key_file)
+    error_message = "The cam_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cam_gui_admin_password" {
@@ -146,6 +161,11 @@ variable "cam_gui_admin_password" {
 variable "cam_gcp_credentials_file" {
   description = "Location of GCP Service Account key file to be used by CAM"
   type        = string
+
+  validation {
+    condition = fileexists(var.cam_gcp_credentials_file)
+    error_message = "The cam_gcp_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_region_list" {
@@ -192,6 +212,11 @@ variable "cac_admin_user" {
 variable "cac_admin_ssh_pub_key_file" {
   description = "SSH public key for Cloud Access Connector Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cac_admin_ssh_pub_key_file)
+    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_health_check" {
@@ -207,11 +232,21 @@ variable "cac_health_check" {
 variable "glb_ssl_key" {
   description = "SSL private key for the Global Load Balancer in PEM format"
   default     = ""
+
+  validation {
+    condition = var.glb_ssl_key == "" ? true : fileexists(var.glb_ssl_key)
+    error_message = "The global ssl_key file specified does not exist. Please check the file path."
+  }
 }
 
 variable "glb_ssl_cert" {
   description = "SSL certificate for the Global Load Balancer in PEM format"
   default     = ""
+
+  validation {
+    condition = var.glb_ssl_cert == "" ? true : fileexists(var.glb_ssl_cert)
+    error_message = "The global ssl_cert file specified does not exist. Please check the file path."
+  }
 }
 
 variable "ws_region_list" {
@@ -387,6 +422,11 @@ variable "centos_admin_user" {
 variable "centos_admin_ssh_pub_key_file" {
   description = "SSH public key for CentOS Workstation Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.centos_admin_ssh_pub_key_file)
+    error_message = "The centos_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "kms_cryptokey_id" {

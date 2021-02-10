@@ -119,6 +119,11 @@ variable "cac_admin_user" {
 variable "cac_admin_ssh_pub_key_file" {
   description = "SSH public key for the Cloud Access Connector Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cac_admin_ssh_pub_key_file)
+    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_installer_url" {
@@ -129,11 +134,21 @@ variable "cac_installer_url" {
 variable "ssl_key" {
   description = "SSL private key for the Connector"
   default     = ""
+  
+  validation {
+    condition = var.ssl_key == "" ? true : fileexists(var.ssl_key)
+    error_message = "The ssl_key file specified does not exist. Please check the file path."
+  }
 }
 
 variable "ssl_cert" {
   description = "SSL certificate for the Connector"
   default     = ""
+    
+  validation {
+    condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
+    error_message = "The ssl_cert file specified does not exist. Please check the file path."
+  }
 }
 
 variable "kms_cryptokey_id" {
