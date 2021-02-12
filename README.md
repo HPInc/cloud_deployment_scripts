@@ -5,8 +5,8 @@ Cloud Access Manager (CAM) enables highly-scalable and cost-effective Cloud Acce
 This repository contains a collection of Terraform scripts for demonstrating how to deploy Cloud Access Connectors in a user's cloud environment. __Note: These scripts are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
 
 # Documentation
-- [Amazon Web Services](docs/aws/README.md)
-- [Google Cloud Platform](docs/gcp/README.md)
+- [Instructions](docs/aws/README.md) for deploying CAS on Amazon Web Services
+- [Instructions](docs/gcp/README.md) for deploying CAS on Google Cloud Platform
 
 # Directory structure
 ## deployments/

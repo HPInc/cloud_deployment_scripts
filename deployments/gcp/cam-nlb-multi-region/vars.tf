@@ -8,6 +8,11 @@
 variable "gcp_credentials_file" {
   description = "Location of GCP Service Account key file to be used by Terraform"
   type        = string
+
+  validation {
+    condition = fileexists(var.gcp_credentials_file)
+    error_message = "The gcp_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "gcp_region" {
@@ -69,7 +74,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210209"
 }
 
 variable "dc_admin_password" {
@@ -101,6 +106,11 @@ variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   type        = string
   default     = ""
+
+  validation {
+    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    error_message = "The domain_users_list file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cam_subnet_name" {
@@ -136,6 +146,11 @@ variable "cam_admin_user" {
 variable "cam_admin_ssh_pub_key_file" {
   description = "SSH public key for Cloud Access Manager Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cam_admin_ssh_pub_key_file)
+    error_message = "The cam_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cam_gui_admin_password" {
@@ -146,6 +161,11 @@ variable "cam_gui_admin_password" {
 variable "cam_gcp_credentials_file" {
   description = "Location of GCP Service Account key file to be used by CAM"
   type        = string
+
+  validation {
+    condition = fileexists(var.cam_gcp_credentials_file)
+    error_message = "The cam_gcp_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_region_list" {
@@ -180,7 +200,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210129"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210211"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -192,6 +212,11 @@ variable "cac_admin_user" {
 variable "cac_admin_ssh_pub_key_file" {
   description = "SSH public key for Cloud Access Connector Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cac_admin_ssh_pub_key_file)
+    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_health_check" {
@@ -207,11 +232,21 @@ variable "cac_health_check" {
 variable "cac_ssl_key" {
   description = "SSL private key for the Connector in PEM format"
   default     = ""
+
+  validation {
+    condition = var.cac_ssl_key == "" ? true : fileexists(var.cac_ssl_key)
+    error_message = "The cac_ssl_key file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_ssl_cert" {
   description = "SSL certificate for the Connector in PEM format"
   default     = ""
+
+  validation {
+    condition = var.cac_ssl_cert == "" ? true : fileexists(var.cac_ssl_cert)
+    error_message = "The cac_ssl_cert file specified does not exist. Please check the file path."
+  }
 }
 
 variable "ws_region_list" {
@@ -291,7 +326,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210209"
 }
 
 variable "win_std_instance_count_list" {
@@ -316,7 +351,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210209"
 }
 
 variable "centos_gfx_instance_count_list" {
@@ -387,6 +422,11 @@ variable "centos_admin_user" {
 variable "centos_admin_ssh_pub_key_file" {
   description = "SSH public key for CentOS Workstation Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.centos_admin_ssh_pub_key_file)
+    error_message = "The centos_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "kms_cryptokey_id" {

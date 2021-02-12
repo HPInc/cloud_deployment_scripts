@@ -119,21 +119,16 @@ variable "cac_admin_user" {
 variable "cac_admin_ssh_pub_key_file" {
   description = "SSH public key for the Cloud Access Connector Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cac_admin_ssh_pub_key_file)
+    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_installer_url" {
   description = "Location of the Cloud Access Connector installer"
   default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/latest/cloud-access-connector_latest_Linux.tar.gz"
-}
-
-variable "ssl_key" {
-  description = "SSL private key for the Connector"
-  default     = ""
-}
-
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector"
-  default     = ""
 }
 
 variable "kms_cryptokey_id" {

@@ -8,6 +8,11 @@
 variable "aws_credentials_file" {
     description = "Location of AWS credentials file"
     type        = string
+
+    validation {
+      condition = fileexists(var.aws_credentials_file)
+      error_message = "The aws_credentials_file specified does not exist. Please check the file path."
+    }
 }
 
 variable "aws_region" {
@@ -111,6 +116,11 @@ variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   type        = string
   default     = ""
+
+  validation {
+    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    error_message = "The domain_users_list file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_zone_list" {
@@ -150,7 +160,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210112"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210128"
 }
 
 variable "admin_ssh_key_name" {
@@ -161,6 +171,11 @@ variable "admin_ssh_key_name" {
 variable "admin_ssh_pub_key_file" {
   description = "Admin SSH public key file"
   type        = string
+
+  validation {
+    condition = fileexists(var.admin_ssh_pub_key_file)
+    error_message = "The admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }  
 }
 
 # Note the following limits for health check:
@@ -180,11 +195,21 @@ variable "cac_health_check" {
 variable "ssl_key" {
   description = "SSL private key for the Connector in PEM format"
   default     = ""
+
+  validation {
+    condition = var.ssl_key == "" ? true : fileexists(var.ssl_key)
+    error_message = "The ssl_key file specified does not exist. Please check the file path."
+  }
 }
 
 variable "ssl_cert" {
   description = "SSL certificate for the Connector in PEM format"
   default     = ""
+
+  validation {
+    condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
+    error_message = "The ssl_cert file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cam_url" {
@@ -195,6 +220,11 @@ variable "cam_url" {
 variable "cam_deployment_sa_file" {
   description = "Location of CAM Deployment Service Account JSON file"
   type        = string
+
+  validation {
+    condition = fileexists(var.cam_deployment_sa_file)
+    error_message = "The cam_deployment_sa_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "pcoip_registration_code" {

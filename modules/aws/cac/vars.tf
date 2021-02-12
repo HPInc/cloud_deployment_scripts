@@ -129,11 +129,21 @@ variable "cac_installer_url" {
 variable "ssl_key" {
   description = "SSL private key for the Connector"
   default     = ""
+  
+  validation {
+    condition = var.ssl_key == "" ? true : fileexists(var.ssl_key)
+    error_message = "The ssl_key file specified does not exist. Please check the file path."
+  }
 }
 
 variable "ssl_cert" {
   description = "SSL certificate for the Connector"
   default     = ""
+
+  validation {
+    condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
+    error_message = "The ssl_cert file specified does not exist. Please check the file path."
+  }
 }
 
 variable "customer_master_key_id" {

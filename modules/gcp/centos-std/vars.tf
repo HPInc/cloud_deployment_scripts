@@ -113,6 +113,11 @@ variable "ws_admin_user" {
 variable "ws_admin_ssh_pub_key_file" {
   description = "SSH public key for the Workstation Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.ws_admin_ssh_pub_key_file)
+    error_message = "The ws_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "pcoip_agent_repo_pubkey_url" {

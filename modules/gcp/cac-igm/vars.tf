@@ -114,6 +114,11 @@ variable "cac_admin_user" {
 variable "cac_admin_ssh_pub_key_file" {
   description = "SSH public key for the Cloud Access Connector Administrator"
   type        = string
+
+  validation {
+    condition = fileexists(var.cac_admin_ssh_pub_key_file)
+    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "cac_installer_url" {
