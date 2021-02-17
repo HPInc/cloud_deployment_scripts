@@ -217,15 +217,15 @@ def ad_password_get():
     txt = r'''
     Please enter a password for the Active Directory Administrator.
 
-    Note Windows password complexity requirements:
+    Note Windows passwords must be at least 7 characters long and meet complexity
+    requirements:
     1. Must not contain user's account name or display name
     2. Must have 3 of the following categories:
-       - A-Z
        - a-z
+       - A-Z
        - 0-9
-       - special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+       - special characters: ~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/
        - unicode characters
-
     See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
     '''
     print(textwrap.dedent(txt))

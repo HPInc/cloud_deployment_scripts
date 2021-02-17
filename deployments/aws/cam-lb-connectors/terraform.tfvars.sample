@@ -117,14 +117,15 @@ centos_std_instance_count = 0
 # "aws_credentials_file" above must have admin permissions to manage the CMK
 # specified.
 #
-# Note Windows password complexity requirements:
+# Note Windows passwords must be at least 7 characters long and meet complexity
+# requirements:
 # 1. Must not contain user's account name or display name
 # 2. Must have 3 of the following categories:
-#    a. a-z
-#    b. A-Z
-#    c. 0-9,
-#    d. (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
-#    3. unicode characters
+#    - a-z
+#    - A-Z
+#    - 0-9
+#    - special characters: ~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/
+#    - unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
 # Uncomment and enter the Customer Master Key ID if using encryption.
