@@ -8,6 +8,8 @@ This repository contains a collection of Terraform scripts for demonstrating how
 - [Instructions](docs/aws/README.md) for deploying CAS on Amazon Web Services
 - [Instructions](docs/gcp/README.md) for deploying CAS on Google Cloud Platform
 
+CAS deployments on Microsoft Azure is available in a separate repository. Please visit https://github.com/teradici/Azure_Deployments
+
 # Directory structure
 ## deployments/
 The top level terraform scripts that creates entire deployments.
