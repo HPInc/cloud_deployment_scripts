@@ -8,7 +8,7 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  cam_script             = "get-cac-token.py"
+  cas_mgr_script = "get-cac-token.py"
   
   num_regions = length(var.gcp_region_list)
   num_cacs    = length(flatten(
@@ -25,8 +25,8 @@ resource "google_storage_bucket_object" "get-cac-token-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
   bucket  = var.bucket_name
-  name   = local.cam_script
-  source = "${path.module}/${local.cam_script}"
+  name   = local.cas_mgr_script
+  source = "${path.module}/${local.cas_mgr_script}"
 }
 
 resource "google_storage_bucket_object" "ssl-key" {
@@ -55,15 +55,15 @@ module "cac-regional" {
   gcp_region     = var.gcp_region_list[count.index]
   instance_count = var.instance_count_list[count.index]
 
-  bucket_name            = var.bucket_name
-  cam_deployment_sa_file = var.cam_deployment_sa_file
+  bucket_name                = var.bucket_name
+  cas_mgr_deployment_sa_file = var.cas_mgr_deployment_sa_file
 
-  kms_cryptokey_id            = var.kms_cryptokey_id
-  cam_url                     = var.cam_url
-  cam_insecure                = var.cam_insecure
-  cac_installer_url           = var.cac_installer_url
-  cam_script                  = local.cam_script
-  pcoip_registration_code     = var.pcoip_registration_code
+  kms_cryptokey_id        = var.kms_cryptokey_id
+  cas_mgr_url             = var.cas_mgr_url
+  cas_mgr_insecure        = var.cas_mgr_insecure
+  cac_installer_url       = var.cac_installer_url
+  cas_mgr_script          = local.cas_mgr_script
+  pcoip_registration_code = var.pcoip_registration_code
 
   domain_controller_ip        = var.domain_controller_ip
   domain_name                 = var.domain_name
@@ -71,8 +71,8 @@ module "cac-regional" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  ssl_key_filename     = local.ssl_key_filename
-  ssl_cert_filename    = local.ssl_cert_filename
+  ssl_key_filename  = local.ssl_key_filename
+  ssl_cert_filename = local.ssl_cert_filename
 
   network_tags = var.network_tags
   subnet = var.subnet_list[count.index]

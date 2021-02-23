@@ -15,13 +15,13 @@ variable "prefix" {
   default     = ""
 }
 
-variable "cam_url" {
-  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+variable "cas_mgr_url" {
+  description = "CAS Manager URL (e.g. https://cam.teradici.com)"
   type        = string
 }
 
-variable "cam_insecure" {
-  description = "Allow unverified SSL access to Cloud Access Manager"
+variable "cas_mgr_insecure" {
+  description = "Allow unverified SSL access to CAS Manager"
   type        = bool
   default     = false
 }
@@ -42,7 +42,7 @@ variable "domain_controller_ip" {
 }
 
 variable "domain_group" {
-  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAM Admins,CN=Users,DC=example,DC=com')"
+  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAS Admins,CN=Users,DC=example,DC=com')"
   default     = "Domain Admins"
 }
 
@@ -61,8 +61,8 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Filename of CAM Deployment Service Account JSON key in bucket"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
