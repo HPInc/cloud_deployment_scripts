@@ -12,7 +12,7 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # prefix = ""
 
 # By default, ICMP, SSH, RDP and WinRM to the deployed virtual machines are only
-# allowed from the Terraform host. HTTPS/API access to CAM Standalone is also
+# allowed from the Terraform host. HTTPS/API access to CAS Manager is also
 # limited by this range. Define allowed_admin_cidrs to open the VPC firewall to
 # additional IP addresses or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_admin_cidrs = []
@@ -30,13 +30,13 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-############################
-#   Cloud Access Manager   #
-############################
-# cam_machine_type = "e2-standard-4"
-# cam_disk_size_gb = 60
+###################
+#   CAS Manager   #
+###################
+# cas_mgr_machine_type = "e2-standard-4"
+# cas_mgr_disk_size_gb = 60
 
-cam_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+cas_mgr_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 ##############################
 #   Cloud Access Connector   #
@@ -56,7 +56,7 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
 
-# Optional: Specify SSL certificate for the Connectors
+# Optional: SSL Private Key & Certificate for the Connectors
 # cac_ssl_key  = "/path/to/privkey.pem"
 # cac_ssl_cert = "/path/to/fullchain.pem"
 
@@ -81,25 +81,25 @@ win_std_instance_count_list    = []
 centos_gfx_instance_count_list = []
 centos_std_instance_count_list = []
 
-# win_gfx_machine_type = "n1-standard-4"
-# win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
+# win_gfx_machine_type      = "n1-standard-4"
+# win_gfx_accelerator_type  = "nvidia-tesla-p4-vws"
 # win_gfx_accelerator_count = 1
-# win_gfx_disk_size_gb = 50
-# win_gfx_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+# win_gfx_disk_size_gb      = 50
+# win_gfx_disk_image        = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
 
 # win_std_machine_type = "n1-standard-4"
 # win_std_disk_size_gb = 50
-# win_std_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+# win_std_disk_image   = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
 
-# centos_gfx_machine_type = "n1-standard-2"
-# centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
+# centos_gfx_machine_type      = "n1-standard-2"
+# centos_gfx_accelerator_type  = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1
-# centos_gfx_disk_size_gb = 50
-# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20210122"
+# centos_gfx_disk_size_gb      = 50
+# centos_gfx_disk_image        = "projects/centos-cloud/global/images/centos-7-v20210122"
 
 # centos_std_machine_type = "n1-standard-2"
 # centos_std_disk_size_gb = 50
-# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20210122"
+# centos_std_disk_image   = "projects/centos-cloud/global/images/centos-7-v20210122"
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -138,9 +138,9 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
 
 # <-- Start of secrets section, do not edit this line. -->
-dc_admin_password           = "SecuRe_pwd1"
-safe_mode_admin_password    = "SecuRe_pwd2"
-ad_service_account_password = "SecuRe_pwd3"
-cam_gui_admin_password      = "SecuRe_pwd4"
-pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cam_gcp_credentials_file    = "/path/to/gcp_cred.json"
+dc_admin_password            = "SecuRe_pwd1"
+safe_mode_admin_password     = "SecuRe_pwd2"
+ad_service_account_password  = "SecuRe_pwd3"
+cas_mgr_admin_password       = "SecuRe_pwd4"
+pcoip_registration_code      = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+cas_mgr_gcp_credentials_file = "/path/to/gcp_cred.json"

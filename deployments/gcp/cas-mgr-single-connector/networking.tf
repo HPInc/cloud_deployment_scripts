@@ -54,7 +54,7 @@ resource "google_compute_firewall" "allow-internal" {
 
   source_ranges = [
     var.dc_subnet_cidr,
-    var.cam_subnet_cidr,
+    var.cas_mgr_subnet_cidr,
     var.cac_subnet_cidr,
     var.ws_subnet_cidr,
   ]
@@ -174,9 +174,9 @@ resource "google_compute_subnetwork" "dc-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cam-subnet" {
-  name          = "${local.prefix}${var.cam_subnet_name}"
-  ip_cidr_range = var.cam_subnet_cidr
+resource "google_compute_subnetwork" "cas-mgr-subnet" {
+  name          = "${local.prefix}${var.cas_mgr_subnet_name}"
+  ip_cidr_range = var.cas_mgr_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 

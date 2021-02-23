@@ -8,8 +8,8 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
 
   gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
@@ -26,10 +26,10 @@ resource "google_storage_bucket" "scripts" {
   force_destroy = true
 }
 
-resource "google_storage_bucket_object" "cam-deployment-sa-file" {
+resource "google_storage_bucket_object" "cas-mgr-deployment-sa-file" {
   bucket = google_storage_bucket.scripts.name
-  name   = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
+  name   = local.cas_mgr_deployment_sa_file
+  source = var.cas_mgr_deployment_sa_file
 }
 
 module "dc" {
@@ -70,7 +70,7 @@ module "cac-igm" {
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = var.cam_url
+  cas_mgr_url             = var.cas_mgr_url
   pcoip_registration_code = var.pcoip_registration_code
 
   domain_name                 = var.domain_name
@@ -78,8 +78,8 @@ module "cac-igm" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name             = google_storage_bucket.scripts.name
-  cam_deployment_sa_file  = local.cam_deployment_sa_file
+  bucket_name                 = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file  = local.cas_mgr_deployment_sa_file
 
   gcp_region_list = var.cac_region_list
   subnet_list     = google_compute_subnetwork.cac-subnets[*].self_link

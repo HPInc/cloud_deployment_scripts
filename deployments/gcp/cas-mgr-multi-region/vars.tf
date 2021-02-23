@@ -94,7 +94,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "ad_service_account_password" {
@@ -113,58 +113,58 @@ variable "domain_users_list" {
   }
 }
 
-variable "cam_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Manager"
-  default     = "subnet-cam"
+variable "cas_mgr_subnet_name" {
+  description = "Name for subnet containing the CAS Manager"
+  default     = "subnet-cas-mgr"
 }
 
-variable "cam_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Manager"
+variable "cas_mgr_subnet_cidr" {
+  description = "CIDR for subnet containing the CAS Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cam_machine_type" {
-  description = "Machine type for Cloud Access Manager"
+variable "cas_mgr_machine_type" {
+  description = "Machine type for CAS Manager"
   default     = "e2-standard-4"
 }
 
-variable "cam_disk_size_gb" {
-  description = "Disk size (GB) of Cloud Access Manager"
+variable "cas_mgr_disk_size_gb" {
+  description = "Disk size (GB) of CAS Manager"
   default     = 60
 }
 
-variable "cam_disk_image" {
-  description = "Disk image for the Cloud Access Manager"
+variable "cas_mgr_disk_image" {
+  description = "Disk image for the CAS Manager"
   default     = "projects/centos-cloud/global/images/family/centos-8"
 }
 
-variable "cam_admin_user" {
-  description = "Username of Cloud Access Manager Administrator (SSH)"
-  default     = "cam_admin"
+variable "cas_mgr_admin_user" {
+  description = "Username of CAS Manager Administrator (SSH)"
+  default     = "cas_admin"
 }
 
-variable "cam_admin_ssh_pub_key_file" {
-  description = "SSH public key for Cloud Access Manager Administrator"
+variable "cas_mgr_admin_ssh_pub_key_file" {
+  description = "SSH public key for CAS Manager Administrator"
   type        = string
 
   validation {
-    condition = fileexists(var.cam_admin_ssh_pub_key_file)
-    error_message = "The cam_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+    condition = fileexists(var.cas_mgr_admin_ssh_pub_key_file)
+    error_message = "The cas_mgr_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
-variable "cam_gui_admin_password" {
-  description = "Password for the Administrator of Cloud Access Manager"
+variable "cas_mgr_admin_password" {
+  description = "Password for the Administrator of CAS Manager"
   type        = string
 }
 
-variable "cam_gcp_credentials_file" {
-  description = "Location of GCP Service Account key file to be used by CAM"
+variable "cas_mgr_gcp_credentials_file" {
+  description = "Location of GCP Service Account key file to be used by CAS Manager"
   type        = string
 
   validation {
-    condition = fileexists(var.cam_gcp_credentials_file)
-    error_message = "The cam_gcp_credentials_file specified does not exist. Please check the file path."
+    condition = fileexists(var.cas_mgr_gcp_credentials_file)
+    error_message = "The cas_mgr_gcp_credentials_file specified does not exist. Please check the file path."
   }
 }
 
@@ -206,7 +206,7 @@ variable "cac_disk_image" {
 # TODO: does this have to match the tag at the end of the SSH pub key?
 variable "cac_admin_user" {
   description = "Username of Cloud Access Connector Administrator"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "cac_admin_ssh_pub_key_file" {
@@ -280,7 +280,7 @@ variable "enable_workstation_public_ip" {
 }
 
 variable "enable_workstation_idle_shutdown" {
-  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  description = "Enable auto idle shutdown for Workstations"
   default     = true
 }
 
@@ -416,7 +416,7 @@ variable "centos_std_disk_image" {
 
 variable "centos_admin_user" {
   description = "Username of CentOS Workstations"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "centos_admin_ssh_pub_key_file" {

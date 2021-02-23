@@ -8,8 +8,8 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   # Name of GCP service account key file in bucket
   gcp_sa_file = "gcp-sa-key.json"
 
@@ -34,7 +34,7 @@ resource "google_storage_bucket" "scripts" {
 resource "google_storage_bucket_object" "gcp-sa-file" {
   bucket = google_storage_bucket.scripts.name
   name   = local.gcp_sa_file
-  source = var.cam_gcp_credentials_file
+  source = var.cas_mgr_gcp_credentials_file
 }
 
 module "dc" {
@@ -68,36 +68,36 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
-module "cam" {
-  source = "../../../modules/gcp/cam"
+module "cas-mgr" {
+  source = "../../../modules/gcp/cas-mgr"
 
   prefix = var.prefix
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
-  cam_gui_admin_password  = var.cam_gui_admin_password
+  cas_mgr_admin_password  = var.cas_mgr_admin_password
   
-  bucket_name            = google_storage_bucket.scripts.name
-  cam_deployment_sa_file = local.cam_deployment_sa_file
-  gcp_sa_file            = local.gcp_sa_file
+  bucket_name                = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
+  gcp_sa_file                = local.gcp_sa_file
 
   gcp_region   = var.gcp_region
   gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.cam-subnet.self_link
+  subnet       = google_compute_subnetwork.cas-mgr-subnet.self_link
   network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-https.name,
   ]
 
-  machine_type   = var.cam_machine_type
-  disk_size_gb   = var.cam_disk_size_gb
+  machine_type   = var.cas_mgr_machine_type
+  disk_size_gb   = var.cas_mgr_disk_size_gb
 
-  disk_image = var.cam_disk_image
+  disk_image = var.cas_mgr_disk_image
 
-  cam_admin_user              = var.cam_admin_user
-  cam_admin_ssh_pub_key_file  = var.cam_admin_ssh_pub_key_file
+  cas_mgr_admin_user              = var.cas_mgr_admin_user
+  cas_mgr_admin_ssh_pub_key_file  = var.cas_mgr_admin_ssh_pub_key_file
 }
 
 module "cac" {
@@ -107,8 +107,8 @@ module "cac" {
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = "https://${module.cam.internal-ip}"
-  cam_insecure            = true
+  cas_mgr_url             = "https://${module.cas-mgr.internal-ip}"
+  cas_mgr_insecure        = true
   pcoip_registration_code = var.pcoip_registration_code
   
   domain_name                 = var.domain_name
@@ -116,8 +116,8 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name            = google_storage_bucket.scripts.name
-  cam_deployment_sa_file = local.cam_deployment_sa_file
+  bucket_name                = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
   gcp_region_list        = var.cac_region_list
   subnet_list            = google_compute_subnetwork.cac-subnets[*].self_link
