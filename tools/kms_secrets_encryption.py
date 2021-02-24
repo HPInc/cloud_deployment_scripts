@@ -291,7 +291,8 @@ class Tfvars_Encryptor(ABC):
         # Decrypt all secrets
         try:
             for secret in self.tfvars_parser.tfvars_secrets:
-                # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
+                # Additional handling needed if the string is a path to a file
+                # e.g. cas_mgr_deployment_sa_file
                 if os.path.isfile(self.tfvars_parser.tfvars_secrets.get(secret)):
                     self.tfvars_parser.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_parser.tfvars_secrets.get(secret))
                 else:
@@ -355,7 +356,8 @@ class Tfvars_Encryptor(ABC):
         # Encrypt all secrets found in the tfvars_secrets dictionary
         try:
             for secret in self.tfvars_parser.tfvars_secrets:
-                # Additional handling needed if the string is a path to a file (IE. cam_credentials_file)
+                # Additional handling needed if the string is a path to a file
+                # e.g. cas_mgr_deployment_sa_file
                 if os.path.isfile(self.tfvars_parser.tfvars_secrets.get(secret)):
                     self.tfvars_parser.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_parser.tfvars_secrets.get(secret))
                 else:
