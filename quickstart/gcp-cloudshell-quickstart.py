@@ -7,7 +7,6 @@
 
 import base64
 import datetime
-import getpass
 import importlib
 import json
 import os
@@ -20,6 +19,7 @@ import textwrap
 import time
 
 import casmgr
+import password_validation
 
 REQUIRED_PACKAGES = {
     'google-api-python-client': None, 
@@ -213,35 +213,6 @@ def quickstart_config_read(cfg_file):
     return cfg_data
 
 
-def ad_password_get():
-    txt = r'''
-    Please enter a password for the Active Directory Administrator.
-
-    Note Windows passwords must be at least 7 characters long and meet complexity
-    requirements:
-    1. Must not contain user's account name or display name
-    2. Must have 3 of the following categories:
-       - a-z
-       - A-Z
-       - 0-9
-       - special characters: ~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/
-       - unicode characters
-    See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
-    '''
-    print(textwrap.dedent(txt))
-    while True:
-        password1 = getpass.getpass('Enter a password: ').strip()
-        password2 = getpass.getpass('Re-enter the password: ').strip()
-
-        if password1 == password2:
-            print('')
-            break
-
-        print('The passwords do not match.  Please try again.')
-
-    return password1
-
-
 def service_account_find(email):
     service_accounts = iam_service.projects().serviceAccounts().list(
         name = f'projects/{PROJECT_ID}',
@@ -375,7 +346,7 @@ if __name__ == '__main__':
 
     cfg_data = quickstart_config_read(CFG_FILE_PATH)
 
-    password = ad_password_get()
+    password = password_validation.ad_password_get(ENTITLE_USER)
 
     print('Preparing local requirements...')
     os.chdir('../')

@@ -1,27 +1,16 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 Teradici Corporation
+# Copyright (c) 2021 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import base64
-import datetime
 import getpass
-import importlib
-import json
-import os
 import re
-import shutil
-import site
-import subprocess
-import sys
 import textwrap
 import time
-
-import cam
  
-def ad_password_get():
+def ad_password_get(username):
     txt = r'''
     Please enter a password for the Active Directory Administrator.
 
@@ -37,78 +26,78 @@ def ad_password_get():
     See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
     '''
     print(textwrap.dedent(txt))
-    while True:
+
+    password = None
+
+    while password is None:
         password1 = getpass.getpass('Enter a password: ').strip()
-        password2 = getpass.getpass('Re-enter the password: ').strip()
+        if not ad_password_validate(password1, username):
+            print("Please try again.")
+            continue
+        for x in range(3):
+            password2 = getpass.getpass('Re-enter the password: ').strip()
+            if password1 == password2:
+                password = password1
+                break
+            print(f'The passwords do not match. {(2-x)} tries left.')
+        print('\n')
 
-        if password1 == password2:
-            print('')
-            break
+    return password
 
-        print('The passwords do not match.  Please try again.')
+def ad_password_validate(password, username):
 
-    return password1
+    # replace any hyphens with dash
+    username_parsed = username.replace('—','-')
 
-def ad_password_validate(password):
-    #check length
+    username_parsed = re.split("[,.\-\_#\s\t]", username_parsed)
+    for u in username_parsed:
+        if len(u) < 3:
+            continue
+        if re.search(u, password, re.IGNORECASE):
+            print("Password cannot contain username.", end=' ')
+            return False
+    
     if len(password) < 7:
+        print("Password must be at least 7 characters long.", end=' ')
         return False
     
-    count = 0
-    response = "Successful. Password contains: "
+    check = []
 
     #check lowercase
-    regex = "(?=.*[a-z])"
+    regex = "([a-z])"
     pattern = re.compile(regex)
     match = re.search(pattern, password)
     if match:
-        count += 1
-        response += "a-z, "
+        check.append(regex)
 
     #check uppercase
-    regex = "(?=.*[A-Z])"
+    regex = "([A-Z])"
     pattern = re.compile(regex)
     match = re.search(pattern, password)
     if match:
-        count += 1
-        response += "A-Z, "
+        check.append(regex)
 
     #check number
-    regex = "(?=.*\d)"
+    regex = "(\d)"
     pattern = re.compile(regex)
     match = re.search(pattern, password)
     if match:
-        count += 1
-        response += "0-9, "
+        check.append(regex)
 
     #check special characters
-    regex = "(?=.*[@$!%*#?&])"
+    regex = "([@$!%*#?&])"
     pattern = re.compile(regex)
     match = re.search(pattern, password)
     if match:
-        count += 1
-        response += "special characters, "
-    
-    #check 
+        check.append(regex)
+
+    #check unicode
     if f'b\'{password}\'' != f'{password.encode("utf-8")}':
-        count += 1
-        response += "unicode characters."
-    
-    if (count > 2):
-        print(response)
+        check.append("unicode")
+
+    if (len(check) > 2):
         return True
     else:
-        print("Warning: password do not meet the complexity requirements. Please try again.")
+        print("Password does not meet the complexity requirements.", end=' ')
         return False
-
- 
-if __name__ == '__main__':   
-
-    # For testing
-    # Test #1: 123456
-    # Test #2: SECure_3
-    # Test #3: Ġabc123
-    while (True):
-        password = ad_password_get()
-        if ad_password_validate(password):
-            break
+    
