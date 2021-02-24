@@ -25,8 +25,8 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Filename of CAM Deployment Service Account JSON key in bucket"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
@@ -36,68 +36,68 @@ variable "gcp_sa_file" {
 }
 
 variable "gcp_region" {
-  description = "GCP Region to deploy the Cloud Access Managers"
+  description = "GCP Region to deploy the CAS Managers"
   type        = string
 }
 
 variable "gcp_zone" {
-  description = "GCP Zone to deploy the Cloud Access Managers"
+  description = "GCP Zone to deploy the CAS Managers"
   type        = string
 }
 
 variable "subnet" {
-  description = "Subnet to deploy the Cloud Access Managers"
+  description = "Subnet to deploy the CAS Managers"
   type        = string
 }
 
 variable "enable_public_ip" {
-  description = "Assign a public IP to Cloud Access Manager"
+  description = "Assign a public IP to CAS Manager"
   type        = bool
   default     = true
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the Cloud Access Manager"
+  description = "Tags to be applied to the CAS Manager"
   type        = list(string)
 }
 
 variable "host_name" {
   description = "Name to give the host"
-  default     = "vm-cam"
+  default     = "vm-cas-mgr"
 }
 
 variable "machine_type" {
-  description = "Machine type for the Cloud Access Manager (min 8 GB RAM, 4 CPUs)"
+  description = "Machine type for the CAS Manager (min 8 GB RAM, 4 CPUs)"
   default     = "e2-custom-4-8192"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Manager (min 60 GB)"
+  description = "Disk size (GB) of the CAS Manager (min 60 GB)"
   default     = "60"
 }
 
 variable "disk_image" {
-  description = "Disk image for the Cloud Access Manager"
+  description = "Disk image for the CAS Manager"
   default     = "projects/centos-cloud/global/images/family/centos-8"
 }
 
-variable "cam_admin_user" {
-  description = "Username of the Cloud Access Manager Administrator"
+variable "cas_mgr_admin_user" {
+  description = "Username of the CAS Manager Administrator"
   type        = string
 }
 
-variable "cam_admin_ssh_pub_key_file" {
-  description = "SSH public key for the Cloud Access Manager Administrator"
+variable "cas_mgr_admin_ssh_pub_key_file" {
+  description = "SSH public key for the CAS Manager Administrator"
   type        = string
 }
 
-variable "cam_gui_admin_password" {
-  description = "Password for the Administrator of Cloud Access Manager"
+variable "cas_mgr_admin_password" {
+  description = "Password for the Administrator of CAS Manager"
   type        = string
 }
 
-variable "cam_add_repo_script" {
-  description = "Location of script to add repo for Cloud Access Manager"
+variable "cas_mgr_add_repo_script" {
+  description = "Location of script to add repo for CAS Manager"
   default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-manager-dev/cfg/setup/bash.rpm.sh"
 }
 

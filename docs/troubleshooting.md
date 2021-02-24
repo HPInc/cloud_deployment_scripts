@@ -83,17 +83,17 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 
 | VM Instance      | Login User    | Log File Path                               | Description                                                 |
 | :--------------- | :------------ | :------------------------------------------ | :---------------------------------------------------------- |
-| cac              | cam_admin     | /var/log/syslog                             | Detailed system log for startup and provisioning            |
+| cac              | cas_admin     | /var/log/syslog                             | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
 |                  |               | /var/log/cloud-init-output.log              | Console output log (duplicate log from provisioning.log)    |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
-| centos-gfx       | cam_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| centos-gfx       | cas_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |
 |                  |               | /var/log/nvidia-installer.log               | Detailed log for NVIDIA driver installation                 |
-| centos-std       | cam_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| centos-std       | cas_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |

@@ -14,9 +14,9 @@ PATHS = [["single-connector", "vars.tf"],
          ["multi-region", "vars.tf"],
          ["dc-only", "vars.tf"],
          ["nlb-multi-region", "vars.tf"],
-         ["cam-single-connector", "vars.tf"],
-         ["cam-multi-region", "vars.tf"],
-         ["cam-nlb-multi-region", "vars.tf"]]
+         ["cas-mgr-single-connector", "vars.tf"],
+         ["cas-mgr-multi-region", "vars.tf"],
+         ["cas-mgr-nlb-multi-region", "vars.tf"]]
 
 
 def get_os():

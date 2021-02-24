@@ -82,74 +82,110 @@ variable "dc_admin_password" {
   type        = string
 }
 
-variable "cam_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Manager"
-  default     = "subnet-cam"
+variable "domain_name" {
+  description = "Domain name for the new domain"
+  default     = "example.com"
 }
 
-variable "cam_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Manager"
+variable "safe_mode_admin_password" {
+  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
+  type        = string
+}
+
+variable "ad_service_account_username" {
+  description = "Active Directory Service account name to be created"
+  default     = "cas_admin"
+}
+
+variable "ad_service_account_password" {
+  description = "Active Directory Service account password"
+  type        = string
+}
+
+variable "domain_users_list" {
+  description = "Active Directory users to create, in CSV format"
+  type        = string
+  default     = ""
+
+  validation {
+    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    error_message = "The domain_users_list file specified does not exist. Please check the file path."
+  }
+}
+
+variable "cas_mgr_subnet_name" {
+  description = "Name for subnet containing the CAS Manager"
+  default     = "subnet-cas-mgr"
+}
+
+variable "cas_mgr_subnet_cidr" {
+  description = "CIDR for subnet containing the CAS Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cam_machine_type" {
-  description = "Machine type for Cloud Access Manager"
+variable "cas_mgr_machine_type" {
+  description = "Machine type for CAS Manager"
   default     = "e2-standard-4"
 }
 
-variable "cam_disk_size_gb" {
-  description = "Disk size (GB) of Cloud Access Manager"
+variable "cas_mgr_disk_size_gb" {
+  description = "Disk size (GB) of CAS Manager"
   default     = 60
 }
 
-variable "cam_disk_image" {
-  description = "Disk image for the Cloud Access Manager"
+variable "cas_mgr_disk_image" {
+  description = "Disk image for the CAS Manager"
   default     = "projects/centos-cloud/global/images/family/centos-8"
 }
 
-variable "cam_admin_user" {
-  description = "Username of Cloud Access Manager Administrator (SSH)"
-  default     = "cam_admin"
+variable "cas_mgr_admin_user" {
+  description = "Username of CAS Manager Administrator (SSH)"
+  default     = "cas_admin"
 }
 
-variable "cam_admin_ssh_pub_key_file" {
-  description = "SSH public key for Cloud Access Manager Administrator"
+variable "cas_mgr_admin_ssh_pub_key_file" {
+  description = "SSH public key for CAS Manager Administrator"
   type        = string
 
   validation {
-    condition = fileexists(var.cam_admin_ssh_pub_key_file)
-    error_message = "The cam_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+    condition = fileexists(var.cas_mgr_admin_ssh_pub_key_file)
+    error_message = "The cas_mgr_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
-variable "cam_gui_admin_password" {
-  description = "Password for the Administrator of Cloud Access Manager"
+variable "cas_mgr_admin_password" {
+  description = "Password for the Administrator of CAS Manager"
   type        = string
 }
 
-variable "cam_gcp_credentials_file" {
-  description = "Location of GCP Service Account key file to be used by CAM"
+variable "cas_mgr_gcp_credentials_file" {
+  description = "Location of GCP Service Account key file to be used by CAS Manager"
   type        = string
 
   validation {
-    condition = fileexists(var.cam_gcp_credentials_file)
-    error_message = "The cam_gcp_credentials_file specified does not exist. Please check the file path."
+    condition = fileexists(var.cas_mgr_gcp_credentials_file)
+    error_message = "The cas_mgr_gcp_credentials_file specified does not exist. Please check the file path."
   }
+}
+
+variable "cac_region_list" {
+  description = "Regions in which to deploy Connectors"
+  type        = list(string)
 }
 
 variable "cac_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Connector"
+  description = "Name for subnets containing the Cloud Access Connector"
   default     = "subnet-cac"
 }
 
-variable "cac_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Connector"
-  default     = "10.0.1.0/24"
+variable "cac_subnet_cidr_list" {
+  description = "CIDRs for subnets containing the Cloud Access Connector"
+  type        = list(string)
 }
 
-variable "cac_instance_count" {
-  description = "Number of Cloud Access Connector instances"
-  default     = 1
+variable "cac_instance_count_list" {
+  description = "Number of Cloud Access Connector instances to deploy in each region"
+  type        = list(number)
 }
 
 variable "cac_machine_type" {
@@ -170,7 +206,7 @@ variable "cac_disk_image" {
 # TODO: does this have to match the tag at the end of the SSH pub key?
 variable "cac_admin_user" {
   description = "Username of Cloud Access Connector Administrator"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "cac_admin_ssh_pub_key_file" {
@@ -183,55 +219,44 @@ variable "cac_admin_ssh_pub_key_file" {
   }
 }
 
-variable "cac_ssl_key" {
-  description = "SSL private key for the Connector"
-  default     = ""
-
-  validation {
-    condition = var.cac_ssl_key == "" ? true : fileexists(var.cac_ssl_key)
-    error_message = "The cac_ssl_key file specified does not exist. Please check the file path."
+variable "cac_health_check" {
+  description = "Health check configuration for Cloud Access Connector"
+  default = {
+    path         = "/pcoip-broker/xml"
+    port         = 443
+    interval_sec = 5
+    timeout_sec  = 5
   }
 }
 
-variable "cac_ssl_cert" {
-  description = "SSL certificate for the Connector"
+variable "glb_ssl_key" {
+  description = "SSL private key for the Global Load Balancer in PEM format"
   default     = ""
 
   validation {
-    condition = var.cac_ssl_cert == "" ? true : fileexists(var.cac_ssl_cert)
-    error_message = "The cac_ssl_cert file specified does not exist. Please check the file path."
+    condition = var.glb_ssl_key == "" ? true : fileexists(var.glb_ssl_key)
+    error_message = "The global ssl_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "domain_name" {
-  description = "Domain name for the new domain"
-  default     = "example.com"
-}
-
-variable "safe_mode_admin_password" {
-  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
-  type        = string
-}
-
-variable "ad_service_account_username" {
-  description = "Active Directory Service account name to be created"
-  default     = "cam_admin"
-}
-
-variable "ad_service_account_password" {
-  description = "Active Directory Service account password"
-  type        = string
-}
-
-variable "domain_users_list" {
-  description = "Active Directory users to create, in CSV format"
-  type        = string
+variable "glb_ssl_cert" {
+  description = "SSL certificate for the Global Load Balancer in PEM format"
   default     = ""
 
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
-    error_message = "The domain_users_list file specified does not exist. Please check the file path."
+    condition = var.glb_ssl_cert == "" ? true : fileexists(var.glb_ssl_cert)
+    error_message = "The global ssl_cert file specified does not exist. Please check the file path."
   }
+}
+
+variable "ws_region_list" {
+  description = "Regions in which to deploy Workstations"
+  type        = list(string)
+}
+
+variable "ws_zone_list" {
+  description = "Zones in which to deploy Workstations"
+  type        = list(string)
 }
 
 variable "ws_subnet_name" {
@@ -239,9 +264,9 @@ variable "ws_subnet_name" {
   default     = "subnet-ws"
 }
 
-variable "ws_subnet_cidr" {
-  description = "CIDR for subnet containing Remote Workstations"
-  default     = "10.0.2.0/24"
+variable "ws_subnet_cidr_list" {
+  description = "CIDR for subnets containing Remote Workstations"
+  type        = list(string)
 }
 
 variable "pcoip_registration_code" {
@@ -255,7 +280,7 @@ variable "enable_workstation_public_ip" {
 }
 
 variable "enable_workstation_idle_shutdown" {
-  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  description = "Enable auto idle shutdown for Workstations"
   default     = true
 }
 
@@ -269,9 +294,9 @@ variable "minutes_cpu_polling_interval" {
   default     = 15
 }
 
-variable "win_gfx_instance_count" {
-  description = "Number of Windows Graphics Workstations"
-  default     = 0
+variable "win_gfx_instance_count_list" {
+  description = "Number of Windows Graphics Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "win_gfx_instance_name" {
@@ -304,9 +329,9 @@ variable "win_gfx_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
-variable "win_std_instance_count" {
-  description = "Number of Windows Standard Workstations"
-  default     = 0
+variable "win_std_instance_count_list" {
+  description = "Number of Windows Standard Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "win_std_instance_name" {
@@ -329,9 +354,9 @@ variable "win_std_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
-variable "centos_gfx_instance_count" {
-  description = "Number of CentOS Graphics Workstations"
-  default     = 0
+variable "centos_gfx_instance_count_list" {
+  description = "Number of CentOS Graphics Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "centos_gfx_instance_name" {
@@ -364,9 +389,9 @@ variable "centos_gfx_disk_image" {
   default     = "projects/centos-cloud/global/images/centos-7-v20210122"
 }
 
-variable "centos_std_instance_count" {
-  description = "Number of CentOS Standard Workstations"
-  default     = 0
+variable "centos_std_instance_count_list" {
+  description = "Number of CentOS Standard Workstations to deploy in each region"
+  type        = list(number)
 }
 
 variable "centos_std_instance_name" {
@@ -391,7 +416,7 @@ variable "centos_std_disk_image" {
 
 variable "centos_admin_user" {
   description = "Username of CentOS Workstations"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "centos_admin_ssh_pub_key_file" {
