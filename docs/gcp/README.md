@@ -41,6 +41,8 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 
 ### Requirements
 - the user must have owner permissions to a GCP project
+- ensure there is sufficient quota in the GCP project for the chosen number of workstations. Please check the quota here: https://console.cloud.google.com/iam-admin/quotas
+- ensure that the GPU virtual workstation for the graphics machines are available in the specified region and zone. Please check the availability here: https://cloud.google.com/compute/docs/gpus/gpu-regions-zones
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - for deployments using CAS Manager as a Service, a CAS Manager Deployment Service Account is needed. Please see the [CAS Manager as a Service Setup](#cas-manager-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup](/docs/ssh-key-pair-setup.md) for instructions.
