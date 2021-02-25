@@ -8,8 +8,8 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  provisioning_script  = "cac-provisioning.sh"
-  cam_script           = "get-cac-token.py"
+  provisioning_script = "cac-provisioning.sh"
+  cas_mgr_script      = "get-cac-token.py"
 
   num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_region_list)
@@ -36,8 +36,8 @@ resource "google_storage_bucket_object" "get-cac-token-script" {
   count = local.num_cacs == 0 ? 0 : 1
 
   bucket = var.bucket_name
-  name   = local.cam_script
-  source = "${path.module}/${local.cam_script}"
+  name   = local.cas_mgr_script
+  source = "${path.module}/${local.cas_mgr_script}"
 }
 
 # This is needed so new VMs will be based on the same image in case the public
@@ -60,10 +60,10 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       ad_service_account_username = var.ad_service_account_username,
       bucket_name                 = var.bucket_name,
       cac_installer_url           = var.cac_installer_url,
-      cam_deployment_sa_file      = var.cam_deployment_sa_file,
-      cam_insecure                = var.cam_insecure ? "true" : "",
-      cam_script                  = local.cam_script,
-      cam_url                     = var.cam_url,
+      cas_mgr_deployment_sa_file  = var.cas_mgr_deployment_sa_file,
+      cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "",
+      cas_mgr_script              = local.cas_mgr_script,
+      cas_mgr_url                 = var.cas_mgr_url,
       domain_controller_ip        = var.domain_controller_ip,
       domain_group                = var.domain_group,
       domain_name                 = var.domain_name,

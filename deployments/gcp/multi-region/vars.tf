@@ -94,7 +94,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "ad_service_account_password" {
@@ -151,7 +151,7 @@ variable "cac_disk_image" {
 # TODO: does this have to match the tag at the end of the SSH pub key?
 variable "cac_admin_user" {
   description = "Username of Cloud Access Connector Administrator"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "cac_admin_ssh_pub_key_file" {
@@ -214,18 +214,18 @@ variable "ws_subnet_cidr_list" {
   type        = list(string)
 }
 
-variable "cam_url" {
-  description = "cam server url."
+variable "cas_mgr_url" {
+  description = "CAS Manager as a Service URL"
   default     = "https://cam.teradici.com"
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account account JSON file"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Location of CAS Manager Deployment Service Account JSON file"
   type        = string
 
   validation {
-    condition = fileexists(var.cam_deployment_sa_file)
-    error_message = "The cam_deployment_sa_file specified does not exist. Please check the file path."
+    condition = fileexists(var.cas_mgr_deployment_sa_file)
+    error_message = "The cas_mgr_deployment_sa_file specified does not exist. Please check the file path."
   }
 }
 
@@ -234,13 +234,18 @@ variable "pcoip_registration_code" {
   type        = string
 }
 
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
+}
+
 variable "enable_workstation_public_ip" {
   description = "Enable public IP for Workstations"
   default     = false
 }
 
 variable "enable_workstation_idle_shutdown" {
-  description = "Enable Cloud Access Manager auto idle shutdown for Workstations"
+  description = "Enable auto idle shutdown for Workstations"
   default     = true
 }
 
@@ -289,6 +294,11 @@ variable "win_gfx_disk_image" {
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
 }
 
+variable "win_gfx_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Windows Graphics Workstations"
+  default     = "latest"
+}
+
 variable "win_std_instance_count_list" {
   description = "Number of Windows Standard Workstations to deploy in each region"
   type        = list(number)
@@ -312,6 +322,11 @@ variable "win_std_disk_size_gb" {
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
   default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+}
+
+variable "win_std_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Windows Standard Workstations"
+  default     = "latest"
 }
 
 variable "centos_gfx_instance_count_list" {
@@ -376,7 +391,7 @@ variable "centos_std_disk_image" {
 
 variable "centos_admin_user" {
   description = "Username of CentOS Workstations"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "centos_admin_ssh_pub_key_file" {

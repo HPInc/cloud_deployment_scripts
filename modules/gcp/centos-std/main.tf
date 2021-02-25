@@ -33,18 +33,17 @@ resource "google_storage_bucket_object" "centos-std-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      kms_cryptokey_id            = var.kms_cryptokey_id,
-      pcoip_registration_code     = var.pcoip_registration_code,
+      ad_service_account_password = var.ad_service_account_password,
+      ad_service_account_username = var.ad_service_account_username,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
-      ad_service_account_username = var.ad_service_account_username,
-      ad_service_account_password = var.ad_service_account_password,
-      pcoip_agent_repo_pubkey_url = var.pcoip_agent_repo_pubkey_url,
-      pcoip_agent_repo_url        = var.pcoip_agent_repo_url,
+      kms_cryptokey_id            = var.kms_cryptokey_id,
+      pcoip_registration_code     = var.pcoip_registration_code,
+      teradici_download_token     = var.teradici_download_token,
 
       enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
-      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
       minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval,
+      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
     }
   )
 }

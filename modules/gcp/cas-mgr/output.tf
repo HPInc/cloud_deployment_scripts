@@ -6,9 +6,9 @@
  */
 
 output "internal-ip" {
-  value = google_compute_instance.cam.network_interface[0].network_ip
+  value = google_compute_instance.cas-mgr.network_interface[0].network_ip
 }
 
 output "public-ip" {
-  value = var.enable_public_ip ? google_compute_instance.cam.network_interface[0].access_config[0].nat_ip : null 
+  value = var.enable_public_ip ? google_compute_instance.cas-mgr.network_interface[0].access_config[0].nat_ip : null 
 }

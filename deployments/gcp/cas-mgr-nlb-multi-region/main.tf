@@ -8,14 +8,16 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
+  # Name of GCP service account key file in bucket
+  gcp_sa_file = "gcp-sa-key.json"
+
+  all_region_set = setunion(var.cac_region_list, var.ws_region_list)
+  num_regions = length(local.all_region_set)
 
   gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
-
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
-  # Name of GCP service account key file in bucket
-  gcp_sa_file = "gcp-sa-key.json"
 }
 
 resource "random_id" "bucket-name" {
@@ -32,7 +34,7 @@ resource "google_storage_bucket" "scripts" {
 resource "google_storage_bucket_object" "gcp-sa-file" {
   bucket = google_storage_bucket.scripts.name
   name   = local.gcp_sa_file
-  source = var.cam_gcp_credentials_file
+  source = var.cas_mgr_gcp_credentials_file
 }
 
 module "dc" {
@@ -66,36 +68,36 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
-module "cam" {
-  source = "../../../modules/gcp/cam"
+module "cas-mgr" {
+  source = "../../../modules/gcp/cas-mgr"
 
   prefix = var.prefix
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
-  cam_gui_admin_password  = var.cam_gui_admin_password
+  cas_mgr_admin_password  = var.cas_mgr_admin_password
   
-  bucket_name            = google_storage_bucket.scripts.name
-  cam_deployment_sa_file = local.cam_deployment_sa_file
-  gcp_sa_file            = local.gcp_sa_file
+  bucket_name                = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
+  gcp_sa_file                = local.gcp_sa_file
 
   gcp_region   = var.gcp_region
   gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.cam-subnet.self_link
+  subnet       = google_compute_subnetwork.cas-mgr-subnet.self_link
   network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-https.name,
   ]
 
-  machine_type   = var.cam_machine_type
-  disk_size_gb   = var.cam_disk_size_gb
+  machine_type   = var.cas_mgr_machine_type
+  disk_size_gb   = var.cas_mgr_disk_size_gb
 
-  disk_image = var.cam_disk_image
+  disk_image = var.cas_mgr_disk_image
 
-  cam_admin_user              = var.cam_admin_user
-  cam_admin_ssh_pub_key_file  = var.cam_admin_ssh_pub_key_file
+  cas_mgr_admin_user              = var.cas_mgr_admin_user
+  cas_mgr_admin_ssh_pub_key_file  = var.cas_mgr_admin_ssh_pub_key_file
 }
 
 module "cac" {
@@ -105,8 +107,8 @@ module "cac" {
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = "https://${module.cam.internal-ip}"
-  cam_insecure            = true
+  cas_mgr_url             = "https://${module.cas-mgr.internal-ip}"
+  cas_mgr_insecure        = true
   pcoip_registration_code = var.pcoip_registration_code
   
   domain_name                 = var.domain_name
@@ -114,18 +116,19 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name            = google_storage_bucket.scripts.name
-  cam_deployment_sa_file = local.cam_deployment_sa_file
+  bucket_name                = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
-  gcp_region_list = [var.gcp_region]
-  subnet_list     = [google_compute_subnetwork.cac-subnet.self_link]
-  network_tags    = [
+  gcp_region_list        = var.cac_region_list
+  subnet_list            = google_compute_subnetwork.cac-subnets[*].self_link
+  external_pcoip_ip_list = google_compute_address.nlb-ip[*].address
+  network_tags      = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,
   ]
 
-  instance_count_list = [var.cac_instance_count]
+  instance_count_list = var.cac_instance_count_list
   machine_type        = var.cac_machine_type
   disk_size_gb        = var.cac_disk_size_gb
 
@@ -138,6 +141,66 @@ module "cac" {
   ssl_cert = var.cac_ssl_cert
 }
 
+resource "google_compute_target_pool" "cac" {
+  count = length(var.cac_region_list)
+
+  name = "${local.prefix}instance-pool-${var.cac_region_list[count.index]}"
+
+  region           = var.cac_region_list[count.index]
+  session_affinity = "CLIENT_IP"
+
+  instances = module.cac.instance-self-link-list[count.index]
+
+  # TODO: Google Network Load Balancer only support legacy HTTP health check
+  #health_checks =
+}
+
+resource "google_compute_address" "nlb-ip" {
+  count = length(var.cac_region_list)
+
+  name = "${local.prefix}nlb-ip-${var.cac_region_list[count.index]}"
+  region = var.cac_region_list[count.index]
+  address_type = "EXTERNAL"
+}
+
+resource "google_compute_forwarding_rule" "cac-https" {
+  count = length(var.cac_region_list)
+
+  name = "${local.prefix}cac-https-fwdrule-${var.cac_region_list[count.index]}"
+  region = var.cac_region_list[count.index]
+  load_balancing_scheme = "EXTERNAL"
+  ip_address = google_compute_address.nlb-ip[count.index].address
+  ip_protocol = "TCP"
+  port_range = "443"
+  target = google_compute_target_pool.cac[count.index].self_link
+}
+
+resource "google_compute_forwarding_rule" "cac-tcp4172" {
+  count = length(var.cac_region_list)
+
+  name = "${local.prefix}cac-tcp4172-fwdrule-${var.cac_region_list[count.index]}"
+  ip_address = google_compute_address.nlb-ip[count.index].address
+  region = var.cac_region_list[count.index]
+  load_balancing_scheme = "EXTERNAL"
+
+  ip_protocol = "TCP"
+  port_range = "4172"
+  target = google_compute_target_pool.cac[count.index].self_link
+}
+
+resource "google_compute_forwarding_rule" "cac-udp4172" {
+  count = length(var.cac_region_list)
+
+  name = "${local.prefix}cac-udp4172-fwdrule-${var.cac_region_list[count.index]}"
+  ip_address = google_compute_address.nlb-ip[count.index].address
+  region = var.cac_region_list[count.index]
+  load_balancing_scheme = "EXTERNAL"
+
+  ip_protocol = "UDP"
+  port_range = "4172"
+  target = google_compute_target_pool.cac[count.index].self_link
+}
+
 module "win-gfx" {
   source = "../../../modules/gcp/win-gfx"
 
@@ -147,6 +210,8 @@ module "win-gfx" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
+  pcoip_agent_version     = var.win_gfx_pcoip_agent_version
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -154,8 +219,8 @@ module "win-gfx" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  zone_list        = [var.gcp_zone]
-  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
+  zone_list        = var.ws_zone_list
+  subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -167,7 +232,7 @@ module "win-gfx" {
     google_compute_firewall.allow-rdp.name,
   ]
 
-  instance_count_list = [var.win_gfx_instance_count]
+  instance_count_list = var.win_gfx_instance_count_list
   instance_name       = var.win_gfx_instance_name
   machine_type        = var.win_gfx_machine_type
   accelerator_type    = var.win_gfx_accelerator_type
@@ -187,6 +252,8 @@ module "win-std" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
+  pcoip_agent_version     = var.win_std_pcoip_agent_version
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -194,8 +261,8 @@ module "win-std" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  zone_list        = [var.gcp_zone]
-  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
+  zone_list        = var.ws_zone_list
+  subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -207,7 +274,7 @@ module "win-std" {
     google_compute_firewall.allow-rdp.name,
   ]
 
-  instance_count_list = [var.win_std_instance_count]
+  instance_count_list = var.win_std_instance_count_list
   instance_name       = var.win_std_instance_name
   machine_type        = var.win_std_machine_type
   disk_size_gb        = var.win_std_disk_size_gb
@@ -225,6 +292,7 @@ module "centos-gfx" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -232,8 +300,8 @@ module "centos-gfx" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  zone_list        = [var.gcp_zone]
-  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
+  zone_list        = var.ws_zone_list
+  subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -245,7 +313,7 @@ module "centos-gfx" {
     google_compute_firewall.allow-ssh.name,
   ]
 
-  instance_count_list = [var.centos_gfx_instance_count]
+  instance_count_list = var.centos_gfx_instance_count_list
   instance_name       = var.centos_gfx_instance_name
   machine_type        = var.centos_gfx_machine_type
   accelerator_type    = var.centos_gfx_accelerator_type
@@ -268,6 +336,7 @@ module "centos-std" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -275,8 +344,8 @@ module "centos-std" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name      = google_storage_bucket.scripts.name
-  zone_list        = [var.gcp_zone]
-  subnet_list      = [google_compute_subnetwork.ws-subnet.self_link]
+  zone_list        = var.ws_zone_list
+  subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
   enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
@@ -288,7 +357,7 @@ module "centos-std" {
     google_compute_firewall.allow-ssh.name,
   ]
 
-  instance_count_list = [var.centos_std_instance_count]
+  instance_count_list = var.centos_std_instance_count_list
   instance_name       = var.centos_std_instance_name
   machine_type        = var.centos_std_machine_type
   disk_size_gb        = var.centos_std_disk_size_gb

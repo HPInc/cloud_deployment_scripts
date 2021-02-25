@@ -54,7 +54,7 @@ resource "google_compute_firewall" "allow-internal" {
 
   source_ranges = concat(
     [var.dc_subnet_cidr],
-    [var.cam_subnet_cidr],
+    [var.cas_mgr_subnet_cidr],
     var.cac_subnet_cidr_list,
     var.ws_subnet_cidr_list
   )
@@ -189,9 +189,9 @@ resource "google_compute_subnetwork" "dc-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cam-subnet" {
-  name          = "${local.prefix}${var.cam_subnet_name}"
-  ip_cidr_range = var.cam_subnet_cidr
+resource "google_compute_subnetwork" "cas-mgr-subnet" {
+  name          = "${local.prefix}${var.cas_mgr_subnet_name}"
+  ip_cidr_range = var.cas_mgr_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
@@ -221,10 +221,13 @@ resource "google_compute_address" "dc-internal-ip" {
 }
 
 resource "google_compute_router" "router" {
-  count = length(var.ws_region_list)
+  # don't use count with a list of regions here, as adding new regions 
+  # might cause unnecessary delete/recreate of resources, depending on 
+  # order of regions.
+  for_each = local.all_region_set
 
-  name    = "${local.prefix}router-${var.ws_region_list[count.index]}"
-  region  = var.ws_region_list[count.index]
+  name    = "${local.prefix}router-${each.value}"
+  region  = each.value
   network = google_compute_network.vpc.self_link
 
   bgp {
@@ -233,17 +236,43 @@ resource "google_compute_router" "router" {
 }
 
 resource "google_compute_router_nat" "nat" {
-  count = length(var.ws_region_list)
+  # don't use count with a list of regions here, as adding new regions 
+  # might cause unnecessary delete/recreate of resources, depending on 
+  # order of regions.
+  for_each = local.all_region_set
 
-  name                               = "${local.prefix}nat-${var.ws_region_list[count.index]}"
-  router                             = google_compute_router.router[count.index].name
-  region                             = var.ws_region_list[count.index]
+  name                               = "${local.prefix}nat-${each.value}"
+  router                             = google_compute_router.router[each.value].name
+  region                             = each.value
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   min_ports_per_vm                   = 2048
 
-  subnetwork {
-    name                    = google_compute_subnetwork.ws-subnets[count.index].self_link
-    source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
+  dynamic "subnetwork" {
+    # List of cac-subnets in this region
+    for_each = matchkeys(
+      google_compute_subnetwork.cac-subnets[*].self_link,
+      google_compute_subnetwork.cac-subnets[*].region,
+      [each.value]
+    )
+
+    content {
+      name = subnetwork.value
+      source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
+    }
+  }
+
+  dynamic "subnetwork" {
+    # List of ws-subnets in this region
+    for_each = matchkeys(
+      google_compute_subnetwork.ws-subnets[*].self_link,
+      google_compute_subnetwork.ws-subnets[*].region,
+      [each.value]
+    )
+
+    content {
+      name = subnetwork.value
+      source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
+    }
   }
 }

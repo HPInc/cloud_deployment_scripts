@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
-$PCOIP_AGENT_LOCATION_URL = "${pcoip_agent_location_url}"
-$PCOIP_AGENT_FILENAME     = "${pcoip_agent_filename}"
+$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/${teradici_download_token}/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/${pcoip_agent_version}"
+$PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_${pcoip_agent_version}.exe"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
@@ -114,26 +114,13 @@ function PCoIP-Agent-Install {
     }
 
     $agentInstallerDLDirectory = "C:\Teradici"
-    if (![string]::IsNullOrEmpty($PCOIP_AGENT_FILENAME)) {
-        "--> Using user-specified PCoIP standard agent filename..."
-        $agent_filename = $PCOIP_AGENT_FILENAME
-    } else {
-        "--> Using default latest PCoIP standard agent..."
-        $agent_latest = $PCOIP_AGENT_LOCATION_URL + "latest-standard-agent.json"
-        $wc = New-Object System.Net.WebClient
-
-        "--> Checking for the latest PCoIP standard agent version from $agent_latest..."
-        $string = Retry -Action {$wc.DownloadString($agent_latest)}
-
-        $agent_filename = $string | ConvertFrom-Json | Select-Object -ExpandProperty "filename"
-    }
-    $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + $agent_filename
-    $destFile = $agentInstallerDLDirectory + '\' + $agent_filename
+    $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
+    $destFile = $agentInstallerDLDirectory + '\' + $PCOIP_AGENT_FILENAME
     $wc = New-Object System.Net.WebClient
 
     "--> Downloading PCoIP standard agent from $pcoipAgentInstallerUrl..."
     Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
-    "--> Teradici PCoIP standard agent downloaded: $agent_filename"
+    "--> Teradici PCoIP standard agent downloaded: $PCOIP_AGENT_FILENAME"
 
     "--> Installing Teradici PCoIP standard agent..."
     Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot _?$destFile" -PassThru -Wait

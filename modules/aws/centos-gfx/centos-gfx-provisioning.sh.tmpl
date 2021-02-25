@@ -9,8 +9,7 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_IP="http://169.254.169.254"
-PCOIP_AGENT_REPO_PUBKEY_URL=${pcoip_agent_repo_pubkey_url}
-PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
     local message="$1"
@@ -33,7 +32,7 @@ retry() {
         if [ $count -gt $counter ]
         then
             log "$err_message"
-            exit 1
+            return 1
         else
             log "$log_message Retrying in $interval seconds"
             sleep $interval
@@ -57,7 +56,7 @@ get_credentials() {
             log "--> Decrypting pcoip_registration_code..."
             PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
         fi
-        
+
         log "--> Decrypting ad_service_account_password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
@@ -141,8 +140,11 @@ install_gpu_driver() {
         retry   3 \
                 5 \
                 "curl -f -o $gpu_installer ${nvidia_driver_url}" \
-                "--> Non-zero exit status. Retrying in $interval seconds" \
+                "--> Non-zero exit status." \
                 "--> ERROR: Failed to download GPU driver installer."
+        if [ $? -eq 1 ]; then
+            exit 1
+        fi
         log "--> GPU driver installer successfully downloaded"
 
         chmod u+x "$gpu_installer"
@@ -195,19 +197,29 @@ enable_persistence_mode() {
 install_pcoip_agent() {
     if ! (rpm -q pcoip-agent-graphics)
     then
-        log "--> Installing PCoIP agent..."
-        # Get the Teradici pubkey
-        log "--> Getting Teradici pubkey..."
-        rpm --import $PCOIP_AGENT_REPO_PUBKEY_URL
 
-        # Get PCoIP repo
         log "--> Getting Teradici PCoIP agent repo..."
-        wget --retry-connrefused --tries=3 --waitretry=5 -P /etc/yum.repos.d $PCOIP_AGENT_REPO_URL
+        curl --retry 3 --retry-delay 5 -u "token:${teradici_download_token}" -1sLf $TERADICI_REPO_SETUP_SCRIPT_URL | bash
+        if [ $? -ne 0 ]; then
+            log "--> ERROR: Failed to install PCoIP agent repo."
+            exit 1
+        fi
+        log "--> PCoIP agent repo installed successfully."
+
+        log "--> Installing USB dependencies..."
+        retry   3 \
+                5 \
+                "yum install usb-vhci" \
+                "--> Non-zero exit status." \
+                "--> Warning: Failed to install usb-vhci."
 
         log "--> Installing PCoIP graphics agent..."
-        yum -y install pcoip-agent-graphics
+        retry   3 \
+                5 \
+                "yum -y install pcoip-agent-graphics" \
+                "--> Non-zero exit status." \
+                "--> ERROR: Failed to download PCoIP agent."
         if [ $? -ne 0 ]; then
-            log "--> ERROR: Failed to install PCoIP agent."
             exit 1
         fi
         log "--> PCoIP agent installed successfully."
@@ -305,7 +317,7 @@ join_domain() {
         echo "update add $VM_NAME.${domain_name} 600 a $IP_ADDRESS" >> "$dns_record_file"
         echo "send" >> "$dns_record_file"
         nsupdate -g "$dns_record_file" > /var/sky
-        
+
         log "--> Configuring settings..."
         sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf
         sed -c -i "s/\\(use_fully_qualified_names *= *\\).*/\\1False/" /etc/sssd/sssd.conf

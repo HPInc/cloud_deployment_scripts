@@ -10,8 +10,7 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
 DECRYPT_URI="https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
-PCOIP_AGENT_REPO_PUBKEY_URL=${pcoip_agent_repo_pubkey_url}
-PCOIP_AGENT_REPO_URL=${pcoip_agent_repo_url}
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 ENABLE_AUTO_SHUTDOWN=${enable_workstation_idle_shutdown}
 AUTO_SHUTDOWN_IDLE_TIMER=${minutes_idle_before_shutdown}
@@ -178,17 +177,25 @@ enable_persistence_mode() {
 install_pcoip_agent() {
     if ! (rpm -q pcoip-agent-graphics)
     then
-        log "--> Installing PCoIP agent..."
-        # Get the Teradici pubkey
-        log "--> Getting Teradici pubkey..."
-        rpm --import $PCOIP_AGENT_REPO_PUBKEY_URL
 
-        # Get pcoip repo
         log "--> Getting Teradici PCoIP agent repo..."
-        wget --retry-connrefused --tries=3 --waitretry=5 -P /etc/yum.repos.d $PCOIP_AGENT_REPO_URL
+        curl --retry 3 --retry-delay 5 -u "token:${teradici_download_token}" -1sLf $TERADICI_REPO_SETUP_SCRIPT_URL | bash
+        if [ $? -ne 0 ]
+        then
+            log "--> ERROR: Failed to install PCoIP agent repo."
+            exit 1
+        fi
+        log "--> PCoIP agent repo installed successfully."
+
+        log "--> Installing USB dependencies..."
+        retry "yum install usb-vhci"
+        if [ $? -ne 0 ]; then
+            log "--> Warning: Failed to install usb-vhci."
+        fi
+        log "--> usb-vhci successfully installed."
 
         log "--> Installing PCoIP graphics agent..."
-        yum -y install pcoip-agent-graphics
+        retry yum -y install pcoip-agent-graphics
         if [ $? -ne 0 ]; then
             log "--> ERROR: Failed to install PCoIP agent."
             exit 1
@@ -220,7 +227,7 @@ install_idle_shutdown() {
     mkdir /tmp/idleShutdown
 
     retry wget "https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh" -O /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh
-    
+
     awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
 
     log "--> Setting auto shutdown idle timer to $AUTO_SHUTDOWN_IDLE_TIMER minutes..."
@@ -228,7 +235,7 @@ install_idle_shutdown() {
     if [[ "$ENABLE_AUTO_SHUTDOWN" = "false" ]]; then
         INSTALL_OPTS="$INSTALL_OPTS --disabled"
     fi
-    
+
     retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS
 
     exitCode=$?
@@ -276,7 +283,7 @@ join_domain() {
         while true
         do
             echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="${ad_service_account_username}@${domain_name}" "${domain_name}" --verbose >&2
-            
+
             local rc=$?
             if [[ $rc -eq 0 ]]
             then

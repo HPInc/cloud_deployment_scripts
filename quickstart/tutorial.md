@@ -23,7 +23,7 @@ Replace **`<code>`** with your PCoIP Registration code.
 If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
 
 ### api_token
-Replace **`<token>`** with the Cloud Access Manager API token.
+Replace **`<token>`** with the CAS Manager API token.
 
 Log into [https://cam.teradici.com](https://cam.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
@@ -96,13 +96,13 @@ Zone:                     "us-west2-b"
 Network:                  "vpc-cas"
 Subnetwork:               "subnet-ws"
 Domain name:              "example.com"
-Domain service account:   "cam_admin"
+Domain service account:   "cas_admin"
 Service account password: <set by you at start of script>
 ```
 5. Click **Create**
 
 ### Clean up
-  1. Using GCP console, delete all workstations created by Cloud Access Manager
+  1. Using GCP console, delete all workstations created by CAS Manager
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.

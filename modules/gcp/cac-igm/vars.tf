@@ -15,19 +15,19 @@ variable "prefix" {
   default     = ""
 }
 
-variable "cam_url" {
-  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+variable "cas_mgr_url" {
+  description = "CAS Manager URL (e.g. https://cam.teradici.com)"
   type        = string
 }
 
-variable "cam_insecure" {
-  description = "Allow unverified SSL access to Cloud Access Manager"
+variable "cas_mgr_insecure" {
+  description = "Allow unverified SSL access to CAS Manager"
   type        = bool
   default     = false
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Location of CAS Manager Deployment Service Account JSON file"
   type        = string
 }
 
@@ -47,7 +47,7 @@ variable "domain_controller_ip" {
 }
 
 variable "domain_group" {
-  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAM Admins,CN=Users,DC=example,DC=com')"
+  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAS Admins,CN=Users,DC=example,DC=com')"
   default     = "Domain Admins"
 }
 

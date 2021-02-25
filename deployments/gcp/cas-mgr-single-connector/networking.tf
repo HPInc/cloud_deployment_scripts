@@ -52,12 +52,12 @@ resource "google_compute_firewall" "allow-internal" {
     ports    = ["1-65535"]
   }
 
-  source_ranges = concat(
-    [var.dc_subnet_cidr],
-    [var.cam_subnet_cidr],
-    var.cac_subnet_cidr_list,
-    var.ws_subnet_cidr_list
-  )
+  source_ranges = [
+    var.dc_subnet_cidr,
+    var.cas_mgr_subnet_cidr,
+    var.cac_subnet_cidr,
+    var.ws_subnet_cidr,
+  ]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -71,21 +71,6 @@ resource "google_compute_firewall" "allow-ssh" {
 
   target_tags   = ["${local.prefix}fw-allow-ssh"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
-}
-
-# Open TCP/443 for Google Load balancers to perform health checks
-# https://cloud.google.com/load-balancing/docs/health-checks
-resource "google_compute_firewall" "allow-google-health-check" {
-  name    = "${local.prefix}fw-allow-google-health-check"
-  network = google_compute_network.vpc.self_link
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443"]
-  }
-
-  target_tags   = ["${local.prefix}fw-allow-google-health-check"]
-  source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
 }
 
 resource "google_compute_firewall" "allow-rdp" {
@@ -189,27 +174,21 @@ resource "google_compute_subnetwork" "dc-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cam-subnet" {
-  name          = "${local.prefix}${var.cam_subnet_name}"
-  ip_cidr_range = var.cam_subnet_cidr
+resource "google_compute_subnetwork" "cas-mgr-subnet" {
+  name          = "${local.prefix}${var.cas_mgr_subnet_name}"
+  ip_cidr_range = var.cas_mgr_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cac-subnets" {
-  count = length(var.cac_region_list)
-
-  name          = "${local.prefix}${var.cac_subnet_name}-${var.cac_region_list[count.index]}"
-  region        = var.cac_region_list[count.index]
-  ip_cidr_range = var.cac_subnet_cidr_list[count.index]
+resource "google_compute_subnetwork" "cac-subnet" {
+  name          = "${local.prefix}${var.cac_subnet_name}"
+  ip_cidr_range = var.cac_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "ws-subnets" {
-  count = length(var.ws_region_list)
-
-  name          = "${local.prefix}${var.ws_subnet_name}-${var.ws_region_list[count.index]}"
-  region        = var.ws_region_list[count.index]
-  ip_cidr_range = var.ws_subnet_cidr_list[count.index]
+resource "google_compute_subnetwork" "ws-subnet" {
+  name          = "${local.prefix}${var.ws_subnet_name}"
+  ip_cidr_range = var.ws_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
@@ -221,13 +200,8 @@ resource "google_compute_address" "dc-internal-ip" {
 }
 
 resource "google_compute_router" "router" {
-  # don't use count with a list of regions here, as adding new regions 
-  # might cause unnecessary delete/recreate of resources, depending on 
-  # order of regions.
-  for_each = local.all_region_set
-
-  name    = "${local.prefix}router-${each.value}"
-  region  = each.value
+  name    = "${local.prefix}router"
+  region  = var.gcp_region
   network = google_compute_network.vpc.self_link
 
   bgp {
@@ -236,43 +210,15 @@ resource "google_compute_router" "router" {
 }
 
 resource "google_compute_router_nat" "nat" {
-  # don't use count with a list of regions here, as adding new regions 
-  # might cause unnecessary delete/recreate of resources, depending on 
-  # order of regions.
-  for_each = local.all_region_set
-
-  name                               = "${local.prefix}nat-${each.value}"
-  router                             = google_compute_router.router[each.value].name
-  region                             = each.value
+  name                               = "${local.prefix}nat"
+  router                             = google_compute_router.router.name
+  region                             = var.gcp_region
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   min_ports_per_vm                   = 2048
 
-  dynamic "subnetwork" {
-    # List of cac-subnets in this region
-    for_each = matchkeys(
-      google_compute_subnetwork.cac-subnets[*].self_link,
-      google_compute_subnetwork.cac-subnets[*].region,
-      [each.value]
-    )
-
-    content {
-      name = subnetwork.value
-      source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
-    }
-  }
-
-  dynamic "subnetwork" {
-    # List of ws-subnets in this region
-    for_each = matchkeys(
-      google_compute_subnetwork.ws-subnets[*].self_link,
-      google_compute_subnetwork.ws-subnets[*].region,
-      [each.value]
-    )
-
-    content {
-      name = subnetwork.value
-      source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
-    }
+  subnetwork {
+    name                    = google_compute_subnetwork.ws-subnet.self_link
+    source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
   }
 }

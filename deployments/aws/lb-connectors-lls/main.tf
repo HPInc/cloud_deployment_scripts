@@ -235,6 +235,8 @@ module "win-gfx" {
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
+  teradici_download_token = var.teradici_download_token
+  pcoip_agent_version     = var.win_gfx_pcoip_agent_version
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -269,6 +271,8 @@ module "win-std" {
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
+  teradici_download_token = var.teradici_download_token
+  pcoip_agent_version     = var.win_std_pcoip_agent_version
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -303,6 +307,7 @@ module "centos-gfx" {
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
+  teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -340,6 +345,7 @@ module "centos-std" {
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
+  teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip

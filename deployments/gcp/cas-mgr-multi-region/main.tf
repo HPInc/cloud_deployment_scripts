@@ -8,13 +8,10 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   # Name of GCP service account key file in bucket
   gcp_sa_file = "gcp-sa-key.json"
-
-  all_region_set = setunion(var.cac_region_list, var.ws_region_list)
-  num_regions = length(local.all_region_set)
 
   gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
@@ -34,7 +31,7 @@ resource "google_storage_bucket" "scripts" {
 resource "google_storage_bucket_object" "gcp-sa-file" {
   bucket = google_storage_bucket.scripts.name
   name   = local.gcp_sa_file
-  source = var.cam_gcp_credentials_file
+  source = var.cas_mgr_gcp_credentials_file
 }
 
 module "dc" {
@@ -68,61 +65,61 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
-module "cam" {
-  source = "../../../modules/gcp/cam"
+module "cas-mgr" {
+  source = "../../../modules/gcp/cas-mgr"
 
   prefix = var.prefix
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
-  cam_gui_admin_password  = var.cam_gui_admin_password
+  cas_mgr_admin_password  = var.cas_mgr_admin_password
   
-  bucket_name            = google_storage_bucket.scripts.name
-  cam_deployment_sa_file = local.cam_deployment_sa_file
-  gcp_sa_file            = local.gcp_sa_file
+  bucket_name                = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
+  gcp_sa_file                = local.gcp_sa_file
 
   gcp_region   = var.gcp_region
   gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.cam-subnet.self_link
+  subnet       = google_compute_subnetwork.cas-mgr-subnet.self_link
   network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-https.name,
   ]
 
-  machine_type   = var.cam_machine_type
-  disk_size_gb   = var.cam_disk_size_gb
+  machine_type   = var.cas_mgr_machine_type
+  disk_size_gb   = var.cas_mgr_disk_size_gb
 
-  disk_image = var.cam_disk_image
+  disk_image = var.cas_mgr_disk_image
 
-  cam_admin_user              = var.cam_admin_user
-  cam_admin_ssh_pub_key_file  = var.cam_admin_ssh_pub_key_file
+  cas_mgr_admin_user             = var.cas_mgr_admin_user
+  cas_mgr_admin_ssh_pub_key_file = var.cas_mgr_admin_ssh_pub_key_file
 }
 
-module "cac" {
-  source = "../../../modules/gcp/cac"
+module "cac-igm" {
+  source = "../../../modules/gcp/cac-igm"
 
   prefix = var.prefix
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
-  cam_url                 = "https://${module.cam.internal-ip}"
-  cam_insecure            = true
+  cas_mgr_url             = "https://${module.cas-mgr.internal-ip}"
+  cas_mgr_insecure        = true
   pcoip_registration_code = var.pcoip_registration_code
-  
+
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name            = google_storage_bucket.scripts.name
-  cam_deployment_sa_file = local.cam_deployment_sa_file
+  bucket_name                = google_storage_bucket.scripts.name
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
-  gcp_region_list        = var.cac_region_list
-  subnet_list            = google_compute_subnetwork.cac-subnets[*].self_link
-  external_pcoip_ip_list = google_compute_address.nlb-ip[*].address
-  network_tags      = [
+  gcp_region_list = var.cac_region_list
+  subnet_list     = google_compute_subnetwork.cac-subnets[*].self_link
+  network_tags    = [
+    google_compute_firewall.allow-google-health-check.name,
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,
@@ -134,71 +131,89 @@ module "cac" {
 
   disk_image = var.cac_disk_image
 
-  cac_admin_user              = var.cac_admin_user
-  cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
-
-  ssl_key  = var.cac_ssl_key
-  ssl_cert = var.cac_ssl_cert
+  cac_admin_user             = var.cac_admin_user
+  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
 }
 
-resource "google_compute_target_pool" "cac" {
-  count = length(var.cac_region_list)
-
-  name = "${local.prefix}instance-pool-${var.cac_region_list[count.index]}"
-
-  region           = var.cac_region_list[count.index]
-  session_affinity = "CLIENT_IP"
-
-  instances = module.cac.instance-self-link-list[count.index]
-
-  # TODO: Google Network Load Balancer only support legacy HTTP health check
-  #health_checks =
+resource "google_compute_https_health_check" "cac-hchk" {
+  name               = "${local.prefix}hchk-cac"
+  request_path       = var.cac_health_check["path"]
+  port               = var.cac_health_check["port"]
+  check_interval_sec = var.cac_health_check["interval_sec"]
+  timeout_sec        = var.cac_health_check["timeout_sec"]
 }
 
-resource "google_compute_address" "nlb-ip" {
-  count = length(var.cac_region_list)
+resource "google_compute_backend_service" "cac-bkend-service" {
+  name                    = "${local.prefix}bkend-service-cac"
+  port_name               = "https"
+  protocol                = "HTTPS"
+  session_affinity        = "GENERATED_COOKIE"
+  affinity_cookie_ttl_sec = 3600
 
-  name = "${local.prefix}nlb-ip-${var.cac_region_list[count.index]}"
-  region = var.cac_region_list[count.index]
-  address_type = "EXTERNAL"
+  dynamic backend {
+    for_each = module.cac-igm.cac-igm
+    iterator = i
+
+    content {
+      balancing_mode = "UTILIZATION"
+
+      # Wants instanceGroup instead of instanceGroupManager
+      group = replace(i.value, "Manager", "")
+    }
+  }
+
+  health_checks = [google_compute_https_health_check.cac-hchk.self_link]
 }
 
-resource "google_compute_forwarding_rule" "cac-https" {
-  count = length(var.cac_region_list)
+resource "google_compute_url_map" "cac-urlmap" {
+  name            = "${local.prefix}urlmap-cac"
+  default_service = google_compute_backend_service.cac-bkend-service.self_link
+}
 
-  name = "${local.prefix}cac-https-fwdrule-${var.cac_region_list[count.index]}"
-  region = var.cac_region_list[count.index]
-  load_balancing_scheme = "EXTERNAL"
-  ip_address = google_compute_address.nlb-ip[count.index].address
-  ip_protocol = "TCP"
+resource "tls_private_key" "tls-key" {
+  count = var.glb_ssl_key == "" ? 1 : 0
+
+  algorithm = "RSA"
+  rsa_bits  = "2048"
+}
+
+resource "tls_self_signed_cert" "tls-cert" {
+  count = var.glb_ssl_cert == "" ? 1 : 0
+
+  key_algorithm   = tls_private_key.tls-key[0].algorithm
+  private_key_pem = tls_private_key.tls-key[0].private_key_pem
+
+  subject {
+    common_name = var.domain_name
+  }
+
+  validity_period_hours = 8760
+
+  allowed_uses = [
+    "cert_signing",
+    "digital_signature",
+    "key_encipherment",
+  ]
+}
+
+resource "google_compute_ssl_certificate" "ssl-cert" {
+  name        = "${local.prefix}ssl-cert"
+  private_key = var.glb_ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_ssl_key)
+  certificate = var.glb_ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.glb_ssl_cert)
+}
+
+resource "google_compute_target_https_proxy" "cac-proxy" {
+  name             = "${local.prefix}proxy-cac"
+  url_map          = google_compute_url_map.cac-urlmap.self_link
+  ssl_certificates = [google_compute_ssl_certificate.ssl-cert.self_link]
+}
+
+resource "google_compute_global_forwarding_rule" "cac-fwdrule" {
+  name = "${local.prefix}fwdrule-cac"
+
+  #ip_protocol = "TCP"
   port_range = "443"
-  target = google_compute_target_pool.cac[count.index].self_link
-}
-
-resource "google_compute_forwarding_rule" "cac-tcp4172" {
-  count = length(var.cac_region_list)
-
-  name = "${local.prefix}cac-tcp4172-fwdrule-${var.cac_region_list[count.index]}"
-  ip_address = google_compute_address.nlb-ip[count.index].address
-  region = var.cac_region_list[count.index]
-  load_balancing_scheme = "EXTERNAL"
-
-  ip_protocol = "TCP"
-  port_range = "4172"
-  target = google_compute_target_pool.cac[count.index].self_link
-}
-
-resource "google_compute_forwarding_rule" "cac-udp4172" {
-  count = length(var.cac_region_list)
-
-  name = "${local.prefix}cac-udp4172-fwdrule-${var.cac_region_list[count.index]}"
-  ip_address = google_compute_address.nlb-ip[count.index].address
-  region = var.cac_region_list[count.index]
-  load_balancing_scheme = "EXTERNAL"
-
-  ip_protocol = "UDP"
-  port_range = "4172"
-  target = google_compute_target_pool.cac[count.index].self_link
+  target     = google_compute_target_https_proxy.cac-proxy.self_link
 }
 
 module "win-gfx" {
@@ -210,6 +225,8 @@ module "win-gfx" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
+  pcoip_agent_version     = var.win_gfx_pcoip_agent_version
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -250,6 +267,8 @@ module "win-std" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
+  pcoip_agent_version     = var.win_std_pcoip_agent_version
 
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -288,6 +307,7 @@ module "centos-gfx" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -331,6 +351,7 @@ module "centos-std" {
   kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip

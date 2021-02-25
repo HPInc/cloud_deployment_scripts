@@ -11,9 +11,9 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # workstation hostnames.
 # prefix = ""
 
-# By default, ICMP, SSH, RDP and WinRM are only allowed from the Terraform host.
-# Define allowed_admin_cidrs to open the VPC firewall to additional IP addresses
-# or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
+# By default, ICMP, SSH, RDP and WinRM to the deployed virtual machines are only
+# allowed from the Terraform host. Define allowed_admin_cidrs to open the VPC
+# firewall to additional IP addresses or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_admin_cidrs = []
 
 # By default, PCoIP clients are allowed from any IP (0.0.0.0/0). Define
@@ -47,7 +47,7 @@ cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cac_machine_type = "n1-standard-2"
 # cac_disk_size_gb = 50
 
-# Optional: Specify SSL certificate for the Connectors
+# Optional: SSL Private Key & Certificate for the Connectors
 # cac_ssl_key  = "/path/to/privkey.pem"
 # cac_ssl_cert = "/path/to/fullchain.pem"
 
@@ -72,25 +72,25 @@ win_std_instance_count_list    = []
 centos_gfx_instance_count_list = []
 centos_std_instance_count_list = []
 
-# win_gfx_machine_type = "n1-standard-4"
-# win_gfx_accelerator_type = "nvidia-tesla-p4-vws"
+# win_gfx_machine_type      = "n1-standard-4"
+# win_gfx_accelerator_type  = "nvidia-tesla-p4-vws"
 # win_gfx_accelerator_count = 1
-# win_gfx_disk_size_gb = 50
-# win_gfx_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+# win_gfx_disk_size_gb      = 50
+# win_gfx_disk_image        = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
 
 # win_std_machine_type = "n1-standard-4"
 # win_std_disk_size_gb = 50
-# win_std_disk_image = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
+# win_std_disk_image   = "projects/windows-cloud/global/images/windows-server-2019-dc-v20201208"
 
-# centos_gfx_machine_type = "n1-standard-2"
-# centos_gfx_accelerator_type = "nvidia-tesla-p4-vws"
+# centos_gfx_machine_type      = "n1-standard-2"
+# centos_gfx_accelerator_type  = "nvidia-tesla-p4-vws"
 # centos_gfx_accelerator_count = 1
-# centos_gfx_disk_size_gb = 50
-# centos_gfx_disk_image = "projects/centos-cloud/global/images/centos-7-v20210122"
+# centos_gfx_disk_size_gb      = 50
+# centos_gfx_disk_image        = "projects/centos-cloud/global/images/centos-7-v20210122"
 
 # centos_std_machine_type = "n1-standard-2"
 # centos_std_disk_size_gb = 50
-# centos_std_disk_image = "projects/centos-cloud/global/images/centos-7-v20210122"
+# centos_std_disk_image   = "projects/centos-cloud/global/images/centos-7-v20210122"
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
@@ -114,14 +114,15 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # specified by "gcp_credentials_file" above must be in the same project and have
 # KMS decryptor permissions for this key.
 #
-# Note Windows password complexity requirements:
+# Note Windows passwords must be at least 7 characters long and meet complexity
+# requirements:
 # 1. Must not contain user's account name or display name
 # 2. Must have 3 of the following categories:
-#    a. a-z
-#    b. A-Z
-#    c. 0-9,
-#    d. (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
-#    3. unicode characters
+#    - a-z
+#    - A-Z
+#    - 0-9
+#    - special characters: ~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/
+#    - unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
 # Uncomment and enter the KMS key ID if using encryption.
@@ -132,4 +133,4 @@ dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cam_deployment_sa_file      = "/path/to/cloud-access-manager-service-account.json"
+cas_mgr_deployment_sa_file  = "/path/to/cas-manager-deployment-service-account.json"

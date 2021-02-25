@@ -9,7 +9,7 @@ import argparse
 import json 
 import requests
 
-CAM_API_URL = "https://localhost/api/v1"
+CAS_MGR_API_URL = "https://localhost/api/v1"
 TEMP_CRED_PATH = "/opt/teradici/cam/temp-creds.txt"
 
 
@@ -24,13 +24,13 @@ def get_temp_creds(path=TEMP_CRED_PATH):
     return data['username'], data['password']
 
 
-def cam_login(username, password):
+def cas_mgr_login(username, password):
     payload = {
         'username': username, 
         'password': password,
     }
     resp = session.post(
-        f"{CAM_API_URL}/auth/ad/login",
+        f"{CAS_MGR_API_URL}/auth/ad/login",
         json=payload, 
     )
     resp.raise_for_status()
@@ -42,7 +42,7 @@ def cam_login(username, password):
 def password_change(new_password):
     payload = {'password': new_password}
     resp = session.post(
-        f"{CAM_API_URL}/auth/ad/adminPassword",
+        f"{CAS_MGR_API_URL}/auth/ad/adminPassword",
         json=payload,
     )
     resp.raise_for_status()
@@ -54,7 +54,7 @@ def deployment_create(name, reg_code):
         'registrationCode': reg_code,
     }
     resp = session.post(
-        f"{CAM_API_URL}/deployments",
+        f"{CAS_MGR_API_URL}/deployments",
         json = payload,
     )
     resp.raise_for_status()
@@ -68,7 +68,7 @@ def deployment_key_create(deployment, name):
         'keyName': name
     }
     resp = session.post(
-        f"{CAM_API_URL}/auth/keys",
+        f"{CAS_MGR_API_URL}/auth/keys",
         json = payload,
     )
     resp.raise_for_status()
@@ -98,7 +98,7 @@ def validate_gcp_sa(key):
         },
     }
     resp = session.post(
-        f"{CAM_API_URL}/auth/users/cloudServiceAccount/validate",
+        f"{CAS_MGR_API_URL}/auth/users/cloudServiceAccount/validate",
         json = payload,
     )
 
@@ -130,7 +130,7 @@ def deployment_add_gcp_account(key, deployment):
         'credential':   credentials,
     }
     resp = session.post(
-        f"{CAM_API_URL}/auth/users/cloudServiceAccount",
+        f"{CAS_MGR_API_URL}/auth/users/cloudServiceAccount",
         json = payload,
     )
 
@@ -144,40 +144,40 @@ def deployment_add_gcp_account(key, deployment):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="This script updates the password for the CAM Admin user.")
+    parser = argparse.ArgumentParser(description="This script updates the password for the CAS Manager Admin user.")
 
-    parser.add_argument("--deployment_name", required=True, help="CAM deployment to create")
+    parser.add_argument("--deployment_name", required=True, help="CAS Manager deployment to create")
     parser.add_argument("--key_file", required=True, help="path to write Deployment Service Account key JSON file")
-    parser.add_argument("--key_name", required=True, help="name of CAM Deployment Service Account key")
-    parser.add_argument("--password", required=True, help="new CAM administrator password")
+    parser.add_argument("--key_name", required=True, help="name of CAS Manager Deployment Service Account key")
+    parser.add_argument("--password", required=True, help="new CAS Manager administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
     parser.add_argument("--gcp_key", help="GCP Service Account credential key path")
 
     args = parser.parse_args()
 
-    # Set up session to be used for all subsequent calls to CAM
+    # Set up session to be used for all subsequent calls to CAS Manager
     session = requests.Session()
     session.verify = False
 
-    print("Setting CAM Administrator password...")
+    print("Setting CAS Manager Administrator password...")
     user, password = get_temp_creds()
-    cam_login(user, password)
+    cas_mgr_login(user, password)
     password_change(args.password)
 
-    print("Creating CAM deployment...")
-    cam_login(user, args.password)
+    print("Creating CAS Manager deployment...")
+    cas_mgr_login(user, args.password)
     deployment = deployment_create(args.deployment_name, args.reg_code)
-    cam_deployment_key = deployment_key_create(deployment, args.key_name)
-    deployment_key_write(cam_deployment_key, args.key_file)
+    cas_mgr_deployment_key = deployment_key_create(deployment, args.key_name)
+    deployment_key_write(cas_mgr_deployment_key, args.key_file)
 
     if args.gcp_key:
         gcp_sa_key = get_gcp_sa_key(args.gcp_key)
 
-        print("Validating GCP credentials with CAM...")
+        print("Validating GCP credentials with CAS Manager...")
         valid = validate_gcp_sa(gcp_sa_key)
 
         if valid:
-            print("Adding GCP credentials to CAM deployment...")
+            print("Adding GCP credentials to CAS Manager deployment...")
             deployment_add_gcp_account(gcp_sa_key, deployment)
         else:
-            print("WARNING: GCP credentials validation failed. Skip adding GCP credentials to CAM deployment.")
+            print("WARNING: GCP credentials validation failed. Skip adding GCP credentials to CAS Manager deployment.")

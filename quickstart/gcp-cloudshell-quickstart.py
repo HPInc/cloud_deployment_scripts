@@ -19,7 +19,7 @@ import sys
 import textwrap
 import time
 
-import cam
+import casmgr
 
 REQUIRED_PACKAGES = {
     'google-api-python-client': None, 
@@ -28,7 +28,7 @@ REQUIRED_PACKAGES = {
 }
 
 # Service Account ID of the service account to create
-SA_ID       = 'cloud-access-manager'
+SA_ID       = 'cas-manager'
 SA_ROLES    = [
     'roles/editor',
     'roles/cloudkms.cryptoKeyEncrypterDecrypter'
@@ -64,8 +64,8 @@ TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH     = 'terraform.tfvars'
 SECRETS_DIR      = 'secrets'
 GCP_SA_KEY_PATH  = SECRETS_DIR + '/gcp_service_account_key.json'
-SSH_KEY_PATH     = SECRETS_DIR + '/cam_admin_id_rsa'
-CAM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cam_deployment_sa_key.json.encrypted'
+SSH_KEY_PATH     = SECRETS_DIR + '/cas_mgr_admin_id_rsa'
+CAS_MGR_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cas_mgr_deployment_sa_key.json.encrypted'
 
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
@@ -217,15 +217,15 @@ def ad_password_get():
     txt = r'''
     Please enter a password for the Active Directory Administrator.
 
-    Note Windows password complexity requirements:
+    Note Windows passwords must be at least 7 characters long and meet complexity
+    requirements:
     1. Must not contain user's account name or display name
     2. Must have 3 of the following categories:
-       - A-Z
        - a-z
+       - A-Z
        - 0-9
-       - special characters: (~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/)
+       - special characters: ~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/
        - unicode characters
-
     See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
     '''
     print(textwrap.dedent(txt))
@@ -269,7 +269,7 @@ def service_account_create(email):
             'accountId': SA_ID,
             'serviceAccount': {
                 'displayName': SA_ID,
-                'description': 'Account used by Cloud Access Manager to manage PCoIP workstations.',
+                'description': 'Account used by CAS Manager to manage PCoIP workstations.',
             }
         }
     ).execute()
@@ -405,17 +405,17 @@ if __name__ == '__main__':
 
     print('GCP project setup complete.\n')
 
-    print('Setting Cloud Access Manager...')
-    mycam = cam.CloudAccessManager(cfg_data.get('api_token'))
+    print('Setting CAS Manager...')
+    mycasmgr = casmgr.CASManager(cfg_data.get('api_token'))
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
-    deployment = mycam.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
-    mycam.deployment_add_gcp_account(sa_key, deployment)
+    deployment = mycasmgr.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
+    mycasmgr.deployment_add_gcp_account(sa_key, deployment)
 
-    print('Creating CAM API key...')
-    cam_deployment_key = mycam.deployment_key_create(deployment)
+    print('Creating CAS Manager API key...')
+    cas_mgr_deployment_key = mycasmgr.deployment_key_create(deployment)
 
-    print('Cloud Access Manager setup complete.\n')
+    print('CAS Manager setup complete.\n')
 
     print('Encrypting secrets...')
     days90 = 7776000
@@ -457,15 +457,15 @@ if __name__ == '__main__':
 
     password = kms_encode(key_name, password, True)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
-    cam_deployment_key = kms_encode(key_name, json.dumps(cam_deployment_key))
+    cas_mgr_deployment_key = kms_encode(key_name, json.dumps(cas_mgr_deployment_key))
 
     print('Done encrypting secrets.')
 
-    print('Creating CAM Deployment Service Account Key...')
-    with open(CAM_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
-        keyfile.write(cam_deployment_key)
+    print('Creating CAS Manager Deployment Service Account Key...')
+    with open(CAS_MGR_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
+        keyfile.write(cas_mgr_deployment_key)
 
-    print('  Key written to ' + CAM_DEPLOYMENT_SA_KEY_PATH)
+    print('  Key written to ' + CAS_MGR_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
 
@@ -483,7 +483,7 @@ if __name__ == '__main__':
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cam_deployment_sa_file':         cwd + CAM_DEPLOYMENT_SA_KEY_PATH
+        'cas_mgr_deployment_sa_file':     cwd + CAS_MGR_DEPLOYMENT_SA_KEY_PATH
     }
 
     # update tfvar
@@ -506,17 +506,17 @@ if __name__ == '__main__':
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
             hostname = f'{t}-{i}'
-            print(f'Adding "{hostname}" to Cloud Access Manager...')
-            mycam.machine_add_existing(
+            print(f'Adding "{hostname}" to CAS Manager...')
+            mycasmgr.machine_add_existing(
                 hostname,
                 PROJECT_ID,
                 'us-west2-b',
                 deployment
             )
 
-    # Loop until Administrator user is found in CAM
+    # Loop until Administrator user is found in CAS Manager
     while True:
-        entitle_user = mycam.user_get(ENTITLE_USER, deployment)
+        entitle_user = mycasmgr.user_get(ENTITLE_USER, deployment)
         if entitle_user:
             break
 
@@ -524,10 +524,10 @@ if __name__ == '__main__':
         time.sleep(10)
 
     # Add entitlements for each workstation
-    machines_list = mycam.machines_get(deployment)
+    machines_list = mycasmgr.machines_get(deployment)
     for machine in machines_list:
         print(f'Assigning workstation "{machine["machineName"]}" to user "{ENTITLE_USER}"...')
-        mycam.entitlement_add(entitle_user, machine)
+        mycasmgr.entitlement_add(entitle_user, machine)
 
     print('\nQuickstart deployment finished.\n')
 
@@ -555,12 +555,12 @@ if __name__ == '__main__':
         Network:                  "vpc-cas"
         Subnetowrk:               "subnet-ws"
         Domain name:              "example.com"
-        Domain service account:   "cam_admin"
+        Domain service account:   "cas_admin"
         Service account password: <set by you at start of script>
     5. Click **Create**
 
     - Clean up:
-    1. Using GCP console, delete all workstations created by Cloud Access Manager
+    1. Using GCP console, delete all workstations created by CAS Manager
         web interface and manually created workstations. Resources not created by
         the Terraform scripts must be manually removed before Terraform can
         properly destroy resources it created.
