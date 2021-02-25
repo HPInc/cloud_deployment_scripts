@@ -16,8 +16,8 @@
 ## Overview
 
 This repository contains a number of CAS deployments architectures on GCP. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference bewteen them is how each CAS deployment is managed:
-1. using CAS Manager as a Service (CAS-MS), which is a SaaS run by Teradici (first table), or
-2. running the CAS Manager (CAS-M) in a virtual machine that a user controls in his or her own CAS deployment (second table)
+1. using CAS Manager as a Service, which is a SaaS run by Teradici (first table), or
+2. running the CAS Manager in a virtual machine that a user controls in his or her own CAS deployment (second table)
 
 Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is resonsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
 
@@ -98,7 +98,7 @@ The Network load-balanced (NLB) multi-region deployment creates workstations and
 
 Note that this deployment is ideal for clients connecting from different public IP addresses (e.g. in a work from home scenario). This deployment does not scale well for many clients connecting from the same IP address (e.g. employees from the same site) because the load balancer session affinity is based on source IP - which means clients connecting from the same public IP address will be handled by the same instance of Cloud Access Connector.
 
-The user can specify which zones to deploy workstations and which regions to deploy Cloud Access Connectors. Cloud Access Connectors within a region will be spread out across available zones in the region, and will form a target pool behind a GCP external Network Load Balancer with a public IP.
+The user can specify which zones to deploy workstations and which regions to deploy Cloud Access Connectors. Cloud Access Connectors within a region will be spread out across available zones in the region, and will form a GCP target pool behind a GCP external Network Load Balancer with a public IP.
 
 ![nlb-multi-region diagram](nlb-multi-region.png)
 

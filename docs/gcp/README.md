@@ -9,6 +9,7 @@
     1. [Selecting a Deployment](#selecting-a-deployment)
     1. [CAS Manager as a Service Setup](#cas-manager-as-a-service-setup)
     1. [Customizing terraform.tfvars](#customizing-terraform.tfvars)
+        1. [Workstation IdleShutDown](#workstation-idleshutdown)
     1. [(Optional) Encrypting Secrets](#optional-encrypting-secrets)
         1. [Encryption Using Python Script](#encryption-using-python-script)
         1. [Manual Encryption](#manual-encryption)
@@ -85,6 +86,9 @@ Path variables in terraform.tfvars must be absolute and are dependent on the hos
 
 Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
 
+#### Workstation IdleShutDown
+Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `enable_workstation_idle_shutdown` (default: `true`), `minutes_idle_before_shutdown` (default: `240`), and `minutes_cpu_polling_interval` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/pcoip_cloud_access_manager/CACv2/reference/install_configure_cam_idle_shutdown).
+
 ### (Optional) Encrypting Secrets
 terraform.tfvars variables include sensitive information such as Active Directory passwords, PCoIP registration key and the CAS Manager Deployment Service Account credentials file. These secrets are stored in the local files terraform.tfvars and terraform.tfstate, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
 
@@ -142,6 +146,8 @@ With the terraform.tfvars file customized:
 3. answer ```yes``` to start creating the deployment
 
 A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Cloud Access Connectors (CACs) should register themselves with CAS Manager and show up in the Admin Console in CAS Manager.
+
+**Security Note**: The Domain Controller has been assigned a public IP adress by default, so that Terraform can show the progress of setting up the Domain Controller. Access to this public IP address is limited by GCP firewall to the IP address of the Terraform host and any IP addresses specified in the `allowed_admin_cidrs` variable in `terraform.tfvars`. It is recommended that this public IP address be removed from the Domain Controller (see [here](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#IP_assign)) unless there is a specific need for access from public IP addresses. Also note that NAT will need to be set up when the public IP is removed to provide Internet access to the Domain Controller.
 
 ### Add Workstations in CAS Manager
 Go to the CAS Manager Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
