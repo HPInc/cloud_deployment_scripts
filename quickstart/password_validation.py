@@ -27,77 +27,48 @@ def ad_password_get(username):
     '''
     print(textwrap.dedent(txt))
 
-    password = None
-
-    while password is None:
+    while True:
         password1 = getpass.getpass('Enter a password: ').strip()
         if not ad_password_validate(password1, username):
             print("Please try again.")
             continue
-        for x in range(3):
-            password2 = getpass.getpass('Re-enter the password: ').strip()
-            if password1 == password2:
-                password = password1
-                break
-            print(f'The passwords do not match. {(2-x)} tries left.')
-        print('\n')
+        password2 = getpass.getpass('Re-enter the password: ').strip()
+        if password1 == password2:
+            break
+        print(f'The passwords do not match. Please try again.')
+    print('')
 
-    return password
+    return password1
 
 def ad_password_validate(password, username):
 
-    # replace any hyphens with dash
-    username_parsed = username.replace('—','-')
-
-    username_parsed = re.split("[,.\-\_#\s\t]", username_parsed)
+    # delimeters are specified in the microsoft documentation
+    username_parsed = re.split("[—,.\-\_#\s\t]", username)
     for u in username_parsed:
         if len(u) < 3:
             continue
         if re.search(u, password, re.IGNORECASE):
             print("Password cannot contain username.", end=' ')
             return False
-    
+
     if len(password) < 7:
         print("Password must be at least 7 characters long.", end=' ')
         return False
-    
-    check = []
 
-    #check lowercase
-    regex = "([a-z])"
-    pattern = re.compile(regex)
-    match = re.search(pattern, password)
-    if match:
-        check.append(regex)
+    count = 0
 
-    #check uppercase
-    regex = "([A-Z])"
-    pattern = re.compile(regex)
-    match = re.search(pattern, password)
-    if match:
-        check.append(regex)
+    # check lowercase, uppercase, digits, special characters
+    checks = ["[a-z]", "[A-Z]", "\d", "[@$!%*#?&]"]
+    for regex in checks:
+        if re.search(regex, password):
+            count += 1
 
-    #check number
-    regex = "(\d)"
-    pattern = re.compile(regex)
-    match = re.search(pattern, password)
-    if match:
-        check.append(regex)
-
-    #check special characters
-    regex = "([@$!%*#?&])"
-    pattern = re.compile(regex)
-    match = re.search(pattern, password)
-    if match:
-        check.append(regex)
-
-    #check unicode
+    # check unicode: if the password contains unicode characters, 
+    # it will change when encoded to utf-8 to one of [\u00d8-\u00f6]
     if f'b\'{password}\'' != f'{password.encode("utf-8")}':
-        check.append("unicode")
+       count += 1
 
-    if (len(check) > 2):
+    if (count > 2):
         return True
-    else:
-        print("Password does not meet the complexity requirements.", end=' ')
-        return False
-    
+    print("Password does not meet the complexity requirements.", end=' ')
+    return False
