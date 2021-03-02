@@ -72,7 +72,7 @@ variable "instance_count" {
 
 variable "instance_type" {
   description = "Instance type for the Workstation"
-  default     = "t2.xlarge"
+  default     = "g4dn.xlarge"
 }
 
 variable "disk_size_gb" {
