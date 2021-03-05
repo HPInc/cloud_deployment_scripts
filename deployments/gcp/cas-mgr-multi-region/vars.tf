@@ -229,6 +229,11 @@ variable "cac_health_check" {
   }
 }
 
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
 variable "glb_ssl_key" {
   description = "SSL private key for the Global Load Balancer in PEM format"
   default     = ""

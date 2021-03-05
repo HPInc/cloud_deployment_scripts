@@ -203,6 +203,11 @@ variable "cac_ssl_cert" {
   }
 }
 
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   default     = "example.com"
