@@ -22,7 +22,7 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
       bucket_name                 = var.bucket_name,
-      cac_installer_url           = var.cac_installer_url,
+      cac_version                 = var.cac_version,
       cas_mgr_deployment_sa_file  = var.cas_mgr_deployment_sa_file,
       cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "", 
       cas_mgr_script              = var.cas_mgr_script,
@@ -35,6 +35,7 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       pcoip_registration_code     = var.pcoip_registration_code,
       ssl_cert                    = var.ssl_cert_filename,
       ssl_key                     = var.ssl_key_filename,
+      teradici_download_token     = var.teradici_download_token,
     }
   )
 }
