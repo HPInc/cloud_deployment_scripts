@@ -249,6 +249,11 @@ variable "cac_ssl_cert" {
   }
 }
 
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
 variable "ws_region_list" {
   description = "Regions in which to deploy Workstations"
   type        = list(string)

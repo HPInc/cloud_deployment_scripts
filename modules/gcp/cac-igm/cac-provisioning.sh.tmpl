@@ -11,6 +11,8 @@ PROVISIONING_DIR="/root"
 CAC_BIN_PATH="/usr/sbin/cloud-access-connector"
 CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
 CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
+CAC_LOCATION_URL="https://dl.teradici.com/${teradici_download_token}/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/${cac_version}"
+CAC_FILENAME="cloud-access-connector_${cac_version}_Linux.tar.gz"
 cd $PROVISIONING_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
@@ -183,7 +185,8 @@ config_network() {
 
 download_cac() {
     log "--> Downloading CAC installer..."
-    curl -L ${cac_installer_url} -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
+    cac_installer_url="$CAC_LOCATION_URL/$CAC_FILENAME"
+    curl -L $cac_installer_url -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
     tar xzvf $PROVISIONING_DIR/cloud-access-connector.tar.gz -C /
 }
 

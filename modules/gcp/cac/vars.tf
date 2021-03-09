@@ -126,9 +126,14 @@ variable "cac_admin_ssh_pub_key_file" {
   }
 }
 
-variable "cac_installer_url" {
-  description = "Location of the Cloud Access Connector installer"
-  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/latest/cloud-access-connector_latest_Linux.tar.gz"
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
 variable "ssl_key" {

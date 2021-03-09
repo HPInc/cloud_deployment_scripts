@@ -290,6 +290,11 @@ variable "cac_ami_name" {
   default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210128"
 }
 
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
 # Note the following limits for health check:
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5

@@ -61,7 +61,6 @@ module "cac-regional" {
   kms_cryptokey_id        = var.kms_cryptokey_id
   cas_mgr_url             = var.cas_mgr_url
   cas_mgr_insecure        = var.cas_mgr_insecure
-  cac_installer_url       = var.cac_installer_url
   cas_mgr_script          = local.cas_mgr_script
   pcoip_registration_code = var.pcoip_registration_code
 
@@ -80,6 +79,8 @@ module "cac-regional" {
 
   cac_admin_user = var.cac_admin_user
   cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
+  cac_version             = var.cac_version
+  teradici_download_token = var.teradici_download_token
 
   gcp_service_account = var.gcp_service_account
 

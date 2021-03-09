@@ -208,6 +208,11 @@ variable "cac_ami_name" {
   default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210128"
 }
 
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
 variable "ssl_key" {
   description = "SSL private key for the Connector"
   default     = ""
