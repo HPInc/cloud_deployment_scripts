@@ -23,6 +23,14 @@ aws_credentials_file = "/path/to/aws_key"
 # connect to remote workstations. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_client_cidrs = ["0.0.0.0/0"]
 
+# Note the domain name must comply with the character and length restrictions:
+# - each label must:
+#   - only contain a-z, A-Z, 0-9, and hyphen(-)
+#   - be at least 2 and at most 63 characters long
+#   - not start or end with a hyphen(-)
+# - the lowest level domain (ex. 'dev' in dev.example.com) must be at most 15 characters long
+# - must not end with '.local'
+# see: https://docs.microsoft.com/en-us/troubleshoot/windows-server/identity/naming-conventions-for-computer-domain-site-ou
 # domain_name = "example.com"
 
 # Optional: additional AD users to create
