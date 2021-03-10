@@ -310,8 +310,8 @@ install_cac() {
             --retrieve-agent-state true \
             --sync-interval 5 \
             --cam-url ${cas_mgr_url} \
-            $args \
             ${cac_extra_install_flags} \
+            $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
 
         local rc=$?
