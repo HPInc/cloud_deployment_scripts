@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 Teradici Corporation
+# Copyright (c) 2021 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -19,68 +19,53 @@ import sys
 import textwrap
 import time
 
-import casmgr
-
 REQUIRED_PACKAGES = {
-    'google-api-python-client': None, 
-    'grpc-google-iam-v1': None, 
-    'google-cloud-kms': "2.0.0"
+    'boto3': None, 
+    'retry': None, 
+    'requests': None,
 }
-
-# Service Account ID of the service account to create
-SA_ID       = 'cas-manager'
-SA_ROLES    = [
-    'roles/editor',
-    'roles/cloudkms.cryptoKeyEncrypterDecrypter'
-]
-
-PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
-GCP_REGION = 'us-west2'
-REQUIRED_APIS = [
-    'deploymentmanager.googleapis.com',
-    'cloudkms.googleapis.com',
-    'cloudresourcemanager.googleapis.com',
-    'compute.googleapis.com',
-    'dns.googleapis.com',
-    'iam.googleapis.com',
-]
 
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
-CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
 
 HOME               = os.path.expanduser('~')
-TERRAFORM_BIN_DIR  = f'{HOME}/bin'
-TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
-TERRAFORM_VER_PATH = '../deployments/gcp/single-connector/versions.tf'
-CFG_FILE_PATH      = 'gcp-cloudshell-quickstart.cfg'
-DEPLOYMENT_PATH    = 'deployments/gcp/single-connector'
+TERRAFORM_BIN_DIR  = os.path.join(HOME, 'bin')
+TERRAFORM_BIN_PATH = os.path.join(TERRAFORM_BIN_DIR, 'terraform')
 
-# All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
-TF_VARS_REF_PATH = 'terraform.tfvars.sample'
-TF_VARS_PATH     = 'terraform.tfvars'
-SECRETS_DIR      = 'secrets'
-GCP_SA_KEY_PATH  = SECRETS_DIR + '/gcp_service_account_key.json'
-SSH_KEY_PATH     = SECRETS_DIR + '/cas_mgr_admin_id_rsa'
-CAS_MGR_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/cas_mgr_deployment_sa_key.json.encrypted'
+os.chdir('../../')
+REPOSITORY_PATH    = os.getcwd()
+DEPLOYMENT_PATH    = os.path.join(REPOSITORY_PATH, 'deployments/aws/single-connector/')
+QUICKSTART_PATH    = os.path.join(REPOSITORY_PATH, 'quickstart/aws/')
+KMS_ENCRYPTOR_PATH = os.path.join(REPOSITORY_PATH, 'tools/')
+INSTALL_TERRAFORM  = os.path.join(REPOSITORY_PATH, 'quickstart/install-terraform.py')
+TERRAFORM_VER_PATH = os.path.join(DEPLOYMENT_PATH, 'versions.tf')
+SECRETS_DIR        = os.path.join(DEPLOYMENT_PATH, 'secrets/')
+
+# Setting paths for secrets
+SSH_KEY_PATH                   = os.path.join(SECRETS_DIR, 'cas_mgr_admin_id_rsa')
+CAS_MGR_DEPLOYMENT_SA_KEY_PATH = os.path.join(SECRETS_DIR, 'cas_mgr_deployment_sa_key.json')
+AWS_SA_KEY_PATH                = os.path.join(SECRETS_DIR, 'aws_service_account_credentials')
+ARN_FILE_PATH                  = os.path.join(SECRETS_DIR, 'arn.txt')
+
+# Setting paths for terraform.tfvars
+TF_VARS_REF_PATH = os.path.join(DEPLOYMENT_PATH, 'terraform.tfvars.sample')
+TF_VARS_PATH     = os.path.join(DEPLOYMENT_PATH, 'terraform.tfvars')
+
+CFG_FILE_PATH        = os.path.join(QUICKSTART_PATH, 'aws-quickstart.cfg')
+ROLE_POLICY_DOCUMENT = os.path.join(QUICKSTART_PATH, 'cas-mgr-power-manage-role-policy.json')
+AWS_USER_POLICY_ARN  = "arn:aws:iam::aws:policy/AdministratorAccess"
 
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
 
 def ensure_requirements():
-    if not PROJECT_ID:
-        print('The PROJECT property has not been set.')
-        print('Please run "gcloud config set project [PROJECT_ID]" to set the project.')
-        print('See: https://cloud.google.com/sdk/gcloud/reference/config/set')
-        print('')
-        sys.exit(1)
-
     ensure_required_packages()
     import_modules()
     ensure_terraform()
+    ensure_aws_cli()
 
 
 def ensure_required_packages():
@@ -90,6 +75,9 @@ def ensure_required_packages():
     installed, the required version number will then be checked. It will next prompt 
     the user to update or install the required packages.
     """
+
+    update_cmd = 'pip3 install --upgrade pip --user'
+    subprocess.run(update_cmd.split(' '), check=True)
 
     packages_to_install_list = []
 
@@ -106,7 +94,7 @@ def ensure_required_packages():
             current_version = output.splitlines()[1].split(' ')[-1]
 
             # Convert the string into a tuple of numbers for comparison
-            current_version_tuple  = tuple( map(int, current_version.split('.')) )
+            current_version_tuple = tuple( map(int, current_version.split('.')) )
             required_version_tuple = tuple( map(int, required_version.split('.')) )
 
             if current_version_tuple < required_version_tuple:
@@ -135,21 +123,20 @@ def ensure_required_packages():
 
 
 def import_modules():
-    """A function that dynamically imports required Python packages.
+    """A function that dynamically imports required modules.
     """
 
     # Global calls for import statements are required to avoid module not found error
     import_required_packages = '''\
-    import googleapiclient.discovery
-    from google.cloud import kms
-    from google.api_core import exceptions as google_exc
+        import casmgr
+        import aws_iam_wrapper as aws
     '''
 
     # Recommended to clear cache after installing python packages for dynamic imports
     importlib.invalidate_caches()
 
     exec(textwrap.dedent(import_required_packages), globals())
-    print('Successfully imported required Python packages.')
+    print('Successfully imported required modules.')
 
 
 def ensure_terraform():
@@ -159,8 +146,6 @@ def ensure_terraform():
     the user's system. If Terraform is not installed, it will prompt the user to 
     install Terraform in the user's home directory. 
     """
-
-    global TERRAFORM_BIN_PATH
 
     path = shutil.which('terraform')
 
@@ -180,10 +165,11 @@ def ensure_terraform():
         current_version = re.search(r'Terraform\s*v([\d.]+)', terraform_version).group(1)
 
         # Convert the string into a tuple of numbers for comparison
-        current_version_tuple  = tuple( map(int, current_version.split('.')) )
+        current_version_tuple = tuple( map(int, current_version.split('.')) )
         required_version_tuple = tuple( map(int, required_version.split('.')) )
 
         if current_version_tuple >= required_version_tuple:
+            global TERRAFORM_BIN_PATH
             TERRAFORM_BIN_PATH = path
             return
 
@@ -195,8 +181,25 @@ def ensure_terraform():
         print('Terraform is required for deployment. Exiting...')
         sys.exit(1)
 
-    install_cmd = f'{sys.executable} install-terraform.py {TERRAFORM_BIN_DIR}'
+    install_cmd = f'{sys.executable} {INSTALL_TERRAFORM} {TERRAFORM_BIN_DIR}'
     subprocess.run(install_cmd.split(' '), check=True)
+
+
+def ensure_aws_cli():
+    path = shutil.which('aws')
+    if path:
+        cmd = 'aws --version'
+        # Command returns a string 'aws-cli/1.16.300 Python/2.7.18 Linux/4.14.186-146.268.amzn2.x86_64 botocore/1.13.36'
+        # Stderr redirection is required as that's where the output of the command is printed out to
+        output = subprocess.run(cmd.split(' '), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        aws_cli_version = output.stdout.decode('utf-8').split(' ', 1)[0].split('/', 1)[1]
+        print(f'Found AWS CLI {aws_cli_version} in {path}.')
+        return
+
+    # TODO Add install-aws-cli.py script similar to install-terraform.py if AWS CLI is not installed.
+
+    print('AWS CLI not found. Please install and try again. Exiting...\n')
+    sys.exit(1)
 
 
 def quickstart_config_read(cfg_file):
@@ -242,95 +245,6 @@ def ad_password_get():
     return password1
 
 
-def service_account_find(email):
-    service_accounts = iam_service.projects().serviceAccounts().list(
-        name = f'projects/{PROJECT_ID}',
-    ).execute()
-
-    if not service_accounts:
-        return
-
-    for account in service_accounts['accounts']:
-        if account['email'] == email:
-            return account
-
-
-def service_account_create(email):
-    print('Creating Service Account...')
-
-    service_account = service_account_find(email)
-    if service_account:
-        print(f'  Service account {email} already exists.')
-        return service_account
-
-    service_account = iam_service.projects().serviceAccounts().create(
-        name = 'projects/' + PROJECT_ID,
-        body = {
-            'accountId': SA_ID,
-            'serviceAccount': {
-                'displayName': SA_ID,
-                'description': 'Account used by CAS Manager to manage PCoIP workstations.',
-            }
-        }
-    ).execute()
-
-    print('  Created service account: ' + service_account['email'])
-
-    return service_account
-
-
-def service_account_create_key(service_account, filepath):
-    print(f'Created key for {service_account["email"]}...')
-
-    key = iam_service.projects().serviceAccounts().keys().create(
-        name = 'projects/-/serviceAccounts/' + service_account['email'],
-        body = {},
-    ).execute()
-
-    key_data = base64.b64decode(key['privateKeyData'])
-
-    with open(filepath, 'wb') as keyfile:
-        keyfile.write(key_data)
-
-    print('  Key written to ' + filepath)
-    return json.loads(key_data.decode('utf-8'))
-
-
-def iam_policy_update(service_account, roles):
-
-    policy = crm_service.projects().getIamPolicy(
-        resource = PROJECT_ID,
-        body = {},
-    ).execute()
-
-    print('Adding roles:')
-    for role in roles:
-        print(f'  {role}...')
-        binding = {
-            'role': role,
-            'members': [f'serviceAccount:{service_account["email"]}'],
-        }
-        policy['bindings'].append(binding)
-
-    policy = crm_service.projects().setIamPolicy(
-        resource = PROJECT_ID,
-        body = {
-            'policy': policy
-        }
-    ).execute()
-
-    return policy
-
-
-def apis_enable(apis):
-    print('Enabling APIs:')
-
-    # Using shell command, no Python Google Cloud Client library support
-    for api in apis:
-        print(f'  {api}...')
-        subprocess.run(['gcloud', 'services', 'enable', api], check=True)
-
-
 def ssh_key_create(path):
     print('Creating SSH key...')
 
@@ -350,38 +264,40 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
         for line in ref_file:
-            # Append the crypto key path to kms_cryptokey_id line since it is commented out in ref_file
-            if '# kms_cryptokey_id' in line:
-                out_file.write(f'{"kms_cryptokey_id"} = \"{settings["kms_cryptokey_id"]}\"')
-                continue
 
+            if '# aws_region' in line:
+                out_file.write(f'{"aws_region"} = \"{settings["aws_region"]}\"')
+            
+            elif '# prefix' in line:
+                out_file.write(f'{"prefix"} = \"{PREFIX}\"')
+            
             # Comments and blank lines are unchanged
-            if line[0] in ('#', '\n'):
+            elif line[0] in ('#', '\n'):
                 out_file.write(line)
-                continue
-
-            key = line.split('=')[0].strip()
-            try:
-                out_file.write(f'{key} = "{settings[key]}"\n')
-            except KeyError:
-                # Remove file and error out
-                os.remove(tfvar_file_path)
-                print(f'Required value for {key} missing. tfvars file {tfvar_file_path} not created.')
-                sys.exit(1)
+            
+            else:
+                key = line.split('=')[0].strip()
+                try:
+                    out_file.write(f'{key} = "{settings[key]}"\n')
+                except KeyError:
+                    # Remove file and error out
+                    os.remove(tfvar_file_path)
+                    print(f'Required value for {key} missing. tfvars file {tfvar_file_path} not created.')
+                    sys.exit(1)
 
 
 if __name__ == '__main__':
+
+    print('Reading configurations file...')
+    cfg_data = quickstart_config_read(CFG_FILE_PATH)
+    PREFIX = cfg_data.get('prefix', '')
+
     ensure_requirements()
 
-    cfg_data = quickstart_config_read(CFG_FILE_PATH)
-
+    # Get password for AD user
     password = ad_password_get()
 
     print('Preparing local requirements...')
-    os.chdir('../')
-    os.chdir(DEPLOYMENT_PATH)
-    # Paths passed into terraform.tfvars should be absolute paths
-    cwd = os.getcwd() + '/'
 
     try:
         print(f'Creating directory {SECRETS_DIR} to store secrets...')
@@ -393,102 +309,91 @@ if __name__ == '__main__':
 
     print('Local requirements setup complete.\n')
 
-    print('Setting GCP project...')
-    sa_email = f'{SA_ID}@{PROJECT_ID}.iam.gserviceaccount.com'
-    iam_service = googleapiclient.discovery.build('iam', 'v1')
-    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
+    print('Validating AWS credentials...')
+    AWS_REGION = cfg_data.get('aws_region')
+    aws.set_boto3_region(AWS_REGION)
 
-    apis_enable(REQUIRED_APIS)
-    sa = service_account_create(sa_email)
-    iam_policy_update(sa, SA_ROLES)
-    sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
+    if not aws.validate_credentials():
+        exit(1)
 
-    print('GCP project setup complete.\n')
+    print('Checking AWS resources...')
+    if PREFIX == '': 
+        AWS_USERNAME = 'cas-manager'
+    else:
+        AWS_USERNAME = PREFIX + '-cas-manager'
+
+    AWS_ROLE_NAME = f'{AWS_USERNAME}_role'
+    ROLE_POLICY_NAME = f'{AWS_ROLE_NAME}_policy'
+
+    if any((aws.find_user(AWS_USERNAME), aws.find_role(AWS_ROLE_NAME), aws.find_policy(ROLE_POLICY_NAME))):
+        print("AWS IAM resources must have unique names. Exiting script...")
+        exit(1)
 
     print('Setting CAS Manager...')
     mycasmgr = casmgr.CASManager(cfg_data.get('api_token'))
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
     deployment = mycasmgr.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
-    mycasmgr.deployment_add_gcp_account(sa_key, deployment)
+    role_info = mycasmgr.generate_aws_role_info(deployment)
 
     print('Creating CAS Manager API key...')
     cas_mgr_deployment_key = mycasmgr.deployment_key_create(deployment)
-
+    with open(CAS_MGR_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
+        keyfile.write(json.dumps(cas_mgr_deployment_key))
+    print('  Key written to ' + CAS_MGR_DEPLOYMENT_SA_KEY_PATH)
     print('CAS Manager setup complete.\n')
 
-    print('Encrypting secrets...')
-    days90 = 7776000
+    print('Creating AWS user for Terraform deployment...')
+    aws.create_user(AWS_USERNAME)
+    aws.attach_user_policy(AWS_USERNAME, AWS_USER_POLICY_ARN)
+    
+    print('Creating AWS role for CAS Manager deployment...')
+    role = aws.create_role(AWS_ROLE_NAME, role_info['camAccountId'], role_info['externalId'])
+    role_policy_description = "Permissions to allow managing instances using CAS Manager"
+    role_policy = aws.create_policy(ROLE_POLICY_NAME, role_policy_description, ROLE_POLICY_DOCUMENT)
+    aws.attach_role_policy(AWS_ROLE_NAME, ROLE_POLICY_NAME)
+    
+    print('Creating AWS service account key for Terraform deployment...')
+    # This is done last because the number of keys a user can have is limited
+    # so if issues occur when creating other IAM resources, the key won't easily run out
+    sa_key_id = aws.service_account_create_key(AWS_USERNAME, AWS_SA_KEY_PATH)
 
-    kms_client = kms.KeyManagementServiceClient()
+    print('Registering AWS role to CAS Manager deployment...')
+    mycasmgr.deployment_add_aws_account(deployment, role.get('Arn'))
 
-    parent = f'projects/{PROJECT_ID}/locations/{GCP_REGION}'
-    key_ring_id = 'cloud_deployment_scripts'
-    key_ring_init = {}
-
-    try:
-        key_ring = kms_client.create_key_ring(request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring_init})
-        print(f'Created Key Ring {key_ring.name}')
-    except google_exc.AlreadyExists:
-        print(f'Key Ring {key_ring_id} already exists. Using it...')
-
-    parent = kms_client.key_ring_path(PROJECT_ID, GCP_REGION, key_ring_id)
-    crypto_key_id = 'quickstart_key'
-    crypto_key_init = {
-        'purpose': kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
-        'rotation_period': {'seconds': days90},
-        'next_rotation_time': {'seconds': int(time.time()) + days90},
-    }
-
-    try:
-        crypto_key = kms_client.create_crypto_key(request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key_init})
-        print(f'Created Crypto Key {crypto_key.name}')
-    except google_exc.AlreadyExists:
-        print(f'Crypto Key {crypto_key_id} already exists. Using it...')
-
-    key_name = kms_client.crypto_key_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
-
-    def kms_encode(key, text, base64_encoded=False):
-        encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
-
-        if base64_encoded:
-            return base64.b64encode(encrypted.ciphertext).decode('utf-8')
-        return encrypted.ciphertext
-
-    password = kms_encode(key_name, password, True)
-    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
-    cas_mgr_deployment_key = kms_encode(key_name, json.dumps(cas_mgr_deployment_key))
-
-    print('Done encrypting secrets.')
-
-    print('Creating CAS Manager Deployment Service Account Key...')
-    with open(CAS_MGR_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
-        keyfile.write(cas_mgr_deployment_key)
-
-    print('  Key written to ' + CAS_MGR_DEPLOYMENT_SA_KEY_PATH)
+    # Newly created IAM access key needs to wait to avoid security token error
+    time.sleep(5)
+    print('AWS setup complete.\n')
 
     print('Deploying with Terraform...')
-
-    #TODO: refactor this to work with more types of deployments
     settings = {
-        'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
-        'kms_cryptokey_id':               key_name,
+        'aws_credentials_file':           AWS_SA_KEY_PATH,
+        'aws_region':                     AWS_REGION,
         'dc_admin_password':              password,
         'safe_mode_admin_password':       password,
         'ad_service_account_password':    password,
-        'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
+        'admin_ssh_pub_key_file':         SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
-        'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cas_mgr_deployment_sa_file':     cwd + CAS_MGR_DEPLOYMENT_SA_KEY_PATH
+        'cas_mgr_deployment_sa_file':     CAS_MGR_DEPLOYMENT_SA_KEY_PATH,
+        'prefix':                         PREFIX,
     }
 
     # update tfvar
     tf_vars_create(TF_VARS_REF_PATH, TF_VARS_PATH, settings)
+    # Newly created tfvars files might need a few seconds to write
+    time.sleep(5)
 
+    print('Encrypting secrets...')
+    os.chdir(KMS_ENCRYPTOR_PATH)
+    command = f'./kms_secrets_encryption.py {TF_VARS_PATH}'
+    subprocess.run(command.split(' '), check=True)
+    print('Done encrypting secets...')
+
+    os.chdir(DEPLOYMENT_PATH)
     tf_cmd = f'{TERRAFORM_BIN_PATH} init'
     subprocess.run(tf_cmd.split(' '), check=True)
 
@@ -500,18 +405,20 @@ if __name__ == '__main__':
                                stdout=subprocess.PIPE)
     cac_public_ip = comp_proc.stdout.decode().split('"')[1]
 
+    # Newly created AWS instances might need a few seconds to sync to CAS Manager
+    time.sleep(10)
     print('Terraform deployment complete.\n')
 
     # Add existing workstations
+    mycasmgr.deployment_signin(cas_mgr_deployment_key)
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
-            hostname = f'{t}-{i}'
+            hostname = f'{PREFIX}-{t}-{i}'
             print(f'Adding "{hostname}" to CAS Manager...')
             mycasmgr.machine_add_existing(
                 hostname,
-                PROJECT_ID,
-                'us-west2-b',
-                deployment
+                deployment,
+                AWS_REGION,
             )
 
     # Loop until Administrator user is found in CAS Manager
@@ -535,40 +442,33 @@ if __name__ == '__main__':
     next_steps = f"""
     Next steps:
 
-    - Connect to a workstation:
-    1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
-    2. sign in with the "{ENTITLE_USER}" user credentials
-    3. When connecting to a workstation immediately after this script completes,
+    - Connecting to Workstations:
+    1.  From a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}. 
+        To install a PCoIP client, please see: https://docs.teradici.com/find/product/software-and-mobile-clients
+    2.  Sign in with the "{ENTITLE_USER}" user credentials
+    3.  When connecting to a workstation immediately after this script completes,
         the workstation (especially graphics ones) may still be setting up. You may
         see "Remote Desktop is restarting..." in the client. Please wait a few
         minutes or reconnect if it times out.
 
-    - Add additional workstations:
-    1. Log in to https://cas.teradici.com
-    2. Click on "Workstations" in the left panel, select "Create new remote
-        workstation" from the "+" button
-    3. Select connector "quickstart_cac_<timestamp>"
-    4. Fill in the form according to your preferences. Note that the following
-        values must be used for their respective fields:
-        Region:                   "us-west2"
-        Zone:                     "us-west2-b"
-        Network:                  "vpc-cas"
-        Subnetowrk:               "subnet-ws"
-        Domain name:              "example.com"
-        Domain service account:   "cas_admin"
-        Service account password: <set by you at start of script>
-    5. Click **Create**
-
-    - Clean up:
-    1. Using GCP console, delete all workstations created by CAS Manager
-        web interface and manually created workstations. Resources not created by
-        the Terraform scripts must be manually removed before Terraform can
-        properly destroy resources it created.
-    2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{DEPLOYMENT_PATH}"
-    3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
+    - Deleting the Deployment:
+    1.  Make sure you are at the right directory using the command "cd {DEPLOYMENT_PATH}"
+    2.  Remove resources deployed by Terraform using the following command. Enter "yes" when prompted.
         "{'terraform' if TERRAFORM_BIN_PATH == shutil.which('terraform') else TERRAFORM_BIN_PATH} destroy"
-    4. Log in to https://cas.teradici.com and delete the deployment named
-        "quickstart_deployment_<timestamp>"
+    3.  Log in to https://cas.teradici.com and delete the deployment named
+        "{DEPLOYMENT_NAME}"
+
+    - Deleting the AWS IAM Resources:
+    1.  The script created an IAM policy, role, access key, and user to allow Terraform to create and CAS Manager to 
+        manage AWS resources. Before removing these IAM resources, you must first make sure to complete all previous 
+        steps to delete the deployment.
+    2.  Then, run the following commands:
+        aws iam detach-role-policy --role-name {AWS_ROLE_NAME} --policy-arn {aws.get_policy_arn(ROLE_POLICY_NAME)}
+        aws iam delete-policy --policy-arn {aws.get_policy_arn(ROLE_POLICY_NAME)}
+        aws iam delete-role --role-name {AWS_ROLE_NAME}
+        aws iam delete-access-key --user-name {AWS_USERNAME} --access-key-id {sa_key_id}
+        aws iam detach-user-policy --user-name {AWS_USERNAME} --policy-arn {AWS_USER_POLICY_ARN}
+        aws iam delete-user --user-name {AWS_USERNAME}
     """
 
     print(next_steps)
