@@ -265,6 +265,7 @@ install_cac() {
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
     log "  --cam-url ${cas_mgr_url}"
+    log "  ${cac_extra_install_flags}"
 
     # Set pipefail option to return status of the connector install command
     set -o pipefail
@@ -309,6 +310,7 @@ install_cac() {
             --retrieve-agent-state true \
             --sync-interval 5 \
             --cam-url ${cas_mgr_url} \
+            ${cac_extra_install_flags} \
             $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
 

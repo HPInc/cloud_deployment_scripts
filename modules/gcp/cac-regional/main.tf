@@ -22,6 +22,7 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
       bucket_name                 = var.bucket_name,
+      cac_extra_install_flags     = var.cac_extra_install_flags,
       cac_version                 = var.cac_version,
       cas_mgr_deployment_sa_file  = var.cas_mgr_deployment_sa_file,
       cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "", 

@@ -231,6 +231,11 @@ variable "ssl_cert" {
   }
 }
 
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
+}
+
 variable "cam_url" {
   description = "cam server url."
   default     = "https://cam.teradici.com"

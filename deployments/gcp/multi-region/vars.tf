@@ -188,6 +188,11 @@ variable "cac_health_check" {
   }
 }
 
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
+}
+
 variable "cac_version" {
   description = "Version of the Cloud Access Connector to install"
   default     = "latest"

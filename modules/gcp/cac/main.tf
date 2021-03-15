@@ -73,6 +73,8 @@ module "cac-regional" {
   ssl_key_filename  = local.ssl_key_filename
   ssl_cert_filename = local.ssl_cert_filename
 
+  cac_extra_install_flags = var.cac_extra_install_flags
+
   network_tags = var.network_tags
   subnet = var.subnet_list[count.index]
   external_pcoip_ip = var.external_pcoip_ip_list == [] ? "" : var.external_pcoip_ip_list[count.index]

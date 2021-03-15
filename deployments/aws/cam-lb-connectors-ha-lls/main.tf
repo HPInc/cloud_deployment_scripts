@@ -249,6 +249,8 @@ module "cac" {
   teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 resource "aws_lb_target_group_attachment" "cac-tg-attachment" {

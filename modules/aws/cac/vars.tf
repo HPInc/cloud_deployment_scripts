@@ -165,6 +165,11 @@ variable "ssl_cert" {
   }
 }
 
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
+}
+
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""

@@ -105,6 +105,8 @@ module "cac" {
 
   ssl_key  = var.cac_ssl_key
   ssl_cert = var.cac_ssl_cert
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 resource "google_compute_target_pool" "cac" {

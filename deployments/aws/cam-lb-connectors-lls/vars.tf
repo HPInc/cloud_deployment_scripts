@@ -321,6 +321,11 @@ variable "ssl_cert" {
   }
 }
 
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
+}
+
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string

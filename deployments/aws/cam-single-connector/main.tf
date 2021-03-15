@@ -134,6 +134,8 @@ module "cac" {
 
   ssl_key  = var.ssl_key
   ssl_cert = var.ssl_cert
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 module "win-gfx" {
