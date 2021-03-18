@@ -280,8 +280,8 @@ install_cac() {
         args=$args"--ssl-key $PROVISIONING_DIR/${ssl_key} "
         args=$args"--ssl-cert $PROVISIONING_DIR/${ssl_cert} "
     else
-        log "  --insecure"
-        args=$args"--insecure "
+        log "  --self-signed"
+        args=$args"--self-signed "
     fi
 
     if [ "${cas_mgr_insecure}" ]
