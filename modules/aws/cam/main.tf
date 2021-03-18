@@ -11,6 +11,13 @@ locals {
   enable_public_ip = var.enable_public_ip ? [true] : []
   cam_setup_script = "cam-setup.py"
   provisioning_script = "cam-provisioning.sh"
+  cam_aws_credentials_file = "cam-aws-credentials.ini"
+}
+
+resource "aws_s3_bucket_object" "cam_aws_credentials_file" {
+  bucket = var.bucket_name
+  key    = local.cam_aws_credentials_file
+  source = var.cam_aws_credentials_file
 }
 
 resource "aws_s3_bucket_object" "cam-setup-script" {
@@ -24,17 +31,16 @@ resource "aws_s3_bucket_object" "cam-provisioning-script" {
   key     = local.provisioning_script
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
-    {
-      aws_key_id              = var.aws_key_id,
-      aws_region              = var.aws_region,
-      aws_secret_key          = var.aws_secret_key,
-      bucket_name             = var.bucket_name,
-      cam_deployment_sa_file  = var.cam_deployment_sa_file,
-      cam_gui_admin_password  = var.cam_gui_admin_password,
-      cam_setup_script        = local.cam_setup_script,
-      customer_master_key_id  = var.customer_master_key_id,
-      pcoip_registration_code = var.pcoip_registration_code,
-      teradici_download_token = var.teradici_download_token,
+    {      
+      aws_region               = var.aws_region,
+      bucket_name              = var.bucket_name,
+      cam_aws_credentials_file = local.cam_aws_credentials_file,
+      cam_deployment_sa_file   = var.cam_deployment_sa_file,
+      cam_gui_admin_password   = var.cam_gui_admin_password,
+      cam_setup_script         = local.cam_setup_script,
+      customer_master_key_id   = var.customer_master_key_id,
+      pcoip_registration_code  = var.pcoip_registration_code,
+      teradici_download_token  = var.teradici_download_token,
     }
   )
 }
@@ -97,6 +103,12 @@ data "aws_iam_policy_document" "cam-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_aws_credentials_file}"]
     effect    = "Allow"
   }
 

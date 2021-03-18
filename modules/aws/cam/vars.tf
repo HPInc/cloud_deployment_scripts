@@ -5,16 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-variable "aws_key_id"{
-  description = "AWS cloud service account credentials access key id"
-  type        = string
-}
-
-variable "aws_secret_key" {
-  description = "AWS cloud service account credentials secret key"
-  type        = string
-}
-
 variable "aws_region" {
   description = "AWS region"
   default     = "us-west-1"
@@ -84,6 +74,16 @@ variable "host_name" {
 variable "admin_ssh_key_name" {
   description = "Name of Admin SSH Key"
   type        = string
+}
+
+variable "cam_aws_credentials_file" {
+    description = "Location of AWS credentials file for Cloud Access Manager"
+    type        = string
+
+    validation {
+      condition = fileexists(var.cam_aws_credentials_file)
+      error_message = "The cam_aws_credentials_file specified does not exist. Please check the file path."
+    }
 }
 
 variable "cam_gui_admin_password" {

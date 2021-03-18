@@ -55,8 +55,6 @@ lls_license_count = 0
 # cam_instance_type = "t2.xlarge"
 # cam_disk_size_gb  = "50"
 
-cam_aws_credentials_file = "/path/to/cam_aws_key"
-
 ##############################
 #   Cloud Access Connector   #
 ##############################
@@ -155,3 +153,4 @@ cam_gui_admin_password      = "SecuRe_pwd4"
 lls_admin_password          = "SecuRe_pwd5"
 lls_activation_code         = "0123-4567-89AB-CDEF"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+cam_aws_credentials_file    = "/path/to/cam_aws_key"

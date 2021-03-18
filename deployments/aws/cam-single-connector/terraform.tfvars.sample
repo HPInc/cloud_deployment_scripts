@@ -49,8 +49,6 @@ admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cam_instance_type = "t2.xlarge"
 # cam_disk_size_gb  = "50"
 
-cam_aws_credentials_file = "/path/to/cam_aws_key"
-
 ##############################
 #   Cloud Access Connector   #
 ##############################
@@ -135,3 +133,4 @@ safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"
 cam_gui_admin_password      = "SecuRe_pwd4"
 pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+cam_aws_credentials_file    = "/path/to/cam_aws_key"

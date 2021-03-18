@@ -8,8 +8,7 @@
 import argparse
 import json 
 import requests
-import retry
-from retry import retry
+import configparser
 
 CAM_API_URL = "https://localhost/api/v1"
 TEMP_CRED_PATH = "/opt/teradici/casm/temp-creds.txt"
@@ -83,27 +82,51 @@ def deployment_key_write(deployment_key, path):
         json.dump(deployment_key, f)
 
 
-@retry(tries=5,delay=5)
-def register_service_account(user, aws_key_id, aws_secret_key, deployment):
+def parse_aws_sa_key(path):
+    config = configparser.ConfigParser()
+    config.read(path)
+    return config['default']
+
+
+def validate_aws_credentials(user, credentials):
+    print("Validating AWS cloud service account...")
     payload = {
         'provider': 'aws',
         'credential': {
             'userName': user,
-            'accessKeyId': aws_key_id,
-            'secretAccessKey': aws_secret_key,
+            'accessKeyId': credentials['aws_access_key_id'],
+            'secretAccessKey': credentials['aws_secret_access_key'],
+        }
+    }
+    resp = session.post(
+        f"{CAM_API_URL}/auth/users/cloudServiceAccount/validate",
+        json = payload,
+    )
+    try:
+        resp.raise_for_status()
+        return True
+    except requests.exceptions.HTTPError as e:
+        # Not failing because AWS service account is optional
+        print("Warning: error validating AWS Service Account key.")
+        print(e)
+
+
+def deployment_register_service_account(user, credentials, deployment):
+    print("Adding AWS cloud service account to deployment...")
+    payload = {
+        'provider': 'aws',
+        'credential': {
+            'userName': user,
+            'accessKeyId': credentials['aws_access_key_id'],
+            'secretAccessKey': credentials['aws_secret_access_key'],
         }
     }
     resp = session.post(
         f"{CAM_API_URL}/deployments/{deployment['deploymentId']}/cloudServiceAccounts",
         json = payload,
     )
-    resp.raise_for_status()
-
-
-def deployment_register_service_account(user, aws_key_id, aws_secret_key, deployment):
-    print("Adding AWS cloud service account to deployment...")
     try:
-        register_service_account(user, aws_key_id, aws_secret_key, deployment)
+        resp.raise_for_status()
         print("Successfully added AWS cloud service account to deployment.")
     except requests.exceptions.HTTPError as e:
         # Not failing because AWS service account is optional
@@ -118,8 +141,7 @@ if __name__ == '__main__':
     parser.add_argument("--key_name", required=True, help="name of CAM Deployment Service Account key")
     parser.add_argument("--password", required=True, help="new CAM administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
-    parser.add_argument("--aws_key_id", help="AWS Service Account credential key ID")
-    parser.add_argument("--aws_secret_key", help="AWS Service Account credential secret")
+    parser.add_argument("--aws_credentials_file", required=True, help="AWS Service Account credentials INI file")
 
     args = parser.parse_args()
 
@@ -139,4 +161,6 @@ if __name__ == '__main__':
     deployment_key_write(cam_deployment_key, args.key_file)
 
     print("Registering AWS cloud service account to CAM...")
-    deployment_register_service_account("CAM", args.aws_key_id, args.aws_secret_key, deployment)
+    credentials = parse_aws_sa_key(args.aws_credentials_file)
+    if validate_aws_credentials("CAM", credentials):
+        deployment_register_service_account("CAM", credentials, deployment)
