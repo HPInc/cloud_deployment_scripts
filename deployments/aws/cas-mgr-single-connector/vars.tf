@@ -133,7 +133,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "ad_service_account_password" {
@@ -152,48 +152,48 @@ variable "domain_users_list" {
   }
 }
 
-variable "cam_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Manager"
-  default     = "subnet-cam"
+variable "cas_mgr_subnet_name" {
+  description = "Name for subnet containing the CAS Manager"
+  default     = "subnet-cas-mgr"
 }
 
-variable "cam_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Manager"
+variable "cas_mgr_subnet_cidr" {
+  description = "CIDR for subnet containing the CAS Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cam_instance_type" {
-  description = "Instance type for the Cloud Access Manager"
+variable "cas_mgr_instance_type" {
+  description = "Instance type for the CAS Manager"
   default     = "t2.xlarge"
 }
 
-variable "cam_disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Manager"
+variable "cas_mgr_disk_size_gb" {
+  description = "Disk size (GB) of the CAS Manager"
   default     = "60"
 }
 
-variable "cam_ami_owner" {
-  description = "Owner of AMI for the Cloud Access Manager"
+variable "cas_mgr_ami_owner" {
+  description = "Owner of AMI for the CAS Manager"
   default     = "aws-marketplace"
 }
 
-variable "cam_ami_product_code" {
-  description = "Product Code of the AMI to create Cloud Access Manager from"
+variable "cas_mgr_ami_product_code" {
+  description = "Product Code of the AMI to create CAS Manager from"
   default     = "47k9ia2igxpcce2bzo8u3kj03"
 }
 
-variable "cam_gui_admin_password" {
-  description = "Password for the Administrator of Cloud Access Manager"
+variable "cas_mgr_admin_password" {
+  description = "Password for the Administrator of CAS Manager"
   type        = string
 }
 
-variable "cam_aws_credentials_file" {
-    description = "Location of AWS credentials file for Cloud Access Manager"
+variable "cas_mgr_aws_credentials_file" {
+    description = "Location of AWS credentials file for CAS Manager"
     type        = string
 
     validation {
-      condition = fileexists(var.cam_aws_credentials_file)
-      error_message = "The cam_aws_credentials_file specified does not exist. Please check the file path."
+      condition = fileexists(var.cas_mgr_aws_credentials_file)
+      error_message = "The cas_mgr_aws_credentials_file specified does not exist. Please check the file path."
     }
 }
 

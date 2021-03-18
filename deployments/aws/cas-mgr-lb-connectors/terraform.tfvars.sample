@@ -14,7 +14,7 @@ aws_credentials_file = "/path/to/aws_key"
 # prefix = ""
 
 # By default, ICMP, SSH, RDP and WinRM to the deployed virtual machines are only
-# allowed from the Terraform host. HTTPS/API access to CAM Standalone is also
+# allowed from the Terraform host. HTTPS/API access to CAS Manager is also
 # limited by this range. Define allowed_admin_cidrs to open the VPC firewall to
 # additional IP addresses or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_admin_cidrs = []
@@ -43,11 +43,11 @@ admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-############################
-#   Cloud Access Manager   #
-############################
-# cam_instance_type = "t2.xlarge"
-# cam_disk_size_gb  = "50"
+###################
+#   CAS Manager   #
+###################
+# cas_mgr_instance_type = "t2.xlarge"
+# cas_mgr_disk_size_gb  = "50"
 
 ##############################
 #   Cloud Access Connector   #
@@ -140,9 +140,9 @@ centos_std_instance_count = 0
 # customer_master_key_id = "<key-id-uuid>"
 
 # <-- Start of secrets section, do not edit this line. -->
-dc_admin_password           = "SecuRe_pwd1"
-safe_mode_admin_password    = "SecuRe_pwd2"
-ad_service_account_password = "SecuRe_pwd3"
-cam_gui_admin_password      = "SecuRe_pwd4"
-pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cam_aws_credentials_file    = "/path/to/cam_aws_key"
+dc_admin_password            = "SecuRe_pwd1"
+safe_mode_admin_password     = "SecuRe_pwd2"
+ad_service_account_password  = "SecuRe_pwd3"
+cas_mgr_admin_password       = "SecuRe_pwd4"
+pcoip_registration_code      = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+cas_mgr_aws_credentials_file = "/path/to/aws_credentials.ini"

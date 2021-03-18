@@ -8,10 +8,10 @@
 locals {
   prefix             = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
-  cam_aws_credentials_file = "cam-aws-credentials.ini"
+  cas_mgr_aws_credentials_file = "cas-mgr-aws-credentials.ini"
 }
 
 resource "random_id" "bucket-name" {
@@ -28,13 +28,13 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
-resource "aws_s3_bucket_object" "cam_aws_credentials_file" {
+resource "aws_s3_bucket_object" "cas_mgr_aws_credentials_file" {
   bucket = aws_s3_bucket.scripts.bucket
-  key    = local.cam_aws_credentials_file
-  source = var.cam_aws_credentials_file
+  key    = local.cas_mgr_aws_credentials_file
+  source = var.cas_mgr_aws_credentials_file
 }
 
-resource "aws_key_pair" "cam_admin" {
+resource "aws_key_pair" "cas_admin" {
   key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
 }
@@ -69,22 +69,22 @@ module "dc" {
   ami_name  = var.dc_ami_name
 }
 
-module "cam" {
-  source = "../../../modules/aws/cam"
+module "cas-mgr" {
+  source = "../../../modules/aws/cas-mgr"
 
   prefix = var.prefix
 
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
-  cam_gui_admin_password  = var.cam_gui_admin_password
+  cas_mgr_admin_password  = var.cas_mgr_admin_password
   teradici_download_token = var.teradici_download_token
   
-  bucket_name              = aws_s3_bucket.scripts.id
-  cam_aws_credentials_file = local.cam_aws_credentials_file
-  cam_deployment_sa_file   = local.cam_deployment_sa_file
+  bucket_name                  = aws_s3_bucket.scripts.id
+  cas_mgr_aws_credentials_file = local.cas_mgr_aws_credentials_file
+  cas_mgr_deployment_sa_file   = local.cas_mgr_deployment_sa_file
 
   aws_region   = var.aws_region
-  subnet       = aws_subnet.cam-subnet.id
+  subnet       = aws_subnet.cas-mgr-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-http.id,
@@ -92,11 +92,11 @@ module "cam" {
     aws_security_group.allow-icmp.id,
   ]
 
-  instance_type = var.cam_instance_type
-  disk_size_gb  = var.cam_disk_size_gb
+  instance_type = var.cas_mgr_instance_type
+  disk_size_gb  = var.cas_mgr_disk_size_gb
 
-  ami_owner        = var.cam_ami_owner
-  ami_product_code = var.cam_ami_product_code
+  ami_owner        = var.cas_mgr_ami_owner
+  ami_product_code = var.cas_mgr_ami_product_code
 
   admin_ssh_key_name = local.admin_ssh_key_name
 }
@@ -219,11 +219,11 @@ module "cac" {
 
   prefix = var.prefix
 
-  aws_region              = var.aws_region
-  customer_master_key_id  = var.customer_master_key_id
-  cam_url                 = "https://${module.cam.internal-ip}"
-  cam_insecure            = true
-  cam_deployment_sa_file  = local.cam_deployment_sa_file
+  aws_region                 = var.aws_region
+  customer_master_key_id     = var.customer_master_key_id
+  cas_mgr_url                = "https://${module.cas-mgr.internal-ip}"
+  cas_mgr_insecure           = true
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip

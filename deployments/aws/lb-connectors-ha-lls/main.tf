@@ -8,8 +8,8 @@
 locals {
   prefix             = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
 }
 
@@ -27,10 +27,10 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
-resource "aws_s3_bucket_object" "cam-deployment-sa-file" {
+resource "aws_s3_bucket_object" "cas-mgr-deployment-sa-file" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.cam_deployment_sa_file
-  source = var.cam_deployment_sa_file
+  key    = local.cas_mgr_deployment_sa_file
+  source = var.cas_mgr_deployment_sa_file
 }
 
 module "dc" {
@@ -100,7 +100,7 @@ module "ha-lls" {
   depends_on = [aws_nat_gateway.nat]
 }
 
-resource "aws_key_pair" "cam_admin" {
+resource "aws_key_pair" "cas_admin" {
   key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
 }
@@ -190,10 +190,10 @@ module "cac" {
 
   prefix = var.prefix
 
-  aws_region              = var.aws_region
-  customer_master_key_id  = var.customer_master_key_id
-  cam_url                 = var.cam_url
-  cam_deployment_sa_file  = local.cam_deployment_sa_file
+  aws_region                 = var.aws_region
+  customer_master_key_id     = var.customer_master_key_id
+  cas_mgr_url                = var.cas_mgr_url
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
