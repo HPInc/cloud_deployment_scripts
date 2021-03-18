@@ -188,7 +188,7 @@ install_pcoip_agent() {
         log "--> PCoIP agent repo installed successfully."
 
         log "--> Installing USB dependencies..."
-        retry "yum install usb-vhci"
+        retry "yum install -y usb-vhci"
         if [ $? -ne 0 ]; then
             log "--> Warning: Failed to install usb-vhci."
         fi
