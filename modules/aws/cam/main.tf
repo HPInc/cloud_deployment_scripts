@@ -11,13 +11,6 @@ locals {
   enable_public_ip = var.enable_public_ip ? [true] : []
   cam_setup_script = "cam-setup.py"
   provisioning_script = "cam-provisioning.sh"
-  cam_aws_credentials_file = "cam-aws-credentials.ini"
-}
-
-resource "aws_s3_bucket_object" "cam_aws_credentials_file" {
-  bucket = var.bucket_name
-  key    = local.cam_aws_credentials_file
-  source = var.cam_aws_credentials_file
 }
 
 resource "aws_s3_bucket_object" "cam-setup-script" {
@@ -34,7 +27,7 @@ resource "aws_s3_bucket_object" "cam-provisioning-script" {
     {      
       aws_region               = var.aws_region,
       bucket_name              = var.bucket_name,
-      cam_aws_credentials_file = local.cam_aws_credentials_file,
+      cam_aws_credentials_file = var.cam_aws_credentials_file,
       cam_deployment_sa_file   = var.cam_deployment_sa_file,
       cam_gui_admin_password   = var.cam_gui_admin_password,
       cam_setup_script         = local.cam_setup_script,
@@ -108,7 +101,7 @@ data "aws_iam_policy_document" "cam-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_aws_credentials_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cam_aws_credentials_file}"]
     effect    = "Allow"
   }
 

@@ -88,6 +88,9 @@ get_credentials() {
 
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting AWS Service Account credentials file..."
+        aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(cat "$INSTALL_DIR/${cam_aws_credentials_file}" | base64 -d) --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cam_aws_credentials_file}"
     fi
     set -x
 }

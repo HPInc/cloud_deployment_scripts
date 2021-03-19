@@ -77,13 +77,8 @@ variable "admin_ssh_key_name" {
 }
 
 variable "cam_aws_credentials_file" {
-    description = "Location of AWS credentials file for Cloud Access Manager"
+    description = "Name of AWS credentials file for Cloud Access Manager in bucket"
     type        = string
-
-    validation {
-      condition = fileexists(var.cam_aws_credentials_file)
-      error_message = "The cam_aws_credentials_file specified does not exist. Please check the file path."
-    }
 }
 
 variable "cam_gui_admin_password" {

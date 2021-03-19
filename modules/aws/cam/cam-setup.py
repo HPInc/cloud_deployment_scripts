@@ -141,7 +141,7 @@ if __name__ == '__main__':
     parser.add_argument("--key_name", required=True, help="name of CAM Deployment Service Account key")
     parser.add_argument("--password", required=True, help="new CAM administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
-    parser.add_argument("--aws_credentials_file", required=True, help="AWS Service Account credentials INI file")
+    parser.add_argument("--aws_credentials_file", required=False, help="AWS Service Account credentials INI file")
 
     args = parser.parse_args()
 
@@ -160,7 +160,9 @@ if __name__ == '__main__':
     cam_deployment_key = deployment_key_create(deployment, args.key_name)
     deployment_key_write(cam_deployment_key, args.key_file)
 
-    print("Registering AWS cloud service account to CAM...")
     credentials = parse_aws_sa_key(args.aws_credentials_file)
     if validate_aws_credentials("CAM", credentials):
+        print("Registering AWS cloud service account to CAM...")
         deployment_register_service_account("CAM", credentials, deployment)
+    else:
+        print("WARNING: AWS credentials validation failed. Skip adding registration to CAM.")
