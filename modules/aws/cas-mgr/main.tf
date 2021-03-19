@@ -9,31 +9,31 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   # Convert bool to iterable collection so it can be used with for_each
   enable_public_ip = var.enable_public_ip ? [true] : []
-  cam_setup_script = "cam-setup.py"
-  provisioning_script = "cam-provisioning.sh"
+  cas_mgr_setup_script = "cas-mgr-setup.py"
+  provisioning_script = "cas-mgr-provisioning.sh"
 }
 
-resource "aws_s3_bucket_object" "cam-setup-script" {
+resource "aws_s3_bucket_object" "cas-mgr-setup-script" {
   bucket = var.bucket_name
-  key    = local.cam_setup_script
-  source = "${path.module}/${local.cam_setup_script}"
+  key    = local.cas_mgr_setup_script
+  source = "${path.module}/${local.cas_mgr_setup_script}"
 }
 
-resource "aws_s3_bucket_object" "cam-provisioning-script" {
+resource "aws_s3_bucket_object" "cas-mgr-provisioning-script" {
   bucket  = var.bucket_name
   key     = local.provisioning_script
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
-    {      
-      aws_region               = var.aws_region,
-      bucket_name              = var.bucket_name,
-      cam_aws_credentials_file = var.cam_aws_credentials_file,
-      cam_deployment_sa_file   = var.cam_deployment_sa_file,
-      cam_gui_admin_password   = var.cam_gui_admin_password,
-      cam_setup_script         = local.cam_setup_script,
-      customer_master_key_id   = var.customer_master_key_id,
-      pcoip_registration_code  = var.pcoip_registration_code,
-      teradici_download_token  = var.teradici_download_token,
+    {
+      aws_region                   = var.aws_region,
+      bucket_name                  = var.bucket_name,
+      cas_mgr_aws_credentials_file = var.cas_mgr_aws_credentials_file,
+      cas_mgr_deployment_sa_file   = var.cas_mgr_deployment_sa_file,
+      cas_mgr_admin_password       = var.cas_mgr_admin_password,
+      cas_mgr_setup_script         = local.cas_mgr_setup_script,
+      customer_master_key_id       = var.customer_master_key_id,
+      pcoip_registration_code      = var.pcoip_registration_code,
+      teradici_download_token      = var.teradici_download_token,
     }
   )
 }
@@ -69,8 +69,8 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   }
 }
 
-resource "aws_iam_role" "cam-role" {
-  name               = "${local.prefix}cam_role"
+resource "aws_iam_role" "cas-mgr-role" {
+  name               = "${local.prefix}cas_mgr_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -80,7 +80,7 @@ data "aws_kms_key" "encryption-key" {
   key_id = var.customer_master_key_id
 }
 
-data "aws_iam_policy_document" "cam-policy-doc" {
+data "aws_iam_policy_document" "cas-mgr-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
     resources = ["*"]
@@ -101,19 +101,19 @@ data "aws_iam_policy_document" "cam-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_setup_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cas_mgr_setup_script}"]
     effect    = "Allow"
   }
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cam_aws_credentials_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cas_mgr_aws_credentials_file}"]
     effect    = "Allow"
   }
 
   statement {
     actions   = ["s3:PutObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cam_deployment_sa_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cas_mgr_deployment_sa_file}"]
     effect    = "Allow"
   }
 
@@ -128,21 +128,21 @@ data "aws_iam_policy_document" "cam-policy-doc" {
   }
 }
 
-resource "aws_iam_role_policy" "cam-role-policy" {
-  name = "${local.prefix}cam_role_policy"
-  role = aws_iam_role.cam-role.id
-  policy = data.aws_iam_policy_document.cam-policy-doc.json
+resource "aws_iam_role_policy" "cas-mgr-role-policy" {
+  name = "${local.prefix}cas_mgr_role_policy"
+  role = aws_iam_role.cas-mgr-role.id
+  policy = data.aws_iam_policy_document.cas-mgr-policy-doc.json
 }
 
-resource "aws_iam_instance_profile" "cam-instance-profile" {
-  name = "${local.prefix}cam_instance_profile"
-  role = aws_iam_role.cam-role.name
+resource "aws_iam_instance_profile" "cas-mgr-instance-profile" {
+  name = "${local.prefix}cas_mgr_instance_profile"
+  role = aws_iam_role.cas-mgr-role.name
 }
 
-resource "aws_instance" "cam" {
+resource "aws_instance" "cas-mgr" {
   depends_on = [
-    aws_s3_bucket_object.cam-setup-script,
-    aws_s3_bucket_object.cam-provisioning-script,
+    aws_s3_bucket_object.cas-mgr-setup-script,
+    aws_s3_bucket_object.cas-mgr-provisioning-script,
   ]
 
   subnet_id         = var.subnet
@@ -161,7 +161,7 @@ resource "aws_instance" "cam" {
 
   key_name = var.admin_ssh_key_name
 
-  iam_instance_profile = aws_iam_instance_profile.cam-instance-profile.name
+  iam_instance_profile = aws_iam_instance_profile.cas-mgr-instance-profile.name
 
   user_data = data.template_file.user-data.rendered
 
