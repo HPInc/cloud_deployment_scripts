@@ -10,7 +10,7 @@ import json
 import requests
 
 CAM_API_URL = "https://localhost/api/v1"
-TEMP_CRED_PATH = "/opt/teradici/cam/temp-creds.txt"
+TEMP_CRED_PATH = "/opt/teradici/casm/temp-creds.txt"
 
 
 def get_temp_creds(path=TEMP_CRED_PATH):

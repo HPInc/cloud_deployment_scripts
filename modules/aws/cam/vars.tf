@@ -83,7 +83,7 @@ variable "cam_gui_admin_password" {
 
 variable "cam_add_repo_script" {
   description = "Location of script to add repo for Cloud Access Manager"
-  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-manager-dev/cfg/setup/bash.rpm.sh"
+  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cas-manager/setup.rpm.sh"
 }
 
 variable "customer_master_key_id" {
