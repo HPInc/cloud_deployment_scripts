@@ -9,6 +9,8 @@ import argparse
 import json 
 import requests
 import configparser
+import boto3
+from botocore.exceptions import ClientError
 
 CAM_API_URL = "https://localhost/api/v1"
 TEMP_CRED_PATH = "/opt/teradici/casm/temp-creds.txt"
@@ -88,12 +90,26 @@ def parse_aws_sa_key(path):
     return config['default']
 
 
-def validate_aws_credentials(user, credentials):
+def get_username(credentials):
+    iam = boto3.resource('iam')
+    users = list(iam.users.all())
+    try:
+        for user in users:
+            if user.user_id == credentials['aws_access_key_id']:
+                return user.user_name
+        print("Warning: no username found with the specified credentials.")
+    except ClientError as e:
+        print("Warning: error retrieving AWS username.")
+        print(e)
+    return None
+
+
+def validate_aws_credentials(username, credentials):
     print("Validating AWS cloud service account...")
     payload = {
         'provider': 'aws',
         'credential': {
-            'userName': user,
+            'userName': username,
             'accessKeyId': credentials['aws_access_key_id'],
             'secretAccessKey': credentials['aws_secret_access_key'],
         }
@@ -106,17 +122,16 @@ def validate_aws_credentials(user, credentials):
         resp.raise_for_status()
         return True
     except requests.exceptions.HTTPError as e:
-        # Not failing because AWS service account is optional
         print("Warning: error validating AWS Service Account key.")
         print(e)
 
 
-def deployment_register_service_account(user, credentials, deployment):
+def deployment_register_service_account(userame, credentials, deployment):
     print("Adding AWS cloud service account to deployment...")
     payload = {
         'provider': 'aws',
         'credential': {
-            'userName': user,
+            'userName': username,
             'accessKeyId': credentials['aws_access_key_id'],
             'secretAccessKey': credentials['aws_secret_access_key'],
         }
@@ -161,8 +176,9 @@ if __name__ == '__main__':
     deployment_key_write(cam_deployment_key, args.key_file)
 
     credentials = parse_aws_sa_key(args.aws_credentials_file)
-    if validate_aws_credentials("CAM", credentials):
+    username = get_username(credentials)
+    if username is not None and validate_aws_credentials(username, credentials):
         print("Registering AWS cloud service account to CAM...")
-        deployment_register_service_account("CAM", credentials, deployment)
+        deployment_register_service_account(username, credentials, deployment)
     else:
-        print("WARNING: AWS credentials validation failed. Skip adding registration to CAM.")
+        print("Skipping AWS cloud service account registration to CAM.")

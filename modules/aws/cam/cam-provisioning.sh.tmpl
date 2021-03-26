@@ -55,7 +55,7 @@ install_prereqs() {
         exit 1
     fi
 
-    python3 -m pip install requests configparser
+    python3 -m pip install requests configparser boto3
 
     if [ $? -ne 0 ]
     then
