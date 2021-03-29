@@ -92,16 +92,15 @@ def parse_aws_sa_key(path):
 
 def get_username(credentials):
     iam = boto3.resource('iam')
-    users = list(iam.users.all())
     try:
-        for user in users:
-            if user.user_id == credentials['aws_access_key_id']:
-                return user.user_name
-        print("Warning: no username found with the specified credentials.")
+        resp = iam.meta.client.get_access_key_last_used(
+            AccessKeyId=credentials['aws_access_key_id']
+        )
+        return resp['UserName']
     except ClientError as e:
         print("Warning: error retrieving AWS username.")
         print(e)
-    return None
+        return None
 
 
 def validate_aws_credentials(username, credentials):
