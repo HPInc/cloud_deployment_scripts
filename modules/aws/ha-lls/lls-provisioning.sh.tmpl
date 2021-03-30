@@ -83,7 +83,7 @@ check_required_vars() {
 }
 
 install_pcoip_license_server() {
-    yum install -y ${lls_repo_url}
+    curl -1sLf ${lls_repo_url} | sudo -E bash
     yum install -y $LLS_YUM_PKG
 
     set +x

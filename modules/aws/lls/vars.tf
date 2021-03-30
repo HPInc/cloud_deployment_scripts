@@ -72,7 +72,7 @@ variable "admin_ssh_key_name" {
 
 variable "lls_repo_url" {
   description = "Location of the Teradici License Server RPM repo"
-  default     = "https://downloads.teradici.com/rhel/teradici-repo-latest.noarch.rpm"
+  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/pcoip-license-server/setup.rpm.sh"
 }
 
 variable "lls_admin_password" {
