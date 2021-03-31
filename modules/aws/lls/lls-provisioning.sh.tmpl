@@ -87,7 +87,7 @@ get_credentials
 
 check_required_vars
 
-curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | sudo -E bash
+curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | bash
 yum install -y $LLS_YUM_PKG
 
 set +x

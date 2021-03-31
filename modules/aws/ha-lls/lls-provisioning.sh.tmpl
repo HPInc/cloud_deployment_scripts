@@ -84,7 +84,7 @@ check_required_vars() {
 }
 
 install_pcoip_license_server() {
-    curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | sudo -E bash
+    curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | bash
     yum install -y $LLS_YUM_PKG
 
     set +x
