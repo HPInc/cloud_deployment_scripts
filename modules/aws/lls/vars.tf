@@ -70,11 +70,6 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "lls_repo_url" {
-  description = "Location of the Teradici License Server RPM repo"
-  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/pcoip-license-server/setup.rpm.sh"
-}
-
 variable "lls_admin_password" {
   description = "Administrative password for the Teradici License Server"
   default     = ""
@@ -88,6 +83,11 @@ variable "lls_activation_code" {
 variable "lls_license_count" {
   description = "Number of PCoIP session licenses to activate"
   default     = 0
+}
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
 variable "customer_master_key_id" {
