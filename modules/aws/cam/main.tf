@@ -27,12 +27,12 @@ resource "aws_s3_bucket_object" "cam-provisioning-script" {
     {
       aws_region              = var.aws_region,
       bucket_name             = var.bucket_name,
-      cam_add_repo_script     = var.cam_add_repo_script,
       cam_deployment_sa_file  = var.cam_deployment_sa_file,
       cam_gui_admin_password  = var.cam_gui_admin_password,
       cam_setup_script        = local.cam_setup_script,
       customer_master_key_id  = var.customer_master_key_id,
       pcoip_registration_code = var.pcoip_registration_code,
+      teradici_download_token = var.teradici_download_token,
     }
   )
 }
