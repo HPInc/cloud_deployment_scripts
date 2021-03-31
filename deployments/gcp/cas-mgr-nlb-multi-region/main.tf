@@ -77,6 +77,7 @@ module "cas-mgr" {
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
   cas_mgr_admin_password  = var.cas_mgr_admin_password
+  teradici_download_token = var.teradici_download_token
   
   bucket_name                = google_storage_bucket.scripts.name
   cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
