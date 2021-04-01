@@ -10,6 +10,7 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 CAM_DEPLOYMENT_KEY_NAME="terraform-key"
 CAM_DEPLOYMENT_NAME="terraform-deployment"
 CAM_INSTALL_LOG="/var/log/teradici/cam-install.log"
+CAM_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/setup.rpm.sh"
 
 INSTALL_DIR="/root"
 cd $INSTALL_DIR
@@ -119,7 +120,7 @@ configure_firewall(){
 
 add_cam_repo() {
     log "--> Adding CAM repo..."
-    curl -1sLf '${cam_add_repo_script}' | sudo -E distro=el codename=7 bash
+    curl -1sLf $CAM_REPO_SETUP_SCRIPT_URL | distro=el codename=7 bash
 }
 
 config_selinux() {

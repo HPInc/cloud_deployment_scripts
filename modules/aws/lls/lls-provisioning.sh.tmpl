@@ -10,6 +10,7 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 LLS_YUM_PKG="pcoip-license-server"
+LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/setup.rpm.sh"
 
 log() {
     local message="$1"
@@ -86,7 +87,7 @@ get_credentials
 
 check_required_vars
 
-curl -1sLf ${lls_repo_url} | sudo -E bash
+curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | bash
 yum install -y $LLS_YUM_PKG
 
 set +x

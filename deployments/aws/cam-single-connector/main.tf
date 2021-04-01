@@ -70,6 +70,7 @@ module "cam" {
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
   cam_gui_admin_password  = var.cam_gui_admin_password
+  teradici_download_token = var.teradici_download_token
   
   bucket_name            = aws_s3_bucket.scripts.id
   cam_deployment_sa_file = local.cam_deployment_sa_file

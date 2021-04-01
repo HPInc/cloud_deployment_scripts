@@ -16,16 +16,16 @@ resource "aws_s3_bucket_object" "lls-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.lls_provisioning_script}.tmpl",
     {
-      aws_region             = var.aws_region, 
-      customer_master_key_id = var.customer_master_key_id,
-      lls_repo_url           = var.lls_repo_url,
-      lls_admin_password     = var.lls_admin_password,
-      lls_activation_code    = var.lls_activation_code,
-      lls_license_count      = var.lls_license_count,
-      lls_main_ip            = var.assigned_ips["lls_main"],
-      lls_backup_ip          = var.assigned_ips["lls_backup"],
-      haproxy_master_ip      = var.assigned_ips["haproxy_master"],
-      haproxy_backup_ip      = var.assigned_ips["haproxy_backup"],
+      aws_region              = var.aws_region, 
+      customer_master_key_id  = var.customer_master_key_id,
+      lls_admin_password      = var.lls_admin_password,
+      lls_activation_code     = var.lls_activation_code,
+      lls_license_count       = var.lls_license_count,
+      lls_main_ip             = var.assigned_ips["lls_main"],
+      lls_backup_ip           = var.assigned_ips["lls_backup"],
+      haproxy_master_ip       = var.assigned_ips["haproxy_master"],
+      haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
+      teradici_download_token = var.teradici_download_token,
     }
   )
 }

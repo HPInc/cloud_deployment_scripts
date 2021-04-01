@@ -70,10 +70,11 @@ module "lls" {
 
   prefix = var.prefix
 
-  customer_master_key_id = var.customer_master_key_id
-  lls_admin_password     = var.lls_admin_password
-  lls_activation_code    = var.lls_activation_code
-  lls_license_count      = var.lls_license_count
+  customer_master_key_id  = var.customer_master_key_id
+  lls_admin_password      = var.lls_admin_password
+  lls_activation_code     = var.lls_activation_code
+  lls_license_count       = var.lls_license_count
+  teradici_download_token = var.teradici_download_token
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.lls-subnet.id
