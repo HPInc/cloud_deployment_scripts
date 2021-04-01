@@ -72,6 +72,9 @@ get_credentials() {
           "aws s3 cp s3://${bucket_name}/${cam_aws_credentials_file} $INSTALL_DIR" \
           "--> Downloading AWS credentials file from bucket ${bucket_name}..." \
           "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
+    
+    dos2unix $INSTALL_DIR/${cam_aws_credentials_file}
+    chmod +x $INSTALL_DIR/${cam_aws_credentials_file}
 
     if [[ -z "${customer_master_key_id}" ]]
     then

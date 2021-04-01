@@ -82,7 +82,13 @@ data "aws_kms_key" "encryption-key" {
 
 data "aws_iam_policy_document" "cam-policy-doc" {
   statement {
-    actions   = ["ec2:DescribeTags", "iam:GetAccessKeyLastUsed"]
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["iam:GetAccessKeyLastUsed"]
     resources = ["*"]
     effect    = "Allow"
   }

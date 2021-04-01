@@ -174,10 +174,11 @@ if __name__ == '__main__':
     cam_deployment_key = deployment_key_create(deployment, args.key_name)
     deployment_key_write(cam_deployment_key, args.key_file)
 
-    credentials = parse_aws_sa_key(args.aws_credentials_file)
-    username = get_username(credentials)
-    if username is not None and validate_aws_credentials(username, credentials):
-        print("Registering AWS cloud service account to CAM...")
-        deployment_register_service_account(username, credentials, deployment)
-    else:
-        print("Skipping AWS cloud service account registration to CAM.")
+    if args.aws_credentials_file is not None:
+        credentials = parse_aws_sa_key(args.aws_credentials_file)
+        username = get_username(credentials)
+        if username is not None and validate_aws_credentials(username, credentials):
+            print("Registering AWS cloud service account to CAM...")
+            deployment_register_service_account(username, credentials, deployment)
+        else:
+            print("Skipping AWS cloud service account registration to CAM.")
