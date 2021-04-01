@@ -84,34 +84,35 @@ def deployment_key_write(deployment_key, path):
         json.dump(deployment_key, f)
 
 
-def parse_aws_sa_key(path):
+def get_aws_sa_key(path):
     config = configparser.ConfigParser()
     config.read(path)
+    
     return config['default']
 
 
-def get_username(credentials):
+def get_username(key):
     iam = boto3.resource('iam')
     try:
         resp = iam.meta.client.get_access_key_last_used(
-            AccessKeyId=credentials['aws_access_key_id']
+            AccessKeyId=key['aws_access_key_id']
         )
         return resp['UserName']
     except ClientError as e:
+        # Not failing because AWS service account is optional
         print("Warning: error retrieving AWS username.")
         print(e)
-        return None
 
 
-def validate_aws_credentials(username, credentials):
-    print("Validating AWS cloud service account...")
+def validate_aws_sa(username, key):
+    print("Validating AWS credentials with CAM...")
     payload = {
         'provider': 'aws',
         'credential': {
             'userName': username,
-            'accessKeyId': credentials['aws_access_key_id'],
-            'secretAccessKey': credentials['aws_secret_access_key'],
-        }
+            'accessKeyId': key['aws_access_key_id'],
+            'secretAccessKey': key['aws_secret_access_key'],
+        },
     }
     resp = session.post(
         f"{CAM_API_URL}/auth/users/cloudServiceAccount/validate",
@@ -121,31 +122,40 @@ def validate_aws_credentials(username, credentials):
         resp.raise_for_status()
         return True
     except requests.exceptions.HTTPError as e:
+        # Not failing because AWS service account is optional
         print("Warning: error validating AWS Service Account key.")
         print(e)
 
+        if resp.status_code == 400:
+             print("Warning: error AWS Service Account key provided has insufficient permissions.")
+             print(resp.json()['data'])
 
-def deployment_register_service_account(userame, credentials, deployment):
-    print("Adding AWS cloud service account to deployment...")
+        return False
+
+
+def deployment_add_aws_account(username, key, deployment):
+    credentials = {
+        'userName': username,
+        'accessKeyId': key['aws_access_key_id'],
+        'secretAccessKey': key['aws_secret_access_key'],
+    }
     payload = {
         'provider': 'aws',
-        'credential': {
-            'userName': username,
-            'accessKeyId': credentials['aws_access_key_id'],
-            'secretAccessKey': credentials['aws_secret_access_key'],
-        }
+        'credential': credentials,
     }
     resp = session.post(
         f"{CAM_API_URL}/deployments/{deployment['deploymentId']}/cloudServiceAccounts",
         json = payload,
     )
+
     try:
         resp.raise_for_status()
         print("Successfully added AWS cloud service account to deployment.")
     except requests.exceptions.HTTPError as e:
         # Not failing because AWS service account is optional
-        print("Warning: error adding AWS cloud service account to deployment.")
+        print("Warning: error adding AWS Service Account to deployment.")
         print(e)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="This script updates the password for the CAM Admin user.")
@@ -155,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument("--key_name", required=True, help="name of CAM Deployment Service Account key")
     parser.add_argument("--password", required=True, help="new CAM administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
-    parser.add_argument("--aws_credentials_file", required=False, help="AWS Service Account credentials INI file")
+    parser.add_argument("--aws_key", help="AWS Service Account credentials INI file")
 
     args = parser.parse_args()
 
@@ -174,11 +184,11 @@ if __name__ == '__main__':
     cam_deployment_key = deployment_key_create(deployment, args.key_name)
     deployment_key_write(cam_deployment_key, args.key_file)
 
-    if args.aws_credentials_file is not None:
-        credentials = parse_aws_sa_key(args.aws_credentials_file)
-        username = get_username(credentials)
-        if username is not None and validate_aws_credentials(username, credentials):
-            print("Registering AWS cloud service account to CAM...")
-            deployment_register_service_account(username, credentials, deployment)
+    if args.aws_key:
+        key = get_aws_sa_key(args.aws_key)
+        username = get_username(key)
+        if username and validate_aws_sa(username, key):
+            print("Adding AWS credentials to CAM deployment...")
+            deployment_add_aws_account(username, key, deployment)
         else:
-            print("Skipping AWS cloud service account registration to CAM.")
+            print("Skip adding AWS credentials to CAM deployment.")

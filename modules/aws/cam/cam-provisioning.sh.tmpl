@@ -68,13 +68,13 @@ get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    retry 7200 10 \
-          "aws s3 cp s3://${bucket_name}/${cam_aws_credentials_file} $INSTALL_DIR" \
-          "--> Downloading AWS credentials file from bucket ${bucket_name}..." \
-          "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
-    
-    dos2unix $INSTALL_DIR/${cam_aws_credentials_file}
-    chmod +x $INSTALL_DIR/${cam_aws_credentials_file}
+    if [ "${cam_aws_credentials_file}" ]
+    then
+        retry 7200 10 \
+            "aws s3 cp s3://${bucket_name}/${cam_aws_credentials_file} $INSTALL_DIR" \
+            "--> Downloading AWS credentials file from bucket ${bucket_name}..." \
+            "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
+    fi
 
     if [[ -z "${customer_master_key_id}" ]]
     then
@@ -92,9 +92,13 @@ get_credentials() {
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
 
-        log "--> Decrypting AWS Service Account credentials file..."
-        aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(cat "$INSTALL_DIR/${cam_aws_credentials_file}" | base64 -d) --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cam_aws_credentials_file}"
+        if [ "${cam_aws_credentials_file}" ]
+        then
+            log "--> Decrypting AWS Service Account credentials file..."
+            aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(cat "$INSTALL_DIR/${cam_aws_credentials_file}" | base64 -d) --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cam_aws_credentials_file}"
+        fi
     fi
+
     set -x
 }
 
@@ -168,13 +172,19 @@ cam_setup() {
     dos2unix $INSTALL_DIR/${cam_setup_script}
     chmod +x $INSTALL_DIR/${cam_setup_script}
 
+    if [ "${cam_aws_credentials_file}" ]
+    then
+        dos2unix $INSTALL_DIR/${cam_aws_credentials_file}
+        chmod 600 $INSTALL_DIR/${cam_aws_credentials_file}
+        optional_args=$optional_args"--aws_key $INSTALL_DIR/${cam_aws_credentials_file}"
+    fi
+
     log "--> Running CAM setup script with the following options:"
     log "  --deployment_name $CAM_DEPLOYMENT_NAME"
     log "  --key_file $INSTALL_DIR/${cam_deployment_sa_file}"
     log "  --key_name $CAM_DEPLOYMENT_KEY_NAME"
     log "  --password <CAM GUI Administrator Password"
     log "  --reg_code <PCoIP Registration Code>"
-    log "  --aws_credentials $INSTALL_DIR/${cam_aws_credentials_file}"
     log "  $optional_args"
 
     set +x
@@ -185,7 +195,6 @@ cam_setup() {
       --key_name $CAM_DEPLOYMENT_KEY_NAME \
       --password $CAM_GUI_ADMIN_PASSWORD \
       --reg_code $PCOIP_REGISTRATION_CODE \
-      --aws_credentials $INSTALL_DIR/${cam_aws_credentials_file} \
       $optional_args
     set -x
 
