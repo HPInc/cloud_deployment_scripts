@@ -34,6 +34,20 @@ variable "pcoip_registration_code" {
 variable "domain_name" {
   description = "Name of the domain to join"
   type        = string
+
+  /* validation notes:
+      - the name is at least 2 levels and at most 3, as we have only tested up to 3 levels
+  */
+  validation {
+    condition = (
+      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(var.domain_name) < 256 &&
+      can(regex(
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
+        var.domain_name))
+    )
+    error_message = "Domain name is invalid. Please try again."
+  }
 }
 
 variable "domain_controller_ip" {
@@ -126,9 +140,14 @@ variable "cac_admin_ssh_pub_key_file" {
   }
 }
 
-variable "cac_installer_url" {
-  description = "Location of the Cloud Access Connector installer"
-  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/latest/cloud-access-connector_latest_Linux.tar.gz"
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
 variable "ssl_key" {
@@ -149,6 +168,11 @@ variable "ssl_cert" {
     condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
     error_message = "The ssl_cert file specified does not exist. Please check the file path."
   }
+}
+
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
 }
 
 variable "kms_cryptokey_id" {

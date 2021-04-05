@@ -97,9 +97,13 @@ module "cac" {
 
   cac_admin_user              = var.cac_admin_user
   cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
+  cac_version                 = var.cac_version
+  teradici_download_token     = var.teradici_download_token
 
   ssl_key  = var.cac_ssl_key
   ssl_cert = var.cac_ssl_cert
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 module "win-gfx" {

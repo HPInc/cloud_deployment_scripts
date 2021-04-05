@@ -11,6 +11,8 @@ PROVISIONING_DIR="/root"
 CAC_BIN_PATH="/usr/sbin/cloud-access-connector"
 CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
 CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
+CAC_LOCATION_URL="https://dl.teradici.com/${teradici_download_token}/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/${cac_version}"
+CAC_FILENAME="cloud-access-connector_${cac_version}_Linux.tar.gz"
 cd $PROVISIONING_DIR
 
 PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
@@ -175,7 +177,8 @@ config_network() {
 
 download_cac() {
     log "--> Downloading CAC installer..."
-    curl -L ${cac_installer_url} -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
+    cac_installer_url="$CAC_LOCATION_URL/$CAC_FILENAME"
+    curl -L $cac_installer_url -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
     tar xzvf $PROVISIONING_DIR/cloud-access-connector.tar.gz -C /
 }
 
@@ -255,6 +258,7 @@ install_cac() {
     log "--> Installing Cloud Access Connector..."
     local retries=10
     local args=""
+    local external_ip=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
 
     log "--> Running command: $CAC_BIN_PATH install"
     log "--> CAC install options:"
@@ -268,6 +272,8 @@ install_cac() {
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
     log "  --cam-url ${cam_url}"
+    log "  --external-pcoip-ip $external_ip"
+    log "  ${cac_extra_install_flags}"
 
     # Set pipefail option to return status of the connector install command
     set -o pipefail
@@ -282,8 +288,8 @@ install_cac() {
         args=$args"--ssl-key $PROVISIONING_DIR/${ssl_key} "
         args=$args"--ssl-cert $PROVISIONING_DIR/${ssl_cert} "
     else
-        log "  --insecure"
-        args=$args"--insecure "
+        log "  --self-signed"
+        args=$args"--self-signed "
     fi
 
     if [ "${cam_insecure}" ]
@@ -312,6 +318,8 @@ install_cac() {
             --retrieve-agent-state true \
             --sync-interval 5 \
             --cam-url ${cam_url} \
+            --external-pcoip-ip $external_ip \
+            ${cac_extra_install_flags} \
             $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
 

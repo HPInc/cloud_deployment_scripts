@@ -70,6 +70,7 @@ module "cam" {
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
   cam_gui_admin_password  = var.cam_gui_admin_password
+  teradici_download_token = var.teradici_download_token
   
   bucket_name            = aws_s3_bucket.scripts.id
   cam_deployment_sa_file = local.cam_deployment_sa_file
@@ -126,11 +127,16 @@ module "cac" {
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
+  
+  cac_version             = var.cac_version
+  teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
   ssl_key  = var.ssl_key
   ssl_cert = var.ssl_cert
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 module "win-gfx" {

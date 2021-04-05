@@ -74,7 +74,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210309"
 }
 
 variable "dc_admin_password" {
@@ -109,7 +109,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210211"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210325"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -148,9 +148,33 @@ variable "cac_ssl_cert" {
   }
 }
 
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
+}
+
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   default     = "example.com"
+
+  /* validation notes:
+      - the name is at least 2 levels and at most 3, as we have only tested up to 3 levels
+  */
+  validation {
+    condition = (
+      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(var.domain_name) < 256 &&
+      can(regex(
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
+        var.domain_name))
+    )
+    error_message = "Domain name is invalid. Please try again."
+  }
 }
 
 variable "safe_mode_admin_password" {
@@ -266,7 +290,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210309"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -296,7 +320,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210112"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210309"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -336,7 +360,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20210122"
+  default     = "projects/centos-cloud/global/images/centos-7-v20210401"
 }
 
 variable "centos_std_instance_count" {
@@ -361,7 +385,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20210122"
+  default     = "projects/centos-cloud/global/images/centos-7-v20210401"
 }
 
 variable "centos_admin_user" {

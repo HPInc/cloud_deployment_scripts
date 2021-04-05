@@ -10,6 +10,7 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 CAM_DEPLOYMENT_KEY_NAME="terraform-key"
 CAM_DEPLOYMENT_NAME="terraform-deployment"
 CAM_INSTALL_LOG="/var/log/teradici/cam-install.log"
+CAM_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/setup.rpm.sh"
 
 INSTALL_DIR="/root"
 cd $INSTALL_DIR
@@ -110,25 +111,32 @@ check_required_vars() {
     fi
 }
 
+configure_firewall(){
+    firewall-cmd --permanent --add-port=6443/tcp # virtual network flannel
+    firewall-cmd --permanent --zone=trusted --add-source=10.42.0.0/16 # This subnet is for the pods
+    firewall-cmd --permanent --zone=trusted --add-source=10.43.0.0/16 # This subnet is for the services
+    firewall-cmd --reload
+}
+
 add_cam_repo() {
     log "--> Adding CAM repo..."
-    curl -1sLf '${cam_add_repo_script}' | sudo -E distro=el codename=7 bash
+    curl -1sLf $CAM_REPO_SETUP_SCRIPT_URL | distro=el codename=7 bash
 }
 
 config_selinux() {
     log "--> Configuring SE Linux..."
     yum install -y selinux-policy-base container-selinux
-    yum install -y https://rpm.rancher.io/k3s-selinux-0.1.1-rc1.el7.noarch.rpm    
-    yum install -y cloud-access-manager-selinux
+    yum install -y https://github.com/k3s-io/k3s-selinux/releases/download/v0.2.stable.1/k3s-selinux-0.2-1.el7_8.noarch.rpm
+    yum install -y cas-manager-selinux
 }
 
 install_cam() {
     log "--> Installing CAM..."
     # TODO: figure out the /dev/tty error
-    yum install -y cloud-access-manager 2>&1 | tee -a $CAM_INSTALL_LOG
+    yum install -y cas-manager 2>&1 | tee -a $CAM_INSTALL_LOG
 
     # Install manually
-    /usr/local/bin/cloud-access-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAM_INSTALL_LOG
+    /usr/local/bin/cas-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAM_INSTALL_LOG
 
     if [ $? -ne 0 ]
     then
@@ -227,6 +235,7 @@ exec &>>$LOG_FILE
 install_prereqs
 get_credentials
 check_required_vars
+configure_firewall
 add_cam_repo
 config_selinux
 install_cam

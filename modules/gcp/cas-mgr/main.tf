@@ -26,13 +26,13 @@ resource "google_storage_bucket_object" "cas-mgr-provisioning-script" {
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       bucket_name                = var.bucket_name,
-      cas_mgr_add_repo_script    = var.cas_mgr_add_repo_script,
       cas_mgr_deployment_sa_file = var.cas_mgr_deployment_sa_file,
       cas_mgr_admin_password     = var.cas_mgr_admin_password,
       cas_mgr_setup_script       = local.cas_mgr_setup_script,
       gcp_sa_file                = var.gcp_sa_file,
       kms_cryptokey_id           = var.kms_cryptokey_id,
       pcoip_registration_code    = var.pcoip_registration_code,
+      teradici_download_token    = var.teradici_download_token,
     }
   )
 }

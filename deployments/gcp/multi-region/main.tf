@@ -98,6 +98,9 @@ module "cac-igm" {
 
   cac_admin_user             = var.cac_admin_user
   cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
+  cac_extra_install_flags    = var.cac_extra_install_flags
+  cac_version                = var.cac_version
+  teradici_download_token    = var.teradici_download_token
 }
 
 resource "google_compute_https_health_check" "cac-hchk" {

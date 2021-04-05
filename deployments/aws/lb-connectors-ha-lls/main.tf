@@ -68,10 +68,11 @@ module "ha-lls" {
 
   prefix = var.prefix
 
-  customer_master_key_id = var.customer_master_key_id
-  lls_admin_password     = var.lls_admin_password
-  lls_activation_code    = var.lls_activation_code
-  lls_license_count      = var.lls_license_count
+  customer_master_key_id  = var.customer_master_key_id
+  lls_admin_password      = var.lls_admin_password
+  lls_activation_code     = var.lls_activation_code
+  lls_license_count       = var.lls_license_count
+  teradici_download_token = var.teradici_download_token
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.lls-subnet.id
@@ -219,8 +220,13 @@ module "cac" {
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
+  
+  cac_version             = var.cac_version
+  teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 resource "aws_lb_target_group_attachment" "cac-tg-attachment" {

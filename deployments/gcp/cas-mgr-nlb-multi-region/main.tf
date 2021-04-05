@@ -77,6 +77,7 @@ module "cas-mgr" {
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
   cas_mgr_admin_password  = var.cas_mgr_admin_password
+  teradici_download_token = var.teradici_download_token
   
   bucket_name                = google_storage_bucket.scripts.name
   cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
@@ -136,9 +137,13 @@ module "cac" {
 
   cac_admin_user              = var.cac_admin_user
   cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
+  cac_version                 = var.cac_version
+  teradici_download_token     = var.teradici_download_token
 
   ssl_key  = var.cac_ssl_key
   ssl_cert = var.cac_ssl_cert
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 resource "google_compute_target_pool" "cac" {

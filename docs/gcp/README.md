@@ -58,7 +58,7 @@ Although it is possible to create deployments in existing and currently in-use G
 
 With a new GCP project:
 - create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAS Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
-- enable the following APIs in the GCP console or via the command ```gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com```:
+- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com`:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
     - Cloud Resource Manager
@@ -78,13 +78,13 @@ Follow the steps below to set up a CAS Manager deployment and download CAS Manag
 4. click on "Download JSON file" to download the CAS Manager Deployment Service Account credentials file which will be used in terraform.tfvars.
 
 ### Customizing terraform.tfvars
-```terraform.tfvars``` is the file in which a user specify variables for a deployment. In each deployment, there is a ```terraform.tfvars.sample``` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines (those beginning with `#`) show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file ```vars.tf``` of the deployment.
+`terraform.tfvars` is the file in which a user specify variables for a deployment. In each deployment, there is a `terraform.tfvars.sample` file showing the required variables that a user must provide, along with other commonly used but optional variables. Uncommented lines show required variables, while commented lines (those beginning with `#`) show optional variables with their default or sample values. A complete list of available variables are described in the variable definition file `vars.tf` of the deployment.
 
 Path variables in terraform.tfvars must be absolute and are dependent on the host platform:
-- on Linux systems, the forward slash / is used as the path segment separator. ```gcp_credentials_file = "/path/to/cred.json"```
-- on Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. ```gcp_credentials_file = "C:/path/to/cred.json"```
+- on Linux systems, the forward slash / is used as the path segment separator. `gcp_credentials_file = "/path/to/cred.json"`
+- on Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. `gcp_credentials_file = "C:/path/to/cred.json"`
 
-Save ```terraform.tfvars.sample``` as ```terraform.tfvars``` in the same directory, and fill out the required and optional variables.
+Save `terraform.tfvars.sample` as `terraform.tfvars` in the same directory, and fill out the required and optional variables.
 
 #### Workstation IdleShutDown
 Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `enable_workstation_idle_shutdown` (default: `true`), `minutes_idle_before_shutdown` (default: `240`), and `minutes_cpu_polling_interval` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/pcoip_cloud_access_manager/CACv2/reference/install_configure_cam_idle_shutdown).
@@ -141,9 +141,9 @@ Alernatively, the secrets can be manually encrypted. To encrypt secrets using th
 ### Creating the deployment
 With the terraform.tfvars file customized:
 
-1. run ```terraform init``` to initialize the deployment
-2. run ```terraform apply``` to display the resources that will be created by Terraform
-3. answer ```yes``` to start creating the deployment
+1. run `terraform init` to initialize the deployment
+2. run `terraform apply` to display the resources that will be created by Terraform
+3. answer `yes` to start creating the deployment
 
 A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Cloud Access Connectors (CACs) should register themselves with CAS Manager and show up in the Admin Console in CAS Manager.
 
@@ -156,10 +156,10 @@ Go to the CAS Manager Admin Console and add the newly created workstations using
 Once the workstations have been added to be managed by CAS Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the CAC, or Load Balancer if one is configured, to start a PCoIP session.
 
 ### Changing the deployment
-Terraform is a declarative language to describe the desired state of resources. A user can modify terraform.tfvars and run ```terraform apply``` again, and Terraform will try to only apply the changes needed to achieve the new state.
+Terraform is a declarative language to describe the desired state of resources. A user can modify terraform.tfvars and run `terraform apply` again, and Terraform will try to only apply the changes needed to achieve the new state.
 
 ### Deleting the deployment
-Run ```terraform destroy``` to remove all resources created by Terraform.
+Run `terraform destroy` to remove all resources created by Terraform.
 
 ## Troubleshooting
 Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.

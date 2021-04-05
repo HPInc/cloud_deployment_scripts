@@ -99,12 +99,26 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.02.10"
+  default     = "Windows_Server-2019-English-Full-Base-2021.03.10"
 }
 
 variable "domain_name" {
   description = "Domain name for the new domain"
   default     = "example.com"
+
+  /* validation notes:
+      - the name is at least 2 levels and at most 3, as we have only tested up to 3 levels
+  */
+  validation {
+    condition = (
+      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(var.domain_name) < 256 &&
+      can(regex(
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
+        var.domain_name))
+    )
+    error_message = "Domain name is invalid. Please try again."
+  }
 }
 
 variable "dc_admin_password" {
@@ -210,7 +224,12 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210128"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210325"
+}
+
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
 }
 
 # Note the following limits for health check:
@@ -245,6 +264,11 @@ variable "ssl_cert" {
     condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
     error_message = "The ssl_cert file specified does not exist. Please check the file path."
   }
+}
+
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
+  default     = ""
 }
 
 variable "pcoip_registration_code" {
@@ -301,7 +325,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.02.10"
+  default     = "Windows_Server-2019-English-Full-Base-2021.03.10"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -336,7 +360,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.02.10"
+  default     = "Windows_Server-2019-English-Full-Base-2021.03.10"
 }
 
 variable "win_std_pcoip_agent_version" {

@@ -101,11 +101,16 @@ module "cac" {
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
+  
+  cac_version             = var.cac_version
+  teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
   ssl_key  = var.ssl_key
   ssl_cert = var.ssl_cert
+
+  cac_extra_install_flags = var.cac_extra_install_flags
 }
 
 module "win-gfx" {

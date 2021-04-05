@@ -108,7 +108,7 @@ install_pcoip_agent() {
         log "--> Installing USB dependencies..."
         retry   3 \
                 5 \
-                "yum install usb-vhci" \
+                "yum install -y usb-vhci" \
                 "--> Non-zero exit status." \
                 "--> Warning: Failed to install usb-vhci."
 

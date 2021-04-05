@@ -96,9 +96,9 @@ variable "cas_mgr_admin_password" {
   type        = string
 }
 
-variable "cas_mgr_add_repo_script" {
-  description = "Location of script to add repo for CAS Manager"
-  default     = "https://dl.teradici.com/yj39yHtgj68Uv2Qf/cloud-access-manager-dev/cfg/setup/bash.rpm.sh"
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }
 
 variable "kms_cryptokey_id" {
