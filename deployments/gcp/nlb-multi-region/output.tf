@@ -22,7 +22,10 @@ output "cac-load-balancer-ip" {
 }
 
 output "cac-public-ip" {
-  value = flatten(module.cac.public-ip[*])
+  value = {
+    for i in range(length(var.cac_region_list)):
+      var.cac_region_list[i] => module.cac.public-ip[i]
+  }
 }
 
 output "win-gfx-internal-ip" {
