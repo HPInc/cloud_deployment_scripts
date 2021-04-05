@@ -127,8 +127,8 @@ def validate_aws_sa(username, key):
         print(e)
 
         if resp.status_code == 400:
-             print("Warning: error AWS Service Account key provided has insufficient permissions.")
-             print(resp.json()['data'])
+            print("Warning: error AWS Service Account key provided has insufficient permissions.")
+            print(resp.json()['data'])
 
         return False
 
