@@ -11,6 +11,7 @@ locals {
   # Name of CAM deployment service account key file in bucket
   cam_deployment_sa_file = "cam-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
+  cam_aws_credentials_file = "cam-aws-credentials.ini"
 }
 
 resource "random_id" "bucket-name" {
@@ -25,6 +26,12 @@ resource "aws_s3_bucket" "scripts" {
   tags = {
     Name = local.bucket_name
   }
+}
+
+resource "aws_s3_bucket_object" "cam_aws_credentials_file" {
+  bucket = aws_s3_bucket.scripts.bucket
+  key    = local.cam_aws_credentials_file
+  source = var.cam_aws_credentials_file
 }
 
 resource "aws_key_pair" "cam_admin" {
@@ -72,8 +79,9 @@ module "cam" {
   cam_gui_admin_password  = var.cam_gui_admin_password
   teradici_download_token = var.teradici_download_token
   
-  bucket_name            = aws_s3_bucket.scripts.id
-  cam_deployment_sa_file = local.cam_deployment_sa_file
+  bucket_name              = aws_s3_bucket.scripts.id
+  cam_aws_credentials_file = local.cam_aws_credentials_file
+  cam_deployment_sa_file   = local.cam_deployment_sa_file
 
   aws_region   = var.aws_region
   subnet       = aws_subnet.cam-subnet.id

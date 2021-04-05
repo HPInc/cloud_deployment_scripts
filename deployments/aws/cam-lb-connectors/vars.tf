@@ -187,6 +187,16 @@ variable "cam_gui_admin_password" {
   type        = string
 }
 
+variable "cam_aws_credentials_file" {
+    description = "Location of AWS credentials file for Cloud Access Manager"
+    type        = string
+
+    validation {
+      condition = fileexists(var.cam_aws_credentials_file)
+      error_message = "The cam_aws_credentials_file specified does not exist. Please check the file path."
+    }
+}
+
 variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
   type        = list(string)

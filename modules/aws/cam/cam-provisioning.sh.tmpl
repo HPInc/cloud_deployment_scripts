@@ -55,7 +55,7 @@ install_prereqs() {
         exit 1
     fi
 
-    python3 -m pip install requests
+    python3 -m pip install requests configparser boto3
 
     if [ $? -ne 0 ]
     then
@@ -67,6 +67,14 @@ install_prereqs() {
 get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
+
+    if [ "${cam_aws_credentials_file}" ]
+    then
+        retry 7200 10 \
+            "aws s3 cp s3://${bucket_name}/${cam_aws_credentials_file} $INSTALL_DIR" \
+            "--> Downloading AWS credentials file from bucket ${bucket_name}..." \
+            "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
+    fi
 
     if [[ -z "${customer_master_key_id}" ]]
     then
@@ -84,7 +92,13 @@ get_credentials() {
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
 
+        if [ "${cam_aws_credentials_file}" ]
+        then
+            log "--> Decrypting AWS Service Account credentials file..."
+            aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(cat "$INSTALL_DIR/${cam_aws_credentials_file}" | base64 -d) --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cam_aws_credentials_file}"
+        fi
     fi
+
     set -x
 }
 
@@ -157,6 +171,13 @@ cam_setup() {
 
     dos2unix $INSTALL_DIR/${cam_setup_script}
     chmod +x $INSTALL_DIR/${cam_setup_script}
+
+    if [ "${cam_aws_credentials_file}" ]
+    then
+        dos2unix $INSTALL_DIR/${cam_aws_credentials_file}
+        chmod 600 $INSTALL_DIR/${cam_aws_credentials_file}
+        optional_args=$optional_args"--aws_key $INSTALL_DIR/${cam_aws_credentials_file}"
+    fi
 
     log "--> Running CAM setup script with the following options:"
     log "  --deployment_name $CAM_DEPLOYMENT_NAME"

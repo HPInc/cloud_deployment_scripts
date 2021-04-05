@@ -76,6 +76,11 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
+variable "cam_aws_credentials_file" {
+    description = "Name of AWS credentials file for Cloud Access Manager in bucket"
+    type        = string
+}
+
 variable "cam_gui_admin_password" {
   description = "Password for the Administrator of Cloud Access Manager"
   type        = string
