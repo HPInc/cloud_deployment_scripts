@@ -95,6 +95,11 @@ variable "external_pcoip_ip" {
   default     = ""
 }
 
+variable "enable_cac_external_ip" {
+  description = "Enable external IP address assignment to each Connector"
+  default     = false
+}
+
 variable "network_tags" {
   description = "Tags to be applied to the Cloud Access Connector"
   type        = list(string)

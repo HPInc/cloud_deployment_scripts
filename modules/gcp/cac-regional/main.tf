@@ -6,7 +6,7 @@
  */
 
 locals {
-  enable_public_ip    = var.external_pcoip_ip == "" ? [true] : []
+  enable_public_ip    = (var.enable_cac_external_ip || var.external_pcoip_ip == "") ? [true] : []
   prefix              = var.prefix != "" ? "${var.prefix}-" : ""
   provisioning_script = "cac-provisioning.sh"
 }

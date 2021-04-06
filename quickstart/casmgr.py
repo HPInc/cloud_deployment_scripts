@@ -80,6 +80,18 @@ class CASManager:
 
         return resp.json()['data']
 
+    def connectors_get(self, deployment):
+        resp = requests.get(
+            self.url + '/api/v1/deployments/connectors',
+            headers = self.header,
+            params = {
+                'deploymentId': deployment['deploymentId']
+            }
+        )
+        resp.raise_for_status()
+
+        return resp.json()['data']
+
     def machine_add_existing(self, name, project_id, zone, deployment):
         machine_details = {
             'provider':    'gcp',

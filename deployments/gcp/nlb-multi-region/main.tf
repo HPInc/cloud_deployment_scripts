@@ -11,7 +11,6 @@ locals {
   # Name of CAS Manager deployment service account key file in bucket
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   all_region_set = setunion(var.cac_region_list, var.ws_region_list)
-  num_regions = length(local.all_region_set)
 
   gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
@@ -86,6 +85,7 @@ module "cac" {
   gcp_region_list        = var.cac_region_list
   subnet_list            = google_compute_subnetwork.cac-subnets[*].self_link
   external_pcoip_ip_list = google_compute_address.nlb-ip[*].address
+  enable_cac_external_ip = var.cac_enable_external_ip
   network_tags      = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,

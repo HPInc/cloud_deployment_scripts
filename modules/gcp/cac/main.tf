@@ -78,6 +78,7 @@ module "cac-regional" {
   network_tags = var.network_tags
   subnet = var.subnet_list[count.index]
   external_pcoip_ip = var.external_pcoip_ip_list == [] ? "" : var.external_pcoip_ip_list[count.index]
+  enable_cac_external_ip = var.enable_cac_external_ip
 
   cac_admin_user = var.cac_admin_user
   cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
