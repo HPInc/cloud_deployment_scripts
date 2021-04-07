@@ -124,6 +124,9 @@ install_gpu_driver() {
         local nvidia_driver_filename=$(basename ${nvidia_driver_url})
         local gpu_installer="/root/$nvidia_driver_filename"
 
+        log "--> Killing X server before installing driver..."
+        systemctl stop gdm
+
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
         retry "curl -f -o $gpu_installer ${nvidia_driver_url}"
         chmod u+x "$gpu_installer"

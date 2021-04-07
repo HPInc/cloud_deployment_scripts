@@ -134,7 +134,7 @@ install_gpu_driver() {
         local gpu_installer="/root/$nvidia_driver_filename"
 
         log "--> Killing X server before installing driver..."
-        service gdm stop
+        systemctl stop gdm
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
         retry   3 \
