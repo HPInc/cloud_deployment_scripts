@@ -62,7 +62,6 @@ module "cac-regional" {
   cas_mgr_url             = var.cas_mgr_url
   cas_mgr_insecure        = var.cas_mgr_insecure
   cas_mgr_script          = local.cas_mgr_script
-  pcoip_registration_code = var.pcoip_registration_code
 
   domain_controller_ip        = var.domain_controller_ip
   domain_name                 = var.domain_name

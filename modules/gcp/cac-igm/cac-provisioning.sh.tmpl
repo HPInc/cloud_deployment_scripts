@@ -80,7 +80,6 @@ get_credentials() {
     if [[ -z "${kms_cryptokey_id}" ]]; then
         log "--> Script is not using encryption for secrets."
 
-        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
         AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 
     else
@@ -91,9 +90,6 @@ get_credentials() {
         local kms_location="$(echo ${kms_cryptokey_id} | cut -d'/' -f4)"
         local kms_keyring="$(echo ${kms_cryptokey_id} | cut -d'/' -f6)"
         local kms_key="$(echo ${kms_cryptokey_id} | cut -d'/' -f8)"
-
-        log "--> Decrypting PCoIP registration code..."
-        PCOIP_REGISTRATION_CODE=$(echo -n ${pcoip_registration_code} | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
 
         log "--> Decrypting AD service account password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(echo -n ${ad_service_account_password} | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
@@ -136,11 +132,6 @@ get_cac_token() {
 
 check_required_vars() {
     set +x
-    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
-        log "--> ERROR: Missing PCoIP Registration Code."
-        missing_vars="true"
-    fi
-
     if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
         log "--> ERROR: Missing Active Directory Service Account Password."
         missing_vars="true"
@@ -268,7 +259,6 @@ install_cac() {
     log "  --sa-user <ad_service_account_username>"
     log "  --sa-password <ad_service_account_password>"
     log "  --domain ${domain_name}"
-    log "  --reg-code <pcoip_registration_code>"
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
     log "  --cam-url ${cas_mgr_url}"
@@ -307,7 +297,6 @@ install_cac() {
             --sa-user ${ad_service_account_username} \
             --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
             --domain ${domain_name} \
-            --reg-code $PCOIP_REGISTRATION_CODE \
             --retrieve-agent-state true \
             --sync-interval 5 \
             --cam-url ${cas_mgr_url} \

@@ -108,7 +108,6 @@ module "cac" {
   kms_cryptokey_id        = var.kms_cryptokey_id
   cas_mgr_url             = "https://${module.cas-mgr.internal-ip}"
   cas_mgr_insecure        = true
-  pcoip_registration_code = var.pcoip_registration_code
   
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
