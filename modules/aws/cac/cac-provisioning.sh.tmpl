@@ -267,7 +267,6 @@ install_cac() {
     log "  --sa-user <ad_service_account_username>"
     log "  --sa-password <ad_service_account_password>"
     log "  --domain ${domain_name}"
-    log "  --domain-group ${domain_group}"
     log "  --reg-code <pcoip_registration_code>"
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
@@ -313,7 +312,6 @@ install_cac() {
             --sa-user ${ad_service_account_username} \
             --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
             --domain ${domain_name} \
-            --domain-group "${domain_group}" \
             --reg-code $PCOIP_REGISTRATION_CODE \
             --retrieve-agent-state true \
             --sync-interval 5 \

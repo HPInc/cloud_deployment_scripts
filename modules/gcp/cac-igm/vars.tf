@@ -60,11 +60,6 @@ variable "domain_controller_ip" {
   type        = string
 }
 
-variable "domain_group" {
-  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAS Admins,CN=Users,DC=example,DC=com')"
-  default     = "Domain Admins"
-}
-
 variable "ad_service_account_username" {
   description = "Active Directory Service Account username"
   type        = string

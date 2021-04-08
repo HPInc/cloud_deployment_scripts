@@ -69,7 +69,6 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       cam_url                     = var.cam_url,
       customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
-      domain_group                = var.domain_group,
       domain_name                 = var.domain_name,
       lls_ip                      = var.lls_ip,
       pcoip_registration_code     = var.pcoip_registration_code,

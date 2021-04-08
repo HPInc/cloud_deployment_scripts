@@ -66,7 +66,6 @@ module "cac-regional" {
 
   domain_controller_ip        = var.domain_controller_ip
   domain_name                 = var.domain_name
-  domain_group                = var.domain_group
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 

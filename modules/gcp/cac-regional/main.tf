@@ -29,7 +29,6 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       cas_mgr_script              = var.cas_mgr_script,
       cas_mgr_url                 = var.cas_mgr_url,
       domain_controller_ip        = var.domain_controller_ip,
-      domain_group                = var.domain_group,
       domain_name                 = var.domain_name,
       external_pcoip_ip           = var.external_pcoip_ip,
       kms_cryptokey_id            = var.kms_cryptokey_id,
