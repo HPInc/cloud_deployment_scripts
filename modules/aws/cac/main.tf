@@ -71,7 +71,6 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       lls_ip                      = var.lls_ip,
-      pcoip_registration_code     = var.pcoip_registration_code,
       ssl_key                     = local.ssl_key_filename,
       ssl_cert                    = local.ssl_cert_filename,
       teradici_download_token     = var.teradici_download_token,

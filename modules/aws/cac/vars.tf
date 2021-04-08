@@ -31,11 +31,6 @@ variable "cam_deployment_sa_file" {
   type        = string
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
-  type        = string
-}
-
 variable "domain_name" {
   description = "Name of the domain to join"
   type        = string

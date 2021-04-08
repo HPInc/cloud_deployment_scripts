@@ -77,14 +77,10 @@ get_credentials() {
     if [[ -z "${customer_master_key_id}" ]]; then
         log "--> Script is not using encryption for secrets."
 
-        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
         AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 
     else
         log "--> Script is using encryption key: ${customer_master_key_id}"
-
-        log "--> Decrypting PCoIP registration code..."
-        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting AD service account password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
@@ -128,11 +124,6 @@ get_cac_token() {
 
 check_required_vars() {
     set +x
-    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
-        log "--> ERROR: Missing PCoIP Registration Code."
-        missing_vars="true"
-    fi
-
     if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
         log "--> ERROR: Missing Active Directory Service Account Password."
         missing_vars="true"
@@ -267,7 +258,6 @@ install_cac() {
     log "  --sa-user <ad_service_account_username>"
     log "  --sa-password <ad_service_account_password>"
     log "  --domain ${domain_name}"
-    log "  --reg-code <pcoip_registration_code>"
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
     log "  --cam-url ${cam_url}"
@@ -312,7 +302,6 @@ install_cac() {
             --sa-user ${ad_service_account_username} \
             --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
             --domain ${domain_name} \
-            --reg-code $PCOIP_REGISTRATION_CODE \
             --retrieve-agent-state true \
             --sync-interval 5 \
             --cam-url ${cam_url} \

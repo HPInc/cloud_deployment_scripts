@@ -328,11 +328,6 @@ variable "cam_deployment_sa_file" {
   }
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
-  type        = string
-}
-
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"

@@ -191,7 +191,6 @@ module "cac" {
   cam_url                 = "https://${module.cam.internal-ip}"
   cam_insecure            = true
   cam_deployment_sa_file  = local.cam_deployment_sa_file
-  pcoip_registration_code = var.pcoip_registration_code
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
