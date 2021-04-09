@@ -72,7 +72,7 @@ With a new GCP project:
 
 Follow the steps below to set up a CAS Manager deployment and download CAS Manager Deployment Service Acccount credentials. For deployments using CAS Manager running in a virtual machine, these steps can be skipped because the Terraform configuration will automatically set those up for the user.
 
-1. Login to CAS Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
+1. Login to CAS Manager Admin Console at https://cas.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
 2. create a new deployment and submit the credentials for the GCP service account created above.
 3. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAS Manager Deployment Service Account.
 4. click on "Download JSON file" to download the CAS Manager Deployment Service Account credentials file which will be used in terraform.tfvars.

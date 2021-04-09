@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     parser.add_argument("cam", help="specify the path to CAM Deployment Service Account JSON file")
     parser.add_argument("--out", required=True, help="File to write the CAC token")
-    parser.add_argument("--url", default="https://cam.teradici.com", help="specify the api url")
+    parser.add_argument("--url", default="https://cas.teradici.com", help="specify the api url")
     parser.add_argument("--insecure", action="store_true", help="Allow unverified HTTPS connection to CAM")
 
     args = parser.parse_args()

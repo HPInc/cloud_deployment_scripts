@@ -52,7 +52,7 @@ aws_secret_access_key = <your_key>
 - (Optional) For better security, create an AWS KMS Customer Managed Symmetric Customer Master Key (CMK) to encrypt secrets.  Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create CMKs.
 
 ### Cloud Access Manager Setup
-Login to Cloud Access Manager Admin Console at https://cam.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
+Login to Cloud Access Manager Admin Console at https://cas.teradici.com using a Google G Suite, Google Cloud Identity, or Microsoft business account.
 
 1. create a new deployment using your PCoIP Registration Code. Ignore "Cloud Credentials".
 2. on the "Edit the Deployment" page, under "Deployment Service Accounts", click on the + icon to create a CAM Deployment Service Account.

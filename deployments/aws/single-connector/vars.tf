@@ -219,7 +219,7 @@ variable "cac_extra_install_flags" {
 
 variable "cam_url" {
   description = "cam server url."
-  default     = "https://cam.teradici.com"
+  default     = "https://cas.teradici.com"
 }
 
 variable "cam_deployment_sa_file" {

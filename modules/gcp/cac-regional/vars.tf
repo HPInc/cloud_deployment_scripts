@@ -16,7 +16,7 @@ variable "prefix" {
 }
 
 variable "cas_mgr_url" {
-  description = "CAS Manager URL (e.g. https://cam.teradici.com)"
+  description = "CAS Manager URL (e.g. https://cas.teradici.com)"
   type        = string
 }
 

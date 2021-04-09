@@ -16,7 +16,7 @@ variable "prefix" {
 }
 
 variable "cam_url" {
-  description = "Cloud Access Manager URL (e.g. https://cam.teradici.com)"
+  description = "Cloud Access Manager URL (e.g. https://cas.teradici.com)"
   type        = string
 }
 
