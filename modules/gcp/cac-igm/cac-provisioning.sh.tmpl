@@ -243,14 +243,6 @@ install_cac() {
     log "--> Installing Cloud Access Connector..."
     local retries=10
     local args=""
-    local external_ip=""
-
-    if [ "${external_pcoip_ip}" ]
-    then
-        external_ip="${external_pcoip_ip}"
-    else
-        external_ip=$(curl http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip -H "Metadata-Flavor: Google")
-    fi
 
     log "--> Running command: $CAC_BIN_PATH install"
     log "--> CAC install options:"
@@ -262,7 +254,6 @@ install_cac() {
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
     log "  --cam-url ${cas_mgr_url}"
-    log "  --external-pcoip-ip $external_ip"
     log "  ${cac_extra_install_flags}"
 
     # Set pipefail option to return status of the connector install command
@@ -288,6 +279,12 @@ install_cac() {
         args=$args"--cam-insecure "
     fi
 
+    if [ "${external_pcoip_ip}" ]
+    then
+        log "  --external-pcoip-ip ${external_pcoip_ip}"
+        args=$args"--external-pcoip-ip ${external_pcoip_ip} "
+    fi
+
     set +x
     while true
     do
@@ -300,7 +297,6 @@ install_cac() {
             --retrieve-agent-state true \
             --sync-interval 5 \
             --cam-url ${cas_mgr_url} \
-            --external-pcoip-ip $external_ip \
             ${cac_extra_install_flags} \
             $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
