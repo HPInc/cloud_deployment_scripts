@@ -13,8 +13,8 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
-output "cam-public-ip" {
-  value = module.cam.public-ip
+output "cas-mgr-public-ip" {
+  value = module.cas-mgr.public-ip
 }
 
 output "load-balancer-url" {

@@ -13,12 +13,16 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
-output "cam-public-ip" {
-  value = module.cam.public-ip
+output "lls-internal-ip" {
+  value = module.lls.internal-ip
 }
 
 output "load-balancer-url" {
   value = aws_lb.cac-alb.dns_name
+}
+
+output "cas-mgr-public-ip" {
+  value = module.cas-mgr.public-ip
 }
 
 output "cac-internal-ip" {
@@ -27,22 +31,6 @@ output "cac-internal-ip" {
 
 output "cac-public-ip" {
   value = module.cac.public-ip
-}
-
-output "haproxy-master-ip" {
-  value = module.ha-lls.haproxy-master-ip
-}
-
-output "haproxy-backup-ip" {
-  value = module.ha-lls.haproxy-backup-ip
-}
-
-output "lls-main-ip" {
-  value = module.ha-lls.lls-main-ip
-}
-
-output "lls-backup-ip" {
-  value = module.ha-lls.lls-backup-ip
 }
 
 output "win-gfx-internal-ip" {

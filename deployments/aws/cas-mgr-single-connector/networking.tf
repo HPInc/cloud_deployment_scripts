@@ -9,13 +9,13 @@ data "http" "myip" {
   url = "https://ifconfig.co/ip"
 }
 
-locals {
-  myip = "${chomp(data.http.myip.body)}/32"
-}
-
 data "aws_availability_zones" "available_az" {
   state            = "available"
   exclude_zone_ids = var.az_id_exclude_list
+}
+
+locals {
+  myip = "${chomp(data.http.myip.body)}/32"
 }
 
 resource "aws_vpc" "vpc" {
@@ -38,35 +38,23 @@ resource "aws_subnet" "dc-subnet" {
   }
 }
 
-resource "aws_subnet" "cam-subnet" {
-  cidr_block        = var.cam_subnet_cidr
+resource "aws_subnet" "cas-mgr-subnet" {
+  cidr_block        = var.cas_mgr_subnet_cidr
   vpc_id            = aws_vpc.vpc.id
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}${var.cam_subnet_name}"
+    Name = "${local.prefix}${var.cas_mgr_subnet_name}"
   }
 }
 
-resource "aws_subnet" "lls-subnet" {
-  cidr_block        = var.lls_subnet_cidr
+resource "aws_subnet" "cac-subnet" {
+  cidr_block        = var.cac_subnet_cidr
   vpc_id            = aws_vpc.vpc.id
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}${var.lls_subnet_name}"
-  }
-}
-
-resource "aws_subnet" "cac-subnets" {
-  count = length(var.cac_subnet_cidr_list)
-
-  cidr_block        = var.cac_subnet_cidr_list[count.index]
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = var.cac_zone_list[count.index]
-
-  tags = {
-    Name = "${local.prefix}${var.cac_subnet_name}-${var.cac_zone_list[count.index]}"
+    Name = "${local.prefix}${var.cac_subnet_name}"
   }
 }
 
@@ -98,7 +86,7 @@ resource "aws_eip" "nat-ip" {
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat-ip.id
-  subnet_id     = aws_subnet.cac-subnets[0].id
+  subnet_id     = aws_subnet.cac-subnet.id
 
   tags = {
     Name = "${local.prefix}nat"
@@ -138,20 +126,13 @@ resource "aws_route_table_association" "rt-dc" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "rt-cam" {
-  subnet_id      = aws_subnet.cam-subnet.id
+resource "aws_route_table_association" "rt-cas-mgr" {
+  subnet_id      = aws_subnet.cas-mgr-subnet.id
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "rt-lls" {
-  subnet_id      = aws_subnet.lls-subnet.id
-  route_table_id = aws_route_table.private.id
-}
-
 resource "aws_route_table_association" "rt-cac" {
-  count = length(var.cac_subnet_cidr_list)
-
-  subnet_id      = aws_subnet.cac-subnets[count.index].id
+  subnet_id      = aws_subnet.cac-subnet.id
   route_table_id = aws_route_table.public.id
 }
 
@@ -310,7 +291,7 @@ resource "aws_route53_resolver_endpoint" "outbound" {
   # minimum, config has 1 declared" without the second ip_address block with a
   # different subnet.
   ip_address {
-    subnet_id = aws_subnet.cac-subnets[0].id
+    subnet_id = aws_subnet.cac-subnet.id
   }
 
   tags = {
@@ -331,7 +312,7 @@ resource "aws_route53_resolver_rule" "rule" {
 
   tags = {
     Name = "${local.prefix}${var.domain_name}-rule"
-  }
+  } 
 }
 
 resource "aws_route53_resolver_rule_association" "association" {

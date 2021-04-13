@@ -15,19 +15,19 @@ variable "prefix" {
   default     = ""
 }
 
-variable "cam_url" {
-  description = "Cloud Access Manager URL (e.g. https://cas.teradici.com)"
+variable "cas_mgr_url" {
+  description = "CAS Manager URL (e.g. https://cas.teradici.com)"
   type        = string
 }
 
-variable "cam_insecure" {
-  description = "Allow unverified SSL access to Cloud Access Manager"
+variable "cas_mgr_insecure" {
+  description = "Allow unverified SSL access to CAS Manager"
   type        = bool
   default     = false
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Location of CAS Manager Deployment Service Account JSON file"
   type        = string
 }
 

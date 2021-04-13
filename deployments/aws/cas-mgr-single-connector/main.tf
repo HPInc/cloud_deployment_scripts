@@ -8,10 +8,10 @@
 locals {
   prefix             = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAM deployment service account key file in bucket
-  cam_deployment_sa_file = "cam-deployment-sa-key.json"
+  # Name of CAS Manager deployment service account key file in bucket
+  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
-  cam_aws_credentials_file = "cam-aws-credentials.ini"
+  cas_mgr_aws_credentials_file = "cas-mgr-aws-credentials.ini"
 }
 
 resource "random_id" "bucket-name" {
@@ -28,13 +28,13 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
-resource "aws_s3_bucket_object" "cam_aws_credentials_file" {
+resource "aws_s3_bucket_object" "cas_mgr_aws_credentials_file" {
   bucket = aws_s3_bucket.scripts.bucket
-  key    = local.cam_aws_credentials_file
-  source = var.cam_aws_credentials_file
+  key    = local.cas_mgr_aws_credentials_file
+  source = var.cas_mgr_aws_credentials_file
 }
 
-resource "aws_key_pair" "cam_admin" {
+resource "aws_key_pair" "cas_admin" {
   key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
 }
@@ -43,7 +43,7 @@ module "dc" {
   source = "../../../modules/aws/dc"
 
   prefix = var.prefix
-
+  
   customer_master_key_id      = var.customer_master_key_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
@@ -69,22 +69,22 @@ module "dc" {
   ami_name  = var.dc_ami_name
 }
 
-module "cam" {
-  source = "../../../modules/aws/cam"
+module "cas-mgr" {
+  source = "../../../modules/aws/cas-mgr"
 
   prefix = var.prefix
 
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
-  cam_gui_admin_password  = var.cam_gui_admin_password
+  cas_mgr_admin_password  = var.cas_mgr_admin_password
   teradici_download_token = var.teradici_download_token
 
-  bucket_name              = aws_s3_bucket.scripts.id
-  cam_aws_credentials_file = local.cam_aws_credentials_file
-  cam_deployment_sa_file   = local.cam_deployment_sa_file
+  bucket_name                  = aws_s3_bucket.scripts.id
+  cas_mgr_aws_credentials_file = local.cas_mgr_aws_credentials_file
+  cas_mgr_deployment_sa_file   = local.cas_mgr_deployment_sa_file
 
   aws_region   = var.aws_region
-  subnet       = aws_subnet.cam-subnet.id
+  subnet       = aws_subnet.cas-mgr-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-http.id,
@@ -92,130 +92,13 @@ module "cam" {
     aws_security_group.allow-icmp.id,
   ]
 
-  instance_type = var.cam_instance_type
-  disk_size_gb  = var.cam_disk_size_gb
+  instance_type = var.cas_mgr_instance_type
+  disk_size_gb  = var.cas_mgr_disk_size_gb
 
-  ami_owner        = var.cam_ami_owner
-  ami_product_code = var.cam_ami_product_code
-
-  admin_ssh_key_name = local.admin_ssh_key_name
-}
-
-module "ha-lls" {
-  source = "../../../modules/aws/ha-lls"
-
-  prefix = var.prefix
-
-  customer_master_key_id  = var.customer_master_key_id
-  lls_admin_password      = var.lls_admin_password
-  lls_activation_code     = var.lls_activation_code
-  lls_license_count       = var.lls_license_count
-  teradici_download_token = var.teradici_download_token
-
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.lls-subnet.id
-  assigned_ips       = var.lls_subnet_ips
-  security_group_ids = [
-    data.aws_security_group.default.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-ssh.id,
-  ]
-
-  haproxy_instance_type = var.haproxy_instance_type
-  haproxy_disk_size_gb  = var.haproxy_disk_size_gb
-
-  lls_instance_type = var.haproxy_instance_type
-  lls_disk_size_gb  = var.haproxy_disk_size_gb
-
-  haproxy_ami_owner        = var.haproxy_ami_owner
-  haproxy_ami_name         = var.haproxy_ami_name
-
-  lls_ami_owner        = var.lls_ami_owner
-  lls_ami_name         = var.lls_ami_name
+  ami_owner        = var.cas_mgr_ami_owner
+  ami_product_code = var.cas_mgr_ami_product_code
 
   admin_ssh_key_name = local.admin_ssh_key_name
-
-  depends_on = [aws_nat_gateway.nat]
-}
-
-resource "aws_lb" "cac-alb" {
-  name               = "${local.prefix}cac-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [
-    data.aws_security_group.default.id,
-    aws_security_group.allow-ssh.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-pcoip.id,
-  ]
-  subnets            = aws_subnet.cac-subnets[*].id
-}
-
-resource "aws_lb_target_group" "cac-tg" {
-  name        = "${local.prefix}cac-tg"
-  port        = 443
-  protocol    = "HTTPS"
-  target_type = "instance"
-  vpc_id      = aws_vpc.vpc.id
-
-  stickiness {
-    type = "lb_cookie"
-  }
-
-  health_check {
-    path     = var.cac_health_check["path"]
-    protocol = var.cac_health_check["protocol"]
-    port     = var.cac_health_check["port"]
-    interval = var.cac_health_check["interval_sec"]
-    timeout  = var.cac_health_check["timeout_sec"]
-    matcher  = "200"
-  }
-}
-
-resource "tls_private_key" "tls-key" {
-  count = var.ssl_key == "" ? 1 : 0
-
-  algorithm = "RSA"
-  rsa_bits  = "2048"
-}
-
-resource "tls_self_signed_cert" "tls-cert" {
-  count = var.ssl_cert == "" ? 1 : 0
-
-  key_algorithm   = tls_private_key.tls-key[0].algorithm
-  private_key_pem = tls_private_key.tls-key[0].private_key_pem
-
-  subject {
-    common_name  = var.domain_name
-  }
-
-  validity_period_hours = 8760
-
-  allowed_uses = [
-    "key_encipherment",
-    "cert_signing",
-  ]
-}
-
-resource "aws_acm_certificate" "ssl-cert" {
-  private_key      = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
-  certificate_body = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
-
-  tags = {
-    Name = "${local.prefix}ssl-cert"
-  }
-}
-
-resource "aws_lb_listener" "alb-listener" {
-  load_balancer_arn = aws_lb.cac-alb.arn
-  port              = 443
-  protocol          = "HTTPS"
-  certificate_arn   = aws_acm_certificate.ssl-cert.arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.cac-tg.arn
-  }
 }
 
 module "cac" {
@@ -223,22 +106,20 @@ module "cac" {
 
   prefix = var.prefix
 
-  aws_region              = var.aws_region
-  customer_master_key_id  = var.customer_master_key_id
-  cam_url                 = "https://${module.cam.internal-ip}"
-  cam_insecure            = true
-  cam_deployment_sa_file  = local.cam_deployment_sa_file
+  aws_region                 = var.aws_region
+  customer_master_key_id     = var.customer_master_key_id
+  cas_mgr_url                = "https://${module.cas-mgr.internal-ip}"
+  cas_mgr_insecure           = true
+  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  lls_ip = var.lls_subnet_ips["haproxy_vip"]
-
-  zone_list           = aws_subnet.cac-subnets[*].availability_zone
-  subnet_list         = aws_subnet.cac-subnets[*].id
-  instance_count_list = var.cac_instance_count_list
+  zone_list           = [aws_subnet.cac-subnet.availability_zone]
+  subnet_list         = [aws_subnet.cac-subnet.id]
+  instance_count_list = [var.cac_instance_count]
 
   security_group_ids = [
     data.aws_security_group.default.id,
@@ -247,9 +128,9 @@ module "cac" {
     aws_security_group.allow-pcoip.id,
   ]
 
-  bucket_name    = aws_s3_bucket.scripts.id
-  instance_type  = var.cac_instance_type
-  disk_size_gb   = var.cac_disk_size_gb
+  bucket_name   = aws_s3_bucket.scripts.id
+  instance_type = var.cac_instance_type
+  disk_size_gb  = var.cac_disk_size_gb
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
@@ -259,15 +140,10 @@ module "cac" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
+  ssl_key  = var.ssl_key
+  ssl_cert = var.ssl_cert
+
   cac_extra_install_flags = var.cac_extra_install_flags
-}
-
-resource "aws_lb_target_group_attachment" "cac-tg-attachment" {
-  count            = length(module.cac.instance-id)
-
-  target_group_arn = aws_lb_target_group.cac-tg.arn
-  target_id        = module.cac.instance-id[count.index]
-  port             = 443
 }
 
 module "win-gfx" {
@@ -277,7 +153,7 @@ module "win-gfx" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = ""
+  pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
   pcoip_agent_version     = var.win_gfx_pcoip_agent_version
 
@@ -297,8 +173,8 @@ module "win-gfx" {
 
   instance_count = var.win_gfx_instance_count
   instance_name  = var.win_gfx_instance_name
-  instance_type     = var.win_gfx_instance_type
-  disk_size_gb      = var.win_gfx_disk_size_gb
+  instance_type  = var.win_gfx_instance_type
+  disk_size_gb   = var.win_gfx_disk_size_gb
 
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
@@ -313,7 +189,7 @@ module "win-std" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = ""
+  pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
   pcoip_agent_version     = var.win_std_pcoip_agent_version
 
@@ -333,8 +209,8 @@ module "win-std" {
 
   instance_count = var.win_std_instance_count
   instance_name  = var.win_std_instance_name
-  instance_type     = var.win_std_instance_type
-  disk_size_gb      = var.win_std_disk_size_gb
+  instance_type  = var.win_std_instance_type
+  disk_size_gb   = var.win_std_disk_size_gb
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
@@ -349,7 +225,7 @@ module "centos-gfx" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = ""
+  pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
@@ -368,8 +244,8 @@ module "centos-gfx" {
 
   instance_count = var.centos_gfx_instance_count
   instance_name  = var.centos_gfx_instance_name
-  instance_type     = var.centos_gfx_instance_type
-  disk_size_gb      = var.centos_gfx_disk_size_gb
+  instance_type  = var.centos_gfx_instance_type
+  disk_size_gb   = var.centos_gfx_disk_size_gb
 
   ami_owner        = var.centos_gfx_ami_owner
   ami_product_code = var.centos_gfx_ami_product_code
@@ -387,7 +263,7 @@ module "centos-std" {
 
   customer_master_key_id = var.customer_master_key_id
 
-  pcoip_registration_code = ""
+  pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
 
   domain_name                 = var.domain_name
@@ -406,8 +282,8 @@ module "centos-std" {
 
   instance_count = var.centos_std_instance_count
   instance_name  = var.centos_std_instance_name
-  instance_type     = var.centos_std_instance_type
-  disk_size_gb      = var.centos_std_disk_size_gb
+  instance_type  = var.centos_std_instance_type
+  disk_size_gb   = var.centos_std_disk_size_gb
 
   ami_owner        = var.centos_std_ami_owner
   ami_product_code = var.centos_std_ami_product_code

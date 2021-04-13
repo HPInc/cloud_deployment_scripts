@@ -7,10 +7,10 @@
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 
-CAM_DEPLOYMENT_KEY_NAME="terraform-key"
-CAM_DEPLOYMENT_NAME="terraform-deployment"
-CAM_INSTALL_LOG="/var/log/teradici/cam-install.log"
-CAM_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/setup.rpm.sh"
+CAS_MGR_DEPLOYMENT_KEY_NAME="terraform-key"
+CAS_MGR_DEPLOYMENT_NAME="terraform-deployment"
+CAS_MGR_INSTALL_LOG="/var/log/teradici/cas-mgr-install.log"
+CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/setup.rpm.sh"
 
 INSTALL_DIR="/root"
 cd $INSTALL_DIR
@@ -68,10 +68,10 @@ get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    if [ "${cam_aws_credentials_file}" ]
+    if [ "${cas_mgr_aws_credentials_file}" ]
     then
         retry 7200 10 \
-            "aws s3 cp s3://${bucket_name}/${cam_aws_credentials_file} $INSTALL_DIR" \
+            "aws s3 cp s3://${bucket_name}/${cas_mgr_aws_credentials_file} $INSTALL_DIR" \
             "--> Downloading AWS credentials file from bucket ${bucket_name}..." \
             "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
     fi
@@ -80,23 +80,23 @@ get_credentials() {
     then
         log "--> Script is not using encryption for secrets."
 
-        CAM_GUI_ADMIN_PASSWORD=${cam_gui_admin_password}
+        CAS_MGR_GUI_ADMIN_PASSWORD=${cas_mgr_admin_password}
         PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 
     else
         log "--> Script is using encryption key: ${customer_master_key_id}"
 
-        log "--> Decrypting CAM GUI Administrator password..."
-        CAM_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cam_gui_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+        log "--> Decrypting CAS Manager GUI Administrator password..."
+        CAS_MGR_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cas_mgr_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
 
-        if [ "${cam_aws_credentials_file}" ]
+        if [ "${cas_mgr_aws_credentials_file}" ]
         then
             log "--> Decrypting AWS Service Account credentials file..."
-            aws kms decrypt --region ${aws_region} --ciphertext-blob "fileb://$INSTALL_DIR/${cam_aws_credentials_file}" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cam_aws_credentials_file}.decrypted"
-            mv "${cam_aws_credentials_file}.decrypted" "$INSTALL_DIR/${cam_aws_credentials_file}"
+            aws kms decrypt --region ${aws_region} --ciphertext-blob "fileb://$INSTALL_DIR/${cas_mgr_aws_credentials_file}" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cas_mgr_aws_credentials_file}.decrypted"
+            mv "${cas_mgr_aws_credentials_file}.decrypted" "$INSTALL_DIR/${cas_mgr_aws_credentials_file}"
         fi
     fi
 
@@ -112,9 +112,9 @@ check_required_vars() {
         missing_vars="true"
     fi
 
-    if [[ -z "$CAM_GUI_ADMIN_PASSWORD" ]]
+    if [[ -z "$CAS_MGR_GUI_ADMIN_PASSWORD" ]]
     then
-        log "--> ERROR: Missing CAM GUI Administrator Password."
+        log "--> ERROR: Missing CAS Manager GUI Administrator Password."
         missing_vars="true"
     fi
     set -x
@@ -133,10 +133,9 @@ configure_firewall(){
     firewall-cmd --reload
 }
 
-add_cam_repo() {
-    log "--> Adding CAM repo..."
-    curl -1sLf $CAM_REPO_SETUP_SCRIPT_URL | distro=el codename=7 bash
-}
+add_cas_mgr_repo() {
+    log "--> Adding CAS Manager repo..."
+    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | distro=el codename=7 bash
 
 config_selinux() {
     log "--> Configuring SE Linux..."
@@ -145,69 +144,69 @@ config_selinux() {
     yum install -y cas-manager-selinux
 }
 
-install_cam() {
-    log "--> Installing CAM..."
+install_cas_mgr() {
+    log "--> Installing CAS Manager..."
     # TODO: figure out the /dev/tty error
-    yum install -y cas-manager 2>&1 | tee -a $CAM_INSTALL_LOG
+    yum install -y cas-manager 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
 
     # Install manually
-    /usr/local/bin/cas-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAM_INSTALL_LOG
+    /usr/local/bin/cas-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to install CAM..."
+        log "--> ERROR: Failed to install CAS Manager..."
         exit 1
     fi
 }
 
-cam_setup() {
+cas_mgr_setup() {
     local optional_args=""
 
-    log "--> Running CAM setup script..."
+    log "--> Running CAS Manager setup script..."
 
     retry 7200 10 \
-          "aws s3 cp s3://${bucket_name}/${cam_setup_script} $INSTALL_DIR" \
-          "--> Downloading CAM setup script from bucket ${bucket_name}..." \
-          "--> ERROR: Failed to download CAM setup script from bucket ${bucket_name}."
+          "aws s3 cp s3://${bucket_name}/${cas_mgr_setup_script} $INSTALL_DIR" \
+          "--> Downloading CAS Manager setup script from bucket ${bucket_name}..." \
+          "--> ERROR: Failed to download CAS Manager setup script from bucket ${bucket_name}."
 
-    dos2unix $INSTALL_DIR/${cam_setup_script}
-    chmod +x $INSTALL_DIR/${cam_setup_script}
+    dos2unix $INSTALL_DIR/${cas_mgr_setup_script}
+    chmod +x $INSTALL_DIR/${cas_mgr_setup_script}
 
-    if [ "${cam_aws_credentials_file}" ]
+    if [ "${cas_mgr_aws_credentials_file}" ]
     then
-        dos2unix $INSTALL_DIR/${cam_aws_credentials_file}
-        chmod 600 $INSTALL_DIR/${cam_aws_credentials_file}
-        optional_args=$optional_args"--aws_key $INSTALL_DIR/${cam_aws_credentials_file}"
+        dos2unix $INSTALL_DIR/${cas_mgr_aws_credentials_file}
+        chmod 600 $INSTALL_DIR/${cas_mgr_aws_credentials_file}
+        optional_args=$optional_args"--aws_key $INSTALL_DIR/${cas_mgr_aws_credentials_file}"
     fi
 
-    log "--> Running CAM setup script with the following options:"
-    log "  --deployment_name $CAM_DEPLOYMENT_NAME"
-    log "  --key_file $INSTALL_DIR/${cam_deployment_sa_file}"
-    log "  --key_name $CAM_DEPLOYMENT_KEY_NAME"
-    log "  --password <CAM GUI Administrator Password"
+    log "--> Running CAS Manager setup script with the following options:"
+    log "  --deployment_name $CAS_MGR_DEPLOYMENT_NAME"
+    log "  --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file}"
+    log "  --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME"
+    log "  --password <CAS Manager GUI Administrator Password"
     log "  --reg_code <PCoIP Registration Code>"
     log "  $optional_args"
 
     set +x
     PYTHONWARNINGS="ignore:Unverified HTTPS request" \
-      $INSTALL_DIR/${cam_setup_script} \
-      --deployment_name $CAM_DEPLOYMENT_NAME \
-      --key_file $INSTALL_DIR/${cam_deployment_sa_file} \
-      --key_name $CAM_DEPLOYMENT_KEY_NAME \
-      --password $CAM_GUI_ADMIN_PASSWORD \
+      $INSTALL_DIR/${cas_mgr_setup_script} \
+      --deployment_name $CAS_MGR_DEPLOYMENT_NAME \
+      --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file} \
+      --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME \
+      --password $CAS_MGR_GUI_ADMIN_PASSWORD \
       --reg_code $PCOIP_REGISTRATION_CODE \
       $optional_args
     set -x
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to run CAM setup script. Exiting provisioning script..."
+        log "--> ERROR: Failed to run CAS Manager setup script. Exiting provisioning script..."
         exit 1
     fi
 
-    if [ ! -f "$INSTALL_DIR/${cam_deployment_sa_file}" ]
+    if [ ! -f "$INSTALL_DIR/${cas_mgr_deployment_sa_file}" ]
     then
-        log "--> ERROR: CAM Deployment service account key not created. Exiting provisioning script..."
+        log "--> ERROR: CAS Manager Deployment service account key not created. Exiting provisioning script..."
         exit 1
     fi
 }
@@ -217,23 +216,23 @@ upload_dsa_key() {
     then
         log "--> Encrypting Deployment Service Account key with ${customer_master_key_id}"
 
-        mv $INSTALL_DIR/${cam_deployment_sa_file} $INSTALL_DIR/${cam_deployment_sa_file}.orig
+        mv $INSTALL_DIR/${cas_mgr_deployment_sa_file} $INSTALL_DIR/${cas_mgr_deployment_sa_file}.orig
 
         aws kms encrypt \
             --region ${aws_region} \
             --key-id ${customer_master_key_id} \
-            --plaintext fileb://$INSTALL_DIR/${cam_deployment_sa_file}.orig \
+            --plaintext fileb://$INSTALL_DIR/${cas_mgr_deployment_sa_file}.orig \
             --output text \
-            --query CiphertextBlob | base64 -d > $INSTALL_DIR/${cam_deployment_sa_file}
+            --query CiphertextBlob | base64 -d > $INSTALL_DIR/${cas_mgr_deployment_sa_file}
     fi
 
     log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
 
-    aws s3 cp $INSTALL_DIR/${cam_deployment_sa_file} s3://${bucket_name}/
+    aws s3 cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} s3://${bucket_name}/
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to upload CAM deployment service account key to bucket ${bucket_name}. Exiting provisioning script..."
+        log "--> ERROR: Failed to upload CAS Manager deployment service account key to bucket ${bucket_name}. Exiting provisioning script..."
         exit 1
     fi
 }
@@ -258,10 +257,10 @@ install_prereqs
 get_credentials
 check_required_vars
 configure_firewall
-add_cam_repo
+add_cas_mgr_repo
 config_selinux
-install_cam
-cam_setup
+install_cas_mgr
+cas_mgr_setup
 upload_dsa_key
 
 log "--> Provisioning script completed successfully."

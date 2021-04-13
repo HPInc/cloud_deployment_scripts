@@ -50,7 +50,7 @@ variable "admin_ssh_key_name" {
 variable "admin_ssh_pub_key_file" {
   description = "Admin SSH public key file"
   type        = string
-  
+
   validation {
     condition = fileexists(var.admin_ssh_pub_key_file)
     error_message = "The admin_ssh_pub_key_file specified does not exist. Please check the file path."
@@ -133,7 +133,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "ad_service_account_password" {
@@ -152,125 +152,48 @@ variable "domain_users_list" {
   }
 }
 
-variable "lls_subnet_name" {
-  description = "Name for subnet containing the PCoIP License Servers"
-  default     = "subnet-lls"
+variable "cas_mgr_subnet_name" {
+  description = "Name for subnet containing the CAS Manager"
+  default     = "subnet-cas-mgr"
 }
 
-variable "lls_subnet_cidr" {
-  description = "CIDR for subnet containing the PCoIP License Servers"
-  default     = "10.0.0.32/28"
-}
-
-variable "lls_subnet_ips" {
-  description = "IP addresses used in the PCoIP License Server subnet"
-  default = {
-    haproxy_vip    = "10.0.0.40"
-    haproxy_master = "10.0.0.41"
-    haproxy_backup = "10.0.0.42"
-    lls_main       = "10.0.0.43"
-    lls_backup     = "10.0.0.44"
-    subnet_mask    = "/28"
-  }
-}
-
-variable "haproxy_instance_type" {
-  description = "Instance type for the HAProxy"
-  default     = "t2.medium"
-}
-
-variable "haproxy_disk_size_gb" {
-  description = "Disk size (GB) of the HAProxy"
-  default     = "10"
-}
-
-variable "haproxy_ami_owner" {
-  description = "Owner of AMI for the HAProxy"
-  default     = "125523088429"
-}
-
-variable "haproxy_ami_name" {
-  description = "Name of the CentOS AMI to run HAProxy on"
-  default     = "CentOS 8.2.2004 x86_64"
-}
-
-variable "lls_instance_type" {
-  description = "Instance type for the PCoIP License Server"
-  default     = "t2.medium"
-}
-
-variable "lls_disk_size_gb" {
-  description = "Disk size (GB) of the PCoIP License Server"
-  default     = "10"
-}
-
-variable "lls_ami_owner" {
-  description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
-}
-
-variable "lls_ami_name" {
-  description = "Name of the CentOS AMI to run PCoIP License Server on"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
-}
-
-variable "lls_admin_password" {
-  description = "Administrative password for the Teradici License Server"
-  default     = ""
-}
-
-variable "lls_activation_code" {
-  description = "Activation Code for PCoIP session licenses"
-  default     = ""
-}
-
-variable "lls_license_count" {
-  description = "Number of PCoIP session licenses to activate"
-  default     = 0
-}
-
-variable "cam_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Manager"
-  default     = "subnet-cam"
-}
-
-variable "cam_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Manager"
+variable "cas_mgr_subnet_cidr" {
+  description = "CIDR for subnet containing the CAS Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cam_instance_type" {
-  description = "Instance type for the Cloud Access Manager"
+variable "cas_mgr_instance_type" {
+  description = "Instance type for the CAS Manager"
   default     = "t2.xlarge"
 }
 
-variable "cam_disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Manager"
+variable "cas_mgr_disk_size_gb" {
+  description = "Disk size (GB) of the CAS Manager"
   default     = "60"
 }
 
-variable "cam_ami_owner" {
-  description = "Owner of AMI for the Cloud Access Manager"
+variable "cas_mgr_ami_owner" {
+  description = "Owner of AMI for the CAS Manager"
   default     = "aws-marketplace"
 }
 
-variable "cam_ami_product_code" {
-  description = "Product Code of the AMI to create Cloud Access Manager from"
+variable "cas_mgr_ami_product_code" {
+  description = "Product Code of the AMI to create CAS Manager from"
   default     = "47k9ia2igxpcce2bzo8u3kj03"
 }
 
-variable "cam_gui_admin_password" {
-  description = "Password for the Administrator of Cloud Access Manager"
+variable "cas_mgr_admin_password" {
+  description = "Password for the Administrator of CAS Manager"
   type        = string
 }
 
-variable "cam_aws_credentials_file" {
-    description = "Location of AWS credentials file for Cloud Access Manager"
+variable "cas_mgr_aws_credentials_file" {
+    description = "Location of AWS credentials file for CAS Manager"
     type        = string
 
     validation {
-      condition = fileexists(var.cam_aws_credentials_file)
-      error_message = "The cam_aws_credentials_file specified does not exist. Please check the file path."
+      condition = fileexists(var.cas_mgr_aws_credentials_file)
+      error_message = "The cas_mgr_aws_credentials_file specified does not exist. Please check the file path."
     }
 }
 

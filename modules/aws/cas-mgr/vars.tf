@@ -25,50 +25,50 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Filename of CAM Deployment Service Account JSON key in bucket"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
 variable "subnet" {
-  description = "Subnet to deploy the Cloud Access Manager"
+  description = "Subnet to deploy the CAS Manager"
   type        = string
 }
 
 variable "enable_public_ip" {
-  description = "Assign a public IP to Cloud Access Manager"
+  description = "Assign a public IP to CAS Manager"
   type        = bool
   default     = true
 }
 
 variable "security_group_ids" {
-  description = "Security Groups to be applied to the Cloud Access Manager"
+  description = "Security Groups to be applied to the CAS Manager"
   type        = list(string)
 }
 
 variable "instance_type" {
-  description = "Instance type for the Cloud Access Manager (min 4 GB RAM, 8 vCPUs)"
+  description = "Instance type for the CAS Manager (min 4 GB RAM, 8 vCPUs)"
   default     = "t2.xlarge"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Manager (min 60 GB)"
+  description = "Disk size (GB) of the CAS Manager (min 60 GB)"
   default     = "60"
 }
 
 variable "ami_owner" {
-  description = "Owner of AMI for the Cloud Access Manager"
+  description = "Owner of AMI for the CAS Manager"
   default     = "aws-marketplace"
 }
 
 variable "ami_product_code" {
-  description = "Product Code of the AMI for the Cloud Access Manager"
+  description = "Product Code of the AMI for the CAS Manager"
   default     = "47k9ia2igxpcce2bzo8u3kj03"
 }
 
 variable "host_name" {
   description = "Name to give the host"
-  default     = "vm-cam"
+  default     = "vm-cas-mgr"
 }
 
 variable "admin_ssh_key_name" {
@@ -76,13 +76,13 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "cam_aws_credentials_file" {
-    description = "Name of AWS credentials file for Cloud Access Manager in bucket"
+variable "cas_mgr_aws_credentials_file" {
+    description = "Name of AWS credentials file for CAS Manager in bucket"
     type        = string
 }
 
-variable "cam_gui_admin_password" {
-  description = "Password for the Administrator of Cloud Access Manager"
+variable "cas_mgr_admin_password" {
+  description = "Password for the Administrator of CAS Manager"
   type        = string
 }
 

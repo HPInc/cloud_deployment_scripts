@@ -6,13 +6,13 @@
  */
 
 output "internal-ip" {
-  value = aws_instance.cam.private_ip
+  value = aws_instance.cas-mgr.private_ip
 }
 
 output "public-ip" {
-  value = aws_instance.cam.public_ip
+  value = aws_instance.cas-mgr.public_ip
 }
 
 output "instance-id" {
-  value = aws_instance.cam.id
+  value = aws_instance.cas-mgr.id
 }
