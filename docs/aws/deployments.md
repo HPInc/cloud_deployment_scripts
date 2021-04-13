@@ -2,14 +2,14 @@
 
 ## Table of Contents
 
-1. [Overview](#overview)
-1. [single-connector](#single-connector)
-1. [cas-mgr-single-connector](#cas-mgr-single-connector)
-1. [multi-region](#multi-region)
-1. [cas-mgr-multi-region](#cas-mgr-multi-region)
-1. [nlb-multi-region](#nlb-multi-region)
-1. [cas-mgr-nlb-multi-region](#cas-mgr-nlb-multi-region)
-1. [dc-only](#dc-only)
+- [Overview](#overview)
+- [single-connector](#single-connector)
+- [cas-mgr-single-connector](#cas-mgr-single-connector)
+- [multi-region](#multi-region)
+- [cas-mgr-multi-region](#cas-mgr-multi-region)
+- [nlb-multi-region](#nlb-multi-region)
+- [cas-mgr-nlb-multi-region](#cas-mgr-nlb-multi-region)
+- [dc-only](#dc-only)
 
 ---
 

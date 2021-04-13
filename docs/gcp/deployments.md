@@ -2,24 +2,24 @@
 
 ## Table of Contents
 
-1. [Overview](#overview)
-1. [single-connector](#single-connector)
-1. [cas-mgr-single-connector](#cas-mgr-single-connector)
-1. [multi-region](#multi-region)
-1. [cas-mgr-multi-region](#cas-mgr-multi-region)
-1. [nlb-multi-region](#nlb-multi-region)
-1. [cas-mgr-nlb-multi-region](#cas-mgr-nlb-multi-region)
-1. [dc-only](#dc-only)
+- [Overview](#overview)
+- [single-connector](#single-connector)
+- [cas-mgr-single-connector](#cas-mgr-single-connector)
+- [multi-region](#multi-region)
+- [cas-mgr-multi-region](#cas-mgr-multi-region)
+- [nlb-multi-region](#nlb-multi-region)
+- [cas-mgr-nlb-multi-region](#cas-mgr-nlb-multi-region)
+- [dc-only](#dc-only)
 
 ---
 
 ## Overview
 
-This repository contains a number of CAS deployments architectures on GCP. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference bewteen them is how each CAS deployment is managed:
+This repository contains a number of CAS deployment architectures on GCP. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference between them is how each CAS deployment is managed:
 1. using CAS Manager as a Service, which is a SaaS run by Teradici (first table), or
 2. running the CAS Manager in a virtual machine that a user controls in his or her own CAS deployment (second table)
 
-Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is resonsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
+Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of the CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is resonsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
 
 | | single-connector | multi-region | nlb-multi-region |
 | --- | --- | --- | --- |
@@ -40,29 +40,29 @@ Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici
 ## single-connector
 
 This is the simplest CAS deployment which uses CAS Manager as a Service; it creates a VPC with 3 subnets in the same region. The subnets are
-- ```subnet-dc```: for the Domain Controller
-- ```subnet-cac```: for the Connector
-- ```subnet-ws```: for the workstations
+- `subnet-dc`: for the Domain Controller
+- `subnet-cac`: for the Connector
+- `subnet-ws`: for the workstations
 
 Firewall rules are created to allow wide-open access within the VPC, and selected ports are open to the public for operation and for debug purposes.
 
-A Domain Controller is created with Active Directory, DNS and LDAP-S configured. Two Domain Admins are set up in the new domain: ```Administrator``` and ```cas_admin```. Domain Users are also created if a ```domain_users_list``` CSV file is specified. The Domain Controller is given a static internal IP (configurable) and public IP.
+A Domain Controller is created with Active Directory, DNS and LDAP-S configured. Two Domain Admins are set up in the new domain: `Administrator` and `cas_admin`. Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static internal IP (configurable) and public IP.
 
-A Cloud Access Connector is created and registers itself with the CAS Manager with the given CAS Manager Deployment Service Account credentials and PCoIP Registration code.
+A Cloud Access Connector is created and registers itself with the CAS Manager with the given CAS Manager Deployment Service Account credentials.
 
 Domain-joined workstations are optionally created, specified by the following parameters:
-- ```win_gfx_instance_count```: Windows Graphics workstation,
-- ```win_std_instance_count```: Windows Standard workstation,
-- ```centos_gfx_instance_count```: CentOS Graphics workstation, and
-- ```centos_std_instance_count```: CentOS Standard workstation.
+- `win_gfx_instance_count`:    Windows Graphics workstation
+- `win_std_instance_count`:    Windows Standard workstation
+- `centos_gfx_instance_count`: CentOS Graphics workstation
+- `centos_std_instance_count`: CentOS Standard workstation
 
-These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics drivers are also installed.
+These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics driver is also installed.
 
 ![single-connector diagram](single-connector.png)
 
 ## cas-mgr-single-connector
 
-This deployment is essentially the same as [single-connector](#single-connector), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the ```subnet-cas-mgr``` subnet.
+This deployment is essentially the same as [single-connector](#single-connector), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
 
 ![cas-mgr-single-connector diagram](cas-mgr-single-connector.png)
 
@@ -86,7 +86,7 @@ The next diagram shows a deployment with Cloud Access Connectors and workstation
 
 ## cas-mgr-multi-region
 
-This deployment is essentially the same as [multi-region](#multi-region), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the ```subnet-cas-mgr``` subnet.
+This deployment is essentially the same as [multi-region](#multi-region), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
 
 ![cas-mgr-multi-region (single region) diagram](cas-mgr-multi-region-single.png)
 
@@ -104,7 +104,7 @@ The user can specify which zones to deploy workstations and which regions to dep
 
 ## cas-mgr-nlb-multi-region
 
-This deployment is essentially the same as [nlb-multi-region](#nlb-multi-region), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the ```subnet-cas-mgr``` subnet.
+This deployment is essentially the same as [nlb-multi-region](#nlb-multi-region), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
 
 ![cas-mgr-nlb-multi-region diagram](cas-mgr-nlb-multi-region.png)
 
