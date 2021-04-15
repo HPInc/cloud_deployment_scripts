@@ -136,6 +136,7 @@ configure_firewall(){
 add_cas_mgr_repo() {
     log "--> Adding CAS Manager repo..."
     curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | distro=el codename=7 bash
+}
 
 config_selinux() {
     log "--> Configuring SE Linux..."
