@@ -7,7 +7,7 @@ import requests
 
 
 class CASManager:
-    def __init__(self, auth_token, url='https://cam.teradici.com'):
+    def __init__(self, auth_token, url='https://cas.teradici.com'):
         self.auth_token = auth_token
         self.url = url
         self.header = {'authorization': auth_token}
@@ -75,6 +75,18 @@ class CASManager:
             self.url + '/api/v1/auth/tokens/connector',
             headers = self.header,
             json = connector_details,
+        )
+        resp.raise_for_status()
+
+        return resp.json()['data']
+
+    def connectors_get(self, deployment):
+        resp = requests.get(
+            self.url + '/api/v1/deployments/connectors',
+            headers = self.header,
+            params = {
+                'deploymentId': deployment['deploymentId']
+            }
         )
         resp.raise_for_status()
 

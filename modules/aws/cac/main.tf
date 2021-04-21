@@ -6,10 +6,10 @@
  */
 
 locals {
-  prefix         = var.prefix != "" ? "${var.prefix}-" : ""
+  prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  provisioning_script    = "cac-provisioning.sh"
-  cam_script             = "get-cac-token.py"
+  provisioning_script = "cac-provisioning.sh"
+  cas_mgr_script      = "get-cac-token.py"
 
   instance_info_list = flatten(
     [ for i in range(length(var.zone_list)):
@@ -29,8 +29,8 @@ resource "aws_s3_bucket_object" "get-cac-token-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   bucket = var.bucket_name
-  key    = local.cam_script
-  source = "${path.module}/${local.cam_script}"
+  key    = local.cas_mgr_script
+  source = "${path.module}/${local.cas_mgr_script}"
 }
 
 resource "aws_s3_bucket_object" "ssl-key" {
@@ -63,16 +63,14 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       bucket_name                 = var.bucket_name,
       cac_extra_install_flags     = var.cac_extra_install_flags,
       cac_version                 = var.cac_version,
-      cam_deployment_sa_file      = var.cam_deployment_sa_file,
-      cam_insecure                = var.cam_insecure ? "true" : "",
-      cam_script                  = local.cam_script,
-      cam_url                     = var.cam_url,
+      cas_mgr_deployment_sa_file  = var.cas_mgr_deployment_sa_file,
+      cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "",
+      cas_mgr_script              = local.cas_mgr_script,
+      cas_mgr_url                 = var.cas_mgr_url,
       customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
-      domain_group                = var.domain_group,
       domain_name                 = var.domain_name,
       lls_ip                      = var.lls_ip,
-      pcoip_registration_code     = var.pcoip_registration_code,
       ssl_key                     = local.ssl_key_filename,
       ssl_cert                    = local.ssl_cert_filename,
       teradici_download_token     = var.teradici_download_token,
@@ -133,13 +131,13 @@ data "aws_iam_policy_document" "cac-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cam_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cas_mgr_script}"]
     effect    = "Allow"
   }
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cam_deployment_sa_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cas_mgr_deployment_sa_file}"]
     effect    = "Allow"
   }
 

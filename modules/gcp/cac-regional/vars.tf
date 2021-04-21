@@ -16,7 +16,7 @@ variable "prefix" {
 }
 
 variable "cas_mgr_url" {
-  description = "CAS Manager URL (e.g. https://cam.teradici.com)"
+  description = "CAS Manager URL (e.g. https://cas.teradici.com)"
   type        = string
 }
 
@@ -24,11 +24,6 @@ variable "cas_mgr_insecure" {
   description = "Allow unverified SSL access to CAS Manager"
   type        = bool
   default     = false
-}
-
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
-  type        = string
 }
 
 variable "domain_name" {
@@ -53,11 +48,6 @@ variable "domain_name" {
 variable "domain_controller_ip" {
   description = "Internal IP of the Domain Controller"
   type        = string
-}
-
-variable "domain_group" {
-  description = "Active Directory Distinguished Name for the User Group to log into the CAM Management Interface. Default is 'Domain Admins'. (eg, 'CN=CAS Admins,CN=Users,DC=example,DC=com')"
-  default     = "Domain Admins"
 }
 
 variable "ad_service_account_username" {
@@ -93,6 +83,11 @@ variable "subnet" {
 variable "external_pcoip_ip" {
   description = "External IP addresses to use to connect to the Cloud Access Connectors."
   default     = ""
+}
+
+variable "enable_cac_external_ip" {
+  description = "Enable external IP address assignment to each Connector"
+  default     = false
 }
 
 variable "network_tags" {

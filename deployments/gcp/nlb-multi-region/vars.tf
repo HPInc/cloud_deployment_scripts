@@ -178,16 +178,6 @@ variable "cac_admin_ssh_pub_key_file" {
   }
 }
 
-variable "cac_health_check" {
-  description = "Health check configuration for Cloud Access Connector"
-  default = {
-    path         = "/pcoip-broker/xml"
-    port         = 443
-    interval_sec = 5
-    timeout_sec  = 5
-  }
-}
-
 variable "cac_ssl_key" {
   description = "SSL private key for the Connector in PEM format"
   default     = ""
@@ -218,6 +208,11 @@ variable "cac_version" {
   default     = "latest"
 }
 
+variable "cac_enable_external_ip" {
+  description = "Enable external IP address assignments for each Connector. For testing/debugging purposes only"
+  default     = false
+}
+
 variable "ws_region_list" {
   description = "Regions in which to deploy Workstations"
   type        = list(string)
@@ -240,7 +235,7 @@ variable "ws_subnet_cidr_list" {
 
 variable "cas_mgr_url" {
   description = "CAS Manager as a Service URL"
-  default     = "https://cam.teradici.com"
+  default     = "https://cas.teradici.com"
 }
 
 variable "cas_mgr_deployment_sa_file" {

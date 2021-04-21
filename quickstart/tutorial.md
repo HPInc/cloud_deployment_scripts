@@ -25,7 +25,7 @@ If you don't have one, visit [https://www.teradici.com/compare-plans](https://ww
 ### api_token
 Replace **`<token>`** with the CAS Manager API token.
 
-Log into [https://cam.teradici.com](https://cam.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
+Log into [https://cas.teradici.com](https://cas.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
 ### Number of Workstations
 Enter the number of workstations to create.
@@ -85,7 +85,7 @@ The script should take approximately 25 minutes to run.
 **Note:** When connecting to a workstation immediately after this script completes, the workstation (especially graphics ones) may still be setting up. You may see "Remote Desktop is restarting..." in the client. Please wait a few minutes or reconnect if it times out.
 
 ### Add additional workstations
-1. Log in to [https://cam.teradici.com](https://cam.teradici.com)
+1. Log in to [https://cas.teradici.com](https://cas.teradici.com)
 2. Click on **Workstations** in the left panel, select **Create new remote workstation** from the **+** button
 3. Select connector **`quickstart_connector_<timestamp>`**
 4. Fill in the form according to your preferences. Note that the following
@@ -119,5 +119,5 @@ terraform destroy
 ~/bin/terraform destroy
 ```
 
-  4. Log in to [https://cam.teradici.com](https://cam.teradici.com) and delete the deployment named
+  4. Log in to [https://cas.teradici.com](https://cas.teradici.com) and delete the deployment named
      **`quickstart_deployment_<timestamp>`**

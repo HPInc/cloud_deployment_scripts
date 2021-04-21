@@ -6,7 +6,7 @@
  */
 
 locals {
-  enable_public_ip    = var.external_pcoip_ip == "" ? [true] : []
+  enable_public_ip    = (var.enable_cac_external_ip || var.external_pcoip_ip == "") ? [true] : []
   prefix              = var.prefix != "" ? "${var.prefix}-" : ""
   provisioning_script = "cac-provisioning.sh"
 }
@@ -29,11 +29,9 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       cas_mgr_script              = var.cas_mgr_script,
       cas_mgr_url                 = var.cas_mgr_url,
       domain_controller_ip        = var.domain_controller_ip,
-      domain_group                = var.domain_group,
       domain_name                 = var.domain_name,
       external_pcoip_ip           = var.external_pcoip_ip,
       kms_cryptokey_id            = var.kms_cryptokey_id,
-      pcoip_registration_code     = var.pcoip_registration_code,
       ssl_cert                    = var.ssl_cert_filename,
       ssl_key                     = var.ssl_key_filename,
       teradici_download_token     = var.teradici_download_token,

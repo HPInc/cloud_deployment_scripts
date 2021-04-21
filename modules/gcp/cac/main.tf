@@ -62,11 +62,9 @@ module "cac-regional" {
   cas_mgr_url             = var.cas_mgr_url
   cas_mgr_insecure        = var.cas_mgr_insecure
   cas_mgr_script          = local.cas_mgr_script
-  pcoip_registration_code = var.pcoip_registration_code
 
   domain_controller_ip        = var.domain_controller_ip
   domain_name                 = var.domain_name
-  domain_group                = var.domain_group
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
@@ -78,6 +76,7 @@ module "cac-regional" {
   network_tags = var.network_tags
   subnet = var.subnet_list[count.index]
   external_pcoip_ip = var.external_pcoip_ip_list == [] ? "" : var.external_pcoip_ip_list[count.index]
+  enable_cac_external_ip = var.enable_cac_external_ip
 
   cac_admin_user = var.cac_admin_user
   cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file

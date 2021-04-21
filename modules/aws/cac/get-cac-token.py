@@ -57,7 +57,7 @@ def get_instance_name(region):
 
 
 def load_service_account_key(path):
-    print(f"Loading CAM deployment service account key from {path}...")
+    print(f"Loading CAS Manager deployment service account key from {path}...")
 
     with open(path) as f:
         dsa_key = json.load(f)
@@ -65,15 +65,15 @@ def load_service_account_key(path):
     return dsa_key
 
 
-def cam_login(key):
-    print(f"Signing in to CAM with key {key['keyName']}...")
+def cas_mgr_login(key):
+    print(f"Signing in to CAS Manager with key {key['keyName']}...")
 
     payload = {
         'username': key['username'], 
         'password': key['apiKey'],
     }
     resp = session.post(
-        f"{cam_api_url}/auth/signin",
+        f"{cas_mgr_api_url}/auth/signin",
         json=payload, 
     )
     resp.raise_for_status()
@@ -90,7 +90,7 @@ def get_cac_token(key, connector_name):
         'connectorName': connector_name,
     }
     resp = session.post(
-        f"{cam_api_url}/auth/tokens/connector",
+        f"{cas_mgr_api_url}/auth/tokens/connector",
         json=payload, 
     )
     resp.raise_for_status()
@@ -105,24 +105,24 @@ def token_write(token, path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="This script uses CAM Deployment Service Account JSON file to create a new CAC token.")
+    parser = argparse.ArgumentParser(description="This script uses CAS Manager Deployment Service Account JSON file to create a new CAC token.")
 
-    parser.add_argument("cam", help="specify the path to CAM Deployment Service Account JSON file")
+    parser.add_argument("cas_mgr", help="specify the path to CAS Manager Deployment Service Account JSON file")
     parser.add_argument("--out", required=True, help="File to write the CAC token")
-    parser.add_argument("--url", default="https://cam.teradici.com", help="specify the api url")
-    parser.add_argument("--insecure", action="store_true", help="Allow unverified HTTPS connection to CAM")
+    parser.add_argument("--url", default="https://cas.teradici.com", help="specify the api url")
+    parser.add_argument("--insecure", action="store_true", help="Allow unverified HTTPS connection to CAS Manager")
 
     args = parser.parse_args()
 
-    cam_api_url = f"{args.url}/api/v1"
+    cas_mgr_api_url = f"{args.url}/api/v1"
 
-    # Set up session to be used for all subsequent calls to CAM
+    # Set up session to be used for all subsequent calls to CAS Manager
     session = requests.Session()
     if args.insecure:
         session.verify = False
 
-    dsa_key = load_service_account_key(args.cam)
-    cam_login(dsa_key)
+    dsa_key = load_service_account_key(args.cas_mgr)
+    cas_mgr_login(dsa_key)
     connector_name = create_connector_name()
     cac_token = get_cac_token(dsa_key, connector_name)
     token_write(cac_token, args.out)

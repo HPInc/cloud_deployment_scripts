@@ -118,7 +118,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cam_admin"
+  default     = "cas_admin"
 }
 
 variable "ad_service_account_password" {
@@ -291,24 +291,19 @@ variable "cac_extra_install_flags" {
   default     = ""
 }
 
-variable "cam_url" {
-  description = "cam server url."
-  default     = "https://cam.teradici.com"
+variable "cas_mgr_url" {
+  description = "CAS Manager as a Service URL"
+  default     = "https://cas.teradici.com"
 }
 
-variable "cam_deployment_sa_file" {
-  description = "Location of CAM Deployment Service Account JSON file"
+variable "cas_mgr_deployment_sa_file" {
+  description = "Location of CAS Manager Deployment Service Account JSON file"
   type        = string
 
   validation {
-    condition = fileexists(var.cam_deployment_sa_file)
-    error_message = "The cam_deployment_sa_file specified does not exist. Please check the file path."
+    condition = fileexists(var.cas_mgr_deployment_sa_file)
+    error_message = "The cas_mgr_deployment_sa_file specified does not exist. Please check the file path."
   }
-}
-
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
-  type        = string
 }
 
 variable "teradici_download_token" {

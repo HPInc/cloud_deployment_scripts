@@ -1,8 +1,16 @@
-# Cloud Access Connector Deployment
+# Cloud Access Software
 
-Cloud Access Manager (CAM) enables highly-scalable and cost-effective Cloud Access Software deployments by managing cloud compute costs and brokering PCoIP connections to remote Windows or Linux workstations. The Cloud Access Manager solution is comprised of two main components – the Cloud Access Manager service, which is a service offered by Teradici to manage Cloud Access Manager deployments, and the Cloud Access Connector, which is the portion of the Cloud Access Manager solution that resides in the customer environment.  To learn more about Cloud Access Manager, visit https://www.teradici.com/web-help/pcoip_cloud_access_manager/CACv2/
+Teradici CAS (Cloud Access Software) delivers a highly responsive remote desktop experience with color-accurate, lossless and distortion-free graphics – even for high frame rate 4K/UHD graphics workloads. This is exactly why artists, editors, producers, architects, and designers all trust CAS to provide the resolution, sound, and color fidelity they need to create and work from anywhere. The immersive, feature-rich experience that CAS delivers is the reason why we won an Engineering Emmy in 2020.
 
-This repository contains a collection of Terraform scripts for demonstrating how to deploy Cloud Access Connectors in a user's cloud environment. __Note: These scripts are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
+Based on our secure PCoIP® (PC-over-IP) protocol that connects over 15 million endpoints around the globe, CAS makes all the magic happen for Windows, Linux and macOS (coming soon) desktops and applications through three core software components:
+
+- **PCoIP Agents** in any standalone or virtualized workstation, on-prem data center, cloud, multicloud or hybrid host environment
+- **CAS Manager** to secure, broker, and provision Teradici CAS connections
+- **PCoIP Clients** to enable any PCoIP Zero Client, PCoIP-Enabled Thin Client, PC, Mac, laptop, or tablet to access their remote desktops, fixed or mobile workstations from anywhere
+
+For more details, please visit https://teradici.com.
+
+This repository contains a collection of Terraform configurations for demonstrating how to deploy CAS Manager and Cloud Access Connectors in a user's cloud environment. __Note: These configurations are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
 
 # Documentation
 - [Instructions](docs/aws/README.md) for deploying CAS on Amazon Web Services
@@ -12,7 +20,7 @@ CAS deployments on Microsoft Azure is available in a separate repository. Please
 
 # Directory structure
 ## deployments/
-The top level terraform scripts that creates entire deployments.
+The top level Terraform configuration that creates entire deployments.
 
 ## docs/
 Description and instructions for deployments on different clouds.

@@ -240,7 +240,7 @@ variable "ws_subnet_cidr_list" {
 
 variable "cas_mgr_url" {
   description = "CAS Manager as a Service URL"
-  default     = "https://cam.teradici.com"
+  default     = "https://cas.teradici.com"
 }
 
 variable "cas_mgr_deployment_sa_file" {

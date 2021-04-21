@@ -515,7 +515,7 @@ if __name__ == '__main__':
         minutes or reconnect if it times out.
 
     - Add additional workstations:
-    1. Log in to https://cam.teradici.com
+    1. Log in to https://cas.teradici.com
     2. Click on "Workstations" in the left panel, select "Create new remote
         workstation" from the "+" button
     3. Select connector "quickstart_cac_<timestamp>"
@@ -538,7 +538,7 @@ if __name__ == '__main__':
     2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{DEPLOYMENT_PATH}"
     3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
         "{'terraform' if TERRAFORM_BIN_PATH == shutil.which('terraform') else TERRAFORM_BIN_PATH} destroy"
-    4. Log in to https://cam.teradici.com and delete the deployment named
+    4. Log in to https://cas.teradici.com and delete the deployment named
         "quickstart_deployment_<timestamp>"
     """
 
