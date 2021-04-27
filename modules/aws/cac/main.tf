@@ -23,6 +23,8 @@ locals {
   )
   ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+
+  aws_logs_script = "awslogs.sh"
 }
 
 resource "aws_s3_bucket_object" "get-cac-token-script" {
@@ -124,6 +126,12 @@ data "aws_kms_key" "encryption-key" {
 
 data "aws_iam_policy_document" "cac-policy-doc" {
   statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+  
+  statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
@@ -142,8 +150,17 @@ data "aws_iam_policy_document" "cac-policy-doc" {
   }
 
   statement {
-    actions   = ["ec2:DescribeTags"]
-    resources = ["*"]
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.aws_logs_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:PutLogEvents",
+                 "logs:DescribeLogStreams"]
+    resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
@@ -228,3 +245,10 @@ resource "aws_instance" "cac" {
     Name = "${local.prefix}${var.host_name}-${count.index}"
   }
 }
+
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = length(local.instance_info_list)
+
+  name = "${local.prefix}${var.host_name}-${count.index}"
+}
+

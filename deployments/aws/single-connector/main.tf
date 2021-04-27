@@ -11,6 +11,7 @@ locals {
   # Name of CAS Manager deployment service account key file in bucket
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
+  awslogs_shell_script = "awslogs.sh"
 }
 
 resource "random_id" "bucket-name" {
@@ -31,6 +32,12 @@ resource "aws_s3_bucket_object" "cas-mgr-deployment-sa-file" {
   bucket = aws_s3_bucket.scripts.id
   key    = local.cas_mgr_deployment_sa_file
   source = var.cas_mgr_deployment_sa_file
+}
+
+resource "aws_s3_bucket_object" "awslogs-shell-script" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.awslogs_shell_script
+  source = "../../../${local.awslogs_shell_script}"
 }
 
 module "dc" {

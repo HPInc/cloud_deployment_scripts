@@ -52,6 +52,27 @@ retry() {
     done
 }
 
+setup_awslogs(){
+    if [[ ! -f "/var/log/awslogs.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        retry 3 5 "aws s3 cp s3://${bucket_name}/$AWS_LOGS_SCRIPT ." \
+            "--> " \
+            "--> ERROR: Failed to download awslogs setup script."
+        chmod +x $AWS_LOGS_SCRIPT
+        dos2unix $AWS_LOGS_SCRIPT
+
+        . $AWS_LOGS_SCRIPT ${aws_region} \
+            $LOG_FILE                        "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/messages"              "%b %d %H:%M:%S" \
+            "/var/log/user-data.log"         "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/yum.log"               "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/agent.log" "%Y-%m-%dT%H:%M:%S.%fZ" \
+            "/var/log/nvidia-installer.log"  "%a %b %d %H:%M:%S %Y"
+    fi
+}
+
 get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
@@ -409,6 +430,10 @@ set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
+
+log "$(date)"
+
+setup_awslogs
 
 get_credentials
 
