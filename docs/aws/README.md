@@ -84,7 +84,12 @@ The easiest way to encrypt secrets is to use the kms_secrets_encryption.py Pytho
    ```
    # customer_master_key_id = "<key-id-uuid>"
    ```
-3. Run the following command inside the tools directory:
+3. Run the following command to update the aws configurations and set the default region to match the value specified for the `aws_region` variable in the `terraform.tfvars` file:
+   ```
+   aws configure
+   ```
+   Please refer to https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.
+4. Run the following command inside the tools directory:
    ```
    ./kms_secrets_encryption.py </path/to/terraform.tfvars>
    ```
