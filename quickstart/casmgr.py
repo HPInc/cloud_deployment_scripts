@@ -7,7 +7,7 @@ import requests
 
 
 class CASManager:
-    def __init__(self, auth_token, url='https://cam.teradici.com',
+    def __init__(self, auth_token, url='https://cas.teradici.com',
                  verify_certificate=True):
         self.auth_token = auth_token
         self.url = url
