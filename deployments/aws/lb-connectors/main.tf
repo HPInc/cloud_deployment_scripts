@@ -274,6 +274,7 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
+  aws_region             = var.aws_region
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
@@ -312,6 +313,7 @@ module "centos-std" {
 
   prefix = var.prefix
 
+  aws_region             = var.aws_region
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code

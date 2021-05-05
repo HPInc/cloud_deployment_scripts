@@ -68,6 +68,7 @@ module "ha-lls" {
 
   prefix = var.prefix
 
+  aws_region              = var.aws_region
   customer_master_key_id  = var.customer_master_key_id
   lls_admin_password      = var.lls_admin_password
   lls_activation_code     = var.lls_activation_code
@@ -313,6 +314,7 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
+  aws_region             = var.aws_region
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
@@ -351,6 +353,7 @@ module "centos-std" {
 
   prefix = var.prefix
 
+  aws_region             = var.aws_region
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
