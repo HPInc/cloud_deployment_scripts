@@ -12,7 +12,3 @@ output "internal-ip" {
 output "public-ip" {
   value = var.enable_public_ip ? google_compute_instance.cas-mgr.network_interface[0].access_config[0].nat_ip : null 
 }
-
-output "sa-key" {
-  value = var.cas_mgr_deployment_sa_file
-}
