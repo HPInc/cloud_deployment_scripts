@@ -7,10 +7,15 @@ import requests
 
 
 class CASManager:
-    def __init__(self, auth_token, url='https://cas.teradici.com'):
+    def __init__(self, auth_token, url='https://cas.teradici.com',
+                 verify_certificate=True):
         self.auth_token = auth_token
         self.url = url
-        self.header = {'authorization': auth_token}
+        self.session = requests.Session()
+        # Option to disable verification to avoid validation errors
+        # from self-signed certificates as may be used by CAS Manager
+        self.session.verify = verify_certificate
+        self.session.headers['authorization'] = auth_token
 
     def deployment_create(self, name, reg_code):
         deployment_details = {
@@ -19,9 +24,8 @@ class CASManager:
         }
 
         # this is the connector token endpoint
-        resp = requests.post(
+        resp = self.session.post(
             self.url + '/api/v1/deployments',
-            headers = self.header,
             json = deployment_details,
         )
         resp.raise_for_status()
@@ -41,9 +45,8 @@ class CASManager:
             'credential':   credentials,
         }
 
-        resp = requests.post(
+        resp = self.session.post(
             self.url + '/api/v1/auth/users/cloudServiceAccount',
-            headers = self.header,
             json = account_details,
         )
         resp.raise_for_status()
@@ -55,9 +58,8 @@ class CASManager:
         }
 
         # this is the deployment service account endpoint
-        resp = requests.post(
+        resp = self.session.post(
             self.url + '/api/v1/auth/keys',
-            headers = self.header,
             json = key_details
         )
         resp.raise_for_status()
@@ -71,9 +73,8 @@ class CASManager:
             'connectorName': name,
         }
 
-        resp = requests.post(
+        resp = self.session.post(
             self.url + '/api/v1/auth/tokens/connector',
-            headers = self.header,
             json = connector_details,
         )
         resp.raise_for_status()
@@ -81,9 +82,8 @@ class CASManager:
         return resp.json()['data']
 
     def connectors_get(self, deployment):
-        resp = requests.get(
+        resp = self.session.get(
             self.url + '/api/v1/deployments/connectors',
-            headers = self.header,
             params = {
                 'deploymentId': deployment['deploymentId']
             }
@@ -103,9 +103,8 @@ class CASManager:
             'managed':      True,
         }
 
-        resp = requests.post(
+        resp = self.session.post(
             self.url + '/api/v1/machines',
-            headers = self.header,
             json = machine_details,
         )
         resp.raise_for_status()
@@ -119,9 +118,8 @@ class CASManager:
             'userGuid': user['userGuid'],
         }
 
-        resp = requests.post(
+        resp = self.session.post(
             self.url + '/api/v1/machines/entitlements',
-            headers = self.header,
             json = entitlement_details,
         )
         resp.raise_for_status()
@@ -129,9 +127,8 @@ class CASManager:
         return resp.json()['data']
 
     def user_get(self, name, deployment):
-        resp = requests.get(
+        resp = self.session.get(
             self.url + '/api/v1/machines/entitlements/adusers',
-            headers = self.header,
             params = {
                 'deploymentId': deployment['deploymentId'],
                 'name': name,
@@ -143,9 +140,8 @@ class CASManager:
         return resp['data'][0] if len(resp.get('data', [])) >= 1 else None
 
     def machines_get(self, deployment):
-        resp = requests.get(
+        resp = self.session.get(
             self.url + '/api/v1/machines',
-            headers = self.header,
             params = {
                 'deploymentId': deployment['deploymentId'],
             },
