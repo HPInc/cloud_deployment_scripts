@@ -774,7 +774,8 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         self.kms_client = boto3.client(
             "kms",
             aws_access_key_id     = self.aws_credentials.get("aws_access_key_id"),
-            aws_secret_access_key = self.aws_credentials.get("aws_secret_access_key")
+            aws_secret_access_key = self.aws_credentials.get("aws_secret_access_key"),
+            region_name           = self.tfvars_parser.tfvars_data.get("aws_region","us-west-1")
         )
 
         # AWS KMS resource variables

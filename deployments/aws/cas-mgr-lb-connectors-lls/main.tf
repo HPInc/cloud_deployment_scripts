@@ -74,6 +74,7 @@ module "cas-mgr" {
 
   prefix = var.prefix
 
+  aws_region              = var.aws_region
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
   cas_mgr_admin_password  = var.cas_mgr_admin_password
@@ -83,8 +84,7 @@ module "cas-mgr" {
   cas_mgr_aws_credentials_file = local.cas_mgr_aws_credentials_file
   cas_mgr_deployment_sa_file   = local.cas_mgr_deployment_sa_file
 
-  aws_region   = var.aws_region
-  subnet       = aws_subnet.cas-mgr-subnet.id
+  subnet = aws_subnet.cas-mgr-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-http.id,
@@ -108,6 +108,7 @@ module "lls" {
 
   prefix = var.prefix
 
+  aws_region              = var.aws_region
   customer_master_key_id  = var.customer_master_key_id
   lls_admin_password      = var.lls_admin_password
   lls_activation_code     = var.lls_activation_code
@@ -343,6 +344,7 @@ module "centos-gfx" {
 
   prefix = var.prefix
 
+  aws_region             = var.aws_region
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
@@ -381,6 +383,7 @@ module "centos-std" {
 
   prefix = var.prefix
 
+  aws_region             = var.aws_region
   customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = ""
