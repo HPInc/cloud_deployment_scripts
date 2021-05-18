@@ -214,7 +214,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210415"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210508"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -230,16 +230,6 @@ variable "cac_admin_ssh_pub_key_file" {
   validation {
     condition = fileexists(var.cac_admin_ssh_pub_key_file)
     error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
-  }
-}
-
-variable "cac_health_check" {
-  description = "Health check configuration for Cloud Access Connector"
-  default = {
-    path         = "/pcoip-broker/xml"
-    port         = 443
-    interval_sec = 5
-    timeout_sec  = 5
   }
 }
 
@@ -271,6 +261,11 @@ variable "cac_extra_install_flags" {
 variable "cac_version" {
   description = "Version of the Cloud Access Connector to install"
   default     = "latest"
+}
+
+variable "cac_enable_external_ip" {
+  description = "Enable external IP address assignments for each Connector. For testing/debugging purposes only"
+  default     = false
 }
 
 variable "ws_region_list" {
@@ -425,7 +420,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20210420"
+  default     = "projects/centos-cloud/global/images/centos-7-v20210512"
 }
 
 variable "centos_std_instance_count_list" {
@@ -450,7 +445,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20210420"
+  default     = "projects/centos-cloud/global/images/centos-7-v20210512"
 }
 
 variable "centos_admin_user" {

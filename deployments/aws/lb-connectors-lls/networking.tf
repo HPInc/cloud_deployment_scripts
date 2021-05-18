@@ -16,6 +16,10 @@ locals {
 data "aws_availability_zones" "available_az" {
   state            = "available"
   exclude_zone_ids = var.az_id_exclude_list
+  filter {
+    name   = "zone-type"
+    values = ["availability-zone"]
+  }
 }
 
 resource "aws_vpc" "vpc" {
