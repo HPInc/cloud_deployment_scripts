@@ -50,6 +50,14 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     }
 }
 
+function Setup-AWSLogs {
+    "################################################################"
+    "Setting Up AWS CloudWatch..."
+    "################################################################"
+    Read-S3Object -BucketName ${bucket_name} -Key $AWS_LOGS_SCRIPT -File $AWS_LOGS_SCRIPT
+    powershell $AWS_LOGS_SCRIPT C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+}
+
 function Decrypt-Credentials {
     "################################################################"
     "Decrypting credentials..."
@@ -354,6 +362,8 @@ if (Test-Path $LOG_FILE) {
 }
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+
+Setup-AWSLogs
 
 "--> Script running as user '$(whoami)'."
 

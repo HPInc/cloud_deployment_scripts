@@ -12,6 +12,7 @@ locals {
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
   awslogs_shell_script = "awslogs.sh"
+  awslogs_powershell   = "awslogs.ps1"
 }
 
 resource "random_id" "bucket-name" {
@@ -38,6 +39,12 @@ resource "aws_s3_bucket_object" "awslogs-shell-script" {
   bucket = aws_s3_bucket.scripts.id
   key    = local.awslogs_shell_script
   source = "../../../${local.awslogs_shell_script}"
+}
+
+resource "aws_s3_bucket_object" "awslogs-powershell" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.awslogs_powershell
+  source = "../../../${local.awslogs_powershell}"
 }
 
 module "dc" {
