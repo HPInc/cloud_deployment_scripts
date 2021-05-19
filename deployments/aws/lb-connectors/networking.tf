@@ -6,7 +6,7 @@
  */
 
 data "http" "myip" {
-  url = "https://ifconfig.co/ip"
+  url = "https://api.ipify.org"
 }
 
 locals {
