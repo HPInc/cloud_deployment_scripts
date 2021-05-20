@@ -121,7 +121,7 @@ variable "teradici_download_token" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-11.3/NVIDIA-Linux-x86_64-450.102.04-grid-aws.run"
+  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-12.0/NVIDIA-Linux-x86_64-460.32.03-grid-aws.run"
 }
 
 variable "customer_master_key_id" {

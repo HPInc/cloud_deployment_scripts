@@ -103,12 +103,12 @@ variable "admin_password" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/grid-11.2/"
+  default     = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/grid-12.0/"
 }
 
 variable "nvidia_driver_filename" {
   description = "Filename of NVIDIA GRID driver"
-  default     = "452.57_grid_win10_server2016_server2019_64bit_international.exe"
+  default     = "461.09_grid_win10_server2016_server2019_64bit_AWS_SWL.exe"
 }
 
 variable "teradici_download_token" {
