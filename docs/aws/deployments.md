@@ -5,11 +5,12 @@
 - [Overview](#overview)
 - [single-connector](#single-connector)
 - [cas-mgr-single-connector](#cas-mgr-single-connector)
-- [multi-region](#multi-region)
-- [cas-mgr-multi-region](#cas-mgr-multi-region)
-- [nlb-multi-region](#nlb-multi-region)
-- [cas-mgr-nlb-multi-region](#cas-mgr-nlb-multi-region)
-- [dc-only](#dc-only)
+- [lb-connectors](#lb-connectors)
+- [cas-mgr-lb-connectors](#cas-mgr-lb-connectors)
+- [lb-connectors-lls](#lb-connectors-lls)
+- [cas-mgr-lb-connectors-lls](#cas-mgr-lb-connectors-lls)
+- [lb-connectors-ha-lls](#lb-connectors-ha-lls)
+- [cas-mgr-lb-connectors-ha-lls](#cas-mgr-lb-connectors-ha-lls)
 
 ---
 
@@ -19,7 +20,7 @@ This repository contains a number of CAS deployment architectures on AWS. The ta
 1. using CAS Manager as a Service, which is a SaaS run by Teradici (first table), or
 2. running the CAS Manager in a virtual machine that a user controls in his or her own CAS deployment (second table)
 
-Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of the CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is resonsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
+Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of the CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is responsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
 
 | | single-connector | lb-connectors | lb-connectors-lls | lb-connectors-ha-lls |
 | --- | --- | --- | --- | --- |
@@ -66,7 +67,7 @@ These workstations are automatically domain-joined and have the PCoIP Agent inst
 
 ![single-connector diagram](./single-connector.png)
 
-##  cas-mgr-single-connector
+## cas-mgr-single-connector
 
 This deployment is essentially the same as [single-connector](#single-connector), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
 
