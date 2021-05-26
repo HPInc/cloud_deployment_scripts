@@ -174,12 +174,12 @@ variable "cas_mgr_disk_size_gb" {
 
 variable "cas_mgr_ami_owner" {
   description = "Owner of AMI for the CAS Manager"
-  default     = "aws-marketplace"
+  default     = "125523088429"
 }
 
-variable "cas_mgr_ami_product_code" {
-  description = "Product Code of the AMI to create CAS Manager from"
-  default     = "47k9ia2igxpcce2bzo8u3kj03"
+variable "cas_mgr_ami_name" {
+  description = "Name of the AMI to create CAS Manager from"
+  default     = "CentOS 8.3.2011 x86_64"
 }
 
 variable "cas_mgr_admin_password" {

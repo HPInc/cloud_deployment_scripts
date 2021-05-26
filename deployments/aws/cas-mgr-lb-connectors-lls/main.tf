@@ -95,8 +95,8 @@ module "cas-mgr" {
   instance_type = var.cas_mgr_instance_type
   disk_size_gb  = var.cas_mgr_disk_size_gb
 
-  ami_owner        = var.cas_mgr_ami_owner
-  ami_product_code = var.cas_mgr_ami_product_code
+  ami_owner = var.cas_mgr_ami_owner
+  ami_name  = var.cas_mgr_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 }
