@@ -179,17 +179,12 @@ variable "lls_disk_size_gb" {
 
 variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
-}
-
-variable "lls_ami_product_code" {
-  description = "Product Code of the AMI for the PCoIP License Server"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "lls_ami_name" {
   description = "Name of the CentOS AMI to run PCoIP License Server on"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7.9.2009 x86_64"
 }
 
 variable "lls_admin_password" {

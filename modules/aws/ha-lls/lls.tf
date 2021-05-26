@@ -44,11 +44,6 @@ data "aws_ami" "lls_ami" {
   most_recent = true
   owners      = [var.lls_ami_owner]
 
-#  filter {
-#    name   = "product-code"
-#    values = [var.lls_ami_product_code]
-#  }
-
   filter {
     name   = "name"
     values = [var.lls_ami_name]

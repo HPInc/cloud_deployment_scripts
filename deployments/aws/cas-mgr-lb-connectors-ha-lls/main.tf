@@ -128,11 +128,11 @@ module "ha-lls" {
   lls_instance_type = var.haproxy_instance_type
   lls_disk_size_gb  = var.haproxy_disk_size_gb
 
-  haproxy_ami_owner        = var.haproxy_ami_owner
-  haproxy_ami_name         = var.haproxy_ami_name
+  haproxy_ami_owner = var.haproxy_ami_owner
+  haproxy_ami_name  = var.haproxy_ami_name
 
-  lls_ami_owner        = var.lls_ami_owner
-  lls_ami_name         = var.lls_ami_name
+  lls_ami_owner = var.lls_ami_owner
+  lls_ami_name  = var.lls_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
