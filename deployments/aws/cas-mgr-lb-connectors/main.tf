@@ -333,9 +333,8 @@ module "centos-gfx" {
   instance_type  = var.centos_gfx_instance_type
   disk_size_gb   = var.centos_gfx_disk_size_gb
 
-  ami_owner        = var.centos_gfx_ami_owner
-  ami_product_code = var.centos_gfx_ami_product_code
-  ami_name         = var.centos_gfx_ami_name
+  ami_owner = var.centos_gfx_ami_owner
+  ami_name  = var.centos_gfx_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
@@ -372,9 +371,8 @@ module "centos-std" {
   instance_type  = var.centos_std_instance_type
   disk_size_gb   = var.centos_std_disk_size_gb
 
-  ami_owner        = var.centos_std_ami_owner
-  ami_product_code = var.centos_std_ami_product_code
-  ami_name         = var.centos_std_ami_name
+  ami_owner = var.centos_std_ami_owner
+  ami_name  = var.centos_std_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
