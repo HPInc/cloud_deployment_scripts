@@ -57,13 +57,13 @@ variable "disk_size_gb" {
 }
 
 variable "ami_owner" {
-  description = "Owner of AMI for the CAS Manager"
-  default     = "aws-marketplace"
+  description = "Owner of AMI for the Workstation"
+  default     = "125523088429"
 }
 
-variable "ami_product_code" {
-  description = "Product Code of the AMI for the CAS Manager"
-  default     = "47k9ia2igxpcce2bzo8u3kj03"
+variable "ami_name" {
+  description = "Name of the AMI to create Workstation from"
+  default     = "CentOS 8*x86_64"
 }
 
 variable "host_name" {

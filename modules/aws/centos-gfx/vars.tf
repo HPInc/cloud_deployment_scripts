@@ -96,17 +96,12 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the Workstation"
-  default     = "679593333241"
-}
-
-variable "ami_product_code" {
-  description = "Product Code of the AMI for the Workstation"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7*x86_64"
 }
 
 variable "admin_ssh_key_name" {
