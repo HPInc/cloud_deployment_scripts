@@ -47,17 +47,12 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
-}
-
-variable "ami_product_code" {
-  description = "Product Code of the AMI for the PCoIP License Server"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "ami_name" {
   description = "Name of the AMI to create PCoIP License Server from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7*x86_64"
 }
 
 variable "host_name" {

@@ -96,17 +96,12 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the Workstation"
-  default     = "679593333241"
-}
-
-variable "ami_product_code" {
-  description = "Product Code of the AMI for the Workstation"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7*x86_64"
 }
 
 variable "admin_ssh_key_name" {
@@ -121,7 +116,7 @@ variable "teradici_download_token" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-11.3/NVIDIA-Linux-x86_64-450.102.04-grid-aws.run"
+  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-12.0/NVIDIA-Linux-x86_64-460.32.03-grid-aws.run"
 }
 
 variable "customer_master_key_id" {

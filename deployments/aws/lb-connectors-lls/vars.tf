@@ -84,7 +84,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.04.14"
+  default     = "Windows_Server-2019-English-Full-Base-2021.05.12"
 }
 
 variable "domain_name" {
@@ -164,17 +164,12 @@ variable "lls_disk_size_gb" {
 
 variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
-}
-
-variable "lls_ami_product_code" {
-  description = "Product Code of the AMI for the PCoIP License Server"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "lls_ami_name" {
   description = "Name of the CentOS AMI to run PCoIP License Server on"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7.9.2009 x86_64"
 }
 
 variable "lls_admin_password" {
@@ -229,7 +224,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210415"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210514"
 }
 
 variable "cac_version" {
@@ -355,7 +350,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.04.14"
+  default     = "Windows_Server-2019-English-Full-Base-2021.05.12"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -390,7 +385,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.04.14"
+  default     = "Windows_Server-2019-English-Full-Base-2021.05.12"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -422,17 +417,12 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_ami_owner" {
   description = "Owner of AMI for the CentOS Graphics Workstations"
-  default     = "aws-marketplace"
-}
-
-variable "centos_gfx_ami_product_code" {
-  description = "Product Code of the AMI for the CentOS Graphics Workstation"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "centos_gfx_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7.9.2009 x86_64"
 }
 
 variable "centos_std_instance_count" {
@@ -457,17 +447,12 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_ami_owner" {
   description = "Owner of AMI for the CentOS Standard Workstations"
-  default     = "aws-marketplace"
-}
-
-variable "centos_std_ami_product_code" {
-  description = "Product Code of the AMI for the CentOS Standard Workstation"
-  default     = "aw0evgkw8e5c1q413zgy5pjce"
+  default     = "125523088429"
 }
 
 variable "centos_std_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS Linux 7 x86_64 HVM EBS ENA 2002*"
+  default     = "CentOS 7.9.2009 x86_64"
 }
 
 variable "customer_master_key_id" {
