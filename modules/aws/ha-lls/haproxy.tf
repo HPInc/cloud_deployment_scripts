@@ -55,8 +55,8 @@ data "template_file" "haproxy-user-data" {
   template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
-    bucket_name = var.bucket_name,
-    file_name   = local.haproxy_provisioning_script,
+    bucket_name         = var.bucket_name,
+    provisioning_script = local.haproxy_provisioning_script,
   }
 }
 

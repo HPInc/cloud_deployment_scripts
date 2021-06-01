@@ -82,8 +82,8 @@ data "template_file" "user-data" {
   template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
-    bucket_name            = var.bucket_name,
-    provisioning_script    = local.provisioning_script,
+    bucket_name         = var.bucket_name,
+    provisioning_script = local.provisioning_script,
   }
 }
 
