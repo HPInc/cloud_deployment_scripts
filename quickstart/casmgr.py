@@ -17,6 +17,17 @@ class CASManager:
         self.session.verify = verify_certificate
         self.session.headers['authorization'] = auth_token
 
+    def auth_token_validate(self):
+        resp = self.session.post(
+            self.url + '/api/v1/auth/verify')
+        try:
+            resp.raise_for_status()
+            return True
+        except requests.models.HTTPError:
+            if resp.status_code == 401:
+                return False
+            raise
+    
     def deployment_create(self, name, reg_code):
         deployment_details = {
             'deploymentName':   name,
@@ -91,6 +102,20 @@ class CASManager:
         resp.raise_for_status()
 
         return resp.json()['data']
+
+    def deployment_signin(self, cas_mgr_deployment_key):
+        account_details = {
+            'username': cas_mgr_deployment_key['username'],
+            'apiKey': cas_mgr_deployment_key['apiKey']
+        }
+        resp = self.session.post(
+            self.url + '/api/v1/auth/signin',
+            json = account_details
+        )
+        resp.raise_for_status()
+        
+        self.auth_token = resp.json()['data']['token']
+        self.session.headers['authorization'] = self.auth_token
 
     def machine_add_existing(self, name, project_id, zone, deployment):
         machine_details = {

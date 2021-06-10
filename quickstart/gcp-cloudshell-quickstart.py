@@ -5,6 +5,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import base64
 import datetime
 import importlib
@@ -19,7 +20,7 @@ import textwrap
 import time
 
 import casmgr
-import password_validation
+import interactive
 
 REQUIRED_PACKAGES = {
     'google-api-python-client': None, 
@@ -35,7 +36,6 @@ SA_ROLES    = [
 ]
 
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
-GCP_REGION = 'us-west2'
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
@@ -252,7 +252,6 @@ def service_account_create(email):
 
 def service_account_create_key(service_account, filepath):
     print(f'Created key for {service_account["email"]}...')
-
     key = iam_service.projects().serviceAccounts().keys().create(
         name = 'projects/-/serviceAccounts/' + service_account['email'],
         body = {},
@@ -321,32 +320,35 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     with open(ref_file_path, 'r') as ref_file, open(tfvar_file_path, 'w') as out_file:
         for line in ref_file:
-            # Append the crypto key path to kms_cryptokey_id line since it is commented out in ref_file
-            if '# kms_cryptokey_id' in line:
-                out_file.write(f'{"kms_cryptokey_id"} = \"{settings["kms_cryptokey_id"]}\"')
-                continue
+            if line[0] == '#':
+                # Check if it's an optional variable and uncomment if so
+                for k in settings.keys():
+                    # Building string using + because can't use f"{k}" with regex
+                    pattern = "^#\s*(" + k + ")\s*="
+                    if re.search(pattern, line.strip()):
+                        line = f'{k} = "{settings[k]}"\n'
+            elif line[0] != '\n':
+                key = line.split('=')[0].strip()
+                line = f'{key} = "{settings[key]}"\n'
 
-            # Comments and blank lines are unchanged
-            if line[0] in ('#', '\n'):
-                out_file.write(line)
-                continue
-
-            key = line.split('=')[0].strip()
-            try:
-                out_file.write(f'{key} = "{settings[key]}"\n')
-            except KeyError:
-                # Remove file and error out
-                os.remove(tfvar_file_path)
-                print(f'Required value for {key} missing. tfvars file {tfvar_file_path} not created.')
-                sys.exit(1)
+            out_file.write(line)
 
 
 if __name__ == '__main__':
     ensure_requirements()
 
-    cfg_data = quickstart_config_read(CFG_FILE_PATH)
+    print('Setting GCP project...')
+    sa_email = f'{SA_ID}@{PROJECT_ID}.iam.gserviceaccount.com'
+    iam_service = googleapiclient.discovery.build('iam', 'v1')
+    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
 
-    password = password_validation.ad_password_get(ENTITLE_USER)
+    apis_enable(REQUIRED_APIS)
+    sa = service_account_create(sa_email)
+    iam_policy_update(sa, SA_ROLES)
+
+    print('GCP project setup complete.\n')
+
+    cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
 
     print('Preparing local requirements...')
     os.chdir('../')
@@ -364,20 +366,10 @@ if __name__ == '__main__':
 
     print('Local requirements setup complete.\n')
 
-    print('Setting GCP project...')
-    sa_email = f'{SA_ID}@{PROJECT_ID}.iam.gserviceaccount.com'
-    iam_service = googleapiclient.discovery.build('iam', 'v1')
-    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
-
-    apis_enable(REQUIRED_APIS)
-    sa = service_account_create(sa_email)
-    iam_policy_update(sa, SA_ROLES)
-    sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
-
-    print('GCP project setup complete.\n')
-
     print('Setting CAS Manager...')
     mycasmgr = casmgr.CASManager(cfg_data.get('api_token'))
+    # Key created here to prevent from running out
+    sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
     deployment = mycasmgr.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
@@ -393,7 +385,7 @@ if __name__ == '__main__':
 
     kms_client = kms.KeyManagementServiceClient()
 
-    parent = f'projects/{PROJECT_ID}/locations/{GCP_REGION}'
+    parent = f"projects/{PROJECT_ID}/locations/{cfg_data.get('gcp_region')}"
     key_ring_id = 'cloud_deployment_scripts'
     key_ring_init = {}
 
@@ -403,7 +395,7 @@ if __name__ == '__main__':
     except google_exc.AlreadyExists:
         print(f'Key Ring {key_ring_id} already exists. Using it...')
 
-    parent = kms_client.key_ring_path(PROJECT_ID, GCP_REGION, key_ring_id)
+    parent = kms_client.key_ring_path(PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id)
     crypto_key_id = 'quickstart_key'
     crypto_key_init = {
         'purpose': kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
@@ -417,7 +409,7 @@ if __name__ == '__main__':
     except google_exc.AlreadyExists:
         print(f'Crypto Key {crypto_key_id} already exists. Using it...')
 
-    key_name = kms_client.crypto_key_path(PROJECT_ID, GCP_REGION, key_ring_id, crypto_key_id)
+    key_name = kms_client.crypto_key_path(PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id, crypto_key_id)
 
     def kms_encode(key, text, base64_encoded=False):
         encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
@@ -426,15 +418,15 @@ if __name__ == '__main__':
             return base64.b64encode(encrypted.ciphertext).decode('utf-8')
         return encrypted.ciphertext
 
-    password = kms_encode(key_name, password, True)
+    cfg_data['ad_password'] = kms_encode(key_name, cfg_data.get('ad_password'), True)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
-    cas_mgr_deployment_key = kms_encode(key_name, json.dumps(cas_mgr_deployment_key))
+    cas_mgr_deployment_key_encrypted = kms_encode(key_name, json.dumps(cas_mgr_deployment_key))
 
     print('Done encrypting secrets.')
 
     print('Creating CAS Manager Deployment Service Account Key...')
     with open(CAS_MGR_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
-        keyfile.write(cas_mgr_deployment_key)
+        keyfile.write(cas_mgr_deployment_key_encrypted)
 
     print('  Key written to ' + CAS_MGR_DEPLOYMENT_SA_KEY_PATH)
 
@@ -443,10 +435,12 @@ if __name__ == '__main__':
     #TODO: refactor this to work with more types of deployments
     settings = {
         'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
+        'gcp_region':                     cfg_data.get('gcp_region'),
+        'gcp_zone':                       cfg_data.get('gcp_zone'),
         'kms_cryptokey_id':               key_name,
-        'dc_admin_password':              password,
-        'safe_mode_admin_password':       password,
-        'ad_service_account_password':    password,
+        'dc_admin_password':              cfg_data.get('ad_password'),
+        'safe_mode_admin_password':       cfg_data.get('ad_password'),
+        'ad_service_account_password':    cfg_data.get('ad_password'),
         'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
@@ -473,6 +467,9 @@ if __name__ == '__main__':
 
     print('Terraform deployment complete.\n')
 
+    # To update the auth_token used by the session header for the API call 
+    # with the one from the deployment key in case the API Token expires
+    mycasmgr.deployment_signin(cas_mgr_deployment_key)
     # Add existing workstations
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
@@ -481,7 +478,7 @@ if __name__ == '__main__':
             mycasmgr.machine_add_existing(
                 hostname,
                 PROJECT_ID,
-                'us-west2-b',
+                cfg_data.get('gcp_zone'),
                 deployment
             )
 
@@ -521,8 +518,8 @@ if __name__ == '__main__':
     3. Select connector "quickstart_cac_<timestamp>"
     4. Fill in the form according to your preferences. Note that the following
         values must be used for their respective fields:
-        Region:                   "us-west2"
-        Zone:                     "us-west2-b"
+        Region:                   "{cfg_data.get('gcp_region')}"
+        Zone:                     "{cfg_data.get('gcp_zone')}"
         Network:                  "vpc-cas"
         Subnetowrk:               "subnet-ws"
         Domain name:              "example.com"

@@ -9,25 +9,41 @@ The Python script is a wrapper script that sets up the environment required for 
 
 **Time to complete**: about 30 minutes
 
-## Enter Parameters
-Click
-<walkthrough-editor-open-file
-    filePath="cloud_deployment_scripts/quickstart/gcp-cloudshell-quickstart.cfg">
-    here
-</walkthrough-editor-open-file>
-to open the configuration file in the GCP Cloud Shell Editor. Fill in the following values:
+## Create Deployment
+### Select the Project
+Ensure the proper project is selected. Replace **<project_id>** with your project ID in the command below.
+```bash
+gcloud config set project <project_id>
+```
 
-### reg_code
-Replace **`<code>`** with your PCoIP Registration code.
+### Enter Parameters
+
+Run the following command in Cloud Shell
+```bash
+cd quickstart
+./gcp-cloudshell-quickstart.py
+```
+and you will be prompted to enter each parameter. After you answer all the prompts, the script will continue to create the deployment.
+
+#### reg_code
+Enter your PCoIP Registration code.
 
 If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
 
-### api_token
-Replace **`<token>`** with the CAS Manager API token.
+#### api_token
+Enter the CAS Manager API token.
 
 Log into [https://cas.teradici.com](https://cas.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
-### Number of Workstations
+#### gcp_region
+Enter the GCP Region you want to deploy in.     
+
+You can see the list of GCP regions and zones [here](https://cloud.google.com/compute/docs/regions-zones)
+
+#### gcp_zone
+Enter the GCP Zone you want to deploy in.
+
+#### Number of Workstations
 Enter the number of workstations to create.
 
 Parameter | Description
@@ -37,10 +53,10 @@ gcent | CentOS 7 with NVIDIA Tesla P4 Virtual Workstation GPU
 swin | Windows Server 2019 Workstation
 gwin | Windows Server 2019 with NVIDIA Tesla P4 Virtual Workstation GPU
 
-### Check your Quota
+#### Check your Quota
 Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Cloud Access Connector (CAC) which will also be created.
 
-The deployment will be created in **us-west2-b** and have the following specs:
+The deployment will have the following specs:
 
 VM | vCPUs | Memory (GB) | SSD (GB) | GPU 
 ---|---|---|---|--- 
@@ -51,29 +67,9 @@ gcent | 2 | 7.5 | 50 | 1
 swin | 4 | 15 | 50 | 0
 gwin | 4 | 15 | 50 | 1
 
-You can check your quota [here](https://console.cloud.google.com/iam-admin/quotas).
+You can check your quota [here](https://console.cloud.google.com/iam-admin/quotas).     
 
-### Save the changes
-To save the configuration file, open the
-<walkthrough-editor-spotlight spotlightId="fileMenu"
-                              text="file menu">
-</walkthrough-editor-spotlight> and choose **Save**.
-
-## Create Deployment
-### Select the project
-Ensure the proper project is selected. Replace **<project_id>** with your project ID in the command below.
-```bash
-gcloud config set project <project_id>
-```
-
-### Run the script
-
-Run the following command in Cloud Shell. You will be prompted to create a password for the Active Directory Administrator.
-```bash
-cd quickstart
-./gcp-cloudshell-quickstart.py
-```
-The script should take approximately 25 minutes to run.
+You can check the availability of the GPU Virtual Workstation for the graphics machine [here](https://cloud.google.com/compute/docs/gpus/gpu-regions-zones).
 
 ## Next steps
 
@@ -91,8 +87,8 @@ The script should take approximately 25 minutes to run.
 4. Fill in the form according to your preferences. Note that the following
    values must be used for their respective fields:
 ```
-Region:                   "us-west2"
-Zone:                     "us-west2-b"
+Region:                   "<set by you at start of script>"
+Zone:                     "<set by you at start of script>"
 Network:                  "vpc-cas"
 Subnetwork:               "subnet-ws"
 Domain name:              "example.com"
