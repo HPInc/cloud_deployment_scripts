@@ -33,7 +33,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - for deployments using CAS Manager as a Service, a CAS Manager Deployment Service Account is needed. Please see the [CAS Manager as a Service Setup])#cas-manager-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if custom SSL key and certificates are required, the SSL key and certificate files are needed in PEM format.
-- Terraform v0.13 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
+- Terraform v1.0 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### Selecting a Deployment
 This repository contains Terraform configurations for a number of different CAS deployment types. Please see the the [Deployments](deployments.md) page for a more detailed description of the various deployments.
