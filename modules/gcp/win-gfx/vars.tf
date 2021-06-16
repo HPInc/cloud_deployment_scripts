@@ -23,6 +23,7 @@ variable "instance_name" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code from Teradici"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_name" {
@@ -52,6 +53,7 @@ variable "ad_service_account_username" {
 variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
+  sensitive   = true
 }
 
 variable "bucket_name" {
@@ -152,4 +154,5 @@ variable "pcoip_agent_version" {
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
+  sensitive   = true
 }

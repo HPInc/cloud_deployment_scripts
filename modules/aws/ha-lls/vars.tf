@@ -83,11 +83,13 @@ variable "admin_ssh_key_name" {
 variable "lls_admin_password" {
   description = "Administrative password for the Teradici License Server"
   default     = ""
+  sensitive   = true
 }
 
 variable "lls_activation_code" {
   description = "Activation Code for PCoIP session licenses"
   default     = ""
+  sensitive   = true
 }
 
 variable "lls_license_count" {
@@ -103,6 +105,7 @@ variable "teradici_download_token" {
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
+  sensitive   = true
 }
 
 variable "assigned_ips" {

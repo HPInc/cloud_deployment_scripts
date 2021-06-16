@@ -109,11 +109,13 @@ variable "domain_name" {
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+  sensitive   = true
 }
 
 variable "safe_mode_admin_password" {
   description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
+  sensitive   = true
 }
 
 variable "ad_service_account_username" {
@@ -124,6 +126,7 @@ variable "ad_service_account_username" {
 variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_users_list" {
@@ -202,11 +205,13 @@ variable "lls_ami_name" {
 variable "lls_admin_password" {
   description = "Administrative password for the Teradici License Server"
   default     = ""
+  sensitive   = true
 }
 
 variable "lls_activation_code" {
   description = "Activation Code for PCoIP session licenses"
   default     = ""
+  sensitive   = true
 }
 
 variable "lls_license_count" {
@@ -485,4 +490,5 @@ variable "centos_std_ami_name" {
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
+  sensitive   = true
 }

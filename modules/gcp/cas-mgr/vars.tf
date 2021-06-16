@@ -18,6 +18,7 @@ variable "prefix" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
+  sensitive   = true
 }
 
 variable "bucket_name" {
@@ -94,6 +95,7 @@ variable "cas_mgr_admin_ssh_pub_key_file" {
 variable "cas_mgr_admin_password" {
   description = "Password for the Administrator of CAS Manager"
   type        = string
+  sensitive   = true
 }
 
 variable "teradici_download_token" {
@@ -104,4 +106,5 @@ variable "teradici_download_token" {
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
+  sensitive   = true
 }
