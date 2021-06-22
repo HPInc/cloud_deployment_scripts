@@ -430,5 +430,4 @@ variable "centos_admin_ssh_pub_key_file" {
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
-  sensitive   = true
 }

@@ -164,5 +164,4 @@ variable "cac_extra_install_flags" {
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
-  sensitive   = true
 }
