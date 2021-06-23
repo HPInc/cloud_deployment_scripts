@@ -34,8 +34,8 @@ data "template_file" "lls-user-data" {
   template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
-    bucket_name = var.bucket_name,
-    file_name   = local.lls_provisioning_script,
+    bucket_name         = var.bucket_name,
+    provisioning_script = local.lls_provisioning_script,
   }
 }
 

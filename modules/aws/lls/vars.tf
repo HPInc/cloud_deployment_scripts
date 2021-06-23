@@ -52,7 +52,7 @@ variable "ami_owner" {
 
 variable "ami_name" {
   description = "Name of the AMI to create PCoIP License Server from"
-  default     = "CentOS 7*x86_64"
+  default     = "CentOS 8*x86_64"
 }
 
 variable "host_name" {

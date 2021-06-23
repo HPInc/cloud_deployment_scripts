@@ -4,9 +4,64 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-yum -y update
-yum -y install awscli dos2unix
-aws s3 cp s3://${bucket_name}/${file_name} .
-chmod +x ${file_name}
-dos2unix ${file_name}
-. ${file_name}
+
+LOG_FILE="/var/log/teradici/user-data.log"
+INSTALL_DIR="/root"
+
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
+
+set -x
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod 600 "$LOG_FILE"
+fi
+
+# Redirect stdout and stderr to the log file
+exec &>> $LOG_FILE
+
+log "--> Running $0 as $(whoami)..."
+
+cd $INSTALL_DIR
+
+if [[ ! -f "${provisioning_script}" ]]
+then
+    yum -y update
+    yum -y install dos2unix unzip
+
+    if [[ ! $(which aws) ]]
+    then
+        # Install AWS CLI directly since it might not be in some Yum Repo (eg. CentOS 8)
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        ./aws/install
+
+        # Make aws available for root later
+        ln -s /usr/local/bin/aws /usr/bin/aws
+    fi
+
+    # wait until we have IAM credentials
+    # successful command returns a string "access_key ****************XXXX iam-role"
+    # missing access key or IAM credentials returns an empty string ""
+    until [ ! -z "$(aws configure list | grep access_key | grep iam-role)" ]
+    do 
+        log "Checking for IAM credentials..."
+        sleep 5
+    done
+
+    log "--> Downloading required files from the bucket..."
+    aws s3 cp s3://${bucket_name}/${provisioning_script} .
+    chmod +x ${provisioning_script}
+    dos2unix ${provisioning_script}
+fi
+
+log "--> Executing provisioning script..."
+. ${provisioning_script}
+
+log "--> $0 finished."
+

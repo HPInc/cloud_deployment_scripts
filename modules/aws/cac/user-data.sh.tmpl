@@ -5,19 +5,63 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+LOG_FILE="/var/log/teradici/user-data.log"
 INSTALL_DIR="/root"
 
-apt-get -qq update
-apt install -y awscli dos2unix python3
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
 
-echo "--> Downloading required files from the bucket..."
-aws s3 cp s3://${bucket_name}/${provisioning_script} $INSTALL_DIR
+set -x
 
-echo "--> Allowing scripts to be executable files..."
-chmod +x $INSTALL_DIR/${provisioning_script}
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod 600 "$LOG_FILE"
+fi
 
-echo "--> Ensuring line endings for downloaded files are in Unix format..."
-dos2unix $INSTALL_DIR/${provisioning_script}
+# Redirect stdout and stderr to the log file
+exec &>> $LOG_FILE
 
-echo "--> Executing provisioning script..."
-$INSTALL_DIR/${provisioning_script}
+log "--> Running $0 as $(whoami)..."
+
+cd $INSTALL_DIR
+
+if [[ ! -f "${provisioning_script}" ]]
+then
+    apt-get -qq update
+    apt install -y dos2unix unzip
+
+    if [[ ! $(which aws) ]]
+    then
+        # Install AWS CLI directly since it might not be in some Yum Repo (eg. CentOS 8)
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        ./aws/install
+
+        # Make aws available for root later
+        ln -s /usr/local/bin/aws /usr/bin/aws
+    fi
+
+    # wait until we have IAM credentials
+    # successful command returns a string "access_key ****************XXXX iam-role"
+    # missing access key or IAM credentials returns an empty string ""
+    until [ ! -z "$(aws configure list | grep access_key | grep iam-role)" ]
+    do 
+        log "Checking for IAM credentials..."
+        sleep 5
+    done
+
+    log "--> Downloading required files from the bucket..."
+    aws s3 cp s3://${bucket_name}/${provisioning_script} .
+    chmod +x ${provisioning_script}
+    dos2unix ${provisioning_script}
+fi
+
+log "--> Executing provisioning script..."
+. ${provisioning_script}
+
+log "--> $0 finished."
+
