@@ -311,7 +311,7 @@ resource "aws_route53_resolver_rule" "rule" {
   resolver_endpoint_id = aws_route53_resolver_endpoint.outbound.id
 
   target_ip {
-    ip = var.dc_private_ip
+    ip = module.dc.internal-ip
   }
 
   tags = {

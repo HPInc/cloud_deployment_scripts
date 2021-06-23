@@ -58,11 +58,6 @@ variable "subnet" {
   type        = string
 }
 
-variable "private_ip" {
-  description = "Static internal IP address for the Domain Controller"
-  type        = string
-}
-
 variable "security_group_ids" {
   description = "Security Groups to be applied to the Domain Controller"
   type        = list(string)

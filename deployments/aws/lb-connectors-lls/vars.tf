@@ -62,11 +62,6 @@ variable "dc_subnet_cidr" {
   default     = "10.0.0.0/28"
 }
 
-variable "dc_private_ip" {
-  description = "Static internal IP address for the Domain Controller"
-  default     = "10.0.0.10"
-}
-
 variable "dc_instance_type" {
   description = "Instance type for the Domain Controller"
   default     = "t2.xlarge"

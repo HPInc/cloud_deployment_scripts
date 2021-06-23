@@ -153,7 +153,6 @@ resource "aws_instance" "dc" {
   }
 
   subnet_id                   = var.subnet
-  private_ip                  = var.private_ip
   associate_public_ip_address = true
 
   vpc_security_group_ids = var.security_group_ids
