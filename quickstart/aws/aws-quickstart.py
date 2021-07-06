@@ -389,7 +389,7 @@ if __name__ == '__main__':
 
     print('Encrypting secrets...')
     os.chdir(KMS_ENCRYPTOR_PATH)
-    command = f'./kms_secrets_encryption.py {TF_VARS_PATH}'
+    command = f'python3 kms_secrets_encryption.py {TF_VARS_PATH}'
     subprocess.run(command.split(' '), check=True)
     print('Done encrypting secets...')
 
