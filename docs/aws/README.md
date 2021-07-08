@@ -3,7 +3,9 @@
 ## Table of Contents
 - [Amazon Web Services Deployments](#amazon-web-services-deployments)
   - [Table of Contents](#table-of-contents)
-  - [Getting Started](#getting-started)
+  - [Introduction](#introduction)
+  - [AWS Quickstart](#aws-quickstart)
+  - [Manual Terraform Configuration](#manual-terraform-configuration)
     - [Requirements](#requirements)
     - [Selecting a Deployment](#selecting-a-deployment)
     - [AWS Setup](#aws-setup)
@@ -21,7 +23,19 @@
 
 ---
 
-## Getting Started
+## Introduction
+
+There are two ways to create a Cloud Access Software (CAS) deployment using this repository:
+- [__AWS Quickstart__](#aws-quickstart): for those who have less experience with the CLI and Terraform, use this to get a deployment running with the least amount of effort. The quickstart will prepare most of the requirements for the user and call a script to deploy the _single-connector_ deployment using Terraform.
+- [__Manual Terraform Configuration__](#manual-terraform-configuration): for those who are experienced with the CLI and Terraform, this is the primary way this repository is meant to be used. A user can choose between different types of deployments, variables can be customized, and deployment architecture can be modified to suit the user's needs.
+
+## AWS Quickstart
+
+The quickest way to create a reference deployment on AWS is to run the Quickstart Python script in the AWS CloudShell or your local CLI. The goal is to automate the creation of a [single-connector deployment](#single-connector) as much as possible by using auto-generated values for required parameters.
+
+To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
+
+## Manual Terraform Configuration
 
 Before starting, consider watching [this video](https://www.youtube.com/watch?v=hwEOoG4pmMQ) on how to use this repo to deploy a single-connector deployment on AWS from a Windows environment. The video guides the viewer through the entire deployment process from set up to tear down. It also shows how the deployment can be managed through CAS Manager as a Service (CAS-MS) and how end-users can connect to their machines using a PCoIP client. While the video shows the single-connector deployment, the process of creating other deployments is very similar. For deployment from a Linux environment, please see the relevant portions of our [GCP video](https://www.youtube.com/watch?v=ESzon04cW4Y). Note that since this repository is constantly being updated, there might be minor differences between what is shown in the video compared to the latest version on GitHub.
 
