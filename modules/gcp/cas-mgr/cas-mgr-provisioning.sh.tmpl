@@ -11,7 +11,7 @@ INSTALL_DIR="/root"
 CAS_MGR_DEPLOYMENT_KEY_NAME="terraform-key"
 CAS_MGR_DEPLOYMENT_NAME="terraform-deployment"
 CAS_MGR_INSTALL_LOG="/var/log/teradici/cas-mgr-install.log"
-CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/setup.rpm.sh"
+CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
@@ -143,7 +143,8 @@ configure_firewall(){
 
 add_cas_mgr_repo() {
     log "--> Adding CAS Manager repo..."
-    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | distro=el codename=7 bash
+    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | bash
+    yum repolist --enabled teradici-cas-manager*
 }
 
 config_selinux() {
@@ -159,7 +160,7 @@ install_cas_mgr() {
     yum install -y cas-manager 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
 
     # Install manually
-    /usr/local/bin/cas-manager install --preview --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --debug 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
+    /usr/local/bin/cas-manager install --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --release-notes /tmp/release-notes.xml --debug 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
 
     if [ $? -ne 0 ]
     then
