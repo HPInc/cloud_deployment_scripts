@@ -115,7 +115,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_admin"
+  default     = "cas_ad_admin"
 }
 
 variable "ad_service_account_password" {
