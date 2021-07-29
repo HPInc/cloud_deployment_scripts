@@ -46,7 +46,7 @@ This is the simplest CAS deployment which uses CAS Manager as a Service; it crea
 
 Firewall rules are created to allow wide-open access within the VPC, and selected ports are open to the public for operation and for debug purposes.
 
-A Domain Controller is created with Active Directory, DNS and LDAP-S configured. Two Domain Admins are set up in the new domain: `Administrator` and `cas_admin`. Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static internal IP (configurable) and public IP.
+A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `cas_ad_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP (configurable) and a public IP.
 
 A Cloud Access Connector is created and registers itself with the CAS Manager with the given CAS Manager Deployment Service Account credentials.
 

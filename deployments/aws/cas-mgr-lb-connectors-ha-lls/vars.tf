@@ -77,11 +77,6 @@ variable "dc_subnet_cidr" {
   default     = "10.0.0.0/28"
 }
 
-variable "dc_private_ip" {
-  description = "Static internal IP address for the Domain Controller"
-  default     = "10.0.0.10"
-}
-
 variable "dc_instance_type" {
   description = "Instance type for the Domain Controller"
   default     = "t2.xlarge"
@@ -99,7 +94,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.06.09"
+  default     = "Windows_Server-2019-English-Full-Base-2021.07.07"
 }
 
 variable "domain_name" {
@@ -124,21 +119,24 @@ variable "domain_name" {
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+  sensitive   = true
 }
 
 variable "safe_mode_admin_password" {
   description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
+  sensitive   = true
 }
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_admin"
+  default     = "cas_ad_admin"
 }
 
 variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_users_list" {
@@ -217,11 +215,13 @@ variable "lls_ami_name" {
 variable "lls_admin_password" {
   description = "Administrative password for the Teradici License Server"
   default     = ""
+  sensitive   = true
 }
 
 variable "lls_activation_code" {
   description = "Activation Code for PCoIP session licenses"
   default     = ""
+  sensitive   = true
 }
 
 variable "lls_license_count" {
@@ -262,6 +262,7 @@ variable "cas_mgr_ami_name" {
 variable "cas_mgr_admin_password" {
   description = "Password for the Administrator of CAS Manager"
   type        = string
+  sensitive   = true
 }
 
 variable "cas_mgr_aws_credentials_file" {
@@ -311,7 +312,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210604"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20210623"
 }
 
 variable "cac_version" {
@@ -361,6 +362,7 @@ variable "cac_extra_install_flags" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
+  sensitive   = true
 }
 
 variable "teradici_download_token" {
@@ -412,7 +414,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.06.09"
+  default     = "Windows_Server-2019-English-Full-Base-2021.07.07"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -447,7 +449,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.06.09"
+  default     = "Windows_Server-2019-English-Full-Base-2021.07.07"
 }
 
 variable "win_std_pcoip_agent_version" {

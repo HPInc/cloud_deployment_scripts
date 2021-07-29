@@ -74,12 +74,13 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210608"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210713"
 }
 
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_name" {
@@ -104,16 +105,18 @@ variable "domain_name" {
 variable "safe_mode_admin_password" {
   description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
+  sensitive   = true
 }
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_admin"
+  default     = "cas_ad_admin"
 }
 
 variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_users_list" {
@@ -159,7 +162,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210604"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20210720"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -251,6 +254,7 @@ variable "cas_mgr_deployment_sa_file" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
+  sensitive   = true
 }
 
 variable "teradici_download_token" {
@@ -310,7 +314,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210608"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210713"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -340,7 +344,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210608"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210713"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -380,7 +384,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20210609"
+  default     = "projects/centos-cloud/global/images/centos-7-v20210721"
 }
 
 variable "centos_std_instance_count_list" {
@@ -405,7 +409,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20210609"
+  default     = "projects/centos-cloud/global/images/centos-7-v20210721"
 }
 
 variable "centos_admin_user" {

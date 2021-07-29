@@ -23,6 +23,7 @@ variable "instance_name" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_name" {
@@ -57,6 +58,7 @@ variable "ad_service_account_username" {
 variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
+  sensitive   = true
 }
 
 variable "bucket_name" {

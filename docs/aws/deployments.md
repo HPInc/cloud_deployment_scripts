@@ -53,7 +53,7 @@ This is the simplest deployment; it creates a VPC with 3 subnets in the same reg
 
 Security Group rules are created to allow wide-open access within the VPC, and selected ports are open to the public for operation and for debug purposes.
 
-A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `cas_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP (configurable).
+A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `cas_ad_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP and a public IP.
 
 A Cloud Access Connector is created and registers itself with CAS Manager as a Service with the given CAS Manager Deployment Service Account credentials.
 

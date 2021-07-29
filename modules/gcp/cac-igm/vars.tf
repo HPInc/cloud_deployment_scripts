@@ -63,6 +63,7 @@ variable "ad_service_account_username" {
 variable "ad_service_account_password" {
   description = "Active Directory Service Account password"
   type        = string
+  sensitive   = true
 }
 
 variable "bucket_name" {

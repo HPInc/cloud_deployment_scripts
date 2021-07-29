@@ -23,11 +23,13 @@ variable "domain_name" {
 variable "admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+  sensitive   = true
 }
 
 variable "safe_mode_admin_password" {
   description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
+  sensitive   = true
 }
 
 variable "ad_service_account_username" {
@@ -38,6 +40,7 @@ variable "ad_service_account_username" {
 variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_users_list" {

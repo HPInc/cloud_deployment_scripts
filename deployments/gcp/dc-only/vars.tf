@@ -69,12 +69,13 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210608"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20210713"
 }
 
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_name" {
@@ -99,16 +100,18 @@ variable "domain_name" {
 variable "safe_mode_admin_password" {
   description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
+  sensitive   = true
 }
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_admin"
+  default     = "cas_ad_admin"
 }
 
 variable "ad_service_account_password" {
   description = "Active Directory Service account password"
   type        = string
+  sensitive   = true
 }
 
 variable "domain_users_list" {

@@ -18,6 +18,7 @@ variable "prefix" {
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string
+  sensitive   = true
 }
 
 variable "bucket_name" {
@@ -84,6 +85,7 @@ variable "cas_mgr_aws_credentials_file" {
 variable "cas_mgr_admin_password" {
   description = "Password for the Administrator of CAS Manager"
   type        = string
+  sensitive   = true
 }
 
 variable "teradici_download_token" {

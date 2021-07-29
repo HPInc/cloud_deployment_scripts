@@ -48,7 +48,6 @@ module "dc" {
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.dc-subnet.id
-  private_ip         = var.dc_private_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-rdp.id,

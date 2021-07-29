@@ -96,7 +96,7 @@ Zone:                     "us-west2-b"
 Network:                  "vpc-cas"
 Subnetwork:               "subnet-ws"
 Domain name:              "example.com"
-Domain service account:   "cas_admin"
+Domain service account:   "cas_ad_admin"
 Service account password: <set by you at start of script>
 ```
 5. Click **Create**

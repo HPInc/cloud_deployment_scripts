@@ -526,7 +526,7 @@ if __name__ == '__main__':
         Network:                  "vpc-cas"
         Subnetowrk:               "subnet-ws"
         Domain name:              "example.com"
-        Domain service account:   "cas_admin"
+        Domain service account:   "cas_ad_admin"
         Service account password: <set by you at start of script>
     5. Click **Create**
 
