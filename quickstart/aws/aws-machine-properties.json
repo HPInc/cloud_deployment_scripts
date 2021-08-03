@@ -1,0 +1,68 @@
+{
+    "dc": {
+        "name": "Domain Controller",
+        "service_requirements": {
+            "ec2": {
+                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+            },
+            "vpc": {
+                "Network interfaces per Region": 1
+            }
+        }
+    },
+    "cac": {
+        "name": "Cloud Access Connector",
+        "service_requirements": {
+            "ec2": {
+                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+            },
+            "vpc": {
+                "Network interfaces per Region": 1
+            }
+        }
+    },
+    "scent": {
+        "name": "Standard CentOS",
+        "service_requirements": {
+            "ec2": {
+                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+            },
+            "vpc": {
+                "Network interfaces per Region": 1
+            }
+        }
+    },
+    "gcent": {
+        "name": "Graphics CentOS",
+        "service_requirements": {
+            "ec2": {
+                "All G Spot Instance Requests": 4
+            },
+            "vpc": {
+                "Network interfaces per Region": 1
+            }
+        }
+    },
+    "swin": {
+        "name": "Standard Windows",
+        "service_requirements": {
+            "ec2": {
+                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+            },
+            "vpc": {
+                "Network interfaces per Region": 1
+            }
+        }
+    },
+    "gwin": {
+        "name": "Graphics Windows",
+        "service_requirements": {
+            "ec2": {
+                "All G Spot Instance Requests": 4
+            },
+            "vpc": {
+                "Network interfaces per Region": 1
+            }
+        }
+    }
+}
