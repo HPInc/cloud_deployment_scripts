@@ -78,21 +78,22 @@ def configurations_get(project_id, ws_types, username):
         # The available quota equals quota limit minus quota usage
         return { m: q['limit'] - q['usage'] for q in quotas for m in METRICS if q['metric'] == m }
 
-    # Prints the available quota in a table format
+    # Prints the remaining available quota in a table format
     def cpe_quota_print(gcp_region):
         print(f"\nYour remaining Compute Engine quotas for region {gcp_region}")
         print("{:<20} {:<20}".format('METRIC', 'QUOTA'))
         for m in METRICS:
-            print("{:<20} {:<20}".format(m, cpe_quota[m]))
+            remaining_available_cpe_quota = available_cpe_quota[m] - required_cpe_quota[m]
+            print("{:<20} {:<20}".format(m, remaining_available_cpe_quota))
         print("")
 
-    # Updates the cpe_quota list to show how much quota will be available after 
-    # the CAC, DC, and workstations instances are created
+    # Updates the required_cpe_quota list to show keep track of how much quota
+    # will be needed to create the CAC, DC, and workstations instances 
     def cpe_quota_reserve(machine, number, gcp_region, gcp_zone):
         if not requirements_are_met(machine, number, gcp_region, gcp_zone, print_cpe_report=False):
             return
         for m in METRICS:
-            cpe_quota[m] -= number * machine_properties[machine]['spec'][m]
+            required_cpe_quota[m] += number * machine_properties[machine]['spec'][m]
 
     # Print options 1,2,3... and ask for a number input
     def number_option_get(options, text):
@@ -149,7 +150,8 @@ def configurations_get(project_id, ws_types, username):
             if (machine_properties[machine]['spec'][m] == 0):
                 continue
             quota_required = number * machine_properties[machine]['spec'][m]
-            if (cpe_quota[m] >= quota_required):
+            remaining_available_cpe_quota = available_cpe_quota[m] - required_cpe_quota[m]
+            if (remaining_available_cpe_quota >= quota_required):
                 continue
             error_response += f"\nYou have reached the limit for number of resource {m} for this project. "
             error_response += f"(Required {quota_required} {m}, {machine_properties[machine]['spec'][m]} for each workstation.)"
@@ -204,7 +206,8 @@ def configurations_get(project_id, ws_types, username):
         # Calculate the maximum number of workstations the user can request with the available quota
         for m in METRICS:
             if (machine_properties[machine]['spec'][m] != 0):
-                max_numberof_ws = min(cpe_quota[m] / machine_properties[machine]['spec'][m], max_numberof_ws)
+                remaining_available_cpe_quota = available_cpe_quota[m] - required_cpe_quota[m]
+                max_numberof_ws = min(remaining_available_cpe_quota / machine_properties[machine]['spec'][m], max_numberof_ws)
         max_numberof_ws = math.floor(max_numberof_ws)
         # Skip the prompt and set value to 0 if there's no more quota left
         if max_numberof_ws <= 0:
@@ -302,7 +305,8 @@ def configurations_get(project_id, ws_types, username):
     while True:
         # Local shared variables
         cfg_data = {} # Dictionary that will be returned
-        cpe_quota = {} # Dictionary to keep track of Compute engine quota
+        available_cpe_quota = {} # Dictionary to keep track of available Compute engine quota
+        required_cpe_quota = { m: 0 for m in METRICS } # Dictionary to keep track of required Compute engine quota
         ws_count = 0 # Variable to keep track of workstations count
 
         cfg_data['reg_code'] = reg_code_get("1")
@@ -326,7 +330,7 @@ def configurations_get(project_id, ws_types, username):
 
             # Get the regional quota, print them out in a table, and check if there's 
             # enough quota to deploy one CAC and one DC instance
-            cpe_quota = cpe_quota_get(cfg_data['gcp_region'])
+            available_cpe_quota = cpe_quota_get(cfg_data['gcp_region'])
             cpe_quota_print(cfg_data['gcp_region'])
             if not region_requirements_met(cfg_data['gcp_region']):
                 customize = True
