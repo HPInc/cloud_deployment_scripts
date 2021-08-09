@@ -232,6 +232,11 @@ def service_account_create(email):
     service_account = service_account_find(email)
     if service_account:
         print(f'  Service account {email} already exists.')
+        # The service account limit check is placed here so that the script doesn't 
+        # unfortunately exit after the user enters their configurations if error, but 
+        # the key will be created later to avoid reaching the limit, in case 
+        # something goes wrong and the script exits before the key is used.
+        service_account_create_key_limit_check(service_account)
         return service_account
 
     service_account = iam_service.projects().serviceAccounts().create(
@@ -264,6 +269,20 @@ def service_account_create_key(service_account, filepath):
 
     print('  Key written to ' + filepath)
     return json.loads(key_data.decode('utf-8'))
+
+
+def service_account_create_key_limit_check(service_account):
+    print(f'  Checking number of keys owned by {service_account["email"]}... ', end='')
+    keys = iam_service.projects().serviceAccounts().keys().list(
+        name='projects/-/serviceAccounts/' + service_account['email']
+    ).execute()['keys']
+    user_managed_keys = list(filter(lambda k: (k['keyType'] == 'USER_MANAGED'), keys)) 
+    print(f'{len(user_managed_keys)}/10')
+    if len(user_managed_keys) >= 10:
+        print(f'    ERROR: The service account has reached the limit of the number of keys it can create.',
+        '    Please see: https://cloud.google.com/iam/docs/creating-managing-service-account-keys',
+        'Exiting script...', sep='\n')
+        sys.exit(1)
 
 
 def iam_policy_update(service_account, roles):
@@ -368,7 +387,8 @@ if __name__ == '__main__':
 
     print('Setting CAS Manager...')
     mycasmgr = casmgr.CASManager(cfg_data.get('api_token'))
-    # Key created here to prevent from running out
+    # TODO: Add a proper clean up of GCP IAM resources so we don't have to move the 
+    # service account creation to here after the rest of the GCP setup
     sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
