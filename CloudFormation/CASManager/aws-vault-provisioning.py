@@ -77,7 +77,7 @@ vault_client = hvac.Client(url=VAULT_URL, token=root_token)
 time.sleep(5)
 
 print("Enabling 'secret/' path...")
-vault_client.sys.enable_secrets_engine('kv', path='secret/')
+vault_client.sys.enable_secrets_engine('kv-v2', path='secret/')
 
 print("Creating policy for CAS Manager...")
 policy = """
