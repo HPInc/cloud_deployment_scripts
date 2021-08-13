@@ -1,0 +1,753 @@
+# Copyright (c) 2021 Teradici Corporation
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+---
+Description: Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using DynamoDB as the storage backend) and a Document DB cluster as the Vault and Database backends for CAS Manager, respectively. Creation time is approximately 25 mins. Please see the "Output" tab in CloudFormation for URL and initial password for the CAS Manager.
+
+
+Parameters:
+  CASMDBInstanceClass:
+    Default: db.r5.large
+    Description: "Instance class. Please refer to: https://docs.aws.amazon.com/documentdb/latest/developerguide/db-instance-classes.html#db-instance-classes-by-region"
+    Type: String
+    AllowedValues:
+      - db.t3.medium
+      - db.r5.large
+      - db.r5.xlarge
+      - db.r5.2xlarge
+      - db.r5.4xlarge
+      - db.r5.12xlarge
+      - db.r5.24xlarge
+    ConstraintDescription: "Instance type must be of the ones supported for the region. Please refer to: https://docs.aws.amazon.com/documentdb/latest/developerguide/db-instance-classes.html#db-instance-classes-by-region"
+  AdminCidr:
+    AllowedPattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/([1-2]?[0-9]|3[0-2])$
+    ConstraintDescription: Requires a CIDR Block (e.g. a.b.c.d/32, e.f.g.0/24)
+    Description: CIDR range to allow SSH access From
+    Type: String
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the CAS Manager and Vault servers
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+  Prefix:
+    #TODO: make optional
+    Default: my
+    Description: Prefix to add to names of resources created by this template to avoid collisions (min 1 character)
+    MinLength: 1
+    Type: String
+  CASManagerVPCId:
+    Description: VPC to create CAS Manager resources in
+    Type: AWS::EC2::VPC::Id
+  CASManagerSubnetId:
+    Description: Subnet to create CAS Manager resources in
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: Must be a subnet in the selected VPC
+    # TODO: how to ensure it's in the VPC?
+
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: General Configuration
+        Parameters:
+          - Prefix
+          - AdminCidr
+          - CASManagerVPCId
+          - CASManagerSubnetId
+          - KeyName
+      - Label:
+          default: CAS Manager Database Configuration
+        Parameters:
+          - CASMDBInstanceClass
+    ParameterLabels:
+      CASMDBInstanceClass:
+        default: CAS Manager Database Instance Class
+      AdminCidr:
+        default: Administrative CIDR
+      KeyName:
+        default: Administrative Key
+      Prefix:
+        default: Prefix
+      CASManagerVPCId:
+        default: VPC ID
+      CASManagerSubnetId:
+        default: Subnet ID
+
+
+Mappings:
+  Constants:
+    DocDB:
+      # Cluster ID of DocumentDB used by CAS Manager
+      ClusterID: casm-db-cluster
+      # Name of database used by CAS Manager
+      DBName: casm_db
+      # Master user of the DocumentDB used by CAS Manager
+      DBUsername: casm_admin
+      # Instance ID of DocumentDB instance used by CAS Manager
+      InstanceID: casm-db-instance
+    DynamoDB:
+      # Name of table in DynamoDB to serve as Vault Storage
+      TableName: casm-vault-backend
+    SecretsManager:
+      # Secret ID of Vault Token used by CAS Manager
+      CASManagerVaultTokenID: CASManagerVaultToken
+      # Secret ID of master user credentials for DocDB used by CAS Manager
+      CASMDBUserCredentialsID: CASMDBUserCredentials
+      # Secret ID of temporary password for CAS Manager
+      CASMTempPasswordID: CASMTempPassword
+      # Secret ID for Vault initialization token and recovery keys
+      VaultInitializationKeysID: VaultInitializationKeys
+  RegionalAMIs:
+    us-east-2:
+      CentOS8: ami-0ac6967966621d983
+    us-east-1:
+      CentOS8: ami-056b03dba13a2c9dd
+    us-west-1:
+      CentOS8: ami-04adf3fcbc8a45c54
+    us-west-2:
+      CentOS8: ami-0155c31ea13d4abd2
+    af-south-1:
+      CentOS8: ami-0bf6cf59605331551
+    ap-east-1:
+      CentOS8: ami-0ad3314ea64676ee5
+    ap-south-1:
+      CentOS8: ami-0e99c55244ca9e406
+    ap-northeast-1:
+      CentOS8: ami-0d9bf167cb68ac889
+    ap-northeast-2:
+      CentOS8: ami-06c6d129b47acaba9
+    ap-southeast-1:
+      CentOS8: ami-05930ce55ebfd2930
+    ap-southeast-2:
+      CentOS8: ami-0e8d52e2390c082c3
+    ca-central-1:
+      CentOS8: ami-0557e54bb3a24f10e
+    eu-central-1:
+      CentOS8: ami-0e337c7f9752d9d34
+    eu-west-1:
+      CentOS8: ami-0a75a5a43b05b4d5f
+    eu-west-2:
+      CentOS8: ami-00c89583fee7b879d
+    eu-west-3:
+      CentOS8: ami-062fbc1f6aaecbede
+    eu-south-1:
+      CentOS8: ami-0bef61145b417dff4
+    eu-north-1:
+      CentOS8: ami-0e201bc52c64d7b5a
+    me-south-1:
+      CentOS8: ami-0b1c03e7905253652
+    sa-east-1:
+      CentOS8: ami-05a85bb881b9f8422
+
+Resources:
+##### CAS Manager Database #####
+
+  CASMDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable access to MongoDB
+      GroupName: !Sub ${Prefix}-CASMDBSecurityGroup
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort:   27017
+          ToPort:     27017
+          SourceSecurityGroupId: !GetAtt CASMSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-CASMDBSecurityGroup
+      VpcId: !Ref CASManagerVPCId
+
+  CASMDBUserCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Master User Credentials for DocumentDB used by CAS Manager
+      GenerateSecretString:
+        SecretStringTemplate: !Sub
+          - '{"username": "${DBUsername}"}'
+          - DBUsername: !FindInMap [Constants, DocDB, DBUsername]
+        GenerateStringKey: password
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\'
+      Name: !Sub
+      - ${Prefix}-${name}
+      - name: !FindInMap [Constants, SecretsManager, CASMDBUserCredentialsID]
+
+  CASMDBCluster:
+    Type: AWS::DocDB::DBCluster
+    DeletionPolicy: Delete
+    Properties:
+      DBClusterIdentifier: !Sub
+      - ${Prefix}-${id}
+      - id: !FindInMap [Constants, DocDB, ClusterID]
+      DeletionProtection: false #TODO: true?
+      EngineVersion: 4.0.0
+      MasterUsername: !Sub '{{resolve:secretsmanager:${CASMDBUserCredentials}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${CASMDBUserCredentials}::password}}'
+      VpcSecurityGroupIds:
+        - !GetAtt CASMDBSecurityGroup.GroupId
+    DependsOn: CASMDBUserCredentials
+
+  CASMDBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref CASMDBCluster
+      DBInstanceIdentifier: !Sub
+      - ${Prefix}-${id}
+      - id: !FindInMap [Constants, DocDB, InstanceID]
+      DBInstanceClass: !Ref CASMDBInstanceClass
+    DependsOn: CASMDBCluster
+
+##### Vault #####
+
+  VaultUnsealKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: CAS Manager Vault unseal key
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+          Action: kms:*
+          Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-VaultUnsealKey
+
+#  VaultUnsealKeyAlias:
+#    Type: AWS::KMS::Alias
+#    AliasName: !Sub alias/${Prefix}-VaultUnsealKey
+#    TargetKeyId: VaultUnsealKey.KeyId
+
+  VaultInitializationKeys:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Stores CAS Manager Vault token and recovery keys generated during Vault Initialization
+      Name: !Sub
+      - ${Prefix}-${name}
+      - name: !FindInMap [Constants, SecretsManager, VaultInitializationKeysID]
+
+  CASManagerVaultToken:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Stores token used by CAS Manager to access the Vault
+      Name: !Sub
+      - ${Prefix}-${name}
+      - name: !FindInMap [Constants, SecretsManager, CASManagerVaultTokenID]
+
+  VaultBackendDB:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: Key
+          AttributeType: S
+        - AttributeName: Path
+          AttributeType: S
+      BillingMode: PROVISIONED
+      KeySchema:
+        - AttributeName: Path
+          KeyType:       HASH
+        - AttributeName: Key
+          KeyType:       RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits:  5
+        WriteCapacityUnits: 5
+      TableName: !Sub
+      - ${Prefix}-${name}
+      - name: !FindInMap [Constants, DynamoDB, TableName]
+
+  VaultSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      GroupName: !Sub ${Prefix}-VaultSecurityGroup
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort:   22
+          ToPort:     22
+          CidrIp:     !Ref AdminCidr
+        - IpProtocol: tcp
+          FromPort:   8200
+          ToPort:     8200
+          CidrIp:     !Ref AdminCidr
+        - IpProtocol: tcp
+          FromPort:   8200
+          ToPort:     8200
+          SourceSecurityGroupId: !GetAtt CASMSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-VaultSecurityGroup
+      VpcId: !Ref CASManagerVPCId
+
+  VaultRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role to be associated with Vault EC2 instance profile
+      Policies:
+        - PolicyName: !Sub ${Prefix}-VaultIAMPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Required to use DynamoDB as Vault Backend
+              # https://www.vaultproject.io/docs/configuration/storage/dynamodb
+              - Effect: Allow
+                Action:
+                  - "dynamodb:DescribeLimits"
+                  - "dynamodb:DescribeTimeToLive"
+                  - "dynamodb:ListTagsOfResource"
+                  - "dynamodb:DescribeReservedCapacityOfferings"
+                  - "dynamodb:DescribeReservedCapacity"
+                  - "dynamodb:ListTables"
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:CreateTable"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:GetRecords"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:DescribeTable"
+                Resource: !GetAtt VaultBackendDB.Arn
+
+              # Required for Vault to use AWS KMS Seal
+              # https://www.vaultproject.io/docs/configuration/seal/awskms
+              - Effect: Allow
+                Action:
+                  - "kms:Encrypt"
+                  - "kms:Decrypt"
+                  - "kms:DescribeKey"
+                Resource: !GetAtt VaultUnsealKey.Arn
+
+              # Required to save Vault secrets in AWS Secrets Manager
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:PutSecretValue"
+                Resource:
+                  - !Ref VaultInitializationKeys
+                  - !Ref CASManagerVaultToken
+
+              # Required to get aws-vault-provisioning.py
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                Resource: "arn:aws:s3:::teradici-public/CloudFormation/CASManager/aws-vault-provisioning.py"
+
+      RoleName: !Sub ${Prefix}-VaultRole
+
+  VaultInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      InstanceProfileName: !Sub ${Prefix}-VaultInstanceProfile
+      Roles:
+        - !Ref VaultRole
+
+  VaultServer:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !FindInMap [RegionalAMIs, !Ref AWS::Region, CentOS8]
+      InstanceType: m5.large # Ref: https://learn.hashicorp.com/tutorials/vault/reference-architecture#deployment-system-requirements
+      IamInstanceProfile: !Ref VaultInstanceProfile
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt VaultSecurityGroup.GroupId
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: 25
+      SubnetId: !Ref CASManagerSubnetId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix} VaultServer
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+            - |
+              #!/usr/bin/env bash
+
+              set -x
+
+              exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+              yum update -y
+
+              echo "##### Installing Vault..."
+              yum install -y yum-utils
+              yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+              yum install -y vault
+
+              echo "##### Enable autocompletion for Vault..."
+              vault -autocomplete-install
+              complete -C `which vault` vault
+
+              echo "##### Allow Vault to use mlock..."
+              setcap cap_ipc_lock=+ep `which vault`
+
+              # vault user already exist, created by repo? home is /home/vault instead of /etc/vault.d installed vault in /bin/vault /usr/bin/vault instead of /usr/local/bin/vault
+              usermod -d /etc/vault.d vault
+
+              #echo "##### Create system user for Vault at /etc/vault.d..."
+              #useradd --system --home /etc/vault.d --shell /bin/false vault
+
+              echo "##### Create Vault systemd service..."
+              cat > /etc/systemd/system/vault.service << EOF
+              [Unit]
+              Description="HashiCorp Vault - A tool for managing secrets"
+              Documentation=https://www.vaultproject.io/docs/
+              Requires=network-online.target
+              After=network-online.target
+              ConditionFileNotEmpty=/etc/vault.d/vault.hcl
+              StartLimitIntervalSec=60
+              StartLimitBurst=3
+
+              [Service]
+              User=vault
+              Group=vault
+              ProtectSystem=full
+              ProtectHome=read-only
+              PrivateTmp=yes
+              PrivateDevices=yes
+              SecureBits=keep-caps
+              AmbientCapabilities=CAP_IPC_LOCK
+              Capabilities=CAP_IPC_LOCK+ep
+              CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK
+              NoNewPrivileges=yes
+              ExecStart=/usr/bin/vault server -config=/etc/vault.d/vault.hcl
+              ExecReload=/bin/kill --signal HUP $MAINPID
+              KillMode=process
+              KillSignal=SIGINT
+              Restart=on-failure
+              RestartSec=5
+              TimeoutStopSec=30
+              StartLimitInterval=60
+              StartLimitIntervalSec=60
+              StartLimitBurst=3
+              LimitNOFILE=65536
+              LimitMEMLOCK=infinity
+
+              [Install]
+              WantedBy=multi-user.target
+
+              EOF
+
+              echo "##### Create Vault config file..."
+              mkdir --parents /etc/vault.d
+              touch /etc/vault.d/vault.hcl
+              chmod 640 /etc/vault.d/vault.hcl
+              chown --recursive vault:vault /etc/vault.d
+
+              cat > /etc/vault.d/vault.hcl << EOF
+              storage "dynamodb" {
+                ha_enabled = "true"
+                region     = "${AWS::Region}"
+                table      = "${TableName}"
+              }
+
+              listener "tcp" {
+                address     = "0.0.0.0:8200"
+                tls_disable = "true"
+              }
+
+              seal "awskms" {
+                region     = "${AWS::Region}"
+                kms_key_id = "${VaultUnsealKey.KeyId}"
+              }
+
+              api_addr = "http://0.0.0.0:8200"
+              ui = true
+
+              EOF
+
+              echo "##### Enable Vault service..."
+              systemctl enable vault
+              systemctl start vault
+              systemctl status vault
+
+              # Set up for Python script to init vault and save to AWS Secrets Manager
+              yum install -y python3
+              pip3 install boto3 hvac
+
+              if [[ ! $(which aws) ]]
+              then
+                  yum install -y unzip
+                  # Install AWS CLI directly since it might not be in some Yum Repo (eg. CentOS 8)
+                  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                  unzip awscliv2.zip
+                  ./aws/install
+
+                  # Make aws available for root later
+                  ln -s /usr/local/bin/aws /usr/bin/aws
+              fi
+
+              aws s3 cp s3://teradici-public/CloudFormation/CASManager/aws-vault-provisioning.py .
+
+              # Wait for Vault
+              export VAULT_ADDR=http://127.0.0.1:8200
+              while true
+              do
+                vault status
+                if [ $? -eq 2 ]
+                then
+                  break
+                fi
+                sleep 2
+              done
+
+              python3 aws-vault-provisioning.py --cas_manager_vault_token_id ${CASManagerVaultTokenID} --vault_initialization_keys_id ${VaultInitializationKeysID} --region ${AWS::Region}
+
+              echo "User-data script finished."
+
+            - TableName: !Sub
+              - ${Prefix}-${name}
+              - name: !FindInMap [Constants, DynamoDB, TableName]
+              CASManagerVaultTokenID: !Sub
+              - ${Prefix}-${id}
+              - id: !FindInMap [Constants, SecretsManager, CASManagerVaultTokenID]
+              VaultInitializationKeysID: !Sub
+              - ${Prefix}-${id}
+              - id: !FindInMap [Constants, SecretsManager, VaultInitializationKeysID]
+    DependsOn:
+      - CASManagerVaultToken
+      - VaultBackendDB
+      - VaultUnsealKey
+      - VaultInitializationKeys
+
+##### CAS Mananger #####
+
+  CASMTempPassword:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Stores temp password for CAS Manager
+      Name: !Sub
+      - ${Prefix}-${name}
+      - name: !FindInMap [Constants, SecretsManager, CASMTempPasswordID]
+
+  CASMSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      GroupName: !Sub ${Prefix}-CASMSecurityGroup
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort:   443
+          ToPort:     443
+          CidrIp:     !Ref AdminCidr
+        - IpProtocol: tcp
+          FromPort:   22
+          ToPort:     22
+          CidrIp:     !Ref AdminCidr
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-CASMSecurityGroup
+      VpcId: !Ref CASManagerVPCId
+
+  CASMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Role to be associated with CAS Manager EC2 instance profile
+      Policies:
+        - PolicyName: !Sub ${Prefix}-CASMIAMPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Required to retrieve secrets for external DB and Vault
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                - !Ref CASManagerVaultToken
+                - !Ref CASMDBUserCredentials
+
+              # Required to export CAS Manager temporary password for adminUser
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:PutSecretValue"
+                Resource: !Ref CASMTempPassword
+      RoleName: !Sub ${Prefix}-CASMRole
+
+  CASMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Prefix}-CASMInstanceProfile
+      Roles:
+        - !Ref CASMRole
+
+  CASMServer:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT30M
+    Properties:
+      ImageId: !FindInMap [RegionalAMIs, !Ref AWS::Region, CentOS8]
+      InstanceType: m5.xlarge # Ref: https://www.teradici.com/web-help/cas_manager/overview/system_requirements/#system-requirements-for-production-mode
+      IamInstanceProfile: !Ref CASMInstanceProfile
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !GetAtt CASMSecurityGroup.GroupId
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: 60
+      SubnetId: !Ref CASManagerSubnetId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-CASMServer
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+            - |
+              #!/usr/bin/env bash
+
+              set -x
+
+              exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+              cd /root
+
+              yum update -y
+
+              if [[ ! $(which aws) ]]
+              then
+                  yum install -y unzip
+                  # Install AWS CLI directly since it might not be in some Yum Repo (eg. CentOS 8)
+                  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                  unzip awscliv2.zip
+                  ./aws/install
+
+                  # Make aws available for root later
+                  ln -s /usr/local/bin/aws /usr/bin/aws
+              fi
+
+              echo "##### Installing CAS Manager..."
+              curl -1sLf 'https://dl.teradici.com/yj39yHtgj68Uv2Qf/cas-manager/cfg/setup/bash.rpm.sh' | bash
+              yum repolist --enabled teradici-cas-manager*
+
+              yum install -y selinux-policy-base container-selinux
+              yum install -y https://github.com/k3s-io/k3s-selinux/releases/download/v0.2.stable.1/k3s-selinux-0.2-1.el7_8.noarch.rpm
+              yum install -y cas-manager-selinux
+
+              # Install after cas-manager-selinux
+              yum install -y cas-manager
+
+              # Install manually
+              /usr/local/bin/cas-manager install --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --release-notes /tmp/release-notes.xml --debug 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
+
+              echo "##### Configure CAS Manager to use Vault..."
+              #TODO: verify-cert : true
+
+              # Retrieve CAS Manager Vault token from AWS Secrets Manager
+              yum install -y jq
+              export CASM_TOKEN=`aws secretsmanager get-secret-value --secret-id ${CASManagerVaultTokenID} --query "SecretString" | jq -r . | jq -r .Token`
+              cat > vault.cfg << EOF
+              {
+                "vault-enable-token-renew": true,
+                "vault-secret-path": "secret/data",
+                "vault-skip-verify-cert": true,
+                "vault-token": "$CASM_TOKEN",
+                "vault-token-renew-interval": "30 * * * *",
+                "vault-type": "vault",
+                "vault-url": "http://${VaultServer.PrivateIp}:8200"
+              }
+              EOF
+
+              /usr/local/bin/cas-manager update --config-file vault.cfg
+              rm vault.cfg
+
+              echo "##### Configure CAS Manager to use AWS DocumentDB..."
+              #Create casm user for DB
+
+              # Create DB user for CAS Manager
+
+              # TODO: create new user for DB?
+
+              # Download the Amazon DocDB CA cert
+              curl -O https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem
+
+              # Get DocDB username/password from AWS Secrets Manager
+              yum install -y python3
+              export DOCDB_USER=`aws secretsmanager get-secret-value --secret-id ${CASMDBUserCredentialsID} --query "SecretString" | jq -r . | jq -r .username`
+              export DOCDB_PASSWORD=`aws secretsmanager get-secret-value --secret-id ${CASMDBUserCredentialsID} --query "SecretString" | jq -r . | jq -r .password | python3 -c "import urllib.parse; print(urllib.parse.quote(input()))"`
+
+              cat > db.cfg << EOF
+              {
+                "db-connection-string": "mongodb://$DOCDB_USER:$DOCDB_PASSWORD@${DBEndpoint}:${DBPort}/${DBName}?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false",
+                "db-ca-cert-file": "/root/rds-combined-ca-bundle.pem",
+                "db-enable-tls": true,
+                "db-skip-verify-cert": false
+              }
+              EOF
+
+              /usr/local/bin/cas-manager update --config-file db.cfg
+              #TODO check failure
+              rm db.cfg
+
+              # Upload one time secret to AWS Sec Mgr
+              aws secretsmanager put-secret-value --secret-id ${CASMTempPasswordID} --secret-string file:///opt/teradici/casm/temp-creds.txt
+
+
+              #TODO improve the follow signalling
+              # Signal CloudFormation of success
+              curl -O https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+              tar xzf aws-cfn-bootstrap-py3-latest.tar.gz
+              pip3 install aws-cfn-bootstrap-*/
+
+              /usr/local/bin/cfn-signal -s true --stack ${AWS::StackName} --resource CASMServer --region ${AWS::Region}
+
+            - CASManagerVaultTokenID: !Sub
+              - ${Prefix}-${id}
+              - id: !FindInMap [Constants, SecretsManager, CASManagerVaultTokenID]
+              CASMTempPasswordID: !Sub
+              - ${Prefix}-${id}
+              - id: !FindInMap [Constants, SecretsManager, CASMTempPasswordID]
+              CASMDBUserCredentialsID: !Sub
+              - ${Prefix}-${id}
+              - id: !FindInMap [Constants, SecretsManager, CASMDBUserCredentialsID]
+              DBEndpoint: !GetAtt CASMDBCluster.Endpoint
+              DBPort: !GetAtt CASMDBCluster.Port
+              DBName: !Sub
+              - ${Prefix}-${name}
+              - name: !FindInMap [Constants, DocDB, DBName]
+
+    DependsOn:
+      - CASMTempPassword
+      - CASMDBInstance
+      - CASMDBUserCredentials
+      - VaultServer
+
+
+Outputs:
+  VaultIP:
+    Description: Public IP of Vault Server
+    Value: !GetAtt VaultServer.PublicIp
+  CASManagerURL:
+    Description: URL to access CAS Manager
+    Value: !Sub
+      - "https://${CASManagerIP}"
+      - CASManagerIP: !GetAtt CASMServer.PublicIp
+  CASManagerPassword:
+    Description: Temporary password to access CAS Manager
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/secretsmanager/home?region=${AWS::Region}#!/secret?name=${CASMTempPassword}
+...
