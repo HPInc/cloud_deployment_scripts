@@ -24,19 +24,16 @@ MACHINE_PROPERTIES_JSON = "aws-machine-properties.json"
 
 # The number of available IP address in subnet. To see reserved IPs, please
 # see: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html#VPC_Sizing
-MAX_SUBNET_IPS = 239
+MAX_SUBNET_IPS = 251
 
+# These requirements were determined by deploying a single connector deployment to
+# see how each ec2 and vpc resources are used. Please see: 
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html
 SERVICE_QUOTA_REQUIREMENTS = {
     'vpc': {
-        "IPv4 CIDR blocks per VPC": 1,
-        "Inbound or outbound rules per security group": 3,
         "Internet gateways per Region": 1,
         "NAT gateways per Availability Zone": 1,
-        "Route tables per VPC": 2,
-        "Routes per route table": 2,
-        "Security groups per network interface": 4,
         "VPC security groups per Region": 5,
-        "Subnets per VPC": 3,
         "VPCs per Region": 1,
         "Network interfaces per Region": 3
     },
@@ -70,11 +67,79 @@ def configurations_get(ws_types, username, quickstart_path):
         while True:
             api_token = input("api_token: ").strip()
             mycasmgr = casmgr.CASManager(api_token)
-            print("Validating API token with CAS Manager... ", end="")
+            print("Validating API token with CAS Manager...", end="")
             if (mycasmgr.auth_token_validate()):
                 print("Yes")
                 return api_token
             print("\nInvalid CAS Manager API token. Please try again.")
+
+    def already_in_use_get(requirement, aws_region):
+        ec2 = boto3.client('ec2', aws_region)
+        limit = 1000
+        if requirement == "Internet gateways per Region":
+            return len(ec2.describe_internet_gateways(MaxResults=limit)['InternetGateways'])
+        if requirement == "NAT gateways per Availability Zone":
+            return len(ec2.describe_nat_gateways(MaxResults=limit)['NatGateways'])
+        if requirement == "VPC security groups per Region":
+            response = ec2.describe_security_groups(MaxResults=limit)
+            count = len(response['SecurityGroups'])
+            try:
+                while response['NextToken']:
+                    response = ec2.describe_security_groups(
+                        NextToken=response['NextToken'],
+                        MaxResults=limit
+                    )
+                    count += len(response['SecurityGroups'])
+            except KeyError:
+                pass
+            return count
+        if requirement == "VPCs per Region":
+            return len(ec2.describe_vpcs(MaxResults=limit)['Vpcs'])
+        if requirement == "Network interfaces per Region":
+            response = ec2.describe_network_interfaces(MaxResults=limit)
+            count = len(response['NetworkInterfaces'])
+            try:
+                while response['NextToken']:
+                    response = ec2.describe_network_interfaces(
+                        NextToken=response['NextToken'],
+                        MaxResults=limit
+                    )
+                    count += len(response['NetworkInterfaces'])
+            except KeyError:
+                pass
+            return count
+        if requirement == "EC2-VPC Elastic IPs":
+            return len(ec2.describe_addresses()['Addresses'])
+        
+        def instance_requests_count(pattern):
+            def vCPUs_count():
+                count = 0
+                for i in response['Reservations']:
+                    instance_type = i['Instances'][0]['InstanceType']
+                    if instance_type[0] in pattern:
+                        count += ec2.describe_instance_types(InstanceTypes=[instance_type])['InstanceTypes'][0]['VCpuInfo']['DefaultVCpus']
+                return count
+
+            count = 0
+            response = ec2.describe_instances(MaxResults=limit)
+            try:
+                count += vCPUs_count()
+                while response['NextToken']:
+                    response = ec2.describe_instances(
+                        NextToken=response['NextToken'],
+                        MaxResults=limit
+                    )
+                    count += vCPUs_count(response['Reservations'][0])
+            except (IndexError, KeyError):
+                pass
+            return count
+
+        if requirement == "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests":
+            count = instance_requests_count(['a','c','d','h','i','m','r','t','z'])
+            return count
+        if requirement == "All G Spot Instance Requests":
+            count = instance_requests_count(['g'])
+            return count
 
     # Gets the available quota for each service quota
     def service_quota_get(aws_region):
@@ -88,19 +153,15 @@ def configurations_get(ws_types, username, quickstart_path):
                 ServiceCode=service,
                 MaxResults=100
             )['Quotas']
-            available_service_quota[service] = { r: q['Value'] for q in service_quota_list for r in SERVICE_QUOTA_REQUIREMENTS[service] if r == q['QuotaName'] }
+            available_service_quota[service] = {}
+            for r in SERVICE_QUOTA_REQUIREMENTS[service]:
+                for q in service_quota_list:
+                    if r == q['QuotaName']:
+                        available_service_quota[service][r] = q['Value'] - already_in_use_get(r, aws_region)
         return available_service_quota
 
-    def service_quota_print(aws_region):
-        available_service_quota = service_quota_get(aws_region)
-        for service in available_service_quota:
-            print(f"\nYour applied {service} service quotas for region {aws_region}")
-            print("{:<75} {:<20}".format('SERVICE', 'QUOTA'))
-            for r in available_service_quota[service]:
-                print("{:<75} {:<20}".format(r, available_service_quota[service][r]))
-
-    def service_quota_reserve(aws_region, requirements):
-        if not requirements_are_met(aws_region, requirements):
+    def service_quota_reserve(aws_region, requirements, verbose=True):
+        if not requirements_are_met(aws_region, requirements, verbose):
             return False
         for service in requirements:
             for r in requirements[service]:
@@ -128,28 +189,35 @@ def configurations_get(ws_types, username, quickstart_path):
         return number_option_get(aws_regions_list, "aws_region")
 
     def region_requirements_met(aws_region):
-        print(f"    Getting your service quota for region {aws_region}...")
-        # service_quota_print(aws_region)
+        print(f"    Checking that you have enough service quota required for this deployment...", end="")
         if not service_quota_reserve(aws_region, SERVICE_QUOTA_REQUIREMENTS):
             return False
         for machine in ["cac", "dc"]:
+            print(f"    Checking that you have enough service quota to deploy the {machine_properties[machine]['name']}...", end="")
             if not service_quota_reserve(aws_region, machine_properties[machine]["service_requirements"]):
                 return False
         return True
 
-    def requirements_are_met(aws_region, requirements):
+    def requirements_are_met(aws_region, requirements, verbose=True):
+
+        def verbose_print(text):
+            if verbose:
+                print(text, end="")
+
         available_service_quota = service_quota_get(aws_region)
-        error_response = "    Based on your applied service quota, not taking into account quotas that are already in use..." # additional information will be appended if any limit is reached
+        error_response = ""
         limit_exceeded = False
         for service in requirements:
             for r in requirements[service]:
-                if required_service_quota[service][r] + requirements[service][r] > available_service_quota[service][r]:
-                    error_response += f"\n      Required {required_service_quota[service][r] + requirements[service][r]} {r} but only {available_service_quota[service][r]} allowed."
+                remaining_service_quota = available_service_quota[service][r] - required_service_quota[service][r]
+                if requirements[service][r] > remaining_service_quota:
+                    error_response += f"    Required {requirements[service][r]} {r} but only {remaining_service_quota} allowed.\n"
                     limit_exceeded = True
         if limit_exceeded:
-            print(error_response)
-            print("      To request to increase the quota, please see: https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html")
+            verbose_print(f"No\n{error_response}")
+            verbose_print("    To request to increase the quota, please see: https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html \n")
             return False
+        verbose_print("Yes\n")
         return True
 
     def numberof_ws_get(index, aws_region, machine):
@@ -178,22 +246,23 @@ def configurations_get(ws_types, username, quickstart_path):
             set_to_zero(f"You don't have enough service quota to deploy any {machine_properties[machine]['name']}.")
             return 0
 
+        print(f"    {chr(index)}. You can have up to {max_numberof_ws} {machine_properties[machine]['name']} workstations.")            
         while True:
             try:
-                number = int(input(f"    {chr(index)}. Number of {machine_properties[machine]['name']} ({machine}): ").strip() or DEFAULT_NUMBEROF_WS)
+                number = int(input(f"       Number of {machine_properties[machine]['name']} ({machine}): ").strip() or DEFAULT_NUMBEROF_WS)
                 if (number < 0):
                     raise ValueError
                 requirements = { service: { r: ws_service_req[service][r]*number for r in ws_service_req[service] } for service in ws_service_req }
                 if (number <= max_numberof_ws):
-                    if service_quota_reserve(aws_region, requirements):
+                    print("       ", end="")
+                    if service_quota_reserve(aws_region, requirements, verbose=False):
                         return number
-                    continue
-                if requirements_are_met(aws_region, requirements):
-                    print(f"       There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet. ", end="")
-                print("    ", end ="")
+                print(f"    Checking that you have enough service quotas to deploy {number} {machine_properties[machine]['name']}...", end="")
+                if requirements_are_met(aws_region, requirements, verbose=True):
+                    print(f"    There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet. ")
             except ValueError:
                 print("       Invalid number input. ", end="")
-            print("Please try again.")
+            print("    Please try again.")
 
     def prefix_get(aws_region):
         aws.set_boto3_region(aws_region)
@@ -202,7 +271,7 @@ def configurations_get(ws_types, username, quickstart_path):
             if (len(prefix) > 5):
                 print("Maximum 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
-            print('Checking that the AWS resources names are unique...')
+            print('Checking that the AWS IAM resources names are unique...', end='')
             aws_username = prefix + '-cas-manager'
             aws_role_name = f'{aws_username}_role'
             role_policy_name = f'{aws_role_name}_policy'
@@ -308,10 +377,10 @@ def configurations_get(ws_types, username, quickstart_path):
                 print("    Getting AWS regions list...")
                 print("")
                 cfg_data['aws_region'] = region_get("a")
-                print("")
             else:
                 cfg_data['aws_region'] = DEFAULT_REGION
 
+            print("")
             if region_requirements_met(cfg_data['aws_region']):
                 break
             if not answer_is_yes("    Try another region (y/n)? "):
