@@ -188,6 +188,7 @@ module "cac" {
   aws_region                 = var.aws_region
   customer_master_key_id     = var.customer_master_key_id
   cas_mgr_url                = var.cas_mgr_url
+  cas_mgr_insecure           = var.cas_mgr_insecure
   cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
   domain_name                 = var.domain_name

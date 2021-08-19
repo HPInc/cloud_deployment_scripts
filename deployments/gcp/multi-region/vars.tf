@@ -246,6 +246,12 @@ variable "cas_mgr_url" {
   default     = "https://cas.teradici.com"
 }
 
+variable "cas_mgr_insecure" {
+  description = "Allow unverified SSL access to CAS Manager"
+  type        = bool
+  default     = false
+}
+
 variable "cas_mgr_deployment_sa_file" {
   description = "Location of CAS Manager Deployment Service Account JSON file"
   type        = string

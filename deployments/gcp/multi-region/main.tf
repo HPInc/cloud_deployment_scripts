@@ -71,6 +71,7 @@ module "cac-igm" {
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   cas_mgr_url             = var.cas_mgr_url
+  cas_mgr_insecure        = var.cas_mgr_insecure
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
