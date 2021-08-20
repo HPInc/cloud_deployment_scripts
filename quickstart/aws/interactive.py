@@ -44,6 +44,36 @@ SERVICE_QUOTA_REQUIREMENTS = {
     }
 }
 
+# Name of the quota mapped to the function call to get the number of quota
+# that is currently in use and the name of the list within the response 
+# that contains the resources currently in use
+QUOTA_CHECK_MAPPING = {
+    'Internet gateways per Region': {
+        'function': 'ec2.describe_internet_gateways',
+        'query': 'InternetGateways'
+    },
+    'NAT gateways per Availability Zone': {
+        'function': 'ec2.describe_nat_gateways',
+        'query': 'NatGateways'
+    },
+    'VPC security groups per Region': {
+        'function': 'ec2.describe_security_groups',
+        'query': 'SecurityGroups'
+    },
+    'VPCs per Region': {
+        'function': 'ec2.describe_vpcs',
+        'query': 'Vpcs'
+    },
+    'Network interfaces per Region': {
+        'function': 'ec2.describe_network_interfaces',
+        'query': 'NetworkInterfaces'
+    },
+    'EC2-VPC Elastic IPs': {
+        'function': 'ec2.describe_addresses',
+        'query': 'Addresses'
+    }
+}
+
 def configurations_get(ws_types, username, quickstart_path):
     # AWS EC2 Client
     ec2 = boto3.client('ec2')
@@ -73,46 +103,37 @@ def configurations_get(ws_types, username, quickstart_path):
                 return api_token
             print("\nInvalid CAS Manager API token. Please try again.")
 
-    def already_in_use_get(requirement, aws_region):
-        ec2 = boto3.client('ec2', aws_region)
-        limit = 1000
-        if requirement == "Internet gateways per Region":
-            return len(ec2.describe_internet_gateways(MaxResults=limit)['InternetGateways'])
-        if requirement == "NAT gateways per Availability Zone":
-            return len(ec2.describe_nat_gateways(MaxResults=limit)['NatGateways'])
-        if requirement == "VPC security groups per Region":
-            response = ec2.describe_security_groups(MaxResults=limit)
-            count = len(response['SecurityGroups'])
-            try:
-                while response['NextToken']:
-                    response = ec2.describe_security_groups(
-                        NextToken=response['NextToken'],
-                        MaxResults=limit
-                    )
-                    count += len(response['SecurityGroups'])
-            except KeyError:
-                pass
-            return count
-        if requirement == "VPCs per Region":
-            return len(ec2.describe_vpcs(MaxResults=limit)['Vpcs'])
-        if requirement == "Network interfaces per Region":
-            response = ec2.describe_network_interfaces(MaxResults=limit)
-            count = len(response['NetworkInterfaces'])
-            try:
-                while response['NextToken']:
-                    response = ec2.describe_network_interfaces(
-                        NextToken=response['NextToken'],
-                        MaxResults=limit
-                    )
-                    count += len(response['NetworkInterfaces'])
-            except KeyError:
-                pass
-            return count
-        if requirement == "EC2-VPC Elastic IPs":
-            return len(ec2.describe_addresses()['Addresses'])
-        
+    def service_quota_in_use_get(requirement, aws_region):
+        """AWS keeps track of the service quota limits, but to get the service quota usage, this function
+        makes different API calls based on the service quota and handles the response accordingly.
+
+        Args:
+            requirement (str): name of service quota requirement
+            aws_region (str): name of AWS region
+
+        Returns:
+            count (int): number of resources used for the requirement and in the region specified
+        """
         def instance_requests_count(pattern):
+            """AWS keeps track of the number of vCPUs in use for each instance types. This function counts the 
+            total vCPUs that are used for the specified instance request service quota requirement, which could 
+            include multiple instance types.
+
+            Args:
+                pattern (list of char): instance types included in the instance request service quota requirement
+
+            Returns:
+                count (int): number of vCPUs in use for the instance request service quota requirement from all API responses
+            """
             def vCPUs_count():
+                """This functions retrieves the list of instances currently deployed in the region, which is the Reservations list, 
+                and gets the instance type of each instance found, then matches the first character to the pattern (i.e. the first 
+                letter of instance type t2.xlarge is 't' and the pattern is a list of characters that could include 't'). If it is 
+                a match, it will then retrieve the vCPUs that is used by that instance type and add it to the count.
+
+                Returns:
+                    count (int): the number of vCPUs in use for the instance request quota from one API call response
+                """
                 count = 0
                 for i in response['Reservations']:
                     instance_type = i['Instances'][0]['InstanceType']
@@ -121,24 +142,38 @@ def configurations_get(ws_types, username, quickstart_path):
                 return count
 
             count = 0
-            response = ec2.describe_instances(MaxResults=limit)
+            response = ec2.describe_instances()
             try:
                 count += vCPUs_count()
                 while response['NextToken']:
                     response = ec2.describe_instances(
-                        NextToken=response['NextToken'],
-                        MaxResults=limit
+                        NextToken=response['NextToken']
                     )
                     count += vCPUs_count(response['Reservations'][0])
             except (IndexError, KeyError):
                 pass
             return count
 
+        ec2 = boto3.client('ec2', aws_region)
+
         if requirement == "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests":
-            count = instance_requests_count(['a','c','d','h','i','m','r','t','z'])
-            return count
+            return instance_requests_count(['a','c','d','h','i','m','r','t','z'])
         if requirement == "All G Spot Instance Requests":
-            count = instance_requests_count(['g'])
+            return instance_requests_count(['g'])
+
+        for quota_name in QUOTA_CHECK_MAPPING:
+            if requirement != quota_name:
+                continue
+            function = QUOTA_CHECK_MAPPING[quota_name]['function']
+            query = QUOTA_CHECK_MAPPING[quota_name]['query']
+            response = eval(function + "()")
+            count = len(response[query])
+            try:
+                while response['NextToken']:
+                    response = eval(function + f"(NextToken={response['NextToken']})")
+                    count += len(response[query])
+            except KeyError:
+                pass
             return count
 
     # Gets the available quota for each service quota
@@ -157,7 +192,7 @@ def configurations_get(ws_types, username, quickstart_path):
             for r in SERVICE_QUOTA_REQUIREMENTS[service]:
                 for q in service_quota_list:
                     if r == q['QuotaName']:
-                        available_service_quota[service][r] = q['Value'] - already_in_use_get(r, aws_region)
+                        available_service_quota[service][r] = q['Value'] - service_quota_in_use_get(r, aws_region)
         return available_service_quota
 
     def service_quota_reserve(aws_region, requirements, verbose=True):
@@ -211,7 +246,11 @@ def configurations_get(ws_types, username, quickstart_path):
             for r in requirements[service]:
                 remaining_service_quota = available_service_quota[service][r] - required_service_quota[service][r]
                 if requirements[service][r] > remaining_service_quota:
-                    error_response += f"    Required {requirements[service][r]} {r} but only {remaining_service_quota} allowed.\n"
+                    # For clarity (ex. Required 4 vCPUs for All G Spot Instance Requests but only 2 allowed)
+                    if "Spot Instance Requests" in r:
+                        error_response += f"    Required {requirements[service][r]} vCPUs for {r} but only {remaining_service_quota} allowed.\n"
+                    else:
+                        error_response += f"    Required {requirements[service][r]} {r} but only {remaining_service_quota} allowed.\n"
                     limit_exceeded = True
         if limit_exceeded:
             verbose_print(f"No\n{error_response}")
@@ -259,10 +298,11 @@ def configurations_get(ws_types, username, quickstart_path):
                         return number
                 print(f"    Checking that you have enough service quotas to deploy {number} {machine_properties[machine]['name']}...", end="")
                 if requirements_are_met(aws_region, requirements, verbose=True):
-                    print(f"    There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet. ")
+                    print(f"    There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet.")
+                print("    ", end="")
             except ValueError:
                 print("       Invalid number input. ", end="")
-            print("    Please try again.")
+            print("Please try again.")
 
     def prefix_get(aws_region):
         aws.set_boto3_region(aws_region)
@@ -271,14 +311,14 @@ def configurations_get(ws_types, username, quickstart_path):
             if (len(prefix) > 5):
                 print("Maximum 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
-            print('Checking that the AWS IAM resources names are unique...', end='')
+            print('Checking that the AWS IAM resources names are unique...')
             aws_username = prefix + '-cas-manager'
             aws_role_name = f'{aws_username}_role'
             role_policy_name = f'{aws_role_name}_policy'
             if any((aws.find_user(aws_username), aws.find_role(aws_role_name), aws.find_policy(role_policy_name))):
                 print("AWS IAM resources must have unique names. Please try again.")
                 continue
-            print("Yes")
+            print("Great, this prefix is unique!")
             return prefix
 
     def answer_is_yes(prompt):
