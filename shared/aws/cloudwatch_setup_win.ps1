@@ -6,7 +6,7 @@
 #   2. DateTime format
 
 
-$AWSLOGS_LOG_FILE    = "C:\Teradici\awslogs-setup.log"
+$AWSLOGS_LOG_FILE    = "C:\Teradici\cloudwatch-setup.log"
 
 # Please find the link here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 $CLOUDWATCH_AGENT_INSTALLER_URL = "https://s3.amazonaws.com/amazoncloudwatch-agent/windows/amd64/latest/amazon-cloudwatch-agent.msi"

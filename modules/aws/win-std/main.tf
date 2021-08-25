@@ -27,8 +27,8 @@ resource "aws_s3_bucket_object" "win-std-provisioning-script" {
       admin_password              = var.admin_password,
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
-      awslogs_script              = var.awslogs_script,
       bucket_name                 = var.bucket_name,
+      cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_name                 = var.domain_name,
       pcoip_agent_version         = var.pcoip_agent_version,
@@ -101,7 +101,7 @@ data "aws_iam_policy_document" "win-std-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awslogs_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
     effect    = "Allow"
   }
 

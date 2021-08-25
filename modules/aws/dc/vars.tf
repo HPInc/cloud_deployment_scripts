@@ -88,7 +88,7 @@ variable "customer_master_key_id" {
   default     = ""
 }
 
-variable "awslogs_script" {
+variable "cloudwatch_setup_script" {
   description = "The script that sets up the AWS CloudWatch Logs agent"
   type        = string
 }

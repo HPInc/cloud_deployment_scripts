@@ -11,9 +11,9 @@ locals {
   # Name of CAS Manager deployment service account key file in bucket
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
-  awslogs_linux_script   = "awslogs_linux.sh"
-  awslogs_ubuntu_script  = "awslogs_ubuntu.sh"
-  awslogs_windows_script = "awslogs_windows.ps1"
+  cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
+  cloudwatch_setup_deb_script = "cloudwatch_setup_deb.sh"
+  cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
 }
 
 resource "random_id" "bucket-name" {
@@ -36,22 +36,22 @@ resource "aws_s3_bucket_object" "cas-mgr-deployment-sa-file" {
   source = var.cas_mgr_deployment_sa_file
 }
 
-resource "aws_s3_bucket_object" "awslogs-linux-script" {
+resource "aws_s3_bucket_object" "cloudwatch-setup-rpm-script" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.awslogs_linux_script
-  source = "../../../shared/aws/${local.awslogs_linux_script}"
+  key    = local.cloudwatch_setup_rpm_script
+  source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
 }
 
-resource "aws_s3_bucket_object" "awslogs-ubuntu-script" {
+resource "aws_s3_bucket_object" "cloudwatch-setup-deb-script" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.awslogs_ubuntu_script
-  source = "../../../shared/aws/${local.awslogs_ubuntu_script}"
+  key    = local.cloudwatch_setup_deb_script
+  source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
 }
 
-resource "aws_s3_bucket_object" "awslogs-windows-script" {
+resource "aws_s3_bucket_object" "cloudwatch-setup-win-script" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.awslogs_windows_script
-  source = "../../../shared/aws/${local.awslogs_windows_script}"
+  key    = local.cloudwatch_setup_win_script
+  source = "../../../shared/aws/${local.cloudwatch_setup_win_script}"
 }
 
 module "dc" {
@@ -82,7 +82,7 @@ module "dc" {
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
 
-  awslogs_script = local.awslogs_windows_script
+  cloudwatch_setup_script = local.cloudwatch_setup_win_script
 }
 
 resource "aws_key_pair" "cas_admin" {
@@ -134,7 +134,7 @@ module "cac" {
 
   cac_extra_install_flags = var.cac_extra_install_flags
 
-  awslogs_script = local.awslogs_ubuntu_script
+  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
 }
 
 module "win-gfx" {
@@ -174,7 +174,7 @@ module "win-gfx" {
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
 
-  awslogs_script = local.awslogs_windows_script
+  cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -216,7 +216,7 @@ module "win-std" {
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
 
-  awslogs_script = local.awslogs_windows_script
+  cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -260,7 +260,7 @@ module "centos-gfx" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  awslogs_script = local.awslogs_linux_script
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -304,7 +304,7 @@ module "centos-std" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  awslogs_script = local.awslogs_linux_script
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]
 }

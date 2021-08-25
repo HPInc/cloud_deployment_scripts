@@ -54,8 +54,8 @@ data "template_file" "dc-provisioning-script" {
   template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
-    awslogs_script           = var.awslogs_script,
     bucket_name              = var.bucket_name
+    cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
     safe_mode_admin_password = var.safe_mode_admin_password
@@ -131,7 +131,7 @@ data "aws_iam_policy_document" "dc-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awslogs_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
     effect    = "Allow"
   }
 

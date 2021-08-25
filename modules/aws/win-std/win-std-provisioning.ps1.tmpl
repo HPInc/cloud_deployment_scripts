@@ -51,8 +51,8 @@ function Setup-AWSLogs {
     "################################################################"
     "Setting Up AWS CloudWatch..."
     "################################################################"
-    Read-S3Object -BucketName ${bucket_name} -Key ${awslogs_script} -File ${awslogs_script}
-    powershell ${awslogs_script} C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+    Read-S3Object -BucketName ${bucket_name} -Key ${cloudwatch_setup_script} -File ${cloudwatch_setup_script}
+    powershell ${cloudwatch_setup_script} C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
 }
 
 function Decrypt-Credentials {

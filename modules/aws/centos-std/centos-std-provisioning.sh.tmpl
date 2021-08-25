@@ -56,13 +56,13 @@ setup_awslogs(){
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
-        retry 3 5 "aws s3 cp s3://${bucket_name}/${awslogs_script} ." \
+        retry 3 5 "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
             "--> " \
             "--> ERROR: Failed to download awslogs setup script."
-        chmod +x ${awslogs_script}
-        dos2unix ${awslogs_script}
+        chmod +x ${cloudwatch_setup_script}
+        dos2unix ${cloudwatch_setup_script}
 
-        . ${awslogs_script} ${aws_region} \
+        . ${cloudwatch_setup_script} ${aws_region} \
             $LOG_FILE                        "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/messages"              "%b %d %H:%M:%S" \
             "/var/log/user-data.log"         "%a %b %d %H:%M:%S %Z %Y" \
