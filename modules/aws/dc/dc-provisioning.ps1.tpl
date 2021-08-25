@@ -7,8 +7,6 @@
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 
-$AWS_LOGS_SCRIPT = "awslogs.ps1"
-
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("safe_mode_admin_password", "${safe_mode_admin_password}")
 
@@ -16,8 +14,8 @@ function Setup-AWSLogs {
     "################################################################"
     "Setting Up AWS CloudWatch..."
     "################################################################"
-    Read-S3Object -BucketName ${bucket_name} -Key $AWS_LOGS_SCRIPT -File $AWS_LOGS_SCRIPT
-    powershell .\$AWS_LOGS_SCRIPT C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+    Read-S3Object -BucketName ${bucket_name} -Key ${awslogs_script} -File ${awslogs_script}
+    powershell .\${awslogs_script} C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
 }
 
 function Decrypt-Credentials {

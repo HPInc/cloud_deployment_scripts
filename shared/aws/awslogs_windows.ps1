@@ -8,6 +8,7 @@
 
 $AWSLOGS_LOG_FILE    = "C:\Teradici\awslogs-setup.log"
 
+# Please find the link here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 $CLOUDWATCH_AGENT_INSTALLER_URL = "https://s3.amazonaws.com/amazoncloudwatch-agent/windows/amd64/latest/amazon-cloudwatch-agent.msi"
 $CLOUDWATCH_AGENT_INSTALLER     = "amazon-cloudwatch-agent.msi"
 $CLOUDWATCH_AGENT_DIR           = "C:\Program Files\Amazon\AmazonCloudWatchAgent"
@@ -84,8 +85,8 @@ while ($global:instance_name -eq $null) {
 }
 
 $global:collect_list = @()
-for ( $i = 0; $i -lt $args.count; $i++ ) {
-    Add-AWSLogs-Config -log_file_path $args[$i] -datetime_format $args[++$i]
+for ( $i = 0; $i -lt $args.count; $i+=2 ) {
+    Add-AWSLogs-Config -log_file_path $args[$i] -datetime_format $args[$i+1]
 }
 
 "--> Writing configurations to $AWSLOGS_CONFIG_PATH..."

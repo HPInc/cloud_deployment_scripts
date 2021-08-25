@@ -16,7 +16,6 @@ locals {
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
   sysprep_script             = "dc-sysprep.ps1"
-  awslogs_script             = "awslogs.ps1"
   admin_password = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
 }
 
@@ -55,6 +54,7 @@ data "template_file" "dc-provisioning-script" {
   template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
+    awslogs_script           = var.awslogs_script,
     bucket_name              = var.bucket_name
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
@@ -131,7 +131,7 @@ data "aws_iam_policy_document" "dc-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.awslogs_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awslogs_script}"]
     effect    = "Allow"
   }
 

@@ -11,8 +11,9 @@ locals {
   # Name of CAS Manager deployment service account key file in bucket
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
-  awslogs_shell_script = "awslogs.sh"
-  awslogs_powershell   = "awslogs.ps1"
+  awslogs_linux_script   = "awslogs_linux.sh"
+  awslogs_ubuntu_script  = "awslogs_ubuntu.sh"
+  awslogs_windows_script = "awslogs_windows.ps1"
 }
 
 resource "random_id" "bucket-name" {
@@ -35,16 +36,22 @@ resource "aws_s3_bucket_object" "cas-mgr-deployment-sa-file" {
   source = var.cas_mgr_deployment_sa_file
 }
 
-resource "aws_s3_bucket_object" "awslogs-shell-script" {
+resource "aws_s3_bucket_object" "awslogs-linux-script" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.awslogs_shell_script
-  source = "../../../${local.awslogs_shell_script}"
+  key    = local.awslogs_linux_script
+  source = "../../../shared/aws/${local.awslogs_linux_script}"
 }
 
-resource "aws_s3_bucket_object" "awslogs-powershell" {
+resource "aws_s3_bucket_object" "awslogs-ubuntu-script" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.awslogs_powershell
-  source = "../../../${local.awslogs_powershell}"
+  key    = local.awslogs_ubuntu_script
+  source = "../../../shared/aws/${local.awslogs_ubuntu_script}"
+}
+
+resource "aws_s3_bucket_object" "awslogs-windows-script" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.awslogs_windows_script
+  source = "../../../shared/aws/${local.awslogs_windows_script}"
 }
 
 module "dc" {
@@ -74,6 +81,8 @@ module "dc" {
 
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
+
+  awslogs_script = local.awslogs_windows_script
 }
 
 resource "aws_key_pair" "cas_admin" {
@@ -124,6 +133,8 @@ module "cac" {
   ssl_cert = var.ssl_cert
 
   cac_extra_install_flags = var.cac_extra_install_flags
+
+  awslogs_script = local.awslogs_ubuntu_script
 }
 
 module "win-gfx" {
@@ -162,6 +173,8 @@ module "win-gfx" {
 
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
+
+  awslogs_script = local.awslogs_windows_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -202,6 +215,8 @@ module "win-std" {
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
+
+  awslogs_script = local.awslogs_windows_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -245,6 +260,8 @@ module "centos-gfx" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
+  awslogs_script = local.awslogs_linux_script
+
   depends_on = [aws_nat_gateway.nat]
 }
 
@@ -286,6 +303,8 @@ module "centos-std" {
   ami_name  = var.centos_std_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  awslogs_script = local.awslogs_linux_script
 
   depends_on = [aws_nat_gateway.nat]
 }

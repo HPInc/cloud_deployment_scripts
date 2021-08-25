@@ -13,7 +13,6 @@ locals {
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
 
   provisioning_script = "centos-gfx-provisioning.sh"
-  aws_logs_script     = "awslogs.sh"
 }
 
 resource "aws_s3_bucket_object" "centos-gfx-provisioning-script" {
@@ -26,6 +25,7 @@ resource "aws_s3_bucket_object" "centos-gfx-provisioning-script" {
     {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      awslogs_script              = var.awslogs_script,
       aws_region                  = var.aws_region, 
       bucket_name                 = var.bucket_name,
       customer_master_key_id      = var.customer_master_key_id,
@@ -101,7 +101,7 @@ data "aws_iam_policy_document" "centos-gfx-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.aws_logs_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awslogs_script}"]
     effect    = "Allow"
   }
 

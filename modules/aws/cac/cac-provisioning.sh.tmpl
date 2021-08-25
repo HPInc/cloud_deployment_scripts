@@ -13,7 +13,6 @@ CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
 CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
 CAC_LOCATION_URL="https://dl.teradici.com/${teradici_download_token}/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/${cac_version}"
 CAC_FILENAME="cloud-access-connector_${cac_version}_Linux.tar.gz"
-AWS_LOGS_SCRIPT="awslogs.sh"
 cd $PROVISIONING_DIR
 
 PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
@@ -64,14 +63,14 @@ setup_awslogs(){
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
-        aws s3 cp s3://${bucket_name}/$AWS_LOGS_SCRIPT .
-        chmod +x $AWS_LOGS_SCRIPT
-        dos2unix $AWS_LOGS_SCRIPT
+        aws s3 cp s3://${bucket_name}/${awslogs_script} .
+        chmod +x ${awslogs_script}
+        dos2unix ${awslogs_script}
 
-        . $AWS_LOGS_SCRIPT ${aws_region} \
+        . ${awslogs_script} ${aws_region} \
             $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/syslog"                   "%b %d %H:%M:%S" \
-            "/var/log/teradici/cac-install.log" "time=\"%Y-%m-%dT%H:%M:%SZ\"" \
+            "/var/log/teradici/cac-install.log" 'time=\"%Y-%m-%dT%H:%M:%SZ\"' \
             "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z."
     fi
 }

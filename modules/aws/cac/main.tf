@@ -23,8 +23,6 @@ locals {
   )
   ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
-
-  aws_logs_script = "awslogs.sh"
 }
 
 resource "aws_s3_bucket_object" "get-cac-token-script" {
@@ -61,6 +59,7 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
     {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      awslogs_script              = var.awslogs_script,
       aws_region                  = var.aws_region,
       bucket_name                 = var.bucket_name,
       cac_extra_install_flags     = var.cac_extra_install_flags,
@@ -151,7 +150,7 @@ data "aws_iam_policy_document" "cac-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.aws_logs_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awslogs_script}"]
     effect    = "Allow"
   }
 
