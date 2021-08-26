@@ -58,8 +58,8 @@ install_prereqs() {
     fi
 }
 
-setup_awslogs(){
-    if [[ ! -f "/var/log/awslogs.log" ]]
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
@@ -363,7 +363,7 @@ log "$(date)"
 
 install_prereqs
 
-setup_awslogs
+setup_cloudwatch
 
 get_credentials
 

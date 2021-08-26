@@ -10,7 +10,7 @@ $LOG_FILE = "C:\Teradici\provisioning.log"
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("safe_mode_admin_password", "${safe_mode_admin_password}")
 
-function Setup-AWSLogs {
+function Setup-CloudWatch {
     "################################################################"
     "Setting Up AWS CloudWatch..."
     "################################################################"
@@ -35,7 +35,7 @@ function Decrypt-Credentials {
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-Setup-AWSLogs
+Setup-CloudWatch
 
 if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
     "--> Script is not using encryption for secrets."

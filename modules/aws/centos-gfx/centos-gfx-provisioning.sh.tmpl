@@ -52,14 +52,14 @@ retry() {
     done
 }
 
-setup_awslogs(){
-    if [[ ! -f "/var/log/awslogs.log" ]]
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
         retry 3 5 "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
             "--> " \
-            "--> ERROR: Failed to download awslogs setup script."
+            "--> ERROR: Failed to download CloudWatch setup script."
         chmod +x ${cloudwatch_setup_script}
         dos2unix ${cloudwatch_setup_script}
 
@@ -433,7 +433,7 @@ exec &>>$LOG_FILE
 
 log "$(date)"
 
-setup_awslogs
+setup_cloudwatch
 
 get_credentials
 

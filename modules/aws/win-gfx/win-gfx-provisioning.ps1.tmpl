@@ -50,7 +50,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     }
 }
 
-function Setup-AWSLogs {
+function Setup-CloudWatch {
     "################################################################"
     "Setting Up AWS CloudWatch..."
     "################################################################"
@@ -363,7 +363,7 @@ if (Test-Path $LOG_FILE) {
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-Setup-AWSLogs
+Setup-CloudWatch
 
 "--> Script running as user '$(whoami)'."
 

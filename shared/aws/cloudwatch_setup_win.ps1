@@ -6,15 +6,15 @@
 #   2. DateTime format
 
 
-$AWSLOGS_LOG_FILE    = "C:\Teradici\cloudwatch-setup.log"
+$CLOUDWATCH_LOG_FILE    = "C:\Teradici\cloudwatch-setup.log"
 
 # Please find the link here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 $CLOUDWATCH_AGENT_INSTALLER_URL = "https://s3.amazonaws.com/amazoncloudwatch-agent/windows/amd64/latest/amazon-cloudwatch-agent.msi"
 $CLOUDWATCH_AGENT_INSTALLER     = "amazon-cloudwatch-agent.msi"
 $CLOUDWATCH_AGENT_DIR           = "C:\Program Files\Amazon\AmazonCloudWatchAgent"
 
-$AWSLOGS_CONFIG_FILE = "awslogs_config.json"
-$AWSLOGS_CONFIG_PATH = "C:\Program Files\Amazon\AmazonCloudWatchAgent\awslogs_config.json"
+$CLOUDWATCH_CONFIG_FILE = "cloudwatch_config.json"
+$CLOUDWATCH_CONFIG_PATH = "C:\Program Files\Amazon\AmazonCloudWatchAgent\cloudwatch_config.json"
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -36,7 +36,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     }
 }
 
-function Add-AWSLogs-Config($log_file_path, $datetime_format){
+function Add-CloudWatch-Config($log_file_path, $datetime_format){
     $log_file_name=(Get-Item $log_file_path).Basename
 
     $c = @{
@@ -51,7 +51,7 @@ function Add-AWSLogs-Config($log_file_path, $datetime_format){
     $global:collect_list+=$c
 }
 
-function Write-AWSLogs-Config {
+function Write-CloudWatch-Config {
     $files = "" | Select collect_list
     $files.collect_list = $global:collect_list
 
@@ -64,11 +64,11 @@ function Write-AWSLogs-Config {
     $configurations = @{}
     $configurations.Add("logs", $logs)
 
-    New-Item -itemType File -Path $CLOUDWATCH_AGENT_DIR -Name $AWSLOGS_CONFIG_FILE
-    Retry -Action {$configurations | ConvertTo-JSON -Dept 10| Out-File $AWSLOGS_CONFIG_PATH -Encoding Ascii -Force}
+    New-Item -itemType File -Path $CLOUDWATCH_AGENT_DIR -Name $CLOUDWATCH_CONFIG_FILE
+    Retry -Action {$configurations | ConvertTo-JSON -Dept 10| Out-File $CLOUDWATCH_CONFIG_PATH -Encoding Ascii -Force}
 }
 
-Start-Transcript -Path $AWSLOGS_LOG_FILE -Append -IncludeInvocationHeader
+Start-Transcript -Path $CLOUDWATCH_LOG_FILE -Append -IncludeInvocationHeader
 
 "--> Downloading CloudWatch Logs Agent from $CLOUDWATCH_AGENT_INSTALLER_URL..."
 $wc = New-Object System.Net.WebClient
@@ -86,13 +86,13 @@ while ($global:instance_name -eq $null) {
 
 $global:collect_list = @()
 for ( $i = 0; $i -lt $args.count; $i+=2 ) {
-    Add-AWSLogs-Config -log_file_path $args[$i] -datetime_format $args[$i+1]
+    Add-CloudWatch-Config -log_file_path $args[$i] -datetime_format $args[$i+1]
 }
 
-"--> Writing configurations to $AWSLOGS_CONFIG_PATH..."
-Write-AWSLogs-Config
+"--> Writing configurations to $CLOUDWATCH_CONFIG_PATH..."
+Write-CloudWatch-Config
 
 "--> Starting CloudWatch Agent..."
-& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:$AWSLOGS_CONFIG_PATH
+& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:$CLOUDWATCH_CONFIG_PATH
 " "
 

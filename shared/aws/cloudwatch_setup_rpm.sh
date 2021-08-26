@@ -14,7 +14,7 @@ REGION="${args[0]}"
 
 # Please find the link here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 CLOUDWATCH_AGENT_SETUP_URL="https://s3.$REGION.amazonaws.com/amazoncloudwatch-agent-$REGION/centos/amd64/latest/amazon-cloudwatch-agent.rpm"
-AWSLOGS_CONFIG_FILE="awslogs.conf"
+CLOUDWATCH_CONFIG_FILE="cloudwatch.conf"
 
 # Try command until zero exit status or exit(1) when non-zero status after max tries
 retry() {
@@ -40,7 +40,7 @@ retry() {
     done
 }
 
-add_awslogs_config(){
+add_cloudwatch_config(){
     log_file_path="$1"
     datetime_format="$2"
     log_file_name="$(basename $log_file_path)"
@@ -58,8 +58,8 @@ add_awslogs_config(){
     collect_list+=$c
 }
 
-write_awslogs_config(){
-    cat <<- EOF > $AWSLOGS_CONFIG_FILE
+write_cloudwatch_config(){
+    cat <<- EOF > $CLOUDWATCH_CONFIG_FILE
 {
     "logs": {   
         "logs_collected": {
@@ -90,21 +90,21 @@ done
 
 for ((i=1; i<${#args[@]}; i+=2))
 do
-    add_awslogs_config "${args[i]}" "${args[i+1]}"
+    add_cloudwatch_config "${args[i]}" "${args[i+1]}"
     if [ $((i+2)) -ne ${#args[@]} ]
     then
         collect_list+=","
     fi
 done
 
-log "Writing configurations to $AWSLOGS_CONFIG_FILE"
-write_awslogs_config
+log "Writing configurations to $CLOUDWATCH_CONFIG_FILE"
+write_cloudwatch_config
 
 log "Starting CloudWatch Agent..."
 aws configure set region $REGION
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:$AWSLOGS_CONFIG_FILE
-# The script will also create a folder /var/awslogs 
-# The logs are available at /var/log/awslogs.log and /var/log/awslogs-agent-setup.log 
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:$CLOUDWATCH_CONFIG_FILE
+# The script will also create a folder /var/logs/amazon 
+# The logs are available at /var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log 
 
 # For formatting purpose so that the next entry printed out to the provisioning.log
 # is printed to the next line and is parsable by the CloudWatch Logs agent 
