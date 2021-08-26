@@ -5,7 +5,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import base64
 import datetime
 import getpass
 import importlib
@@ -130,6 +129,7 @@ def import_modules():
     import_required_packages = '''\
         import casmgr
         import aws_iam_wrapper as aws
+        import interactive
     '''
 
     # Recommended to clear cache after installing python packages for dynamic imports
@@ -200,20 +200,6 @@ def ensure_aws_cli():
 
     print('AWS CLI not found. Please install and try again. Exiting...\n')
     sys.exit(1)
-
-
-def quickstart_config_read(cfg_file):
-    cfg_data = {}
-
-    with open(cfg_file, 'r') as f:
-        for line in f:
-            if line[0] in ('#', '\n'):
-                continue
-
-            key, value = map(str.strip, line.split(':'))
-            cfg_data[key] = value
-
-    return cfg_data
 
 
 def ad_password_get():
@@ -287,17 +273,16 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
 
 if __name__ == '__main__':
-
-    print('Reading configurations file...')
-    cfg_data = quickstart_config_read(CFG_FILE_PATH)
-    PREFIX = cfg_data.get('prefix', '')
-
     ensure_requirements()
 
-    # Get password for AD user
-    password = ad_password_get()
+    print('\nValidating AWS credentials...')
+    if not aws.validate_credentials():
+        exit(1)
+    print("")
 
-    print('Preparing local requirements...')
+    cfg_data = interactive.configurations_get(WS_TYPES, ENTITLE_USER, QUICKSTART_PATH)
+
+    print('\nPreparing local requirements...')
 
     try:
         print(f'Creating directory {SECRETS_DIR} to store secrets...')
@@ -308,26 +293,6 @@ if __name__ == '__main__':
     ssh_key_create(SSH_KEY_PATH)
 
     print('Local requirements setup complete.\n')
-
-    print('Validating AWS credentials...')
-    AWS_REGION = cfg_data.get('aws_region')
-    aws.set_boto3_region(AWS_REGION)
-
-    if not aws.validate_credentials():
-        exit(1)
-
-    print('Checking AWS resources...')
-    if PREFIX == '': 
-        AWS_USERNAME = 'cas-manager'
-    else:
-        AWS_USERNAME = PREFIX + '-cas-manager'
-
-    AWS_ROLE_NAME = f'{AWS_USERNAME}_role'
-    ROLE_POLICY_NAME = f'{AWS_ROLE_NAME}_policy'
-
-    if any((aws.find_user(AWS_USERNAME), aws.find_role(AWS_ROLE_NAME), aws.find_policy(ROLE_POLICY_NAME))):
-        print("AWS IAM resources must have unique names. Exiting script...")
-        exit(1)
 
     print('Setting CAS Manager...')
     mycasmgr = casmgr.CASManager(cfg_data.get('api_token'))
@@ -344,6 +309,12 @@ if __name__ == '__main__':
     print('CAS Manager setup complete.\n')
 
     print('Creating AWS user for Terraform deployment...')
+    AWS_REGION = cfg_data.get('aws_region')
+    PREFIX = cfg_data.get('prefix', '')
+    AWS_USERNAME = PREFIX + '-cas-manager'
+    AWS_ROLE_NAME = f'{AWS_USERNAME}_role'
+    ROLE_POLICY_NAME = f'{AWS_ROLE_NAME}_policy'
+
     aws.create_user(AWS_USERNAME)
     aws.attach_user_policy(AWS_USERNAME, AWS_USER_POLICY_ARN)
     
@@ -369,9 +340,9 @@ if __name__ == '__main__':
     settings = {
         'aws_credentials_file':           AWS_SA_KEY_PATH,
         'aws_region':                     AWS_REGION,
-        'dc_admin_password':              password,
-        'safe_mode_admin_password':       password,
-        'ad_service_account_password':    password,
+        'dc_admin_password':              cfg_data.get('ad_password'),
+        'safe_mode_admin_password':       cfg_data.get('ad_password'),
+        'ad_service_account_password':    cfg_data.get('ad_password'),
         'admin_ssh_pub_key_file':         SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),

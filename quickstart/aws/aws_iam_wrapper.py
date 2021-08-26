@@ -3,18 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
 import boto3
 from botocore.exceptions import ClientError
 import json
-import subprocess
-import textwrap
 
+sts = boto3.client('sts')
 
 def set_boto3_region(region):
-    global iam, sts
+    global iam
     iam = boto3.client('iam', region)
-    sts = boto3.client('sts', region)
 
 
 def validate_credentials():

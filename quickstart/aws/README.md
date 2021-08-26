@@ -7,7 +7,7 @@
     - [Requirements](#requirements)
     - [Accessing the Quickstart Script](#accessing-the-quickstart-script)
     - [AWS Setup](#aws-setup)
-    - [Customizing the Configurations File](#customizing-the-configurations-file)
+    - [Enter Parameters](#enter-parameters)
       - [reg_code](#reg_code)
       - [api_token](#api_token)
       - [aws_region](#aws_region)
@@ -32,10 +32,9 @@ You can run the deployment from your local machine or from AWS CloudShell. This 
 - if the user is running from their local machine, they must have AWS CLI Version 2 installed. Please see: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
 
 ### Accessing the AWS Quickstart Script
-Run the following commands to clone the Cloud Deployment Scripts repository and navigate to the AWS quickstart directory.
+Run the following commands to clone the Cloud Deployment Scripts repository.
 ```bash
 git clone https://github.com/teradici/cloud_deployment_scripts.git
-cd cloud_deployment_scripts/quickstart/aws/
 ```
 
 ### AWS Setup
@@ -45,19 +44,26 @@ With a new AWS account:
 - from the AWS console, create a new IAM user with programmatic access and apply the __AdministratorAccess__ policy either by adding the user to a group with such permission, or by attaching the policy to the user directly. 
 - run `aws configure` and set the Access key ID and Secret access key with the newly created credentials. Please see https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.
 
-### Customizing the Configurations File
-In the `cloud_deployment_scripts/quickstart/aws/aws-quickstart.cfg` configurations file, fill in the following values:
+### Enter Parameters
+Run the following command to navigate to the AWS quickstart directory and run the script
+```bash
+cd cloud_deployment_scripts/quickstart/aws/
+./aws-quickstart.py
+```
+and you will be prompted to enter each parameter. You will also be prompted to create a password for the Active Directory Administrator. After you answer all the prompts, the script will continue to create the deployment and should take approximately 25 minutes to run.
 
 #### reg_code
-Replace **`<code>`** with your PCoIP Registration code.
+Enter your PCoIP Registration code.
 
-#### api_token
-Replace **`<token>`** with the CAS Manager API token.
+If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
+
+### api_token
+Enter the CAS Manager API token.
 
 Log into [https://cas.teradici.com](https://cas.teradici.com) using your Google Workspace or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
 #### aws_region
-By default, the region is set to **us-west-2**. Note, this region should match the AWS configuration.
+Enter the AWS Region you want to deploy in.
 
 #### Number of Workstations
 Enter the number of workstations to create.
@@ -70,14 +76,7 @@ swin | Windows Server 2019 Workstation
 gwin | Windows Server 2019 with NVIDIA T4 G4dn Virtual Workstation GPU
 
 #### Prefix
-Adding a unique prefix helps to make sure there are no existing AWS resources in the account with the same name, because an error will occur if that happens. The prefix is set to **quick** but you can change it to anything within 5 characters long.
-
-### Creating the Deployment
-Run the following command. You will be prompted to create a password for the Active Directory Administrator.
-```bash
-./aws-quickstart.py
-```
-The script should take approximately 25 minutes to run.
+Enter a unique prefix to make sure there are no existing AWS resources in the account with the same name, because an error will occur if that happens. The prefix can be anything within 5 characters long.
 
 ## Next Steps
 ### Connecting to the Workstations
