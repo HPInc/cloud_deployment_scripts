@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 ---
-Description: Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using DynamoDB as the storage backend) and a Document DB cluster as the Vault and Database backends for CAS Manager, respectively. Creation time is approximately 25 mins. Please see the "Output" tab in CloudFormation for URL and initial password for the CAS Manager.
+Description: Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using DynamoDB as the storage backend) and a Document DB cluster as the Vault and Database backends for CAS Manager, respectively. All passwords are generated and stored in AWS Secrets Manager. Please see the "Output" tab in CloudFormation for URL and initial password for the CAS Manager. Creation time is approximately 25 mins.
 
 
 Parameters:
