@@ -44,36 +44,6 @@ SERVICE_QUOTA_REQUIREMENTS = {
     }
 }
 
-# Name of the quota mapped to the function call to get the number of quota
-# that is currently in use and the name of the list within the response 
-# that contains the resources currently in use
-QUOTA_CHECK_MAPPING = {
-    'Internet gateways per Region': {
-        'function': 'ec2.describe_internet_gateways',
-        'query': 'InternetGateways'
-    },
-    'NAT gateways per Availability Zone': {
-        'function': 'ec2.describe_nat_gateways',
-        'query': 'NatGateways'
-    },
-    'VPC security groups per Region': {
-        'function': 'ec2.describe_security_groups',
-        'query': 'SecurityGroups'
-    },
-    'VPCs per Region': {
-        'function': 'ec2.describe_vpcs',
-        'query': 'Vpcs'
-    },
-    'Network interfaces per Region': {
-        'function': 'ec2.describe_network_interfaces',
-        'query': 'NetworkInterfaces'
-    },
-    'EC2-VPC Elastic IPs': {
-        'function': 'ec2.describe_addresses',
-        'query': 'Addresses'
-    }
-}
-
 def configurations_get(ws_types, username, quickstart_path):
     # AWS EC2 Client
     ec2 = boto3.client('ec2')
@@ -156,25 +126,52 @@ def configurations_get(ws_types, username, quickstart_path):
 
         ec2 = boto3.client('ec2', aws_region)
 
+        # Name of the quota mapped to the function call to get the number of quota
+        # that is currently in use and the name of the list within the response 
+        # that contains the resources currently in use
+        QUOTA_CHECK_MAPPING = {
+            'Internet gateways per Region': {
+                'function': ec2.describe_internet_gateways,
+                'query': 'InternetGateways'
+            },
+            'NAT gateways per Availability Zone': {
+                'function': ec2.describe_nat_gateways,
+                'query': 'NatGateways'
+            },
+            'VPC security groups per Region': {
+                'function': ec2.describe_security_groups,
+                'query': 'SecurityGroups'
+            },
+            'VPCs per Region': {
+                'function': ec2.describe_vpcs,
+                'query': 'Vpcs'
+            },
+            'Network interfaces per Region': {
+                'function': ec2.describe_network_interfaces,
+                'query': 'NetworkInterfaces'
+            },
+            'EC2-VPC Elastic IPs': {
+                'function': ec2.describe_addresses,
+                'query': 'Addresses'
+            }
+        }
+
         if requirement == "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests":
             return instance_requests_count(['a','c','d','h','i','m','r','t','z'])
         if requirement == "All G Spot Instance Requests":
             return instance_requests_count(['g'])
 
-        for quota_name in QUOTA_CHECK_MAPPING:
-            if requirement != quota_name:
-                continue
-            function = QUOTA_CHECK_MAPPING[quota_name]['function']
-            query = QUOTA_CHECK_MAPPING[quota_name]['query']
-            response = eval(function + "()")
-            count = len(response[query])
-            try:
-                while response['NextToken']:
-                    response = eval(function + f"(NextToken={response['NextToken']})")
-                    count += len(response[query])
-            except KeyError:
-                pass
-            return count
+        function = QUOTA_CHECK_MAPPING[requirement]['function']
+        query = QUOTA_CHECK_MAPPING[requirement]['query']
+        response = function()
+        count = len(response[query])
+        try:
+            while response['NextToken']:
+                response = function(NextToken={response['NextToken']})
+                count += len(response[query])
+        except KeyError:
+            pass
+        return count
 
     # Gets the available quota for each service quota
     def service_quota_get(aws_region):
