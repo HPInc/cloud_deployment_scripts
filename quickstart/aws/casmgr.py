@@ -5,7 +5,6 @@
 
 import requests
 import retry
-import json
 from retry import retry
 
 
@@ -14,6 +13,19 @@ class CASManager:
         self.auth_token = auth_token
         self.url = url
         self.header = {'authorization': auth_token}
+
+    def auth_token_validate(self):
+        resp = requests.post(
+            self.url + '/api/v1/auth/verify',
+            headers = self.header
+        )
+        try:
+            resp.raise_for_status()
+            return True
+        except requests.models.HTTPError:
+            if resp.status_code == 401:
+                return False
+            raise
 
     def deployment_create(self, name, reg_code):
         deployment_details = {
