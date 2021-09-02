@@ -16,8 +16,8 @@ Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using
 
 For more information about CAS Manager, please visit https://www.teradici.com/web-help/cas_manager/current/
 ### Requirements
-- existing VPC
-- existing subnet
+- must be used in a region where Document DB is available
+- existing VPC with at least 2 subnets
 - existing EC2 Key pair
 
 ### Quick create stack
