@@ -42,6 +42,10 @@ Parameters:
     Description: Subnet to create CAS Manager resources in
     Type: AWS::EC2::Subnet::Id
     ConstraintDescription: Must be a subnet in the selected VPC
+  CASManagerSubnet2Id:
+    Description: Additional subnet used for creating a Document DB subnet group. Must be different from the other subnet selected.
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: Must be a subnet in the selected VPC
     # TODO: how to ensure it's in the VPC?
 
 
@@ -59,6 +63,7 @@ Metadata:
       - Label:
           default: CAS Manager Database Configuration
         Parameters:
+          - CASManagerSubnet2Id
           - CASMDBInstanceClass
     ParameterLabels:
       CASMDBInstanceClass:
@@ -73,6 +78,8 @@ Metadata:
         default: VPC ID
       CASManagerSubnetId:
         default: Subnet ID
+      CASManagerSubnet2Id:
+        default: Subnet2 ID
 
 
 Mappings:
@@ -143,6 +150,18 @@ Mappings:
 Resources:
 ##### CAS Manager Database #####
 
+  CASMDBSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for DocumentDB used by CAS Manager
+      DBSubnetGroupName: !Sub ${Prefix}-CASMDBSubnetGroup
+      SubnetIds:
+        - !Ref CASManagerSubnetId
+        - !Ref CASManagerSubnet2Id
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-CASMDBSubnetGroup
+
   CASMDBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -180,6 +199,7 @@ Resources:
       DBClusterIdentifier: !Sub
       - ${Prefix}-${id}
       - id: !FindInMap [Constants, DocDB, ClusterID]
+      DBSubnetGroupName: !Ref CASMDBSubnetGroup
       DeletionProtection: false #TODO: true?
       EngineVersion: 4.0.0
       MasterUsername: !Sub '{{resolve:secretsmanager:${CASMDBUserCredentials}::username}}'
