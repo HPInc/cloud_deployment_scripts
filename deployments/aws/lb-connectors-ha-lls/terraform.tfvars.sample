@@ -115,6 +115,13 @@ centos_std_instance_count = 0
 #    - special characters: ~!@#$%^&*_-+=`|\(){}[]:;"'<>,.?/
 #    - unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
+#
+# LLS admin passwords must be between 8 and 30 characters long and contain all
+# of the following categories:
+#    - a-z
+#    - A-Z
+#    - 0-9
+#    - special characters: ~!@#$%^&*_-+=`|(){}[]:;<>,.?/
 
 # Uncomment and enter the Customer Master Key ID if using encryption.
 # customer_master_key_id = "<key-id-uuid>"
