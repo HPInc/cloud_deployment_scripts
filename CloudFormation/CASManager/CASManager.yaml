@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 ---
-Description: Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using DynamoDB as the storage backend) and a Document DB cluster as the Vault and Database backends for CAS Manager, respectively. All passwords are generated and stored in AWS Secrets Manager. Please see the "Output" tab in CloudFormation for URL and initial password for the CAS Manager. Creation time is approximately 25 mins.
+Description: Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using DynamoDB as the storage backend) and a Document DB cluster as the Vault and Database backends for CAS Manager, respectively. All passwords are generated and stored in AWS Secrets Manager. Please see the "Output" tab in CloudFormation for URL and initial password for the CAS Manager. Creation time is approximately 25 mins. For more details, please refer to https://github.com/teradici/cloud_deployment_scripts/tree/master/CloudFormation
 
 
 Parameters:
@@ -23,7 +23,8 @@ Parameters:
   AdminCidr:
     AllowedPattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/([1-2]?[0-9]|3[0-2])$
     ConstraintDescription: Requires a CIDR Block (e.g. a.b.c.d/32, e.f.g.0/24)
-    Description: CIDR range to allow SSH access From
+    Default: 0.0.0.0/0
+    Description: CIDR block (e.g. a.b.c.d/32, e.f.g.0/24) to allow SSH and API access from. Note that the default 0.0.0.0/0 is open to the world and less secure than a more narrow CIDR block.
     Type: String
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the CAS Manager and Vault servers
@@ -31,6 +32,8 @@ Parameters:
     ConstraintDescription: Must be the name of an existing EC2 KeyPair
   Prefix:
     #TODO: make optional
+    AllowedPattern: ^[a-zA-Z][a-zA-Z0-9]*$
+    ConstraintDescription: Alphanumeric (0-9, a-z) characters only. Min 1 character.
     Default: my
     Description: Prefix to add to names of resources created by this template to avoid collisions (min 1 character)
     MinLength: 1
@@ -39,13 +42,12 @@ Parameters:
     Description: VPC to create CAS Manager resources in
     Type: AWS::EC2::VPC::Id
   CASManagerSubnetId:
-    Description: Subnet to create CAS Manager resources in
+    Description: Subnet to create CAS Manager resources in. Must be a public subnet.
     Type: AWS::EC2::Subnet::Id
     ConstraintDescription: Must be a subnet in the selected VPC
   CASManagerSubnet2Id:
-    Description: Additional subnet used for creating a Document DB subnet group. Must be different from the other subnet selected.
+    Description: Additional subnet used for creating a Document DB subnet group. The subnet must be from a different Availability Zone than the other subnet selected above. Must be a public subnet or has a NAT gateway for internet access.
     Type: AWS::EC2::Subnet::Id
-    ConstraintDescription: Must be a subnet in the selected VPC
     # TODO: how to ensure it's in the VPC?
 
 
@@ -381,14 +383,17 @@ Resources:
       InstanceType: m5.large # Ref: https://learn.hashicorp.com/tutorials/vault/reference-architecture#deployment-system-requirements
       IamInstanceProfile: !Ref VaultInstanceProfile
       KeyName: !Ref KeyName
-      SecurityGroupIds:
-        - !GetAtt VaultSecurityGroup.GroupId
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp2
             VolumeSize: 25
-      SubnetId: !Ref CASManagerSubnetId
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - !GetAtt VaultSecurityGroup.GroupId
+          SubnetId: !Ref CASManagerSubnetId
       Tags:
         - Key: Name
           Value: !Sub ${Prefix} VaultServer
@@ -614,6 +619,31 @@ Resources:
       Roles:
         - !Ref CASMRole
 
+  CASMPublicIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-CASMPublicIP
+
+  CASMNetworkInterface:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SubnetId: !Ref CASManagerSubnetId
+      Description: Interface for CAS Manager public traffic
+      GroupSet:
+      - !GetAtt CASMSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-CASMNetworkInterface
+
+
+  AssociateCASMPublicIP:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt CASMPublicIP.AllocationId
+      NetworkInterfaceId: !Ref CASMNetworkInterface
+
   CASMServer:
     Type: AWS::EC2::Instance
     CreationPolicy:
@@ -624,14 +654,14 @@ Resources:
       InstanceType: m5.xlarge # Ref: https://www.teradici.com/web-help/cas_manager/overview/system_requirements/#system-requirements-for-production-mode
       IamInstanceProfile: !Ref CASMInstanceProfile
       KeyName: !Ref KeyName
-      SecurityGroupIds:
-        - !GetAtt CASMSecurityGroup.GroupId
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp2
             VolumeSize: 60
-      SubnetId: !Ref CASManagerSubnetId
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref CASMNetworkInterface
+          DeviceIndex: 0
       Tags:
         - Key: Name
           Value: !Sub ${Prefix}-CASMServer
