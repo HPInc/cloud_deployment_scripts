@@ -4,7 +4,7 @@ This directory contains CloudFormation templates and related scripts for deployi
 
 __Note: These templates are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
 
-CloudFormation templates can be uploaded to the AWS CloudFormation via the console at https://console.aws.amazon.com/cloudformation/home or used with the AWS CLI. If no modifications are needed, a copy of these templates are also available on S3 location "https://teradici-public.s3.amazonaws.com/CloudFormation/\<template name\>"; this location can be referenced directly when using AWS CloudFormation console.
+CloudFormation templates can be uploaded to the AWS CloudFormation via the console at https://console.aws.amazon.com/cloudformation/home or used with the AWS CLI. If no modifications are needed, a copy of these templates are also available on S3 location "https://teradici-public.s3.amazonaws.com/CloudFormation/{template name}"; this location can be referenced directly when using AWS CloudFormation console.
 
 For more information about CloudFormation, please visit https://aws.amazon.com/cloudformation/
 
@@ -17,8 +17,8 @@ Creates a Teradici CAS Manager server along with a HashiCorp Vault server (using
 For more information about CAS Manager, please visit https://www.teradici.com/web-help/cas_manager/current/
 ### Requirements
 - must be used in a region where Document DB is available
-- existing VPC with at least 2 subnets
-- existing EC2 Key pair
+- must be deployed in an existing VPC with at least 1 public subnet and another subnet in a different Availability Zone
+- an existing EC2 Key pair
 
 ### Quick create stack
 https://console.aws.amazon.com/cloudformation/home?#/stacks/quickcreate?templateURL=https://teradici-public.s3.amazonaws.com/CloudFormation/CASManager/CASManager.yaml&stackName=casm
