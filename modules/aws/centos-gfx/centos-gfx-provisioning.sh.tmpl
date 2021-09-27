@@ -423,15 +423,13 @@ else
     RE_ENTER=1
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-log "$(date)"
+log "$(date) Running $0 as $(whoami)..."
 
 setup_cloudwatch
 

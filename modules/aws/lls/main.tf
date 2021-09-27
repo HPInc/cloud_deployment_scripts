@@ -20,9 +20,11 @@ resource "aws_s3_bucket_object" "lls-provisioning-script" {
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       aws_region              = var.aws_region, 
+      bucket_name             = var.bucket_name,
+      cloudwatch_setup_script = var.cloudwatch_setup_script,
       customer_master_key_id  = var.customer_master_key_id,
-      lls_admin_password      = var.lls_admin_password,
       lls_activation_code     = var.lls_activation_code,
+      lls_admin_password      = var.lls_admin_password,
       lls_license_count       = var.lls_license_count,
       teradici_download_token = var.teradici_download_token,
     }
@@ -79,6 +81,27 @@ data "aws_iam_policy_document" "lls-policy-doc" {
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
   }
+  
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
+    effect    = "Allow"
+  }
 
   dynamic statement {
     for_each = data.aws_kms_key.encryption-key
@@ -130,4 +153,9 @@ resource "aws_instance" "lls" {
   tags = {
     Name = "${local.host_name}-${count.index}"
   }
+}
+
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.instance_count
+  name = "${local.prefix}${var.host_name}-${count.index}"
 }

@@ -17,14 +17,16 @@ resource "aws_s3_bucket_object" "lls-provisioning-script" {
     "${path.module}/${local.lls_provisioning_script}.tmpl",
     {
       aws_region              = var.aws_region, 
+      bucket_name             = var.bucket_name,
+      cloudwatch_setup_script = var.cloudwatch_setup_script,
       customer_master_key_id  = var.customer_master_key_id,
-      lls_admin_password      = var.lls_admin_password,
+      haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
+      haproxy_master_ip       = var.assigned_ips["haproxy_master"],
       lls_activation_code     = var.lls_activation_code,
+      lls_admin_password      = var.lls_admin_password,
+      lls_backup_ip           = var.assigned_ips["lls_backup"],
       lls_license_count       = var.lls_license_count,
       lls_main_ip             = var.assigned_ips["lls_main"],
-      lls_backup_ip           = var.assigned_ips["lls_backup"],
-      haproxy_master_ip       = var.assigned_ips["haproxy_master"],
-      haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
       teradici_download_token = var.teradici_download_token,
     }
   )
@@ -59,6 +61,26 @@ data "aws_iam_policy_document" "lls-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.lls_provisioning_script}"]
+    effect    = "Allow"
+  }
+    statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
@@ -132,4 +154,12 @@ resource "aws_instance" "lls_backup" {
   tags = {
     Name = "${local.lls_host_name}-backup"
   }
+}
+
+resource "aws_cloudwatch_log_group" "instance-log-group-lls-main" {
+  name = "${local.prefix}${var.host_name}-main"
+}
+
+resource "aws_cloudwatch_log_group" "instance-log-group-lls-backup" {
+  name = "${local.prefix}${var.host_name}-backup"
 }

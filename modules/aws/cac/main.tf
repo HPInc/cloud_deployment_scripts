@@ -72,8 +72,8 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       lls_ip                      = var.lls_ip,
-      ssl_key                     = local.ssl_key_filename,
       ssl_cert                    = local.ssl_cert_filename,
+      ssl_key                     = local.ssl_key_filename,
       teradici_download_token     = var.teradici_download_token,
     }
   )
@@ -157,8 +157,8 @@ data "aws_iam_policy_document" "cac-policy-doc" {
   statement {
     actions   = ["logs:CreateLogGroup",
                  "logs:CreateLogStream",
-                 "logs:PutLogEvents",
-                 "logs:DescribeLogStreams"]
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }

@@ -27,10 +27,11 @@ resource "aws_s3_bucket_object" "cas-mgr-provisioning-script" {
     {
       aws_region                   = var.aws_region,
       bucket_name                  = var.bucket_name,
+      cas_mgr_admin_password       = var.cas_mgr_admin_password,
       cas_mgr_aws_credentials_file = var.cas_mgr_aws_credentials_file,
       cas_mgr_deployment_sa_file   = var.cas_mgr_deployment_sa_file,
-      cas_mgr_admin_password       = var.cas_mgr_admin_password,
       cas_mgr_setup_script         = local.cas_mgr_setup_script,
+      cloudwatch_setup_script      = var.cloudwatch_setup_script,
       customer_master_key_id       = var.customer_master_key_id,
       pcoip_registration_code      = var.pcoip_registration_code,
       teradici_download_token      = var.teradici_download_token,
@@ -84,6 +85,21 @@ data "aws_iam_policy_document" "cas-mgr-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
     resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
@@ -168,4 +184,8 @@ resource "aws_instance" "cas-mgr" {
   tags = {
     Name = "${local.prefix}${var.host_name}"
   }
+}
+
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  name = "${local.prefix}${var.host_name}"
 }

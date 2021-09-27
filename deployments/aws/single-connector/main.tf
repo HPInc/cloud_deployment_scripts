@@ -16,6 +16,11 @@ locals {
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
 }
 
+resource "aws_key_pair" "cas_admin" {
+  key_name   = local.admin_ssh_key_name
+  public_key = file(var.admin_ssh_pub_key_file)
+}
+
 resource "random_id" "bucket-name" {
   byte_length = 3
 }
@@ -83,11 +88,6 @@ module "dc" {
   ami_name  = var.dc_ami_name
 
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
-}
-
-resource "aws_key_pair" "cas_admin" {
-  key_name   = local.admin_ssh_key_name
-  public_key = file(var.admin_ssh_pub_key_file)
 }
 
 module "cac" {

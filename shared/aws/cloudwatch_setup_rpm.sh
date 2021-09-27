@@ -75,11 +75,12 @@ write_cloudwatch_config(){
 }
 
 log "Downloading CloudWatch Agent from $CLOUDWATCH_AGENT_SETUP_URL..."
-retry 3 5 "wget $CLOUDWATCH_AGENT_SETUP_URL" "-->" "--> ERROR: Failed to download the CloudWatch Agent."
-rpm -U ./amazon-cloudwatch-agent.rpm
+retry 3 5 "curl -O $CLOUDWATCH_AGENT_SETUP_URL" "-->" "--> ERROR: Failed to download the CloudWatch Agent."
+rpm -U ./$(basename $CLOUDWATCH_AGENT_SETUP_URL)
 
 log "Configuring CloudWatch Agent..."
-declare -A collect_list
+
+collect_list=""
 
 instance_id=$(retry 3 5 "curl http://169.254.169.254/latest/meta-data/instance-id" "-->" "--> ERROR: Failed to get the instance id.")
 

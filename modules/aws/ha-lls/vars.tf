@@ -118,3 +118,8 @@ variable "assigned_ips" {
     subnet_mask    = "/24"
   }
 }
+
+variable "cloudwatch_setup_script" {
+  description = "The script that sets up the AWS CloudWatch Logs agent"
+  type        = string
+}

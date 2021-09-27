@@ -317,15 +317,13 @@ then
     chmod +644 "$LOG_FILE"
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-log "$(date)"
+log "$(date) Running $0 as $(whoami)..."
 
 # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
 yum -y install epel-release

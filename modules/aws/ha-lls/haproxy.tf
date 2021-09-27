@@ -19,16 +19,18 @@ resource "aws_s3_bucket_object" "haproxy-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.haproxy_provisioning_script}.tmpl",
     {
-      bucket_name = var.bucket_name,
-      haproxy_config = local.haproxy_config,
-      keepalived_config = local.keepalived_config,
-      notify_master = local.keepalived_notify_master_script,
-      lls_main_ip = var.assigned_ips["lls_main"],
-      lls_backup_ip = var.assigned_ips["lls_backup"],
-      haproxy_vip = var.assigned_ips["haproxy_vip"],
-      haproxy_vip_cidr = "${var.assigned_ips["haproxy_vip"]}${var.assigned_ips["subnet_mask"]}",
-      haproxy_master_ip = var.assigned_ips["haproxy_master"],
-      haproxy_backup_ip = var.assigned_ips["haproxy_backup"]
+      aws_region              = var.aws_region, 
+      bucket_name             = var.bucket_name,
+      cloudwatch_setup_script = var.cloudwatch_setup_script,
+      haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
+      haproxy_config          = local.haproxy_config,
+      haproxy_master_ip       = var.assigned_ips["haproxy_master"],
+      haproxy_vip             = var.assigned_ips["haproxy_vip"],
+      haproxy_vip_cidr        = "${var.assigned_ips["haproxy_vip"]}${var.assigned_ips["subnet_mask"]}",
+      keepalived_config       = local.keepalived_config,
+      lls_backup_ip           = var.assigned_ips["lls_backup"],
+      lls_main_ip             = var.assigned_ips["lls_main"],
+      notify_master           = local.keepalived_notify_master_script,
     }
   )
 }
@@ -91,6 +93,27 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
   statement {
     actions   = ["ec2:AssignPrivateIpAddresses"]      
     resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
@@ -165,4 +188,12 @@ resource "aws_instance" "haproxy_backup" {
   tags = {
     Name = "${local.haproxy_host_name}-backup"
   }
+}
+
+resource "aws_cloudwatch_log_group" "instance-log-group-ha-main" {
+  name = "${local.haproxy_host_name}-master"
+}
+
+resource "aws_cloudwatch_log_group" "instance-log-group-ha-backup" {
+  name = "${local.haproxy_host_name}-backup"
 }

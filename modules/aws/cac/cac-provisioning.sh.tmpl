@@ -49,7 +49,7 @@ retry() {
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
     apt-get -qq update
-    apt install -y dos2unix python3 python
+    apt install -y dos2unix python3 
 
     if [ $? -ne 0 ]
     then
@@ -351,15 +351,13 @@ then
     chmod +644 "$LOG_FILE"
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-log "$(date)"
+log "$(date) Running $0 as $(whoami)..."
 
 install_prereqs
 

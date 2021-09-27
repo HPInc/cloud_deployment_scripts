@@ -140,3 +140,8 @@ variable "idle_shutdown_polling_interval_minutes" {
   description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
   default     = 15
 }
+
+variable "cloudwatch_setup_script" {
+  description = "The script that sets up the AWS CloudWatch Logs agent"
+  type        = string
+}

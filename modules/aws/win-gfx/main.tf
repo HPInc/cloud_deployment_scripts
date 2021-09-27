@@ -110,8 +110,8 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
   statement {
     actions   = ["logs:CreateLogGroup",
                  "logs:CreateLogStream",
-                 "logs:PutLogEvents",
-                 "logs:DescribeLogStreams"]
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
