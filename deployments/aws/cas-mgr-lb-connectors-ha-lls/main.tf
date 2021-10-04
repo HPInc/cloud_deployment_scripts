@@ -124,8 +124,8 @@ module "ha-lls" {
   haproxy_instance_type = var.haproxy_instance_type
   haproxy_disk_size_gb  = var.haproxy_disk_size_gb
 
-  lls_instance_type = var.haproxy_instance_type
-  lls_disk_size_gb  = var.haproxy_disk_size_gb
+  lls_instance_type = var.lls_instance_type
+  lls_disk_size_gb  = var.lls_disk_size_gb
 
   haproxy_ami_owner = var.haproxy_ami_owner
   haproxy_ami_name  = var.haproxy_ami_name
