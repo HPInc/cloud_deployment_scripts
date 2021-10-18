@@ -117,11 +117,6 @@ function PCoIP-Agent-Install {
     "Installing PCoIP standard agent..."
     "################################################################"
 
-    if (PCoIP-Agent-is-Installed) {
-        "--> PCoIP standard agent is already installed. Skipping..."
-        return
-    }
-
     $agentInstallerDLDirectory = "C:\Teradici"
     $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
     $destFile = $agentInstallerDLDirectory + '\' + $PCOIP_AGENT_FILENAME
@@ -351,7 +346,11 @@ net user Administrator $DATA."admin_password" /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-PCoIP-Agent-Install
+if (PCoIP-Agent-is-Installed) {
+    "--> PCoIP standard agent is already installed. Skipping..."
+} else {
+    PCoIP-Agent-Install
+}
 
 PCoIP-Agent-Register
 

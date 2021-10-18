@@ -102,50 +102,46 @@ exit_and_restart() {
 }
 
 install_pcoip_agent() {
-    if ! (rpm -q pcoip-agent-standard)
-    then
-
-        log "--> Getting Teradici PCoIP agent repo..."
-        curl --retry 3 --retry-delay 5 -u "token:$TERADICI_DOWNLOAD_TOKEN" -1sLf $TERADICI_REPO_SETUP_SCRIPT_URL | bash
-        if [ $? -ne 0 ]; then
-            log "--> ERROR: Failed to install PCoIP agent repo."
-            exit 1
-        fi
-        log "--> PCoIP agent repo installed successfully."
-
-        log "--> Installing USB dependencies..."
-        retry "yum install -y usb-vhci"
-        if [ $? -ne 0 ]; then
-            log "--> Warning: Failed to install usb-vhci."
-        fi
-        log "--> usb-vhci successfully installed."
-
-        log "--> Installing PCoIP standard agent..."
-        retry yum -y install pcoip-agent-standard
-        if [ $? -ne 0 ]; then
-            log "--> ERROR: Failed to install PCoIP agent."
-            exit 1
-        fi
-        log "--> PCoIP agent installed successfully."
-
-        log "--> Registering PCoIP agent license..."
-        n=0
-        set +x
-        while true; do
-            /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
-            n=$[$n+1]
-
-            if [ $n -ge 10 ]; then
-                log "--> ERROR: Failed to register PCoIP agent after $n tries."
-                exit 1
-            fi
-
-            log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
-            sleep 10
-        done
-        set -x
-        log "--> PCoIP agent registered successfully."
+    log "--> Getting Teradici PCoIP agent repo..."
+    curl --retry 3 --retry-delay 5 -u "token:$TERADICI_DOWNLOAD_TOKEN" -1sLf $TERADICI_REPO_SETUP_SCRIPT_URL | bash
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to install PCoIP agent repo."
+        exit 1
     fi
+    log "--> PCoIP agent repo installed successfully."
+
+    log "--> Installing USB dependencies..."
+    retry "yum install -y usb-vhci"
+    if [ $? -ne 0 ]; then
+        log "--> Warning: Failed to install usb-vhci."
+    fi
+    log "--> usb-vhci successfully installed."
+
+    log "--> Installing PCoIP standard agent..."
+    retry yum -y install pcoip-agent-standard
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to install PCoIP agent."
+        exit 1
+    fi
+    log "--> PCoIP agent installed successfully."
+
+    log "--> Registering PCoIP agent license..."
+    n=0
+    set +x
+    while true; do
+        /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
+        n=$[$n+1]
+
+        if [ $n -ge 10 ]; then
+            log "--> ERROR: Failed to register PCoIP agent after $n tries."
+            exit 1
+        fi
+
+        log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
+        sleep 10
+    done
+    set -x
+    log "--> PCoIP agent registered successfully."
 }
 
 install_idle_shutdown() {
@@ -303,7 +299,12 @@ systemctl set-default graphical.target
 
 join_domain
 
-install_pcoip_agent
+if (rpm -q pcoip-agent-standard)
+then
+    log "--> pcoip-agent-standard is already installed."
+else
+    install_pcoip_agent
+fi
 
 install_idle_shutdown
 
