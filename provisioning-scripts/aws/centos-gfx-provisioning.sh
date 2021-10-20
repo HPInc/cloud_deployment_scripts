@@ -1,18 +1,39 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
 #!/bin/bash
 
-# Copyright (c) 2020 Teradici Corporation
+# Copyright (c) 2021 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
-AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
-AWS_REGION=${aws_region}
-CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
-DOMAIN_CONTROLLER_IP=${domain_controller_ip}
-DOMAIN_NAME=${domain_name}
-NVIDIA_DRIVER_URL=${nvidia_driver_url}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
+
+#############
+# Variables #
+#############
+# REQUIRED: You must fill in this value before running the script
+PCOIP_REGISTRATION_CODE=""
+
+# OPTIONAL: You can use the default values set here or change them
+NVIDIA_DRIVER_URL="https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-12.0/NVIDIA-Linux-x86_64-460.32.03-grid-aws.run"
+TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
+
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
@@ -49,48 +70,19 @@ retry() {
     done
 }
 
-get_credentials() {
-    # Disable logging of secrets by wrapping the region with set +x and set -x
-    set +x
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]; then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: '$CUSTOMER_MASTER_KEY_ID'."
-
-        if [[ "$PCOIP_REGISTRATION_CODE" ]]; then
-            log "--> Decrypting pcoip_registration_code..."
-            PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$PCOIP_REGISTRATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
-        fi
-
-        log "--> Decrypting ad_service_account_password..."
-        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AD_SERVICE_ACCOUNT_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
-    fi
-    set -x
-}
-
 check_required_vars() {
     set +x
-    if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
-        log "--> ERROR: Missing Active Directory Service Account Password."
+    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
+        log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
     fi
+
     set -x
 
     if [[ "$missing_vars" = "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
-}
-
-# Update the hostname to match this instance's "Name" Tag
-update_hostname() {
-    TOKEN=`curl -X PUT "$METADATA_IP/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60"`
-    ID=`curl $METADATA_IP/latest/meta-data/instance-id -H "X-aws-ec2-metadata-token: $TOKEN"`
-    REGION=`curl $METADATA_IP/latest/dynamic/instance-identity/document/ -H "X-aws-ec2-metadata-token: $TOKEN" | jq -r .region`
-    NEW_HOSTNAME=`aws ec2 describe-tags --region $REGION --filters "Name=resource-id,Values=$ID" "Name=key,Values=Name" --output json | jq -r .Tags[0].Value`
-
-    sudo hostnamectl set-hostname $NEW_HOSTNAME.$DOMAIN_NAME
 }
 
 exit_and_restart() {
@@ -251,97 +243,6 @@ install_pcoip_agent() {
     set -x
 }
 
-join_domain() {
-    local dns_record_file="dns_record"
-    if [[ ! -f "$dns_record_file" ]]
-    then
-        log "--> DOMAIN NAME: $DOMAIN_NAME"
-        log "--> USERNAME: $AD_SERVICE_ACCOUNT_USERNAME"
-        log "--> DOMAIN CONTROLLER: $DOMAIN_CONTROLLER_IP"
-
-        # default hostname has the form ip-10-0-0-1.us-west-1.compute.internal,
-        # get the first part of it
-        VM_NAME=$(echo $(hostname) | sed -n 's/\(^[^.]*\).*/\1/p')
-
-        # Wait for AD service account to be set up
-        yum -y install openldap-clients
-        log "--> Waiting for AD account $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME to be available..."
-        set +x
-        until ldapwhoami -H ldap://$DOMAIN_CONTROLLER_IP -D $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME -w "$AD_SERVICE_ACCOUNT_PASSWORD" -o nettimeout=1 > /dev/null 2>&1
-        do
-            log "--> $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME not available yet, retrying in 10 seconds..."
-            sleep 10
-        done
-        set -x
-
-        # Join domain
-        log "--> Installing required packages to join domain..."
-        yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python
-
-        log "--> Joining the domain '$DOMAIN_NAME'..."
-        local retries=10
-
-        set +x
-        while true
-        do
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="$AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME" "$DOMAIN_NAME" --verbose >&2
-
-            local rc=$?
-            if [[ $rc -eq 0 ]]
-            then
-                log "--> Successfully joined domain '$DOMAIN_NAME'."
-                break
-            fi
-
-            if [ $retries -eq 0 ]
-            then
-                log "--> ERROR: Failed to join domain '$DOMAIN_NAME'."
-                return 106
-            fi
-
-            log "--> ERROR: Failed to join domain '$DOMAIN_NAME'. $retries retries remaining..."
-            retries=$((retries-1))
-            sleep 60
-        done
-        set -x
-
-        domainname "$VM_NAME.$DOMAIN_NAME"
-        echo "%$DOMAIN_NAME\\\\Domain\\ Admins ALL=(ALL) ALL" > /etc/sudoers.d/sudoers
-
-        log "--> Registering with DNS..."
-        DOMAIN_UPPER=$(echo "$DOMAIN_NAME" | tr '[:lower:]' '[:upper:]')
-        IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
-        set +x
-        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "$AD_SERVICE_ACCOUNT_USERNAME"@"$DOMAIN_UPPER"
-        set -x
-        touch "$dns_record_file"
-        echo "server $DOMAIN_CONTROLLER_IP" > "$dns_record_file"
-        echo "update add $VM_NAME.$DOMAIN_NAME 600 a $IP_ADDRESS" >> "$dns_record_file"
-        echo "send" >> "$dns_record_file"
-        nsupdate -g "$dns_record_file" > /var/sky
-
-        log "--> Configuring settings..."
-        sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf
-        sed -c -i "s/\\(use_fully_qualified_names *= *\\).*/\\1False/" /etc/sssd/sssd.conf
-        sed -c -i "s/\\(fallback_homedir *= *\\).*/\\1\\/home\\/%u/" /etc/sssd/sssd.conf
-
-        # sssd.conf configuration is required first before enabling sssd
-        log "--> Restarting messagebus service..."
-        if ! (systemctl restart messagebus)
-        then
-            log "--> ERROR: Failed to restart messagebus service."
-            return 106
-        fi
-
-        log "--> Enabling and starting sssd service..."
-        if ! (systemctl enable sssd --now)
-        then
-            log "--> ERROR: Failed to start sssd service."
-            return 106
-        fi
-    fi
-}
-
 # Open up firewall for PCoIP Agent. By default eth0 is in firewall zone "public"
 update_firewall() {
     log "--> Adding 'pcoip-agent' service to public firewall zone..."
@@ -374,8 +275,6 @@ set -x
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-get_credentials
-
 check_required_vars
 
 if [[ $RE_ENTER -eq 0 ]]
@@ -385,16 +284,12 @@ then
     yum -y update
     yum install -y wget awscli jq
 
-    update_hostname
-
     # Install GNOME and set it as the desktop
     log "--> Installing Linux GUI..."
     yum -y groupinstall "GNOME Desktop" "Graphical Administration Tools"
 
     log "--> Setting default to graphical target..."
     systemctl set-default graphical.target
-
-    join_domain
 
     remove_nouveau
 
@@ -405,7 +300,6 @@ else
     install_gpu_driver
 
     enable_persistence_mode
-
     
     if ! (rpm -q pcoip-agent-graphics)
     then
@@ -413,7 +307,7 @@ else
     else
         log "--> pcoip-agent-graphics is already installed."
     fi
-    
+
     update_firewall
 
     log "--> Installation is complete!"

@@ -1,18 +1,21 @@
-# Copyright (c) 2020 Teradici Corporation
+<powershell>
+# Copyright (c) 2021 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-$ADMIN_PASSWORD              = "${admin_password}"
-$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
-$AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
-$CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
-$DOMAIN_NAME                 = "${domain_name}"
-$NVIDIA_DRIVER_FILENAME      = "${nvidia_driver_filename}"
-$NVIDIA_DRIVER_URL           = "${nvidia_driver_url}"
-$PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
-$TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
+#############
+# Variables #
+#############
+# REQUIRED: You must fill in this value before running the script
+$PCOIP_REGISTRATION_CODE = ""
+
+# OPTIONAL: You can use the default values set here or change them
+$PCOIP_AGENT_VERSION = "latest"
+$NVIDIA_DRIVER_FILENAME = "461.09_grid_win10_server2016_server2019_64bit_AWS_SWL.exe"
+$NVIDIA_DRIVER_URL = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/grid-12.0/"
+$TERADICI_DOWNLOAD_TOKEN = "yj39yHtgj68Uv2Qf"
+
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 $NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
@@ -22,8 +25,6 @@ $PCOIP_AGENT_FILENAME     = "pcoip-agent-graphics_$PCOIP_AGENT_VERSION.exe"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("admin_password", "$ADMIN_PASSWORD")
-$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
 
 $global:restart = $false
 
@@ -44,40 +45,6 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
   
       Write-Information "Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
       Start-Sleep -Seconds $Interval
-    }
-}
-
-function Decrypt-Credentials {
-    "################################################################"
-    "Decrypting credentials..."
-    "################################################################"
-    try {
-        if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
-            "--> Decrypting pcoip_registration_code..."
-            $ByteAry = [System.Convert]::FromBase64String("$PCOIP_REGISTRATION_CODE")
-            $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-            $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-            $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-            $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
-        }
-
-        "--> Decrypting admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$ADMIN_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."admin_password" = $StreamRead.ReadToEnd()
-
-        "--> Decrypting ad_service_account_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$AD_SERVICE_ACCOUNT_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."ad_service_account_password" = $StreamRead.ReadToEnd()
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
     }
 }
 
@@ -174,7 +141,7 @@ function PCoIP-Agent-Register {
         return
     }
 
-    # License regisration may have intermittent failures
+    # License registration may have intermittent failures
     $Interval = 10
     $Timeout = 600
     $Elapsed = 0
@@ -257,106 +224,10 @@ function Install-Idle-Shutdown {
     }
 }
 
-function Join-Domain {
-    "################################################################"
-    "Joining domain '$DOMAIN_NAME'..."
-    "################################################################"
-
-    $obj = Get-WmiObject -Class Win32_ComputerSystem
-
-    if ($obj.PartOfDomain) {
-        if ($obj.Domain -ne "$DOMAIN_NAME") {
-            "--> ERROR: Trying to join '$DOMAIN_NAME' but computer is already joined to '$obj.Domain'."
-            exit 1
-        }
-
-        "--> Computer already part of the '$obj.Domain' domain."
-        return
-    } 
-
-    "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
-
-    $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
-    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
-    $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
-
-    # Read "Name" tag for hostname
-    $instance_id = Get-EC2InstanceMetadata -Category "InstanceId"
-    $host_name = Get-EC2Tag -Filter @{name="resource-id";value=$instance_id} | Select -ExpandProperty "value"
-
-    # Looping in case Domain Controller is not yet available
-    $Interval = 10
-    $Timeout = 1200
-    $Elapsed = 0
-
-    do {
-        Try {
-            $Retry = $false
-            # Don't do -Restart here because there is no log showing the restart
-            Add-Computer -DomainName "$DOMAIN_NAME" -NewName "$host_name" -Credential $cred -Verbose -Force -ErrorAction Stop
-        }
-
-        # The same Error, System.InvalidOperationException, is thrown in these cases: 
-        # - when Domain Controller not reachable (retry waiting for DC to come up)
-        # - when password is incorrect (retry because user might not be added yet)
-        # - when computer is already in domain
-        Catch [System.InvalidOperationException] {
-            $PSItem
-
-            # Sometimes domain join is successful but renaming the computer fails
-            if ($PSItem.FullyQualifiedErrorId -match "FailToRenameAfterJoinDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                Retry -Action {Rename-Computer -NewName "$host_name" -DomainCredential $cred -ErrorAction Stop}
-                break
-            }
-
-            if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                "--> WARNING: Computer is already joined to the domain '$DOMAIN_NAME'."
-                break
-            }
-
-            if ($Elapsed -ge $Timeout) {
-                "--> ERROR: Timeout reached, exiting..."
-                exit 1
-            }
-
-            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
-            $Retry = $true
-            Start-Sleep -Seconds $Interval
-            $Elapsed += $Interval
-        }
-        Catch {
-            $PSItem
-            exit 1
-        }
-    } while ($Retry)
-
-    $obj = Get-WmiObject -Class Win32_ComputerSystem
-    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "$DOMAIN_NAME") ) {
-        "--> ERROR: Failed to join '$DOMAIN_NAME'."
-        exit 1
-    }
-
-    "--> Successfully joined '$DOMAIN_NAME'."
-    $global:restart = $true
-}
-
-
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
     "--> $LOG_FILE exists. Assuming this provisioning script had ran, exiting..."
-
-    # TODO: Find out why DNS entry is not always added after domain join.
-    # Sometimes the DNS entry for this workstation is not added in the Domain
-    # Controller after joining the domain. Explicitly adding this machine to the DNS
-    # after a reboot. Doing this before a reboot would add a DNS entry with the old
-    # hostname.
-    "--> Registering with DNS..."
-    do {
-        Start-Sleep -Seconds 5
-        Register-DnsClient
-    } while (!$?)
-    "--> Successfully registered with DNS."
 
     exit 0
 }
@@ -372,15 +243,6 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
-    Decrypt-Credentials
-}
-
-net user Administrator $DATA."admin_password" /active:yes
-
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
 Nvidia-Install
@@ -393,11 +255,12 @@ if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
 
 Install-Idle-Shutdown
 
-Join-Domain
-
 if ($global:restart) {
     "--> Restart required. Restarting..."
     Restart-Computer -Force
 } else {
     "--> No restart required."
 }
+
+</powershell>
+<persist>true</persist>
