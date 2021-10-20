@@ -3,15 +3,24 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+$ADMIN_PASSWORD              = "${admin_password}"
+$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
+$AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
+$DOMAIN_NAME                 = "${domain_name}"
+$PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
+$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
+
 $LOG_FILE = "C:\Teradici\provisioning.log"
 
-$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/${teradici_download_token}/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/${pcoip_agent_version}"
-$PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_${pcoip_agent_version}.exe"
+$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
+$PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
-$DATA.Add("admin_password", "${admin_password}")
-$DATA.Add("ad_service_account_password", "${ad_service_account_password}")
+$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
+$DATA.Add("admin_password", "$ADMIN_PASSWORD")
+$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
 
 $global:restart = $false
 
@@ -40,9 +49,9 @@ function Decrypt-Credentials {
     "Decrypting credentials..."
     "################################################################"
     try {
-        if ( -not [string]::IsNullOrEmpty("${pcoip_registration_code}") ) {
+        if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
             "--> Decrypting pcoip_registration_code..."
-            $ByteAry = [System.Convert]::FromBase64String("${pcoip_registration_code}")
+            $ByteAry = [System.Convert]::FromBase64String("$PCOIP_REGISTRATION_CODE")
             $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
             $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
             $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
@@ -50,14 +59,14 @@ function Decrypt-Credentials {
         }
 
         "--> Decrypting admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("${admin_password}")
+        $ByteAry = [System.Convert]::FromBase64String("$ADMIN_PASSWORD")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
         $DATA."admin_password" = $StreamRead.ReadToEnd()
 
         "--> Decrypting ad_service_account_password..."
-        $ByteAry = [System.Convert]::FromBase64String("${ad_service_account_password}")
+        $ByteAry = [System.Convert]::FromBase64String("$AD_SERVICE_ACCOUNT_PASSWORD")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
@@ -202,13 +211,13 @@ function Install-Idle-Shutdown {
 
 function Join-Domain {
     "################################################################"
-    "Joining domain '${domain_name}'..."
+    "Joining domain '$DOMAIN_NAME'..."
     "################################################################"
     $obj = Get-WmiObject -Class Win32_ComputerSystem
 
     if ($obj.PartOfDomain) {
-        if ($obj.Domain -ne "${domain_name}") {
-            "--> ERROR: Trying to join '${domain_name}' but computer is already joined to '$obj.Domain'."
+        if ($obj.Domain -ne "$DOMAIN_NAME") {
+            "--> ERROR: Trying to join '$DOMAIN_NAME' but computer is already joined to '$obj.Domain'."
             exit 1
         }
 
@@ -216,9 +225,9 @@ function Join-Domain {
         return
     } 
 
-    "--> Computer not part of a domain. Joining ${domain_name}..."
+    "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
 
-    $username = "${ad_service_account_username}" + "@" + "${domain_name}"
+    $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
     $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
@@ -235,7 +244,7 @@ function Join-Domain {
         Try {
             $Retry = $false
             # Don't do -Restart here because there is no log showing the restart
-            Add-Computer -DomainName "${domain_name}" -NewName "$host_name" -Credential $cred -Verbose -Force -ErrorAction Stop
+            Add-Computer -DomainName "$DOMAIN_NAME" -NewName "$host_name" -Credential $cred -Verbose -Force -ErrorAction Stop
         }
 
         # The same Error, System.InvalidOperationException, is thrown in these cases: 
@@ -252,7 +261,7 @@ function Join-Domain {
             }
 
             if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                "--> WARNING: Computer is already joined to the domain '${domain_name}'."
+                "--> WARNING: Computer is already joined to the domain '$DOMAIN_NAME'."
                 break
             }
 
@@ -273,12 +282,12 @@ function Join-Domain {
     } while ($Retry)
 
     $obj = Get-WmiObject -Class Win32_ComputerSystem
-    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "${domain_name}") ) {
-        "--> ERROR: Failed to join '${domain_name}'."
+    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "$DOMAIN_NAME") ) {
+        "--> ERROR: Failed to join '$DOMAIN_NAME'."
         exit 1
     }
 
-    "Successfully joined '${domain_name}'"
+    "Successfully joined '$DOMAIN_NAME'"
     $global:restart = $true
 }
 
@@ -313,10 +322,10 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
+if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
     "--> Script is not using encryption for secrets."
 } else {
-    "--> Script is using encryption key ${customer_master_key_id} for secrets."
+    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
     Decrypt-Credentials
 }
 
@@ -326,7 +335,7 @@ net user Administrator $DATA."admin_password" /active:yes
 
 PCoIP-Agent-Install
 
-if ( -not [string]::IsNullOrEmpty("${pcoip_registration_code}") ) {
+if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
     PCoIP-Agent-Register
 }
 

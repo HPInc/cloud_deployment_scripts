@@ -253,7 +253,7 @@ install_cac() {
     log "  --domain ${domain_name}"
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
-    log "  --cam-url ${cas_mgr_url}"
+    log "  --casm-url ${cas_mgr_url}"
     log "  ${cac_extra_install_flags}"
 
     # Set pipefail option to return status of the connector install command
@@ -275,8 +275,8 @@ install_cac() {
 
     if [ "${cas_mgr_insecure}" ]
     then
-        log "  --cam-insecure"
-        args=$args"--cam-insecure "
+        log "  --casm-insecure"
+        args=$args"--casm-insecure "
     fi
 
     if [ "${external_pcoip_ip}" ]
@@ -296,7 +296,7 @@ install_cac() {
             --domain ${domain_name} \
             --retrieve-agent-state true \
             --sync-interval 5 \
-            --cam-url ${cas_mgr_url} \
+            --casm-url ${cas_mgr_url} \
             ${cac_extra_install_flags} \
             $args \
             2>&1 | tee -a $CAC_INSTALL_LOG
