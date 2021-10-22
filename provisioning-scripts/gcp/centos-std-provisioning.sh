@@ -5,27 +5,27 @@
 
 #!/bin/bash
 
-#############
-# Variables #
-#############
+######################
+# Required Variables #
+######################
 # REQUIRED: You must fill in this value before running the script
 PCOIP_REGISTRATION_CODE=""
+# NOTE: Temp password for user "centos". please change upon first login.
+TEMP_PASSWORD="SecuRe_pwd1"
 
-# OPTIONAL: You can use the default values set here or change them
-enable_workstation_idle_shutdown="true"
-minutes_idle_before_shutdown=240
-minutes_cpu_polling_interval=15
+######################
+# Optional Variables #
+######################
+# You can use the default value set here or change it
+AUTO_SHUTDOWN_IDLE_TIMER=240
+CPU_POLLING_INTERVAL=15
+ENABLE_AUTO_SHUTDOWN="true"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
-
-AUTO_SHUTDOWN_IDLE_TIMER=$minutes_idle_before_shutdown
-ENABLE_AUTO_SHUTDOWN=$enable_workstation_idle_shutdown
-CPU_POLLING_INTERVAL=$minutes_cpu_polling_interval
 
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 
-METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
@@ -159,6 +159,11 @@ then
 fi
 
 log "$(date)"
+
+# Add default user "centos" and give the user a password so a user can start 
+# a PCoIP session without having to first create password via SSH
+useradd centos
+echo centos:$TEMP_PASSWORD | chpasswd
 
 # Print all executed commands to the terminal
 set -x
