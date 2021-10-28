@@ -101,11 +101,6 @@ function PCoIP-Agent-Install {
     "Installing PCoIP graphics agent..."
     "################################################################"
 
-    if (PCoIP-Agent-is-Installed) {
-        "--> PCoIP graphics agent is already installed. Skipping..."
-        return
-    }
-
     $agentInstallerDLDirectory = "C:\Teradici"
     $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
     $destFile = $agentInstallerDLDirectory + '\' + $PCOIP_AGENT_FILENAME
@@ -247,7 +242,12 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
 
 Nvidia-Install
 
-PCoIP-Agent-Install
+if (PCoIP-Agent-is-Installed) {
+    "--> PCoIP graphics agent is already installed. Skipping..."
+} else {
+    PCoIP-Agent-Install
+}
+
 
 if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
     PCoIP-Agent-Register

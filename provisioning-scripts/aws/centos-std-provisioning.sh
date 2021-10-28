@@ -173,11 +173,11 @@ yum -y groupinstall "GNOME Desktop" "Graphical Administration Tools"
 log "--> Setting default to graphical target..."
 systemctl set-default graphical.target
 
-if ! (rpm -q pcoip-agent-standard)
+if (rpm -q pcoip-agent-standard)
 then
-    install_pcoip_agent
-else
     log "--> pcoip-agent-standard is already installed."
+else
+    install_pcoip_agent
 fi
 
 update_firewall

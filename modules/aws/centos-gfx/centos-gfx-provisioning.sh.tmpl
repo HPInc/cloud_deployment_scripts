@@ -406,12 +406,11 @@ else
 
     enable_persistence_mode
 
-    
-    if ! (rpm -q pcoip-agent-graphics)
+    if (rpm -q pcoip-agent-graphics)
     then
-        install_pcoip_agent
-    else
         log "--> pcoip-agent-graphics is already installed."
+    else
+        install_pcoip_agent
     fi
     
     update_firewall
