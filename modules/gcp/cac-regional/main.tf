@@ -12,7 +12,7 @@ locals {
 }
 
 resource "google_storage_bucket_object" "cac-provisioning-script" {
-  count = var.instance_count
+  count = var.instance_count == 0 ? 0 : 1
 
   bucket  = var.bucket_name
   name    = "${local.provisioning_script}-${var.gcp_region}"

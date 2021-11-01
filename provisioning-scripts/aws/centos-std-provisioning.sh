@@ -5,15 +5,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-#############
-# Variables #
-#############
+######################
+# Required Variables #
+######################
 # REQUIRED: You must fill in this value before running the script
 PCOIP_REGISTRATION_CODE=""
+# NOTE: Temp password for user "centos". please change upon first login.
+TEMP_PASSWORD="SecuRe_pwd1"
 
-# OPTIONAL: You can use the default value set here or change it
+######################
+# Optional Variables #
+######################
+# You can use the default value set here or change it
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
-
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
@@ -143,6 +147,10 @@ then
 fi
 
 log "$(date)"
+
+# Give the default user "centos" a password so a user can start 
+# a PCoIP session without having to first create password via SSH
+echo centos:$TEMP_PASSWORD | chpasswd
 
 # Print all executed commands to the terminal
 set -x
