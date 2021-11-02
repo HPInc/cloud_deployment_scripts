@@ -10,12 +10,15 @@
 ######################
 # REQUIRED: You must fill in this value before running the script
 PCOIP_REGISTRATION_CODE=""
-# NOTE: Temp password for user "centos". please change upon first login.
-TEMP_PASSWORD="SecuRe_pwd1"
 
 ######################
 # Optional Variables #
 ######################
+# NOTE: Fill both USERNAME and TEMP_PASSWORD to create login credential, 
+# otherwise please SSH into workstation to add user and set password.
+# Please change password upon first login.
+USERNAME=""
+TEMP_PASSWORD=""
 # You can use the default value set here or change it
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
@@ -148,15 +151,25 @@ fi
 
 log "$(date)"
 
-# Give the default user "centos" a password so a user can start 
-# a PCoIP session without having to first create password via SSH
-echo centos:$TEMP_PASSWORD | chpasswd
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
+
+# Add a user and give the user a password so a user can start 
+# a PCoIP session without having to first create password via SSH
+# if USERNAME and TEMP_PASSWORD were provided
+set +x
+if [[ "$TEMP_PASSWORD" && "$USERNAME" ]]
+then
+    useradd $USERNAME
+    echo $USERNAME:$TEMP_PASSWORD | chpasswd
+    log "--> User and TEMP_PASSWORD has been set."
+else
+    log "--> USERNAME or TEMP_PASSWORD not provided. Skip creating user..."
+fi
+set -x
 
 # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
 yum -y install epel-release
