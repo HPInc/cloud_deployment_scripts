@@ -20,7 +20,7 @@ $LOG_FILE = "C:\Teradici\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$KMS_CRYPTOKEY_ID:decrypt"
+$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
