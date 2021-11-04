@@ -3,11 +3,24 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-$LOG_FILE = "C:\Teradici\provisioning.log"
-$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/${teradici_download_token}/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/${pcoip_agent_version}"
-$PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_${pcoip_agent_version}.exe"
+$ADMIN_PASSWORD              = "${admin_password}"
+$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
+$AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$AUTO_SHUTDOWN_IDLE_TIMER    = ${minutes_idle_before_shutdown}
+$CPU_POLLING_INTERVAL        = ${minutes_cpu_polling_interval}
+$DOMAIN_NAME                 = "${domain_name}"
+$ENABLE_AUTO_SHUTDOWN        = [System.Convert]::ToBoolean("${enable_workstation_idle_shutdown}")
+$KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
+$PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
+$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+
+$LOG_FILE = "C:\Teradici\provisioning.log"
+$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
+$PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
+
+$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -16,13 +29,9 @@ $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instanc
 $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "${pcoip_registration_code}")
-$DATA.Add("admin_password", "${admin_password}")
-$DATA.Add("ad_service_account_password", "${ad_service_account_password}")
-
-$ENABLE_AUTO_SHUTDOWN     = [System.Convert]::ToBoolean("${enable_workstation_idle_shutdown}")
-$AUTO_SHUTDOWN_IDLE_TIMER = ${minutes_idle_before_shutdown}
-$CPU_POLLING_INTERVAL     = ${minutes_cpu_polling_interval}
+$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
+$DATA.Add("admin_password", "$ADMIN_PASSWORD")
+$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
 
 $global:restart = $false
 
@@ -73,21 +82,21 @@ function Decrypt-Credentials {
     try {
         "--> Decrypting pcoip_registration_code..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${pcoip_registration_code}")
+        $resource.Add("ciphertext", "$PCOIP_REGISTRATION_CODE")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
 
         "--> Decrypting admin_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${admin_password}")
+        $resource.Add("ciphertext", "$ADMIN_PASSWORD")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
 
         "--> Decrypting ad_service_account_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${ad_service_account_password}")
+        $resource.Add("ciphertext", "$AD_SERVICE_ACCOUNT_PASSWORD")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."ad_service_account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
@@ -107,11 +116,6 @@ function PCoIP-Agent-Install {
     "################################################################"
     "Installing PCoIP standard agent..."
     "################################################################"
-
-    if (PCoIP-Agent-is-Installed) {
-        "--> PCoIP standard agent is already installed. Skipping..."
-        return
-    }
 
     $agentInstallerDLDirectory = "C:\Teradici"
     $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
@@ -232,14 +236,14 @@ function Install-Idle-Shutdown {
 
 function Join-Domain {
     "################################################################"
-    "Joining domain '${domain_name}'..."
+    "Joining domain '$DOMAIN_NAME'..."
     "################################################################"
 
     $obj = Get-WmiObject -Class Win32_ComputerSystem
 
     if ($obj.PartOfDomain) {
-        if ($obj.Domain -ne "${domain_name}") {
-            "--> ERROR: Trying to join '${domain_name}' but computer is already joined to '$obj.Domain'."
+        if ($obj.Domain -ne "$DOMAIN_NAME") {
+            "--> ERROR: Trying to join '$DOMAIN_NAME' but computer is already joined to '$obj.Domain'."
             exit 1
         }
 
@@ -247,9 +251,9 @@ function Join-Domain {
         return
     } 
 
-    "--> Computer not part of a domain. Joining ${domain_name}..."
+    "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
 
-    $username = "${ad_service_account_username}" + "@" + "${domain_name}"
+    $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
     $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
@@ -262,7 +266,7 @@ function Join-Domain {
         Try {
             $Retry = $false
             # Don't do -Restart here because there is no log showing the restart
-            Add-Computer -DomainName "${domain_name}" -Credential $cred -Verbose -Force -ErrorAction Stop
+            Add-Computer -DomainName "$DOMAIN_NAME" -Credential $cred -Verbose -Force -ErrorAction Stop
         }
 
         # The same Error, System.InvalidOperationException, is thrown in these cases: 
@@ -273,7 +277,7 @@ function Join-Domain {
             $PSItem
 
             if ($PSItem.FullyQualifiedErrorId -match "AddComputerToSameDomain,Microsoft.PowerShell.Commands.AddComputerCommand") {
-                "--> WARNING: Computer is already joined to the domain '${domain_name}'."
+                "--> WARNING: Computer is already joined to the domain '$DOMAIN_NAME'."
                 break
             }
 
@@ -294,12 +298,12 @@ function Join-Domain {
     } while ($Retry)
 
     $obj = Get-WmiObject -Class Win32_ComputerSystem
-    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "${domain_name}") ) {
-        "--> ERROR: Failed to join '${domain_name}'."
+    if (!($obj.PartOfDomain) -or ($obj.Domain -ne "$DOMAIN_NAME") ) {
+        "--> ERROR: Failed to join '$DOMAIN_NAME'."
         exit 1
     }
 
-    "--> Successfully joined '${domain_name}'."
+    "--> Successfully joined '$DOMAIN_NAME'."
     $global:restart = $true
 
     # TODO: Find out why DNS entry is not always added after domain join.
@@ -331,10 +335,10 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
+if ([string]::IsNullOrWhiteSpace("$KMS_CRYPTOKEY_ID")) {
     "--> Script is not using encryption for secrets."
 } else {
-    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
+    "--> Script is using encryption key $KMS_CRYPTOKEY_ID for secrets."
     Decrypt-Credentials
 }
 
@@ -342,7 +346,11 @@ net user Administrator $DATA."admin_password" /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-PCoIP-Agent-Install
+if (PCoIP-Agent-is-Installed) {
+    "--> PCoIP standard agent is already installed. Skipping..."
+} else {
+    PCoIP-Agent-Install
+}
 
 PCoIP-Agent-Register
 

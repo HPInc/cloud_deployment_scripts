@@ -1,9 +1,9 @@
-#!/bin/bash
-
 # Copyright (c) 2021 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+#!/bin/bash
 
 ######################
 # Required Variables #
@@ -20,12 +20,14 @@ PCOIP_REGISTRATION_CODE=""
 USERNAME=""
 TEMP_PASSWORD=""
 # You can use the default value set here or change it
+AUTO_SHUTDOWN_IDLE_TIMER=240
+CPU_POLLING_INTERVAL=15
+ENABLE_AUTO_SHUTDOWN="true"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
-exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 LOG_FILE="/var/log/teradici/provisioning.log"
-METADATA_IP="http://169.254.169.254"
+
 TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
@@ -33,33 +35,29 @@ log() {
     echo "[$(date)] $message"
 }
 
-# Try command until zero exit status or exit(1) when non-zero status after max tries
 retry() {
-    local counter="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
-    local count=0
+    local retries=0
+    local max_retries=3
+    until [[ $retries -ge $max_retries ]]
+    do  
+    # Break if command succeeds, or log then retry if command fails.
+        $@ && break || {
 
-    while [ true ]
-    do
-        ((count=count+1))
-        eval $command && break
-        if [ $count -gt $counter ]
-        then
-            log "$err_message"
-            return 1
-        else
-            log "$log_message Retrying in $interval seconds"
-            sleep $interval
-        fi
+            log "--> Failed to run command. $@"
+            log "--> Retries left... $(( $max_retries - $retries ))"
+            ((retries++))
+            sleep 10;
+        }
     done
+
+    if [[ $retries -eq $max_retries ]]
+    then
+        return 1
+    fi
 }
 
 check_required_vars() {
     set +x
-
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
@@ -89,53 +87,66 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry   3 \
-            5 \
-            "yum install -y usb-vhci" \
-            "--> Non-zero exit status." \
-            "--> Warning: Failed to install usb-vhci."
+    retry "yum install -y usb-vhci"
+    if [ $? -ne 0 ]; then
+        log "--> Warning: Failed to install usb-vhci."
+    fi
+    log "--> usb-vhci successfully installed."
 
     log "--> Installing PCoIP standard agent..."
-    retry   3 \
-            5 \
-            "yum -y install pcoip-agent-standard" \
-            "--> Non-zero exit status." \
-            "--> ERROR: Failed to download PCoIP agent."
-    if [ $? -eq 1 ]; then
+    retry yum -y install pcoip-agent-standard
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to install PCoIP agent."
         exit 1
     fi
     log "--> PCoIP agent installed successfully."
 
+    log "--> Registering PCoIP agent license..."
+    n=0
     set +x
-    if [[ "$PCOIP_REGISTRATION_CODE" ]]; then
-        log "--> Registering PCoIP agent license..."
-        n=0
-        while true; do
-            /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
-            n=$[$n+1]
+    while true; do
+        /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
+        n=$[$n+1]
 
-            if [ $n -ge 10 ]; then
-                log "--> ERROR: Failed to register PCoIP agent after $n tries."
-                exit 1
-            fi
+        if [ $n -ge 10 ]; then
+            log "--> ERROR: Failed to register PCoIP agent after $n tries."
+            exit 1
+        fi
 
-            log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
-            sleep 10
-        done
-        log "--> PCoIP agent registered successfully."
-
-    else
-        log "--> No PCoIP Registration Code provided. Skipping PCoIP agent registration..."
-    fi
+        log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
+        sleep 10
+    done
     set -x
+    log "--> PCoIP agent registered successfully."
 }
 
-# Open up firewall for PCoIP Agent. By default eth0 is in firewall zone "public"
-update_firewall() {
-    log "--> Adding 'pcoip-agent' service to public firewall zone..."
-    firewall-offline-cmd --zone=public --add-service=pcoip-agent
-    systemctl enable firewalld
-    systemctl start firewalld
+install_idle_shutdown() {
+    log "--> Installing idle shutdown..."
+    mkdir /tmp/idleShutdown
+
+    retry wget "https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh" -O /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh
+
+    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
+
+    log "--> Setting auto shutdown idle timer to $AUTO_SHUTDOWN_IDLE_TIMER minutes..."
+    INSTALL_OPTS="--idle-timer $AUTO_SHUTDOWN_IDLE_TIMER"
+    if [[ "$ENABLE_AUTO_SHUTDOWN" = "false" ]]; then
+        INSTALL_OPTS="$INSTALL_OPTS --disabled"
+    fi
+
+    retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS
+
+    exitCode=$?
+    if [[ $exitCode -ne 0 ]]; then
+        log "--> ERROR: Failed to install idle shutdown."
+        exit 1
+    fi
+
+    if [[ $CPU_POLLING_INTERVAL -ne 15 ]]; then
+        log "--> Setting CPU polling interval to $CPU_POLLING_INTERVAL minutes..."
+        sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${CPU_POLLING_INTERVAL}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
+        systemctl daemon-reload
+    fi
 }
 
 if (rpm -q pcoip-agent-standard); then
@@ -171,12 +182,11 @@ else
 fi
 set -x
 
-# EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
-yum -y install epel-release
-yum -y update
-yum install -y wget awscli jq
-
 check_required_vars
+
+yum -y update
+
+yum install -y wget
 
 # Install GNOME and set it as the desktop
 log "--> Installing Linux GUI..."
@@ -193,7 +203,7 @@ else
     install_pcoip_agent
 fi
 
-update_firewall
+install_idle_shutdown
 
 log "--> Installation is complete!"
 

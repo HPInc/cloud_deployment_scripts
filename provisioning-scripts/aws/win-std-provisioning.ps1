@@ -54,10 +54,6 @@ function PCoIP-Agent-Install {
     "################################################################"
     "Installing PCoIP graphics agent..."
     "################################################################"
-    if (PCoIP-Agent-is-Installed) {
-        "--> PCoIP standard agent is already installed. Skipping..."
-        return
-    }
 
     $agentInstallerDLDirectory = "C:\Teradici"
     $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
@@ -197,7 +193,12 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-PCoIP-Agent-Install
+if (PCoIP-Agent-is-Installed) {
+    "--> PCoIP standard agent is already installed. Skipping..."
+} else {
+    PCoIP-Agent-Install
+}
+
 
 if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
     PCoIP-Agent-Register
