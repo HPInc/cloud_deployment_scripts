@@ -152,7 +152,7 @@ variable "cas_mgr_disk_size_gb" {
 
 variable "cas_mgr_disk_image" {
   description = "Disk image for the CAS Manager"
-  default     = "projects/centos-cloud/global/images/centos-8-v20211104"
+  default     = "projects/centos-cloud/global/images/centos-8-v20211105"
 }
 
 variable "cas_mgr_admin_user" {
@@ -425,7 +425,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20211104"
+  default     = "projects/centos-cloud/global/images/centos-7-v20211105"
 }
 
 variable "centos_std_instance_count_list" {
@@ -450,7 +450,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20211104"
+  default     = "projects/centos-cloud/global/images/centos-7-v20211105"
 }
 
 variable "centos_admin_user" {
