@@ -26,15 +26,16 @@ The top level Terraform configuration that creates entire deployments.
 Description and instructions for deployments on different clouds.
 
 ## modules/
-The building blocks of deployments, e.g. a Domain Controller, a Cloud Access
-Connector, a Workstation, etc.
+The building blocks of deployments, e.g. a Domain Controller, a Cloud Access Connector, a Workstation, etc.
+
+## provisioning-scripts/
+Contains provisioning scripts to run when creating an individual virtual machine to configure the instance for PCoIP access. These scripts are similar to the scripts used to set up remote workstations under the modules/ directory, except certain features are removed, such as KMS decryption and domain joining. These scripts are meant to be used as the "User data" script in AWS or "Startup script" in GCP when creating a new instance.
 
 ## quickstart/
-Contains the Quickstart Tutorial and Python scripts for a quick deployment using Google Cloud Shell.
+Contains Quickstart scripts, which are Python scripts for quick deployment of the single-connector deployment on GCP or AWS. The Python scripts take care of preparing for some of the requirements such as creating SSH keys, creating service accounts and enabling cloud services.
 
 ## tools/
-Various scripts to help with Terraform deployments.  e.g. a Python script to
-generate random users for an Active Directory in a CSV file.
+Various scripts to help with Terraform deployments.  e.g. a Python script to generate random users for an Active Directory in a CSV file.
 
 # Maintainer
 If any security issues or bugs are found, or if there are feature requests, please contact Sherman Yin at syin@teradici.com
