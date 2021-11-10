@@ -182,7 +182,7 @@ variable "lls_ami_owner" {
 
 variable "lls_ami_name" {
   description = "Name of the CentOS AMI to run PCoIP License Server on"
-  default     = "CentOS 8.3.2011 x86_64"
+  default     = "CentOS 8.4.2105 x86_64"
 }
 
 variable "lls_admin_password" {
@@ -229,7 +229,7 @@ variable "cas_mgr_ami_owner" {
 
 variable "cas_mgr_ami_name" {
   description = "Name of the AMI to create CAS Manager from"
-  default     = "CentOS 8.3.2011 x86_64"
+  default     = "CentOS 8.4.2105 x86_64"
 }
 
 variable "cas_mgr_admin_password" {

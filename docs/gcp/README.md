@@ -90,7 +90,7 @@ Path variables in `terraform.tfvars` must be absolute and are dependent on the h
 Save `terraform.tfvars.sample` as `terraform.tfvars` in the same directory, and fill out the required and optional variables.
 
 #### Workstation IdleShutDown
-Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `enable_workstation_idle_shutdown` (default: `true`), `minutes_idle_before_shutdown` (default: `240`), and `minutes_cpu_polling_interval` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/pcoip_cloud_access_manager/CACv2/reference/install_configure_cam_idle_shutdown).
+Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `enable_workstation_idle_shutdown` (default: `true`), `minutes_idle_before_shutdown` (default: `240`), and `minutes_cpu_polling_interval` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/cas_manager_as_a_service/reference/install_configure_cam_idle_shutdown/).
 
 ### (Optional) Encrypting Secrets
 `terraform.tfvars` variables include sensitive information such as Active Directory passwords, PCoIP registration key and the CAS Manager Deployment Service Account credentials file. These secrets are stored in the local files `terraform.tfvars` and `terraform.tfstate`, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
