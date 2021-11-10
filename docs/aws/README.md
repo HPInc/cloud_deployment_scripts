@@ -11,6 +11,7 @@
     - [AWS Setup](#aws-setup)
     - [CAS Manager as a Service Setup](#cas-manager-as-a-service-setup)
     - [Customizing terraform.tfvars](#customizing-terraformtfvars)
+      - [Workstation IdleShutDown](#workstation-idleshutdown)
     - [(Optional) Encrypting Secrets](#optional-encrypting-secrets)
       - [Encryption Using Python Script](#encryption-using-python-script)
       - [Manual Encryption](#manual-encryption)
@@ -83,6 +84,9 @@ Path variables in `terraform.tfvars` must be absolute and are dependent on the h
 - On Windows systems, the default Windows backslash \ separator must be changed to forward slash as the path segment separator. `aws_credentials_file = "C:/path/to/aws_key"`
 
 Save `terraform.tfvars.sample` as `terraform.tfvars` in the same directory, and fill out the required and optional variables.
+
+#### Workstation IdleShutDown
+Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `idle_shutdown_enable` (default: `true`), `idle_shutdown_minutes_idle_before_shutdown` (default: `240`), and `idle_shutdown_polling_interval_minutes` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/cas_manager_as_a_service/reference/install_configure_cam_idle_shutdown/).
 
 ### (Optional) Encrypting Secrets
 `terraform.tfvars` variables include sensitive information such as Active Directory passwords, PCoIP registration key and the CAS Manager Deployment Service Account credentials file. These secrets are stored in the local files `terraform.tfvars` and `terraform.tfstate`, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket.

@@ -10,9 +10,6 @@
 $PCOIP_REGISTRATION_CODE = ""
 
 # OPTIONAL: You can use the default values set here or change them
-$AUTO_SHUTDOWN_IDLE_TIMER         = 240
-$CPU_POLLING_INTERVAL             = 15
-$ENABLE_WORKSTATION_IDLE_SHUTDOWN = "true"
 $NVIDIA_DRIVER_FILENAME           = "461.09_grid_win10_server2016_server2019_64bit_international.exe"
 $NVIDIA_DRIVER_URL                = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID12.0/"
 $PCOIP_AGENT_VERSION              = "latest"
@@ -166,62 +163,6 @@ function PCoIP-Agent-Register {
     "--> PCoIP agent registered successfully."
 }
 
-function Cam-Idle-Shutdown-is-Installed {
-    Get-Service "CamIdleShutdown"
-    return $?
-}
-
-function Install-Idle-Shutdown {
-    "################################################################"
-    "Installing Idle Shutdown..."
-    "################################################################"
-    $path = "C:\Program Files\Teradici\PCoIP Agent\bin"
-    cd $path
-
-    # Skip if already installed
-    if (Cam-Idle-Shutdown-is-Installed){  
-        "--> Idle shutdown is already installed. Skipping..."
-        return 
-    }
-
-    # Install service and check for success
-    $ret = .\IdleShutdownAgent.exe -install
-    if( !$? ) {
-        "ERROR: failed to install idle shutdown."
-        exit 1
-    }
-    "--> Idle shutdown is successfully installed."
-
-    $idleShutdownRegKeyPath       = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
-    $idleTimerRegKeyName          = "MinutesIdleBeforeShutdown"
-    $cpuPollingIntervalRegKeyName = "PollingIntervalMinutes"
-
-    if (!(Test-Path $idleShutdownRegKeyPath)) {
-        New-Item -Path $idleShutdownRegKeyPath -Force
-    }
-    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
-    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $CPU_POLLING_INTERVAL -PropertyType DWORD -Force
-
-    if (![System.Convert]::ToBoolean("${ENABLE_WORKSTATION_IDLE_SHUTDOWN}")) {
-        $svc = Get-Service -Name "CAMIdleShutdown"
-        "Attempting to disable CAMIdleShutdown..."
-        try {
-            if ($svc.Status -ne "Stopped") {
-                Start-Sleep -s 15
-                $svc.Stop()
-                $svc.WaitForStatus("Stopped", 180)
-            }
-            Set-Service -InputObject $svc -StartupType "Disabled"
-            $status = if ($?) { "succeeded" } else { "failed" }
-            $msg = "Disabling CAMIdleShutdown {0}." -f $status
-            "$msg"
-        }
-        catch {
-            throw "ERROR: Failed to disable CAMIdleShutdown service."
-        }
-    }
-}
-
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
     "--> $LOG_FILE exists. Assuming this provisioning script has run, exiting..."
@@ -250,8 +191,6 @@ if (PCoIP-Agent-is-Installed) {
 }
 
 PCoIP-Agent-Register
-
-Install-Idle-Shutdown
 
 if ($global:restart) {
     "--> Restart required. Restarting..."

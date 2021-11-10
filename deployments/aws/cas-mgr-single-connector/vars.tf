@@ -425,3 +425,18 @@ variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
 }
+
+variable "idle_shutdown_enable" {
+  description = "Enable auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "idle_shutdown_minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
+variable "idle_shutdown_polling_interval_minutes" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
+}

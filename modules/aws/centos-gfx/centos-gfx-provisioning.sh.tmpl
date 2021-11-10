@@ -10,6 +10,9 @@ AWS_REGION=${aws_region}
 CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
+IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
+IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
+IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
 NVIDIA_DRIVER_URL=${nvidia_driver_url}
 PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
@@ -251,6 +254,39 @@ install_pcoip_agent() {
     set -x
 }
 
+install_idle_shutdown() {
+    log "--> Installing idle shutdown..."
+    mkdir /tmp/idleShutdown
+
+    retry 3 \
+          5 \
+          "curl 'https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh' --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
+          "-->" \
+          "--> ERROR: Failed to download Install-Idle-Shutdown.sh."
+
+    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
+
+    log "--> Setting auto shutdown idle timer to $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN minutes..."
+    INSTALL_OPTS="--idle-timer $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN"
+    if [[ "$IDLE_SHUTDOWN_ENABLE" = "false" ]]; then
+        INSTALL_OPTS="$INSTALL_OPTS --disabled"
+    fi
+
+    retry 3 5 "/tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS"
+
+    exitCode=$?
+    if [[ $exitCode -ne 0 ]]; then
+        log "--> ERROR: Failed to install idle shutdown."
+        exit 1
+    fi
+
+    if [[ $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -ne 15 ]]; then
+        log "--> Setting CPU polling interval to $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES minutes..."
+        sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
+        systemctl daemon-reload
+    fi
+}
+
 join_domain() {
     local dns_record_file="dns_record"
     if [[ ! -f "$dns_record_file" ]]
@@ -383,7 +419,7 @@ then
     # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
     yum -y install epel-release
     yum -y update
-    yum install -y wget awscli jq
+    yum install -y awscli jq
 
     update_hostname
 
@@ -414,6 +450,8 @@ else
     fi
     
     update_firewall
+
+    install_idle_shutdown
 
     log "--> Installation is complete!"
 
