@@ -20,9 +20,6 @@ PCOIP_REGISTRATION_CODE=""
 USERNAME=""
 TEMP_PASSWORD=""
 # You can use the default value set here or change it
-AUTO_SHUTDOWN_IDLE_TIMER=240
-CPU_POLLING_INTERVAL=15
-ENABLE_AUTO_SHUTDOWN="true"
 NVIDIA_DRIVER_URL="https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID12.0/NVIDIA-Linux-x86_64-460.32.03-grid.run"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
@@ -206,35 +203,6 @@ install_pcoip_agent() {
     log "--> PCoIP agent registered successfully."
 }
 
-install_idle_shutdown() {
-    log "--> Installing idle shutdown..."
-    mkdir /tmp/idleShutdown
-
-    retry wget "https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh" -O /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh
-
-    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
-
-    log "--> Setting auto shutdown idle timer to $AUTO_SHUTDOWN_IDLE_TIMER minutes..."
-    INSTALL_OPTS="--idle-timer $AUTO_SHUTDOWN_IDLE_TIMER"
-    if [[ "$ENABLE_AUTO_SHUTDOWN" = "false" ]]; then
-        INSTALL_OPTS="$INSTALL_OPTS --disabled"
-    fi
-
-    retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS
-
-    exitCode=$?
-    if [[ $exitCode -ne 0 ]]; then
-        log "--> ERROR: Failed to install idle shutdown."
-        exit 1
-    fi
-
-    if [[ $CPU_POLLING_INTERVAL -ne 15 ]]; then
-        log "--> Setting CPU polling interval to $CPU_POLLING_INTERVAL minutes..."
-        sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${CPU_POLLING_INTERVAL}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
-        systemctl daemon-reload
-    fi
-}
-
 # A flag to indicate if this is run from reboot
 RE_ENTER=0
 
@@ -302,8 +270,6 @@ else
     else
         install_pcoip_agent
     fi
-
-    install_idle_shutdown
 
     log "--> Installation is complete!"
 
