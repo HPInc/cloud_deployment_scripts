@@ -8,6 +8,9 @@ $AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
+$IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
+$IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
+$IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
@@ -161,12 +164,6 @@ function Install-Idle-Shutdown {
     $path = "C:\Program Files\Teradici\PCoIP Agent\bin"
     cd $path
 
-    # Skip if already installed
-    if (Cam-Idle-Shutdown-is-Installed){  
-        "--> Idle shutdown is already installed. Skipping..."
-        return 
-    }
-
     # Install service and check for success
     $ret = .\IdleShutdownAgent.exe -install
     if( !$? ) {
@@ -182,10 +179,10 @@ function Install-Idle-Shutdown {
     if (!(Test-Path $idleShutdownRegKeyPath)) {
         New-Item -Path $idleShutdownRegKeyPath -Force
     }
-    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $AUTO_SHUTDOWN_IDLE_TIMER -PropertyType DWORD -Force
-    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $CPU_POLLING_INTERVAL -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -PropertyType DWORD -Force
 
-    if (!$ENABLE_AUTO_SHUTDOWN) {
+    if (!$IDLE_SHUTDOWN_ENABLE) {
         $svc = Get-Service -Name "CAMIdleShutdown"
         "Attempting to disable CAMIdleShutdown..."
         try {
@@ -339,7 +336,11 @@ if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
     PCoIP-Agent-Register
 }
 
-Install-Idle-Shutdown
+if (Cam-Idle-Shutdown-is-Installed){  
+    "--> Idle shutdown is already installed. Skipping..."
+} else {
+    Install-Idle-Shutdown
+}
 
 Join-Domain
 
