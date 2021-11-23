@@ -74,7 +74,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20211012"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20211115"
 }
 
 variable "dc_admin_password" {
@@ -162,7 +162,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20211103"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20211115"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -273,17 +273,17 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
-variable "enable_workstation_idle_shutdown" {
+variable "idle_shutdown_enable" {
   description = "Enable auto idle shutdown for Workstations"
   default     = true
 }
 
-variable "minutes_idle_before_shutdown" {
+variable "idle_shutdown_minutes_idle_before_shutdown" {
   description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
   default     = 240
 }
 
-variable "minutes_cpu_polling_interval" {
+variable "idle_shutdown_polling_interval_minutes" {
   description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
   default     = 15
 }
@@ -320,7 +320,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20211012"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20211115"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -350,7 +350,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20211012"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20211115"
 }
 
 variable "win_std_pcoip_agent_version" {

@@ -40,7 +40,7 @@ SERVICE_QUOTA_REQUIREMENTS = {
     'ec2': {
         "EC2-VPC Elastic IPs": 1,
         "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 0,
-        "All G Spot Instance Requests": 0
+        "All G and VT Spot Instance Requests": 0
     }
 }
 
@@ -158,7 +158,7 @@ def configurations_get(ws_types, username, quickstart_path):
 
         if requirement == "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests":
             return instance_requests_count(['a','c','d','h','i','m','r','t','z'])
-        if requirement == "All G Spot Instance Requests":
+        if requirement == "All G and VT Spot Instance Requests":
             return instance_requests_count(['g'])
 
         function = QUOTA_CHECK_MAPPING[requirement]['function']
@@ -243,7 +243,7 @@ def configurations_get(ws_types, username, quickstart_path):
             for r in requirements[service]:
                 remaining_service_quota = available_service_quota[service][r] - required_service_quota[service][r]
                 if requirements[service][r] > remaining_service_quota:
-                    # For clarity (ex. Required 4 vCPUs for All G Spot Instance Requests but only 2 allowed)
+                    # For clarity (ex. Required 4 vCPUs for All G and VT Spot Instance Requests but only 2 allowed)
                     if "Spot Instance Requests" in r:
                         error_response += f"    Required {requirements[service][r]} vCPUs for {r} but only {remaining_service_quota} allowed.\n"
                     else:

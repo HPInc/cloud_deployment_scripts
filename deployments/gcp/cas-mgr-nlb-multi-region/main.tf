@@ -227,9 +227,9 @@ module "win-gfx" {
   subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
-  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
-  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
-  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
   network_tags     = [
     google_compute_firewall.allow-icmp.name,
@@ -269,9 +269,9 @@ module "win-std" {
   subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
-  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
-  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
-  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
   network_tags     = [
     google_compute_firewall.allow-icmp.name,
@@ -308,9 +308,9 @@ module "centos-gfx" {
   subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
-  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
-  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
-  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
   network_tags     = [
     google_compute_firewall.allow-icmp.name,
@@ -352,9 +352,9 @@ module "centos-std" {
   subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
-  enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown
-  minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown
-  minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
   network_tags     = [
     google_compute_firewall.allow-icmp.name,

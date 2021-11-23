@@ -41,9 +41,9 @@ resource "google_storage_bucket_object" "centos-std-provisioning-script" {
       pcoip_registration_code     = var.pcoip_registration_code,
       teradici_download_token     = var.teradici_download_token,
 
-      enable_workstation_idle_shutdown = var.enable_workstation_idle_shutdown,
-      minutes_cpu_polling_interval     = var.minutes_cpu_polling_interval,
-      minutes_idle_before_shutdown     = var.minutes_idle_before_shutdown,
+      idle_shutdown_enable                       = var.idle_shutdown_enable,
+      idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown,
+      idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes,
     }
   )
 }

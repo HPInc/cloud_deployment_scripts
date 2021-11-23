@@ -290,6 +290,10 @@ module "win-gfx" {
     aws_security_group.allow-rdp.id,
   ]
 
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
+
   instance_count = var.win_gfx_instance_count
   instance_name  = var.win_gfx_instance_name
   instance_type     = var.win_gfx_instance_type
@@ -326,6 +330,10 @@ module "win-std" {
     aws_security_group.allow-rdp.id,
   ]
 
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
+
   instance_count = var.win_std_instance_count
   instance_name  = var.win_std_instance_name
   instance_type     = var.win_std_instance_type
@@ -361,6 +369,10 @@ module "centos-gfx" {
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
+
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
   instance_count = var.centos_gfx_instance_count
   instance_name  = var.centos_gfx_instance_name
@@ -399,6 +411,10 @@ module "centos-std" {
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
+
+  idle_shutdown_enable                       = var.idle_shutdown_enable
+  idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
+  idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
   instance_count = var.centos_std_instance_count
   instance_name  = var.centos_std_instance_name

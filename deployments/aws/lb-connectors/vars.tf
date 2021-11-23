@@ -79,7 +79,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.10.13"
+  default     = "Windows_Server-2019-English-Full-Base-2021.11.10"
 }
 
 variable "domain_name" {
@@ -172,7 +172,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20211027"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20211115"
 }
 
 variable "cac_version" {
@@ -310,7 +310,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.10.13"
+  default     = "Windows_Server-2019-English-Full-Base-2021.11.10"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -345,7 +345,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2021.10.13"
+  default     = "Windows_Server-2019-English-Full-Base-2021.11.10"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -418,4 +418,19 @@ variable "centos_std_ami_name" {
 variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
+}
+
+variable "idle_shutdown_enable" {
+  description = "Enable auto idle shutdown for Workstations"
+  default     = true
+}
+
+variable "idle_shutdown_minutes_idle_before_shutdown" {
+  description = "Minimum idle time for Workstations before auto idle shutdown, must be between 5 and 10000"
+  default     = 240
+}
+
+variable "idle_shutdown_polling_interval_minutes" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
+  default     = 15
 }

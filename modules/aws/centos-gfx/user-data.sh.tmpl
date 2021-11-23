@@ -56,7 +56,22 @@ then
     if [[ ! $(which aws) ]]
     then
         # Install AWS CLI directly since it might not be in some Yum Repo (eg. CentOS 8)
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        attempts=0
+        max_attempts=3
+        while [[ $attempts -lt $max_attempts ]]
+        do
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+                -o "awscliv2.zip" \
+                --max-time 60 &&
+                break
+            sleep 5
+            ((attempts++))
+        done
+        if [[ $attempts -eq $max_attempts ]]
+        then
+            log "Failed to download AWS CLI after $attempts attempts, aborting."
+            exit 1
+        fi
         unzip awscliv2.zip
         ./aws/install
 
@@ -68,7 +83,7 @@ then
     # successful command returns a string "access_key ****************XXXX iam-role"
     # missing access key or IAM credentials returns an empty string ""
     until [ ! -z "$(aws configure list | grep access_key | grep iam-role)" ]
-    do 
+    do
         log "Checking for IAM credentials..."
         sleep 5
     done

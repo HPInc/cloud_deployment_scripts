@@ -36,7 +36,7 @@
         "name": "Graphics CentOS",
         "service_requirements": {
             "ec2": {
-                "All G Spot Instance Requests": 4
+                "All G and VT Spot Instance Requests": 4
             },
             "vpc": {
                 "Network interfaces per Region": 1
@@ -58,7 +58,7 @@
         "name": "Graphics Windows",
         "service_requirements": {
             "ec2": {
-                "All G Spot Instance Requests": 4
+                "All G and VT Spot Instance Requests": 4
             },
             "vpc": {
                 "Network interfaces per Region": 1
