@@ -45,9 +45,9 @@ retry() {
 }
 
 install_prereqs() {
-    log "--> Installing dos2unix, python3..."
+    log "--> Installing dos2unix, python3, firewalld..."
     yum update -y
-    yum install -y dos2unix python3
+    yum install -y dos2unix python3 firewalld
 
     if [ $? -ne 0 ]
     then
@@ -145,15 +145,21 @@ check_required_vars() {
 }
 
 configure_firewall(){
-    firewall-cmd --permanent --add-port=6443/tcp # virtual network flannel
-    firewall-cmd --permanent --zone=trusted --add-source=10.42.0.0/16 # This subnet is for the pods
-    firewall-cmd --permanent --zone=trusted --add-source=10.43.0.0/16 # This subnet is for the services
-    firewall-cmd --reload
+    # Ran into the following dbus error when using firewall-cmd. Using firewall-offline-cmd as a workaround.
+    # ERROR:dbus.proxies:Introspect error on :1.30:/org/fedoraproject/FirewallD1: dbus.exceptions.DBusException: org.freedesktop.DBus.Error.NoReply
+
+    firewall-offline-cmd --set-default-zone trusted
+    firewall-offline-cmd --add-port=6443/tcp # virtual network flannel
+    firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 # This subnet is for the pods
+    firewall-offline-cmd --zone=trusted --add-source=10.43.0.0/16 # This subnet is for the services
+
+    systemctl enable firewalld
+    systemctl start firewalld
 }
 
 add_cas_mgr_repo() {
     log "--> Adding CAS Manager repo..."
-    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | bash
+    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
     yum repolist --enabled teradici-cas-manager*
 }
 
@@ -203,7 +209,7 @@ cas_mgr_setup() {
     log "  --deployment_name $CAS_MGR_DEPLOYMENT_NAME"
     log "  --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file}"
     log "  --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME"
-    log "  --password <CAS Manager GUI Administrator Password"
+    log "  --password <CAS Manager GUI Administrator Password>"
     log "  --reg_code <PCoIP Registration Code>"
     log "  $optional_args"
 

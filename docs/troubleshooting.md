@@ -62,6 +62,10 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log (duplicate log from provisioning.log)    |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
+| cas-mgr          | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
+|                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
+|                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
+|                  |               | /var/log/cas-mgr/install.log                | (duplicate log from cas-mgr-install.log )                   |
 | centos-gfx       | centos        | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
@@ -95,6 +99,10 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
 |                  |               | /var/log/cloud-init-output.log              | Console output log (duplicate log from provisioning.log)    |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
+| cas-mgr          | cas_admin     | /var/log/messages                           | Detailed system log for startup and provisioning            |
+|                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
+|                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
+|                  |               | /var/log/cas-mgr/install.log                | (duplicate log from cas-mgr-install.log )                   |
 | centos-gfx       | cas_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
