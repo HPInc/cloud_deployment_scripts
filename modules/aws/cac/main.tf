@@ -67,12 +67,13 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "",
       cas_mgr_script              = local.cas_mgr_script,
       cas_mgr_url                 = var.cas_mgr_url,
+      cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       lls_ip                      = var.lls_ip,
-      ssl_key                     = local.ssl_key_filename,
       ssl_cert                    = local.ssl_cert_filename,
+      ssl_key                     = local.ssl_key_filename,
       teradici_download_token     = var.teradici_download_token,
     }
   )
@@ -124,6 +125,12 @@ data "aws_kms_key" "encryption-key" {
 
 data "aws_iam_policy_document" "cac-policy-doc" {
   statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+  
+  statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
@@ -142,8 +149,17 @@ data "aws_iam_policy_document" "cac-policy-doc" {
   }
 
   statement {
-    actions   = ["ec2:DescribeTags"]
-    resources = ["*"]
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
@@ -228,3 +244,10 @@ resource "aws_instance" "cac" {
     Name = "${local.prefix}${var.host_name}-${count.index}"
   }
 }
+
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = length(local.instance_info_list)
+
+  name = "${local.prefix}${var.host_name}-${count.index}"
+}
+

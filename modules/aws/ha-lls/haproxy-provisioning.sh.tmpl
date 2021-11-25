@@ -38,6 +38,24 @@ retry() {
     done
 }
 
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} .
+        chmod +x ${cloudwatch_setup_script}
+        dos2unix ${cloudwatch_setup_script}
+
+        . ${cloudwatch_setup_script} ${aws_region} \
+            $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
+            "/var/log/messages.log"             "%b %d %H:%M:%S" \
+            "/var/log/user-data.log"            "%a %b %d %H:%M:%S %Z %Y" \
+            "/var/log/yum.log"                  "%b %d %H:%M:%S" 
+    fi
+}
+
 # Downloads a file from S3 with retry. Converts using dos2unix and
 # make it executable if specified.
 s3_get() {
@@ -53,6 +71,7 @@ s3_get() {
     dos2unix $dst
     [ $executable ] && chmod +x $dst
 }
+
 
 # Wait for a message using ncat
 get_msg_from() {
@@ -137,12 +156,14 @@ chmod 600 "$LOG_FILE"
 
 exec &>> $LOG_FILE
 
-log "Running $0 as $(whoami)..."
+log "$(date) Running $0 as $(whoami)..."
 
 cd $INSTALL_DIR
 
 yum update -y
 yum install -y haproxy keepalived nc
+
+setup_cloudwatch
 
 # Figure out if this instance is master or backup
 MYIP=$(hostname -I)

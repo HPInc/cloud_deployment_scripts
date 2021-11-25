@@ -50,6 +50,14 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     }
 }
 
+function Setup-CloudWatch {
+    "################################################################"
+    "Setting Up AWS CloudWatch..."
+    "################################################################"
+    Read-S3Object -BucketName ${bucket_name} -Key ${cloudwatch_setup_script} -File ${cloudwatch_setup_script}
+    powershell ${cloudwatch_setup_script} C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+}
+
 function Decrypt-Credentials {
     "################################################################"
     "Decrypting credentials..."
@@ -354,6 +362,8 @@ if (Test-Path $LOG_FILE) {
 }
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+
+Setup-CloudWatch
 
 "--> Script running as user '$(whoami)'."
 

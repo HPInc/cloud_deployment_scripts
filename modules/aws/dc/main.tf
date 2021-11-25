@@ -54,6 +54,8 @@ data "template_file" "dc-provisioning-script" {
   template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
+    bucket_name              = var.bucket_name
+    cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
     safe_mode_admin_password = var.safe_mode_admin_password
@@ -116,8 +118,29 @@ data "aws_kms_key" "encryption-key" {
 
 data "aws_iam_policy_document" "dc-policy-doc" {
   statement {
+    actions   = ["ec2:DescribeTags"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.sysprep_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
@@ -315,3 +338,8 @@ resource "null_resource" "new-domain-user" {
     ]
   }
 }
+
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  name = local.host_name
+}
+

@@ -49,12 +49,29 @@ retry() {
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
     apt-get -qq update
-    apt install -y dos2unix python3
+    apt install -y dos2unix python3 
 
     if [ $? -ne 0 ]
     then
         log "--> ERROR: Failed to install prerequisites. Exiting provisioning script..."
         exit 1
+    fi
+}
+
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} .
+        chmod +x ${cloudwatch_setup_script}
+        dos2unix ${cloudwatch_setup_script}
+
+        . ${cloudwatch_setup_script} ${aws_region} \
+            $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/syslog"                   "%b %d %H:%M:%S" \
+            "/var/log/teradici/cac-install.log" 'time=\"%Y-%m-%dT%H:%M:%SZ\"' \
+            "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z."
     fi
 }
 
@@ -334,15 +351,17 @@ then
     chmod +644 "$LOG_FILE"
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+log "$(date) Running $0 as $(whoami)..."
+
 install_prereqs
+
+setup_cloudwatch
 
 get_credentials
 
