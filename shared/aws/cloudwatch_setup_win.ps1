@@ -37,7 +37,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
 }
 
 function Add-CloudWatch-Config($log_file_path, $datetime_format){
-    $log_file_name=(Get-Item $log_file_path).Basename
+    $log_file_name = $log_file_path -replace '[:]',""
 
     $c = @{
         "file_path"=$log_file_path;
