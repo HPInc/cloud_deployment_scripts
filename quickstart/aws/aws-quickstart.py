@@ -39,7 +39,7 @@ REPOSITORY_PATH    = os.getcwd()
 DEPLOYMENT_PATH    = os.path.join(REPOSITORY_PATH, 'deployments/aws/single-connector/')
 QUICKSTART_PATH    = os.path.join(REPOSITORY_PATH, 'quickstart/aws/')
 KMS_ENCRYPTOR_PATH = os.path.join(REPOSITORY_PATH, 'tools/')
-INSTALL_TERRAFORM  = os.path.join(REPOSITORY_PATH, 'quickstart/install-terraform.py')
+INSTALL_TERRAFORM  = os.path.join(REPOSITORY_PATH, 'tools/install-terraform.py')
 TERRAFORM_VER_PATH = os.path.join(DEPLOYMENT_PATH, 'versions.tf')
 SECRETS_DIR        = os.path.join(DEPLOYMENT_PATH, 'secrets/')
 

@@ -20,7 +20,7 @@ gcloud config set project <project_id>
 
 Run the following command in Cloud Shell
 ```bash
-cd quickstart
+cd quickstart/gcp
 ./gcp-cloudshell-quickstart.py
 ```
 and you will be prompted to enter each parameter. After you answer all the prompts, the script will continue to create the deployment.
@@ -104,7 +104,7 @@ Service account password: <set by you at start of script>
      properly destroy resources it created.
   2. In GCP cloudshell, change directory to **~/cloudshell_open/cloud_deployment_scripts/deployments/gcp/single-connector** using the command
 ```bash
-cd ../deployments/gcp/single-connector
+cd ../../deployments/gcp/single-connector
 ```   
   3. Remove resources deployed by Terraform using the following command. Enter "yes" when prompted to confirm.
 ```bash

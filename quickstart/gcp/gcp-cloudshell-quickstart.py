@@ -55,7 +55,7 @@ ENTITLE_USER = 'Administrator'
 HOME               = os.path.expanduser('~')
 TERRAFORM_BIN_DIR  = f'{HOME}/bin'
 TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
-TERRAFORM_VER_PATH = '../deployments/gcp/single-connector/versions.tf'
+TERRAFORM_VER_PATH = 'deployments/gcp/single-connector/versions.tf'
 CFG_FILE_PATH      = 'gcp-cloudshell-quickstart.cfg'
 DEPLOYMENT_PATH    = 'deployments/gcp/single-connector'
 
@@ -165,7 +165,7 @@ def ensure_terraform():
     path = shutil.which('terraform')
 
     # Reference versions.tf file for the required version
-    with open(TERRAFORM_VER_PATH,"r") as f:
+    with open(f"../../{TERRAFORM_VER_PATH}","r") as f:
         data = f.read()
 
     required_version = re.search(r'\">=\s([\d.]+)\"', data).group(1)
@@ -195,7 +195,7 @@ def ensure_terraform():
         print('Terraform is required for deployment. Exiting...')
         sys.exit(1)
 
-    install_cmd = f'{sys.executable} install-terraform.py {TERRAFORM_BIN_DIR}'
+    install_cmd = f'{sys.executable} ../../tools/install-terraform.py {TERRAFORM_BIN_DIR}'
     subprocess.run(install_cmd.split(' '), check=True)
 
 
@@ -370,8 +370,7 @@ if __name__ == '__main__':
     cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
 
     print('Preparing local requirements...')
-    os.chdir('../')
-    os.chdir(DEPLOYMENT_PATH)
+    os.chdir(f"../../{DEPLOYMENT_PATH}")
     # Paths passed into terraform.tfvars should be absolute paths
     cwd = os.getcwd() + '/'
 
