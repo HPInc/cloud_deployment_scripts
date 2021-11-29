@@ -12,6 +12,14 @@ locals {
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
   cas_mgr_aws_credentials_file = "cas-mgr-aws-credentials.ini"
+  cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
+  cloudwatch_setup_deb_script = "cloudwatch_setup_deb.sh"
+  cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
+}
+
+resource "aws_key_pair" "cas_admin" {
+  key_name   = local.admin_ssh_key_name
+  public_key = file(var.admin_ssh_pub_key_file)
 }
 
 resource "random_id" "bucket-name" {
@@ -34,9 +42,22 @@ resource "aws_s3_bucket_object" "cas_mgr_aws_credentials_file" {
   source = var.cas_mgr_aws_credentials_file
 }
 
-resource "aws_key_pair" "cas_admin" {
-  key_name   = local.admin_ssh_key_name
-  public_key = file(var.admin_ssh_pub_key_file)
+resource "aws_s3_bucket_object" "cloudwatch-setup-rpm-script" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.cloudwatch_setup_rpm_script
+  source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
+}
+
+resource "aws_s3_bucket_object" "cloudwatch-setup-deb-script" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.cloudwatch_setup_deb_script
+  source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
+}
+
+resource "aws_s3_bucket_object" "cloudwatch-setup-win-script" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = local.cloudwatch_setup_win_script
+  source = "../../../shared/aws/${local.cloudwatch_setup_win_script}"
 }
 
 module "dc" {
@@ -66,6 +87,8 @@ module "dc" {
 
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_win_script
 }
 
 module "cas-mgr" {
@@ -98,6 +121,8 @@ module "cas-mgr" {
   ami_name  = var.cas_mgr_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
 module "lls" {
@@ -129,6 +154,8 @@ module "lls" {
   ami_name  = var.lls_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -255,6 +282,8 @@ module "cac" {
   admin_ssh_key_name = local.admin_ssh_key_name
 
   cac_extra_install_flags = var.cac_extra_install_flags
+
+  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
 }
 
 resource "aws_lb_target_group_attachment" "cac-tg-attachment" {
@@ -296,11 +325,13 @@ module "win-gfx" {
 
   instance_count = var.win_gfx_instance_count
   instance_name  = var.win_gfx_instance_name
-  instance_type     = var.win_gfx_instance_type
-  disk_size_gb      = var.win_gfx_disk_size_gb
+  instance_type  = var.win_gfx_instance_type
+  disk_size_gb   = var.win_gfx_disk_size_gb
 
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -336,11 +367,13 @@ module "win-std" {
 
   instance_count = var.win_std_instance_count
   instance_name  = var.win_std_instance_name
-  instance_type     = var.win_std_instance_type
-  disk_size_gb      = var.win_std_disk_size_gb
+  instance_type  = var.win_std_instance_type
+  disk_size_gb   = var.win_std_disk_size_gb
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -376,13 +409,15 @@ module "centos-gfx" {
 
   instance_count = var.centos_gfx_instance_count
   instance_name  = var.centos_gfx_instance_name
-  instance_type     = var.centos_gfx_instance_type
-  disk_size_gb      = var.centos_gfx_disk_size_gb
+  instance_type  = var.centos_gfx_instance_type
+  disk_size_gb   = var.centos_gfx_disk_size_gb
 
   ami_owner = var.centos_gfx_ami_owner
   ami_name  = var.centos_gfx_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]
 }
@@ -418,13 +453,15 @@ module "centos-std" {
 
   instance_count = var.centos_std_instance_count
   instance_name  = var.centos_std_instance_name
-  instance_type     = var.centos_std_instance_type
-  disk_size_gb      = var.centos_std_disk_size_gb
+  instance_type  = var.centos_std_instance_type
+  disk_size_gb   = var.centos_std_disk_size_gb
 
   ami_owner = var.centos_std_ami_owner
   ami_name  = var.centos_std_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]
 }

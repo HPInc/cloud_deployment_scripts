@@ -17,6 +17,48 @@ log() {
     echo "[$(date)] $message"
 }
 
+retry() {
+    local timeout="$1"
+    local interval="$2"
+    local command="$3"
+    local log_message="$4"
+    local err_message="$5"
+
+    log "$log_message"
+
+    while [ true ]
+    do
+        ((count=count+1))
+        eval $command && break
+        if [ $count -gt $counter ]
+        then
+            log "$err_message"
+            return 1
+        else
+            log "$log_message Retrying in $interval seconds"
+            sleep $interval
+        fi
+    done
+}
+
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} .
+        chmod +x ${cloudwatch_setup_script}
+        dos2unix ${cloudwatch_setup_script}
+
+        . ${cloudwatch_setup_script} ${aws_region} \
+            $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
+            "/var/log/messages.log"             "%b %d %H:%M:%S" \
+            "/var/log/user-data.log"            "%a %b %d %H:%M:%S %Z %Y" \
+            "/var/log/yum.log"                  "%b %d %H:%M:%S" 
+    fi
+}
+
 get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
@@ -72,16 +114,18 @@ then
     exit 0
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+log "$(date) Running $0 as $(whoami)..."
+
 yum update -y
-yum install -y wget yum-utils
+yum install -y yum-utils
+
+setup_cloudwatch
 
 get_credentials
 

@@ -27,6 +27,8 @@ resource "aws_s3_bucket_object" "win-gfx-provisioning-script" {
       admin_password              = var.admin_password,
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      bucket_name                 = var.bucket_name,
+      cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_name                 = var.domain_name,
       nvidia_driver_filename      = var.nvidia_driver_filename,
@@ -99,6 +101,21 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
     effect    = "Allow"
   }
 
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:CreateLogGroup",
+                 "logs:CreateLogStream",
+                 "logs:DescribeLogStreams",
+                 "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
+    effect    = "Allow"
+  }
+
   dynamic statement {
     for_each = data.aws_kms_key.encryption-key
     iterator = i
@@ -149,3 +166,10 @@ resource "aws_instance" "win-gfx" {
     Name = "${local.host_name}-${count.index}"
   }
 }
+
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.instance_count
+
+  name = "${local.host_name}-${count.index}"
+}
+

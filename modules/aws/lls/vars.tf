@@ -91,3 +91,8 @@ variable "customer_master_key_id" {
   description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
 }
+
+variable "cloudwatch_setup_script" {
+  description = "The script that sets up the AWS CloudWatch Logs agent"
+  type        = string
+}
