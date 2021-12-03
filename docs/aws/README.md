@@ -43,7 +43,6 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 ### Requirements
 - the user must have Administrator permissions in an AWS account
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
-- a PCoIP Registration Code and/or PCoIP License Server Activation Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - for CAS deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
 - for deployments using CAS Manager as a Service, a CAS Manager Deployment Service Account is needed. Please see the [CAS Manager as a Service Setup])#cas-manager-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
