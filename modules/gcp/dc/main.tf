@@ -35,9 +35,12 @@ data "template_file" "dc-provisioning-script" {
   template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
-    kms_cryptokey_id         = var.kms_cryptokey_id
     domain_name              = var.domain_name
+    kms_cryptokey_id         = var.kms_cryptokey_id
+    pcoip_agent_version      = var.pcoip_agent_version
+    pcoip_registration_code  = var.pcoip_registration_code
     safe_mode_admin_password = var.safe_mode_admin_password
+    teradici_download_token  = var.teradici_download_token
   }
 }
 
@@ -74,6 +77,8 @@ resource "google_compute_instance" "dc" {
   name         = local.host_name
   zone         = var.gcp_zone
   machine_type = var.machine_type
+
+  enable_display = true
 
   boot_disk {
     initialize_params {

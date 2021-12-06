@@ -78,6 +78,11 @@ variable "dc_admin_password" {
   sensitive   = true
 }
 
+variable "dc_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Domain Controller"
+  default     = "latest"
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   default     = "example.com"
@@ -128,4 +133,15 @@ variable "domain_users_list" {
 variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
+}
+
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code"
+  type        = string
+  sensitive   = true
+}
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
 }

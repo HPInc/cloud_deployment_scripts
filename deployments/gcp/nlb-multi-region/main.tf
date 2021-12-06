@@ -37,6 +37,10 @@ module "dc" {
   source = "../../../modules/gcp/dc"
 
   prefix = var.prefix
+  
+  pcoip_agent_version         = var.dc_pcoip_agent_version
+  pcoip_registration_code     = var.pcoip_registration_code
+  teradici_download_token     = var.teradici_download_token
 
   gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id

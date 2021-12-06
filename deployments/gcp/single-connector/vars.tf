@@ -83,6 +83,11 @@ variable "dc_admin_password" {
   sensitive   = true
 }
 
+variable "dc_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Domain Controller"
+  default     = "latest"
+}
+
 variable "cac_subnet_name" {
   description = "Name for subnet containing the Cloud Access Connector"
   default     = "subnet-cac"

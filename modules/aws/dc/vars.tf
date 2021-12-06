@@ -92,3 +92,19 @@ variable "cloudwatch_setup_script" {
   description = "The script that sets up the AWS CloudWatch Logs agent"
   type        = string
 }
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
+}
+
+variable "pcoip_agent_version" {
+  description = "PCoIP Agent version to install"
+  default     = "latest"
+}
+
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code from Teradici"
+  type        = string
+  sensitive   = true
+}

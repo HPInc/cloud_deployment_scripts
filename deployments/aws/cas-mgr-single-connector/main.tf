@@ -66,6 +66,10 @@ module "dc" {
 
   prefix = var.prefix
   
+  pcoip_agent_version         = var.dc_pcoip_agent_version
+  pcoip_registration_code     = var.pcoip_registration_code
+  teradici_download_token     = var.teradici_download_token
+  
   customer_master_key_id      = var.customer_master_key_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
