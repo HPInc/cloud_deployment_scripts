@@ -97,6 +97,27 @@ resource "google_compute_firewall" "allow-icmp" {
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
 }
 
+resource "google_compute_firewall" "allow-pcoip" {
+  name    = "${local.prefix}fw-allow-pcoip"
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+  allow {
+    protocol = "tcp"
+    ports    = ["4172"]
+  }
+  allow {
+    protocol = "udp"
+    ports    = ["4172"]
+  }
+
+  target_tags   = ["${local.prefix}fw-allow-pcoip"]
+  source_ranges = var.allowed_client_cidrs
+}
+
 resource "google_compute_firewall" "allow-dns" {
   name    = "${local.prefix}fw-allow-dns"
   network = google_compute_network.vpc.self_link

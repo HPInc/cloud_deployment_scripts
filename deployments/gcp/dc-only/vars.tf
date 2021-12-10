@@ -145,3 +145,8 @@ variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
 }
+
+variable "allowed_client_cidrs" {
+  description = "Open VPC firewall to allow PCoIP connections from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d', 'e.f.g.0/24']"
+  default     = ["0.0.0.0/0"]
+}
