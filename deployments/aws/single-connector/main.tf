@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -63,6 +63,10 @@ module "dc" {
   source = "../../../modules/aws/dc"
 
   prefix = var.prefix
+  
+  pcoip_agent_version         = var.dc_pcoip_agent_version
+  pcoip_registration_code     = var.pcoip_registration_code
+  teradici_download_token     = var.teradici_download_token
   
   customer_master_key_id      = var.customer_master_key_id
   domain_name                 = var.domain_name

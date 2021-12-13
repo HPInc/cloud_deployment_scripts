@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -82,6 +82,17 @@ variable "dc_ami_name" {
   default     = "Windows_Server-2019-English-Full-Base-2021.11.10"
 }
 
+variable "dc_admin_password" {
+  description = "Password for the Administrator of the Domain Controller"
+  type        = string
+  sensitive   = true
+}
+
+variable "dc_pcoip_agent_version" {
+  description = "Version of PCoIP Agent to install for Domain Controller"
+  default     = "latest"
+}
+
 variable "domain_name" {
   description = "Domain name for the new domain"
   default     = "example.com"
@@ -99,12 +110,6 @@ variable "domain_name" {
     )
     error_message = "Domain name is invalid. Please try again."
   }
-}
-
-variable "dc_admin_password" {
-  description = "Password for the Administrator of the Domain Controller"
-  type        = string
-  sensitive   = true
 }
 
 variable "safe_mode_admin_password" {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Teradici Corporation
+ * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -95,6 +95,27 @@ resource "google_compute_firewall" "allow-icmp" {
 
   target_tags   = ["${local.prefix}fw-allow-icmp"]
   source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
+}
+
+resource "google_compute_firewall" "allow-pcoip" {
+  name    = "${local.prefix}fw-allow-pcoip"
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+  allow {
+    protocol = "tcp"
+    ports    = ["4172"]
+  }
+  allow {
+    protocol = "udp"
+    ports    = ["4172"]
+  }
+
+  target_tags   = ["${local.prefix}fw-allow-pcoip"]
+  source_ranges = var.allowed_client_cidrs
 }
 
 resource "google_compute_firewall" "allow-dns" {

@@ -1,11 +1,18 @@
-# Copyright (c) 2019 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 # Make sure this file has Windows line endings
 
+$KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
+$PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
+$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
+
 $LOG_FILE = "C:\Teradici\provisioning.log"
+$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
+$PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
@@ -16,7 +23,28 @@ $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instanc
 $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
 $DATA.Add("safe_mode_admin_password", "${safe_mode_admin_password}")
+
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
+
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
+
+    if ($?) { return $rc }
+
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
+    }
+
+    Write-Information "--> Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
+}
 
 function Get-AuthToken {
     try {
@@ -51,6 +79,76 @@ function Decrypt-Credentials {
         "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
+}
+
+function PCoIP-Agent-is-Installed {
+    Get-Service "PCoIPAgent"
+    return $?
+}
+
+function PCoIP-Agent-Install {
+    "################################################################"
+    "Installing PCoIP standard agent..."
+    "################################################################"
+
+    $agentInstallerDLDirectory = "C:\Teradici"
+    $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
+    $destFile = $agentInstallerDLDirectory + '\' + $PCOIP_AGENT_FILENAME
+    $wc = New-Object System.Net.WebClient
+
+    "--> Downloading PCoIP standard agent from $pcoipAgentInstallerUrl..."
+    Retry -Action {$wc.DownloadFile($pcoipAgentInstallerUrl, $destFile)}
+    "--> Teradici PCoIP standard agent downloaded: $PCOIP_AGENT_FILENAME"
+
+    "--> Installing Teradici PCoIP standard agent..."
+    Start-Process -FilePath $destFile -ArgumentList "/S /nopostreboot _?$destFile" -PassThru -Wait
+
+    if (!(PCoIP-Agent-is-Installed)) {
+        "--> ERROR: Failed to install PCoIP standard agent."
+        exit 1
+    }
+
+    "--> Teradici PCoIP standard agent installed successfully."
+}
+
+function PCoIP-Agent-Register {
+    "################################################################"
+    "Registering PCoIP agent..."
+    "################################################################"
+
+    cd 'C:\Program Files\Teradici\PCoIP Agent'
+
+    "Checking for existing PCoIP License..."
+    & .\pcoip-validate-license.ps1
+    if ( $LastExitCode -eq 0 ) {
+        "--> Found valid license."
+        return
+    }
+
+    # License registration may have intermittent failures
+    $Interval = 10
+    $Timeout = 600
+    $Elapsed = 0
+
+    do {
+        $Retry = $false
+        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        # the script already produces error message
+
+        if ( $LastExitCode -ne 0 ) {
+            if ($Elapsed -ge $Timeout) {
+                "--> ERROR: Failed to register PCoIP agent."
+                exit 1
+            }
+
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            $Retry = $true
+            Start-Sleep -Seconds $Interval
+            $Elapsed += $Interval
+        }
+    } while ($Retry)
+
+    "--> PCoIP agent registered successfully."
 }
 
 Start-Transcript -path $LOG_FILE -append
@@ -108,6 +206,14 @@ Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thu
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."
 "================================================================"
 sc.exe config ADWS start= delayed-auto 
+
+if (PCoIP-Agent-is-Installed) {
+    "--> PCoIP standard agent is already installed. Skipping..."
+} else {
+    PCoIP-Agent-Install
+}
+
+PCoIP-Agent-Register
 
 "================================================================"
 "Restarting computer..."

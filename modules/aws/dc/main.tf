@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -58,7 +58,10 @@ data "template_file" "dc-provisioning-script" {
     cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
+    pcoip_agent_version      = var.pcoip_agent_version
+    pcoip_registration_code  = var.pcoip_registration_code
     safe_mode_admin_password = var.safe_mode_admin_password
+    teradici_download_token  = var.teradici_download_token
   }
 }
 

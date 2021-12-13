@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -91,4 +91,20 @@ variable "customer_master_key_id" {
 variable "cloudwatch_setup_script" {
   description = "The script that sets up the AWS CloudWatch Logs agent"
   type        = string
+}
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
+}
+
+variable "pcoip_agent_version" {
+  description = "PCoIP Agent version to install"
+  default     = "latest"
+}
+
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code from Teradici"
+  type        = string
+  sensitive   = true
 }
