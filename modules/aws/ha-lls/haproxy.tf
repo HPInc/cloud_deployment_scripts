@@ -21,6 +21,7 @@ resource "aws_s3_bucket_object" "haproxy-provisioning-script" {
     {
       aws_region              = var.aws_region, 
       bucket_name             = var.bucket_name,
+      cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,
       haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
       haproxy_config          = local.haproxy_config,
@@ -140,6 +141,8 @@ resource "aws_iam_instance_profile" "haproxy-instance-profile" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group-ha-master" {
+  count = var.cloudwatch_enable ? 1 : 0
+
   name = "${local.haproxy_host_name}-master"
 }
 
@@ -179,6 +182,8 @@ resource "aws_instance" "haproxy_master" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group-ha-backup" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
   name = "${local.haproxy_host_name}-backup"
 }
 

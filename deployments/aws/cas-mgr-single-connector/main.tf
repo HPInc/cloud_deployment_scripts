@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -93,6 +93,7 @@ module "dc" {
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 }
 
@@ -127,6 +128,7 @@ module "cas-mgr" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
@@ -174,6 +176,7 @@ module "cac" {
 
   cac_extra_install_flags = var.cac_extra_install_flags
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_deb_script
 }
 
@@ -214,6 +217,7 @@ module "win-gfx" {
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
   depends_on = [aws_nat_gateway.nat]
@@ -256,6 +260,7 @@ module "win-std" {
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
   depends_on = [aws_nat_gateway.nat]
@@ -300,6 +305,7 @@ module "centos-gfx" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]
@@ -344,6 +350,7 @@ module "centos-std" {
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
+  cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
   depends_on = [aws_nat_gateway.nat]

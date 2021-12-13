@@ -67,6 +67,7 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "",
       cas_mgr_script              = local.cas_mgr_script,
       cas_mgr_url                 = var.cas_mgr_url,
+      cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
@@ -210,7 +211,7 @@ resource "aws_iam_instance_profile" "cac-instance-profile" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
-  count = length(local.instance_info_list)
+  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
 
   name = "${local.prefix}${var.host_name}-${count.index}"
 }

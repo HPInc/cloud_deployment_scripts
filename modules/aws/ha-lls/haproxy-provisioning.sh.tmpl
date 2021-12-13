@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -163,7 +163,10 @@ cd $INSTALL_DIR
 yum update -y
 yum install -y haproxy keepalived nc
 
-setup_cloudwatch
+if [[ "${cloudwatch_enable}" == "true" ]]
+then
+    setup_cloudwatch
+fi
 
 # Figure out if this instance is master or backup
 MYIP=$(hostname -I)

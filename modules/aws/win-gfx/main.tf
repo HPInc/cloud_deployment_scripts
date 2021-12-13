@@ -28,6 +28,7 @@ resource "aws_s3_bucket_object" "win-gfx-provisioning-script" {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
       bucket_name                 = var.bucket_name,
+      cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_name                 = var.domain_name,
@@ -143,7 +144,7 @@ resource "aws_iam_instance_profile" "win-gfx-instance-profile" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
-  count = var.instance_count
+  count = var.cloudwatch_enable ? var.instance_count : 0
   
   name = "${local.host_name}-${count.index}"
 }

@@ -55,6 +55,7 @@ data "template_file" "dc-provisioning-script" {
 
   vars = {
     bucket_name              = var.bucket_name
+    cloudwatch_enable        = var.cloudwatch_enable
     cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
@@ -170,6 +171,8 @@ resource "aws_iam_instance_profile" "dc-instance-profile" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
   name = local.host_name
 }
 

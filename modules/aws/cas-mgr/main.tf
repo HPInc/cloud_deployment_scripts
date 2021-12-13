@@ -31,6 +31,7 @@ resource "aws_s3_bucket_object" "cas-mgr-provisioning-script" {
       cas_mgr_aws_credentials_file = var.cas_mgr_aws_credentials_file,
       cas_mgr_deployment_sa_file   = var.cas_mgr_deployment_sa_file,
       cas_mgr_setup_script         = local.cas_mgr_setup_script,
+      cloudwatch_enable            = var.cloudwatch_enable,
       cloudwatch_setup_script      = var.cloudwatch_setup_script,
       customer_master_key_id       = var.customer_master_key_id,
       pcoip_registration_code      = var.pcoip_registration_code,
@@ -156,6 +157,8 @@ resource "aws_iam_instance_profile" "cas-mgr-instance-profile" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
   name = "${local.prefix}${var.host_name}"
 }
 

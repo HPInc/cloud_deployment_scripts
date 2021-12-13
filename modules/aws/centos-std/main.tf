@@ -27,6 +27,7 @@ resource "aws_s3_bucket_object" "centos-std-provisioning-script" {
       ad_service_account_username = var.ad_service_account_username,
       aws_region                  = var.aws_region, 
       bucket_name                 = var.bucket_name,
+      cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
@@ -140,7 +141,7 @@ resource "aws_iam_instance_profile" "centos-std-instance-profile" {
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
-  count = var.instance_count
+  count = var.cloudwatch_enable ? var.instance_count : 0
   
   name = "${local.host_name}-${count.index}"
 }

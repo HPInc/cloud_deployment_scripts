@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2021 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -125,7 +125,10 @@ log "$(date) Running $0 as $(whoami)..."
 yum update -y
 yum install -y yum-utils
 
-setup_cloudwatch
+if [[ "${cloudwatch_enable}" == "true" ]]
+then
+    setup_cloudwatch
+fi
 
 get_credentials
 

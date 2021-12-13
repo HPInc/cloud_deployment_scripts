@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -6,6 +6,7 @@
 $ADMIN_PASSWORD              = "${admin_password}"
 $AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$CLOUDWATCH_ENABLE           = [System.Convert]::ToBoolean("${cloudwatch_enable}")
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
@@ -363,7 +364,9 @@ if (Test-Path $LOG_FILE) {
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-Setup-CloudWatch
+if ($CLOUDWATCH_ENABLE) {
+    Setup-CloudWatch
+}
 
 "--> Script running as user '$(whoami)'."
 

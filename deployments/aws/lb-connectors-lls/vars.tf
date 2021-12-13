@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -484,4 +484,9 @@ variable "idle_shutdown_minutes_idle_before_shutdown" {
 variable "idle_shutdown_polling_interval_minutes" {
   description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
   default     = 15
+}
+
+variable "cloudwatch_enable" {
+  description = "Enable AWS CloudWatch Agent for sending logs to AWS CloudWatch"
+  default     = true
 }
