@@ -74,6 +74,13 @@ function Decrypt-Credentials {
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."safe_mode_admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
+
+        "--> Decrypting pcoip_registration_code..."
+        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+        $resource.Add("ciphertext", "${pcoip_registration_code}")
+        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
+        $credsB64 = $response."plaintext"
+        $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
     }
     catch {
         "--> ERROR: Failed to decrypt credentials: $_"

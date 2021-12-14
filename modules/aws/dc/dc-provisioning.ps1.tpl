@@ -52,9 +52,16 @@ function Decrypt-Credentials {
         "--> Decrypting safe_mode_admin_password..."
         $ByteAry = [System.Convert]::FromBase64String("${safe_mode_admin_password}")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream 
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
         $DATA."safe_mode_admin_password" = $StreamRead.ReadToEnd()
+
+        "--> Decrypting pcoip_registration_code..."
+        $ByteAry = [System.Convert]::FromBase64String("${pcoip_registration_code}")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
     }
     catch {
         "--> ERROR: Failed to decrypt credentials: $_"
