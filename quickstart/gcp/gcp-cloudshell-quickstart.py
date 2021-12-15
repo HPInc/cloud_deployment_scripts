@@ -501,6 +501,14 @@ if __name__ == '__main__':
                 deployment
             )
 
+    print(f'Adding DC to CAS Manager...')
+    mycasmgr.machine_add_existing(
+        'vm-dc',
+        PROJECT_ID,
+        cfg_data.get('gcp_zone'),
+        deployment
+    )
+
     # Loop until Administrator user is found in CAS Manager
     while True:
         entitle_user = mycasmgr.user_get(ENTITLE_USER, deployment)
