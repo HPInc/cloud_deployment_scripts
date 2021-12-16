@@ -226,12 +226,14 @@ def service_account_find(email):
             return account
 
 
-def service_account_create(email):
+def service_account_create(email, prefix):
     print('Creating Service Account...')
+    account_id = f'{prefix}-{SA_ID}'
+    sa_email = f'{prefix}-{email}'
 
-    service_account = service_account_find(email)
+    service_account = service_account_find(sa_email)
     if service_account:
-        print(f'  Service account {email} already exists.')
+        print(f'  Service account {sa_email} already exists.')
         # The service account limit check is placed here so that the script doesn't 
         # unfortunately exit after the user enters their configurations if error, but 
         # the key will be created later to avoid reaching the limit, in case 
@@ -242,9 +244,9 @@ def service_account_create(email):
     service_account = iam_service.projects().serviceAccounts().create(
         name = 'projects/' + PROJECT_ID,
         body = {
-            'accountId': SA_ID,
+            'accountId': account_id,
             'serviceAccount': {
-                'displayName': SA_ID,
+                'displayName': account_id,
                 'description': 'Account used by CAS Manager to manage PCoIP workstations.',
             }
         }
@@ -362,12 +364,14 @@ if __name__ == '__main__':
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
 
     apis_enable(REQUIRED_APIS)
-    sa = service_account_create(sa_email)
+    
+    cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
+    prefix = cfg_data.get('prefix')
+
+    sa = service_account_create(sa_email, prefix)
     iam_policy_update(sa, SA_ROLES)
 
     print('GCP project setup complete.\n')
-
-    cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
 
     print('Preparing local requirements...')
     os.chdir(f"../../{DEPLOYMENT_PATH}")
@@ -467,7 +471,8 @@ if __name__ == '__main__':
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cas_mgr_deployment_sa_file':     cwd + CAS_MGR_DEPLOYMENT_SA_KEY_PATH
+        'cas_mgr_deployment_sa_file':     cwd + CAS_MGR_DEPLOYMENT_SA_KEY_PATH,
+        'prefix':                         prefix
     }
 
     # update tfvar
@@ -492,7 +497,7 @@ if __name__ == '__main__':
     # Add existing workstations
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
-            hostname = f'{t}-{i}'
+            hostname = f'{prefix}-{t}-{i}'
             print(f'Adding "{hostname}" to CAS Manager...')
             mycasmgr.machine_add_existing(
                 hostname,
