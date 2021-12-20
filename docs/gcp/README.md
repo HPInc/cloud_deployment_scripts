@@ -60,12 +60,13 @@ Although it is possible to create deployments in existing and currently in-use G
 
 With a new GCP project:
 - create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAS Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
-- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com`:
+- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
     - Cloud Resource Manager
     - Compute Engine
     - Google Cloud DNS
+    - Identity-Aware Proxy (IAP)
 - (Optional) For better security, create a Google KMS key ring and crypto key to encrypt secrets. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
 
 ### CAS Manager as a Service Setup

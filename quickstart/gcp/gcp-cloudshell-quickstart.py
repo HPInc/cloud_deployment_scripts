@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright Teradici Corporation 2019-2021;  © Copyright 2021 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -43,6 +43,7 @@ REQUIRED_APIS = [
     'compute.googleapis.com',
     'dns.googleapis.com',
     'iam.googleapis.com',
+    'iap.googleapis.com',
 ]
 
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
