@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Teradici Corporation
+ * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -97,3 +97,20 @@ variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
 }
+
+variable "teradici_download_token" {
+  description = "Token used to download from Teradici"
+  default     = "yj39yHtgj68Uv2Qf"
+}
+
+variable "pcoip_agent_version" {
+  description = "PCoIP Agent version to install"
+  default     = "latest"
+}
+
+variable "pcoip_registration_code" {
+  description = "PCoIP Registration code from Teradici"
+  type        = string
+  sensitive   = true
+}
+

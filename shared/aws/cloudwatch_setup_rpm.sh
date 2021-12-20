@@ -43,12 +43,11 @@ retry() {
 add_cloudwatch_config(){
     log_file_path="$1"
     datetime_format="$2"
-    log_file_name="$(basename $log_file_path)"
 
     c="{
                         \"file_path\": \"$log_file_path\",
                         \"log_group_name\": \"$instance_name\",
-                        \"log_stream_name\": \"$log_file_name\",
+                        \"log_stream_name\": \"$log_file_path\",
                         \"timestamp_format\": \"$datetime_format\",
                         \"timezone\": \"LOCAL\",
                         \"multi_line_start_pattern\": \"{timestamp_format}\",
