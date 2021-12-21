@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -236,24 +236,23 @@ def configurations_get(project_id, ws_types, username):
         request = cpe_service.networks().list(project=project_id)
         while request is not None:
             response = request.execute()
-            vpc_list = [item['name'] for item in [network for network in response['items']]]
+            vpc_list = [item['name'] for item in response['items']]
 
             request = cpe_service.networks().list_next(previous_request=request, previous_response=response)
         return vpc_list
 
     def prefix_get(order_number):
-        print(f"{order_number}.  Add a prefix for the names of your resources (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
+        print(f"{order_number}.  Prefix to add to the names of resources to be created (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
         while True:
             prefix = input("prefix: ").strip() or DEFAULT_PREFIX
             if (len(prefix) > 5):
                 print("    Maximum 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
-            print("Checking if the prefix is unique...")
             
             vpc_list = vcp_get()
             vpc_name = f'{prefix}-vpc-cas'
             if vpc_name in vpc_list:
-                print("Resources must have unique names. Please try again.")
+                print("vpc_name already exists. Please enter a different prefix.")
                 continue
             print("Great, this prefix is unique!")
             return prefix
