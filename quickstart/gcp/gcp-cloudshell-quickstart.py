@@ -508,7 +508,7 @@ if __name__ == '__main__':
 
     print(f'Adding DC to CAS Manager...')
     mycasmgr.machine_add_existing(
-        'vm-dc',
+        f'{prefix}-vm-dc',
         PROJECT_ID,
         cfg_data.get('gcp_zone'),
         deployment
