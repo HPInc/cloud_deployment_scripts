@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -169,7 +169,21 @@ resource "aws_iam_instance_profile" "dc-instance-profile" {
   role = aws_iam_role.dc-role.name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  name = local.host_name
+}
+
+resource "time_sleep" "delay_destroy_log_group" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "dc" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group]
+  
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
 
@@ -341,8 +355,3 @@ resource "null_resource" "new-domain-user" {
     ]
   }
 }
-
-resource "aws_cloudwatch_log_group" "instance-log-group" {
-  name = local.host_name
-}
-

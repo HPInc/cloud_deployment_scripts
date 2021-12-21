@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -140,7 +140,23 @@ resource "aws_iam_instance_profile" "centos-gfx-instance-profile" {
   role = aws_iam_role.centos-gfx-role[0].name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.instance_count
+  
+  name = "${local.host_name}-${count.index}"
+}
+
+resource "time_sleep" "delay_destroy_log_group" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "centos-gfx" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group]
+
   count = var.instance_count
 
   ami           = data.aws_ami.ami.id
@@ -166,10 +182,3 @@ resource "aws_instance" "centos-gfx" {
     Name = "${local.host_name}-${count.index}"
   }
 }
-
-resource "aws_cloudwatch_log_group" "instance-log-group" {
-  count = var.instance_count
-
-  name = "${local.host_name}-${count.index}"
-}
-
