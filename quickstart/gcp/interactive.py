@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2021 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -243,18 +243,18 @@ def configurations_get(project_id, ws_types, username):
 
     def prefix_get(order_number):
         print(f"{order_number}.  Prefix to add to the names of resources to be created (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
+        
+        vpc_list = vcp_get()
         while True:
             prefix = input("prefix: ").strip() or DEFAULT_PREFIX
             if (len(prefix) > 5):
                 print("    Maximum 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
             
-            vpc_list = vcp_get()
             vpc_name = f'{prefix}-vpc-cas'
             if vpc_name in vpc_list:
                 print("vpc_name already exists. Please enter a different prefix.")
                 continue
-            print("Great, this prefix is unique!")
             return prefix
 
     def answer_is_yes(prompt):

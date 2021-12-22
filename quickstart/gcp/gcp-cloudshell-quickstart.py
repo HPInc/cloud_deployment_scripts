@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2021 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -226,10 +226,10 @@ def service_account_find(email):
             return account
 
 
-def service_account_create(email, prefix):
+def service_account_create(project_id, sa_id, prefix):
     print('Creating Service Account...')
-    account_id = f'{prefix}-{SA_ID}'
-    sa_email = f'{prefix}-{email}'
+    account_id = f'{prefix}-{sa_id}'
+    sa_email = f'{account_id}@{project_id}.iam.gserviceaccount.com'
 
     service_account = service_account_find(sa_email)
     if service_account:
@@ -242,7 +242,7 @@ def service_account_create(email, prefix):
         return service_account
 
     service_account = iam_service.projects().serviceAccounts().create(
-        name = 'projects/' + PROJECT_ID,
+        name = 'projects/' + project_id,
         body = {
             'accountId': account_id,
             'serviceAccount': {
@@ -358,17 +358,17 @@ def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 if __name__ == '__main__':
     ensure_requirements()
 
-    print('Setting GCP project...')
-    sa_email = f'{SA_ID}@{PROJECT_ID}.iam.gserviceaccount.com'
-    iam_service = googleapiclient.discovery.build('iam', 'v1')
-    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
-
     apis_enable(REQUIRED_APIS)
     
     cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
+
+    print('Setting GCP project...')
+    iam_service = googleapiclient.discovery.build('iam', 'v1')
+    crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
+    
     prefix = cfg_data.get('prefix')
 
-    sa = service_account_create(sa_email, prefix)
+    sa = service_account_create(PROJECT_ID, SA_ID, prefix)
     iam_policy_update(sa, SA_ROLES)
 
     print('GCP project setup complete.\n')
