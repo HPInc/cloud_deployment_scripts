@@ -232,7 +232,7 @@ def configurations_get(project_id, ws_types, username):
                 print("       Invalid number input. ", end="")
             print("Please try again.")
 
-    def vcp_get():
+    def vpc_list_get():
         request = cpe_service.networks().list(project=project_id)
         while request is not None:
             response = request.execute()
@@ -244,11 +244,11 @@ def configurations_get(project_id, ws_types, username):
     def prefix_get(order_number):
         print(f"{order_number}.  Prefix to add to the names of resources to be created (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
         
-        vpc_list = vcp_get()
+        vpc_list = vpc_list_get()
         while True:
             prefix = input("prefix: ").strip() or DEFAULT_PREFIX
             if (len(prefix) > 5):
-                print("    Maximum 5 characters to avoid cropping of workstation hostnames. Please try again.")
+                print("    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
             
             vpc_name = f'{prefix}-vpc-cas'

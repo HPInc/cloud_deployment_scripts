@@ -26,7 +26,7 @@ cd quickstart/gcp
 and you will be prompted to enter each parameter. After you answer all the prompts, the script will continue to create the deployment.
 
 #### prefix
-Enter a prefix for the names of your resources (Maximum 5 characters. Default: quick)
+Enter a prefix for your resource names (Maximum 5 characters. Default: quick)
 
 #### reg_code
 Enter your PCoIP Registration code.
