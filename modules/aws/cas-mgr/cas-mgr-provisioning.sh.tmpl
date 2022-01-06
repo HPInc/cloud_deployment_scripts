@@ -137,7 +137,7 @@ check_required_vars() {
     fi
     set -x
 
-    if [[ "$missing_vars" = "true" ]]
+    if [[ "$missing_vars" == "true" ]]
     then
         log "--> Exiting..."
         exit 1

@@ -152,7 +152,7 @@ check_required_vars() {
         missing_vars="true"
     fi
 
-    if [[ "$missing_vars" = "true" ]]; then
+    if [[ "$missing_vars" == "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
