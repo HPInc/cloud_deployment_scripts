@@ -198,6 +198,10 @@ resource "aws_acm_certificate" "ssl-cert" {
   private_key      = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
   certificate_body = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = {
     Name = "${local.prefix}ssl-cert"
   }

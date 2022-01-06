@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2021 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -28,6 +28,7 @@ MACHINE_PROPERTIES_JSON = "gcp-machine-properties.json"
 DEFAULT_REGION      = "us-west2"
 DEFAULT_ZONE        = "us-west2-b"
 DEFAULT_NUMBEROF_WS = "0"
+DEFAULT_PREFIX      = "quick"
 
 # The number of available IP address in subnet. To see reserved IPs, please
 # see: https://cloud.google.com/vpc/docs/vpc#reserved_ip_addresses_in_every_subnet
@@ -231,6 +232,31 @@ def configurations_get(project_id, ws_types, username):
                 print("       Invalid number input. ", end="")
             print("Please try again.")
 
+    def vpc_list_get():
+        request = cpe_service.networks().list(project=project_id)
+        while request is not None:
+            response = request.execute()
+            vpc_list = [item['name'] for item in response['items']]
+
+            request = cpe_service.networks().list_next(previous_request=request, previous_response=response)
+        return vpc_list
+
+    def prefix_get(order_number):
+        print(f"{order_number}.  Prefix to add to the names of resources to be created (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
+        
+        vpc_list = vpc_list_get()
+        while True:
+            prefix = input("prefix: ").strip() or DEFAULT_PREFIX
+            if (len(prefix) > 5):
+                print("    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
+                continue
+            
+            vpc_name = f'{prefix}-vpc-cas'
+            if vpc_name in vpc_list:
+                print("vpc_name already exists. Please enter a different prefix.")
+                continue
+            return prefix
+
     def answer_is_yes(prompt):
         while True:
             response = input(prompt).lower()
@@ -308,14 +334,16 @@ def configurations_get(project_id, ws_types, username):
         available_cpe_quota = {} # Dictionary to keep track of available Compute engine quota
         required_cpe_quota = { m: 0 for m in METRICS } # Dictionary to keep track of required Compute engine quota
         ws_count = 0 # Variable to keep track of workstations count
-
-        cfg_data['reg_code'] = reg_code_get("1")
+        cfg_data['prefix'] = prefix_get("1")
         print("\n")
 
-        cfg_data['api_token'] = api_token_get("2")
+        cfg_data['reg_code'] = reg_code_get("2")
         print("\n")
 
-        print(f"3.  The default region is {DEFAULT_REGION} and the default zone is {DEFAULT_ZONE}.")
+        cfg_data['api_token'] = api_token_get("3")
+        print("\n")
+
+        print(f"4.  The default region is {DEFAULT_REGION} and the default zone is {DEFAULT_ZONE}.")
         customize = not answer_is_yes("    Would you like to continue with the default selections (y/n)? ")
 
         # GCP Region and Zone while loop
@@ -354,7 +382,7 @@ def configurations_get(project_id, ws_types, username):
             customize = True
 
         print("\n")
-        print(f"4.  Please enter the number of remote workstations to create (Default: {DEFAULT_NUMBEROF_WS}).")
+        print(f"5.  Please enter the number of remote workstations to create (Default: {DEFAULT_NUMBEROF_WS}).")
         print("    Based on your remaining quota and the number of available IP addresses in the subnet...")
         index = ord('a')
         for machine in ws_types:
@@ -378,4 +406,3 @@ def configurations_get(project_id, ws_types, username):
         print("")
         cfg_data['ad_password'] = ad_password_get(username)
         return cfg_data # Return to quickstart executable script
-
