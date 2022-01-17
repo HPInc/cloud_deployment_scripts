@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,6 +18,7 @@ resource "aws_s3_bucket_object" "lls-provisioning-script" {
     {
       aws_region              = var.aws_region, 
       bucket_name             = var.bucket_name,
+      cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,
       customer_master_key_id  = var.customer_master_key_id,
       haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
@@ -106,7 +107,23 @@ resource "aws_iam_instance_profile" "lls-instance-profile" {
   role = aws_iam_role.lls-role.name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group-lls-main" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
+  name = "${local.prefix}${var.host_name}-main"
+}
+
+resource "time_sleep" "delay_destroy_log_group_lls_main" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group-lls-main]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "lls_main" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group_lls_main]
+
   ami           = data.aws_ami.lls_ami.id
   instance_type = var.lls_instance_type
 
@@ -131,7 +148,23 @@ resource "aws_instance" "lls_main" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group-lls-backup" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  name = "${local.prefix}${var.host_name}-backup"
+}
+
+resource "time_sleep" "delay_destroy_log_group_lls_backup" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group-lls-backup]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "lls_backup" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group_lls_backup]
+  
   ami           = data.aws_ami.lls_ami.id
   instance_type = var.lls_instance_type
 
@@ -154,12 +187,4 @@ resource "aws_instance" "lls_backup" {
   tags = {
     Name = "${local.lls_host_name}-backup"
   }
-}
-
-resource "aws_cloudwatch_log_group" "instance-log-group-lls-main" {
-  name = "${local.prefix}${var.host_name}-main"
-}
-
-resource "aws_cloudwatch_log_group" "instance-log-group-lls-backup" {
-  name = "${local.prefix}${var.host_name}-backup"
 }

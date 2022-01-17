@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -137,7 +137,7 @@ check_required_vars() {
     fi
     set -x
 
-    if [[ "$missing_vars" = "true" ]]
+    if [[ "$missing_vars" == "true" ]]
     then
         log "--> Exiting..."
         exit 1
@@ -273,7 +273,12 @@ exec &>>$LOG_FILE
 
 log "$(date) Running $0 as $(whoami)..."
 install_prereqs
-setup_cloudwatch
+
+if [[ "${cloudwatch_enable}" == "true" ]]
+then
+    setup_cloudwatch
+fi
+
 get_credentials
 check_required_vars
 configure_firewall

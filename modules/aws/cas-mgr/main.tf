@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -31,6 +31,7 @@ resource "aws_s3_bucket_object" "cas-mgr-provisioning-script" {
       cas_mgr_aws_credentials_file = var.cas_mgr_aws_credentials_file,
       cas_mgr_deployment_sa_file   = var.cas_mgr_deployment_sa_file,
       cas_mgr_setup_script         = local.cas_mgr_setup_script,
+      cloudwatch_enable            = var.cloudwatch_enable,
       cloudwatch_setup_script      = var.cloudwatch_setup_script,
       customer_master_key_id       = var.customer_master_key_id,
       pcoip_registration_code      = var.pcoip_registration_code,
@@ -155,10 +156,25 @@ resource "aws_iam_instance_profile" "cas-mgr-instance-profile" {
   role = aws_iam_role.cas-mgr-role.name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
+  name = "${local.prefix}${var.host_name}"
+}
+
+resource "time_sleep" "delay_destroy_log_group" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "cas-mgr" {
   depends_on = [
     aws_s3_bucket_object.cas-mgr-setup-script,
     aws_s3_bucket_object.cas-mgr-provisioning-script,
+    # wait 5 seconds before deleting the log group to account for delays in 
+    # Cloudwatch receiving the last messages before an EC2 instance is shut down
+    time_sleep.delay_destroy_log_group
   ]
 
   subnet_id         = var.subnet
@@ -184,8 +200,4 @@ resource "aws_instance" "cas-mgr" {
   tags = {
     Name = "${local.prefix}${var.host_name}"
   }
-}
-
-resource "aws_cloudwatch_log_group" "instance-log-group" {
-  name = "${local.prefix}${var.host_name}"
 }

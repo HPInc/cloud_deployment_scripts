@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,6 +21,7 @@ resource "aws_s3_bucket_object" "haproxy-provisioning-script" {
     {
       aws_region              = var.aws_region, 
       bucket_name             = var.bucket_name,
+      cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,
       haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
       haproxy_config          = local.haproxy_config,
@@ -139,7 +140,23 @@ resource "aws_iam_instance_profile" "haproxy-instance-profile" {
   role = aws_iam_role.haproxy-role.name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group-ha-master" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  name = "${local.haproxy_host_name}-master"
+}
+
+resource "time_sleep" "delay_destroy_log_group_master" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group-ha-master]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "haproxy_master" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group_master]
+
   ami           = data.aws_ami.haproxy_ami.id
   instance_type = var.haproxy_instance_type
 
@@ -164,7 +181,23 @@ resource "aws_instance" "haproxy_master" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group-ha-backup" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
+  name = "${local.haproxy_host_name}-backup"
+}
+
+resource "time_sleep" "delay_destroy_log_group_backup" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group-ha-backup]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "haproxy_backup" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group_backup]
+
   ami           = data.aws_ami.haproxy_ami.id
   instance_type = var.haproxy_instance_type
 
@@ -188,12 +221,4 @@ resource "aws_instance" "haproxy_backup" {
   tags = {
     Name = "${local.haproxy_host_name}-backup"
   }
-}
-
-resource "aws_cloudwatch_log_group" "instance-log-group-ha-main" {
-  name = "${local.haproxy_host_name}-master"
-}
-
-resource "aws_cloudwatch_log_group" "instance-log-group-ha-backup" {
-  name = "${local.haproxy_host_name}-backup"
 }

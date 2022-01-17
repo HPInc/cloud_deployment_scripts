@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -142,7 +142,9 @@ function PCoIP-Agent-Register {
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-Setup-CloudWatch
+if ([System.Convert]::ToBoolean("${cloudwatch_enable}")) {
+    Setup-CloudWatch
+} 
 
 if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
     "--> Script is not using encryption for secrets."

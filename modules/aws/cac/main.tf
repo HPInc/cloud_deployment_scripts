@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -67,6 +67,7 @@ resource "aws_s3_bucket_object" "cac-provisioning-script" {
       cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "",
       cas_mgr_script              = local.cas_mgr_script,
       cas_mgr_url                 = var.cas_mgr_url,
+      cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
       customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
@@ -209,6 +210,18 @@ resource "aws_iam_instance_profile" "cac-instance-profile" {
   role = aws_iam_role.cac-role[0].name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
+
+  name = "${local.prefix}${var.host_name}-${count.index}"
+}
+
+resource "time_sleep" "delay_destroy_log_group" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "cac" {
   count = length(local.instance_info_list)
 
@@ -217,6 +230,9 @@ resource "aws_instance" "cac" {
     aws_s3_bucket_object.ssl-cert,
     aws_s3_bucket_object.get-cac-token-script,
     aws_s3_bucket_object.cac-provisioning-script,
+    # wait 5 seconds before deleting the log group to account for delays in 
+    # Cloudwatch receiving the last messages before an EC2 instance is shut down
+    time_sleep.delay_destroy_log_group
   ]
 
   availability_zone = local.instance_info_list[count.index].zone
@@ -244,10 +260,3 @@ resource "aws_instance" "cac" {
     Name = "${local.prefix}${var.host_name}-${count.index}"
   }
 }
-
-resource "aws_cloudwatch_log_group" "instance-log-group" {
-  count = length(local.instance_info_list)
-
-  name = "${local.prefix}${var.host_name}-${count.index}"
-}
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -139,4 +139,9 @@ variable "idle_shutdown_polling_interval_minutes" {
 variable "cloudwatch_setup_script" {
   description = "The script that sets up the AWS CloudWatch Logs agent"
   type        = string
+}
+
+variable "cloudwatch_enable" {
+  description = "Enable AWS CloudWatch Agent for sending logs to AWS CloudWatch"
+  default     = true
 }

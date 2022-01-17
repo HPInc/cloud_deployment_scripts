@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,6 +21,7 @@ resource "aws_s3_bucket_object" "lls-provisioning-script" {
     {
       aws_region              = var.aws_region, 
       bucket_name             = var.bucket_name,
+      cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,
       customer_master_key_id  = var.customer_master_key_id,
       lls_activation_code     = var.lls_activation_code,
@@ -129,7 +130,23 @@ resource "aws_iam_instance_profile" "lls-instance-profile" {
   role = aws_iam_role.lls-role[0].name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.cloudwatch_enable ? var.instance_count : 0
+  
+  name = "${local.prefix}${var.host_name}-${count.index}"
+}
+
+resource "time_sleep" "delay_destroy_log_group" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "lls" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group]
+
   count = var.instance_count
 
   ami           = data.aws_ami.ami.id
@@ -153,9 +170,4 @@ resource "aws_instance" "lls" {
   tags = {
     Name = "${local.host_name}-${count.index}"
   }
-}
-
-resource "aws_cloudwatch_log_group" "instance-log-group" {
-  count = var.instance_count
-  name = "${local.prefix}${var.host_name}-${count.index}"
 }

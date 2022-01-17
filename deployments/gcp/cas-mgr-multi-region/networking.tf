@@ -1,9 +1,16 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+locals {
+  cloud_dns_cidr = ["35.199.192.0/19"]
+
+  #Allows ingress traffic from the IP range 35.235.240.0/20. This range contains all IP addresses that IAP uses for TCP forwarding.
+  iap_cidr = ["35.235.240.0/20"]
+}
 
 data "http" "myip" {
   url = "https://api.ipify.org"
@@ -70,7 +77,7 @@ resource "google_compute_firewall" "allow-ssh" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-ssh"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs, local.iap_cidr)
 }
 
 # Open TCP/443 for Google Load balancers to perform health checks
@@ -102,7 +109,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs, local.iap_cidr)
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -180,7 +187,7 @@ resource "google_compute_firewall" "allow-google-dns" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-google-dns"]
-  source_ranges = ["35.199.192.0/19"]
+  source_ranges = local.cloud_dns_cidr
 }
 
 resource "google_compute_subnetwork" "dc-subnet" {

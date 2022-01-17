@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AWS_REGION=${aws_region}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
@@ -101,7 +102,7 @@ check_required_vars() {
     fi
     set -x
 
-    if [[ "$missing_vars" = "true" ]]; then
+    if [[ "$missing_vars" == "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
@@ -289,7 +290,7 @@ install_idle_shutdown() {
 
     log "--> Setting auto shutdown idle timer to $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN minutes..."
     INSTALL_OPTS="--idle-timer $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN"
-    if [[ "$IDLE_SHUTDOWN_ENABLE" = "false" ]]; then
+    if [[ "$IDLE_SHUTDOWN_ENABLE" == "false" ]]; then
         INSTALL_OPTS="$INSTALL_OPTS --disabled"
     fi
 
@@ -431,7 +432,10 @@ exec &>>$LOG_FILE
 
 log "$(date) Running $0 as $(whoami)..."
 
-setup_cloudwatch
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
+then
+    setup_cloudwatch
+fi
 
 get_credentials
 

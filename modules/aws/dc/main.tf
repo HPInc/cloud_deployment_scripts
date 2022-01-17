@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -55,6 +55,7 @@ data "template_file" "dc-provisioning-script" {
 
   vars = {
     bucket_name              = var.bucket_name
+    cloudwatch_enable        = var.cloudwatch_enable
     cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
@@ -169,7 +170,23 @@ resource "aws_iam_instance_profile" "dc-instance-profile" {
   role = aws_iam_role.dc-role.name
 }
 
+resource "aws_cloudwatch_log_group" "instance-log-group" {
+  count = var.cloudwatch_enable ? 1 : 0
+  
+  name = local.host_name
+}
+
+resource "time_sleep" "delay_destroy_log_group" {
+  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+
+  destroy_duration = "5s"
+}
+
 resource "aws_instance" "dc" {
+  # wait 5 seconds before deleting the log group to account for delays in 
+  # Cloudwatch receiving the last messages before an EC2 instance is shut down
+  depends_on = [time_sleep.delay_destroy_log_group]
+  
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
 
@@ -199,6 +216,12 @@ resource "null_resource" "upload-scripts" {
     id = aws_instance.dc.id
   }
 
+/* Occasionally application of this resource may fail with an error along the
+   lines of "dial tcp <DC public IP>:5986: i/o timeout". A potential cause of
+   this is when the sysprep script has not quite finished running to set up
+   WinRM on the DC host in time for this step to connect. Increasing the timeout
+   from the default 5 minutes is intended to work around this scenario.
+*/
   connection {
     type     = "winrm"
     user     = "Administrator"
@@ -207,6 +230,7 @@ resource "null_resource" "upload-scripts" {
     port     = 5986
     https    = true
     insecure = true
+    timeout  = "10m"
   }
 
   provisioner "file" {
@@ -341,8 +365,3 @@ resource "null_resource" "new-domain-user" {
     ]
   }
 }
-
-resource "aws_cloudwatch_log_group" "instance-log-group" {
-  name = local.host_name
-}
-
