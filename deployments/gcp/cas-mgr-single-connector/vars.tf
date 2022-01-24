@@ -110,7 +110,7 @@ variable "cas_mgr_disk_size_gb" {
 
 variable "cas_mgr_disk_image" {
   description = "Disk image for the CAS Manager"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20211214"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20220120"
 }
 
 variable "cas_mgr_admin_user" {
