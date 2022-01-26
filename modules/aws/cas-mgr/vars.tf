@@ -59,12 +59,12 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the Workstation"
-  default     = "125523088429"
+  default     = "aws-marketplace"
 }
 
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  default     = "CentOS 8*x86_64"
+  default     = "Rocky-8-ec2*x86_64*"
 }
 
 variable "host_name" {

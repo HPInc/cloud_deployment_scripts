@@ -1,4 +1,5 @@
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -143,7 +144,7 @@ configure_firewall(){
 
 add_cas_mgr_repo() {
     log "--> Adding CAS Manager repo..."
-    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | bash
+    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
     yum repolist --enabled teradici-cas-manager*
 }
 
@@ -192,7 +193,7 @@ cas_mgr_setup() {
     log "  --deployment_name $CAS_MGR_DEPLOYMENT_NAME"
     log "  --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file}"
     log "  --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME"
-    log "  --password <CAS Manager Administrator Password"
+    log "  --password <CAS Manager Administrator Password>"
     log "  --reg_code <PCoIP Registration Code>"
     log "  $optional_args"
 

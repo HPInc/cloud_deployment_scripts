@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -79,7 +79,7 @@ variable "disk_size_gb" {
 
 variable "disk_image" {
   description = "Disk image for the CAS Manager"
-  default     = "projects/centos-cloud/global/images/family/centos-8"
+  default     = "projects/rocky-linux-cloud/global/images/family/rocky-linux-8"
 }
 
 variable "cas_mgr_admin_user" {

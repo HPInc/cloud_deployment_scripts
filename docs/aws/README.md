@@ -64,6 +64,8 @@ aws_secret_access_key = <your_key>
 ```
 - (Optional) For better security, create an AWS KMS Customer Managed Symmetric Customer Master Key (CMK) to encrypt secrets.  Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create CMKs.
 
+For deployments using CAS Manager (deployments/aws/cas-mgr-*), the AWS account used for the CAS deployment **must first subscribe to Rocky Linux 8 in AWS Marketplace** before running Terraform. Visit https://aws.amazon.com/marketplace/pp/prodview-2otariyxb3mqu and click on the "Continue to Subscribe" button in the top-right corner of the webpage and subscribe by accepting the terms. Without this subscription, the deployment will not work.
+
 ### CAS Manager as a Service Setup
 (for deployments using the CAS Manager as a Service only)
 

@@ -94,7 +94,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.01.12"
+  default     = "Windows_Server-2019-English-Full-Base-2022.01.21"
 }
 
 variable "dc_pcoip_agent_version" {
@@ -177,12 +177,12 @@ variable "cas_mgr_disk_size_gb" {
 
 variable "cas_mgr_ami_owner" {
   description = "Owner of AMI for the CAS Manager"
-  default     = "125523088429"
+  default     = "aws-marketplace"
 }
 
 variable "cas_mgr_ami_name" {
   description = "Name of the AMI to create CAS Manager from"
-  default     = "CentOS 8.4.2105 x86_64"
+  default     = "Rocky-8-ec2-8.5-20211114.2.x86_64-d6577ceb-8ea8-4e0e-84c6-f098fc302e82"
 }
 
 variable "cas_mgr_admin_password" {
@@ -238,7 +238,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220104"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220118"
 }
 
 variable "cac_version" {
@@ -340,7 +340,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.01.12"
+  default     = "Windows_Server-2019-English-Full-Base-2022.01.21"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -375,7 +375,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.01.12"
+  default     = "Windows_Server-2019-English-Full-Base-2022.01.21"
 }
 
 variable "win_std_pcoip_agent_version" {
