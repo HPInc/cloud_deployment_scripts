@@ -52,22 +52,22 @@ variable "lls_disk_size_gb" {
 
 variable "haproxy_ami_owner" {
   description = "Owner of AMI for the HAProxy"
-  default     = "125523088429"
+  default     = "aws-marketplace"
 }
 
 variable "haproxy_ami_name" {
   description = "Name of the AMI to create HAProxy from"
-  default     = "CentOS 8*x86_64"
+  default     = "Rocky-8-ec2*x86_64*"
 }
 
 variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "125523088429"
+  default     = "aws-marketplace"
 }
 
 variable "lls_ami_name" {
   description = "Name of the AMI to create PCoIP License Server from"
-  default     = "CentOS 8*x86_64"
+  default     = "Rocky-8-ec2*x86_64*"
 }
 
 variable "host_name" {

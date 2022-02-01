@@ -10,7 +10,7 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 LLS_YUM_PKG="pcoip-license-server"
-LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/setup.rpm.sh"
+LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/cfg/setup/bash.rpm.sh"
 
 log() {
     local message="$1"
@@ -123,7 +123,6 @@ exec &>>$LOG_FILE
 log "$(date) Running $0 as $(whoami)..."
 
 yum update -y
-yum install -y yum-utils
 
 if [[ "${cloudwatch_enable}" == "true" ]]
 then
@@ -134,8 +133,8 @@ get_credentials
 
 check_required_vars
 
-curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | bash
-yum install -y $LLS_YUM_PKG
+curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
+dnf install -y $LLS_YUM_PKG
 
 set +x
 pcoip-set-password -p "1P@ssw0rd!" -n "$LLS_ADMIN_PASSWORD"
