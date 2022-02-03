@@ -115,6 +115,17 @@ data "aws_iam_policy_document" "centos-gfx-policy-doc" {
     effect    = "Allow"
   }
 
+  # add minimal permissions to allow users to connect to instances using Session Manager
+  statement {
+    actions   = ["ssm:UpdateInstanceInformation",
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
   dynamic statement {
     for_each = data.aws_kms_key.encryption-key
     iterator = i

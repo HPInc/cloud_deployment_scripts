@@ -310,6 +310,22 @@ update_firewall() {
     systemctl start firewalld
 }
 
+setup_ssm() {
+    yum install -y https://s3.$AWS_REGION.amazonaws.com/amazon-ssm-$AWS_REGION/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+
+    # According to https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent-technical-details.html#ssm-user-account, 
+    # the ssm agent supposed to create ssm-user account with root permissions, but the ssm agent occasionally doesn't assign ssm-user
+    # with root permissions in centos vms and it results in ssm-user not able to use sudo commands, so we assign root permissions to 
+    # ssm-users by creating /etc/sudoers.d/ssm-agent-users and add ssm-user to it as a workaround, please see the following link for more info:
+    # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-ssm-user-permissions.html#ssm-user-permissions-linux
+    cat << EOF > /etc/sudoers.d/ssm-agent-users
+# User rules for ssm-user
+ssm-user ALL=(ALL) NOPASSWD:ALL
+EOF
+}
+
 if (rpm -q pcoip-agent-standard); then
     exit
 fi
@@ -363,6 +379,8 @@ else
 fi
 
 update_firewall
+
+setup_ssm
 
 install_idle_shutdown
 

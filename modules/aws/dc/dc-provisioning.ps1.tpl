@@ -142,6 +142,17 @@ function PCoIP-Agent-Register {
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
+# SSM agent creates ssm-user account on the managed node when SSM agent starts, 
+# but this account isn't created automatically on Windows Server domain controller.  
+# To connect to domain controller using SSM, we create ssm-user for the SSM agent. 
+# More info can be found at https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html
+"================================================================"
+"Creating Local Account ssm-user For AWS Session Manager..."
+"================================================================"
+New-LocalUser -Name ssm-user -Description "local account for AWS Session Manager" -NoPassword
+"--> Assigning ssm-user to Administrators group"
+net localgroup "Administrators" "ssm-user" /add
+
 if ([System.Convert]::ToBoolean("${cloudwatch_enable}")) {
     Setup-CloudWatch
 } 

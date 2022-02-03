@@ -408,6 +408,20 @@ update_firewall() {
     systemctl start firewalld
 }
 
+setup_ssm() {
+    yum install -y https://s3.$AWS_REGION.amazonaws.com/amazon-ssm-$AWS_REGION/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+
+    # the ssm agent occasionally doesn't add ssm-user to the /etc/sudoers.d directory
+    # and it results in ssm-user not able to use sudo commands, 
+    # so we create /etc/sudoers.d/ssm-agent-users as a workaround
+    cat << EOF > /etc/sudoers.d/ssm-agent-users
+# User rules for ssm-user
+ssm-user ALL=(ALL) NOPASSWD:ALL
+EOF
+}
+
 # A flag to indicate if this is run from reboot
 RE_ENTER=0
 
@@ -477,6 +491,8 @@ else
     fi
     
     update_firewall
+
+    setup_ssm
 
     install_idle_shutdown
 
