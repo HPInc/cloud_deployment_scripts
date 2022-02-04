@@ -60,7 +60,7 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
-|                  |               | /var/log/cloud-init-output.log              | Console output log (duplicate log from provisioning.log)    |
+|                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
 | cas-mgr          | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
@@ -77,10 +77,10 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |
-| lls              | centos        | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| lls              | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
-|                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
+|                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 | dc               | Administrator | C:\Teradici\provisioning.log                | Detailed transcript log for PowerShell provisioning script  |
 |                  |               | C:\Windows\System32\winevt\Logs             | Detailed system logs such as Active Directory Web Services  |
 | win-gfx          | Administrator | C:\Teradici\provisioning.log                | Detailed transcript log for PowerShell provisioning script  |
@@ -97,7 +97,7 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 | cac              | cas_admin     | /var/log/syslog                             | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
-|                  |               | /var/log/cloud-init-output.log              | Console output log (duplicate log from provisioning.log)    |
+|                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
 | cas-mgr          | cas_admin     | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
