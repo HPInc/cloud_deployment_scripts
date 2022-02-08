@@ -7,7 +7,7 @@
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 LLS_CONFIG_FILE="/opt/flexnetls/TERADICI/local-configuration.yaml"
-LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/setup.rpm.sh"
+LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/cfg/setup/bash.rpm.sh"
 FLEXNETLSADMIN="/opt/flexnetls/TERADICI/admintools/flexnetlsadmin.sh"
 INSTALL_DIR="/root"
 LLS_YUM_PKG="pcoip-license-server"
@@ -54,9 +54,8 @@ setup_cloudwatch(){
         . ${cloudwatch_setup_script} ${aws_region} \
             $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
-            "/var/log/messages.log"             "%b %d %H:%M:%S" \
-            "/var/log/user-data.log"            "%a %b %d %H:%M:%S %Z %Y" \
-            "/var/log/yum.log"                  "%b %d %H:%M:%S" 
+            "/var/log/messages"                 "%b %d %H:%M:%S" \
+            "/var/log/user-data.log"            "%a %b %d %H:%M:%S %Z %Y"
     fi
 }
 
@@ -102,8 +101,8 @@ check_required_vars() {
 }
 
 install_pcoip_license_server() {
-    curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | bash
-    yum install -y $LLS_YUM_PKG
+    curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
+    dnf install -y $LLS_YUM_PKG
 
     set +x
     pcoip-set-password -p "1P@ssw0rd!" -n "$LLS_ADMIN_PASSWORD"
@@ -266,7 +265,7 @@ log "$(date) Running $0 as $(whoami)..."
 cd $INSTALL_DIR
 
 yum update -y
-yum install -y nc yum-utils
+yum install -y nc
 
 if [[ "${cloudwatch_enable}" == "true" ]]
 then

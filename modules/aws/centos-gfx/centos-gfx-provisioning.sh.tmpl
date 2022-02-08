@@ -67,10 +67,10 @@ setup_cloudwatch(){
         . ${cloudwatch_setup_script} ${aws_region} \
             $LOG_FILE                        "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/messages"              "%b %d %H:%M:%S" \
-            "/var/log/user-data.log"         "[%a %b %d %H:%M:%S %Z %Y]" \
-            "/var/log/yum.log"               "%b %d %H:%M:%S" \
+            "/var/log/nvidia-installer.log"  "%a %b %d %H:%M:%S %Y" \
             "/var/log/pcoip-agent/agent.log" "%Y-%m-%dT%H:%M:%S.%fZ" \
-            "/var/log/nvidia-installer.log"  "%a %b %d %H:%M:%S %Y"
+            "/var/log/user-data.log"         "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/yum.log"               "%b %d %H:%M:%S"
     fi
 }
 

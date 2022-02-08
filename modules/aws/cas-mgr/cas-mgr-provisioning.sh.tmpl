@@ -75,10 +75,9 @@ setup_cloudwatch(){
 
         . ${cloudwatch_setup_script} ${aws_region} \
             $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
             "/var/log/messages"                 "%b %d %H:%M:%S" \
-            "/var/log/user-data.log"            "%a %b %d %H:%M:%S %Z %Y" \
-            "/var/log/yum.log"                  "%b %d %H:%M:%S" \
-            "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z."
+            "/var/log/user-data.log"            "%a %b %d %H:%M:%S %Z %Y"
     fi
 }
 
