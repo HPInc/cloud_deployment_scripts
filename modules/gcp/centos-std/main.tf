@@ -35,9 +35,11 @@ resource "google_storage_bucket_object" "centos-std-provisioning-script" {
     {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      bucket_name                 = var.bucket_name, 
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       kms_cryptokey_id            = var.kms_cryptokey_id,
+      ops_setup_script            = var.ops_setup_script,
       pcoip_registration_code     = var.pcoip_registration_code,
       teradici_download_token     = var.teradici_download_token,
 

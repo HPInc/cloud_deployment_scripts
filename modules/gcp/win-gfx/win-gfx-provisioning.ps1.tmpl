@@ -6,6 +6,7 @@
 $ADMIN_PASSWORD              = "${admin_password}"
 $AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
@@ -13,6 +14,7 @@ $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_
 $KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
 $NVIDIA_DRIVER_FILENAME      = "${nvidia_driver_filename}"
 $NVIDIA_DRIVER_URL           = "${nvidia_driver_url}"
+$OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
@@ -67,6 +69,19 @@ function Get-AuthToken {
     catch {
         "--> ERROR: Failed to fetch auth token: $_"
         return $false
+    }
+}
+
+function Setup-Ops {
+    "################################################################"
+    "Running Ops Agent setup script from gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "
+    "################################################################"
+    if (Test-Path "C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml") {
+        "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
+    } else {
+        gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "C:\Teradici\"
+        
+        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\Teradici\provisioning.log"
     }
 }
 
@@ -367,6 +382,8 @@ if (Test-Path $LOG_FILE) {
 }
 
 Start-Transcript -path $LOG_FILE -append
+
+Setup-Ops
 
 "--> Script running as user '$(whoami)'."
 

@@ -7,6 +7,7 @@
 
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+BUCKET_NAME=${bucket_name}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
@@ -14,6 +15,7 @@ IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_s
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
 KMS_CRYPTOKEY_ID=${kms_cryptokey_id}
 NVIDIA_DRIVER_URL=${nvidia_driver_url}
+OPS_SETUP_SCRIPT=${ops_setup_script}
 PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
@@ -48,6 +50,31 @@ retry() {
     if [[ $retries -eq $max_retries ]]
     then
         return 1
+    fi
+}
+
+setup_ops() {
+    if [[ -f "/etc/google-cloud-ops-agent/config.yaml" ]]
+    then
+        log "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
+    else
+        log "--> Setting up GCP OPs Agent..."
+
+        retry "gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT ."
+        if [ $? -ne 0 ]; then
+            log "--> ERROR: Failed to install GCP OPs agent."
+            exit 1
+        fi 
+
+        chmod +x $OPS_SETUP_SCRIPT
+
+        . $OPS_SETUP_SCRIPT \
+            $LOG_FILE \
+            "/var/log/messages" \
+            "/var/log/nvidia-installer.log" \
+            "/var/log/pcoip-agent/agent.log" \
+            "/var/log/user-data.log" \
+            "/var/log/yum.log"
     fi
 }
 
@@ -361,13 +388,15 @@ else
     RE_ENTER=1
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
+
+log "$(date) Running $0 as $(whoami)..."
+
+setup_ops
 
 get_credentials
 

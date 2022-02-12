@@ -170,3 +170,8 @@ variable "ssl_cert_filename" {
   description = "SSL certificate for the Connector"
   type        = string
 }
+
+variable "ops_setup_script" {
+  description = "The script that sets up the GCP Ops Agent"
+  type        = string
+}

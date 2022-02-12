@@ -59,14 +59,17 @@ This repository contains Terraform configurations for a number of different CAS 
 Although it is possible to create deployments in existing and currently in-use GCP projects, it is recommended to create them in new projects to reduce chances of name collisions and interfering with operations of existing resources.
 
 With a new GCP project:
-- create a new service account with __Editor__ and __Cloud KMS CryptoKey Encrypter/Decrypter__ permissions. Create and download the credentials in JSON format. These credentials are needed by CAS Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
-- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
+- create a new service account with __Editor__, __Cloud KMS CryptoKey Encrypter/Decrypter__, and __Logs Configuration Writer__  permissions. Create and download the credentials in JSON format. These credentials are needed by CAS Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
+- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com logging.googleapis.com monitoring.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
+    - Cloud Logging
+    - Cloud Monitoring
     - Cloud Resource Manager
     - Compute Engine
     - Google Cloud DNS
     - Identity-Aware Proxy (IAP)
+- disable the _Default logging bucket in the GCP console or via the command `gcloud logging sinks update _Default  --disabled`
 - (Optional) For better security, create a Google KMS key ring and crypto key to encrypt secrets. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
 
 ### CAS Manager as a Service Setup
@@ -165,7 +168,7 @@ Once the workstations have been added to be managed by CAS Manager and assigned 
 Terraform is a declarative language to describe the desired state of resources. A user can modify `terraform.tfvars` and run `terraform apply` again, and Terraform will try to only apply the changes needed to achieve the new state.
 
 ### Deleting the deployment
-Run `terraform destroy` to remove all resources created by Terraform.
+Run `terraform destroy` to remove all resources created by Terraform, then go to [GCP Logs Storage](https://console.cloud.google.com/logs/storage) and delete the log bucket named `<prefix>-logging-bucket`.
 
 ## Troubleshooting
 Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.
