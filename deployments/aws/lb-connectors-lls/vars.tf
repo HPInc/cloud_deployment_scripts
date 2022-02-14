@@ -167,12 +167,12 @@ variable "lls_disk_size_gb" {
 
 variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
+  default     = "792107900819"
 }
 
 variable "lls_ami_name" {
   description = "Name of the Rocky Linux AMI to run PCoIP License Server on"
-  default     = "Rocky-8-ec2-8.5-20211114.2.x86_64-d6577ceb-8ea8-4e0e-84c6-f098fc302e82"
+  default     = "Rocky-8-ec2-8.5-20211114.2.x86_64"
 }
 
 variable "lls_admin_password" {
