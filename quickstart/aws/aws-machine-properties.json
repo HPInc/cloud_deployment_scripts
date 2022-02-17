@@ -3,10 +3,10 @@
         "name": "Domain Controller",
         "service_requirements": {
             "ec2": {
-                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+                "L-34B43A08": 4
             },
             "vpc": {
-                "Network interfaces per Region": 1
+                "L-DF5E4CA3": 1
             }
         }
     },
@@ -14,10 +14,10 @@
         "name": "Cloud Access Connector",
         "service_requirements": {
             "ec2": {
-                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+                "L-34B43A08": 4
             },
             "vpc": {
-                "Network interfaces per Region": 1
+                "L-DF5E4CA3": 1
             }
         }
     },
@@ -25,10 +25,10 @@
         "name": "Standard CentOS",
         "service_requirements": {
             "ec2": {
-                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+                "L-34B43A08": 4
             },
             "vpc": {
-                "Network interfaces per Region": 1
+                "L-DF5E4CA3": 1
             }
         }
     },
@@ -36,10 +36,10 @@
         "name": "Graphics CentOS",
         "service_requirements": {
             "ec2": {
-                "All G and VT Spot Instance Requests": 4
+                "L-3819A6DF": 4
             },
             "vpc": {
-                "Network interfaces per Region": 1
+                "L-DF5E4CA3": 1
             }
         }
     },
@@ -47,10 +47,10 @@
         "name": "Standard Windows",
         "service_requirements": {
             "ec2": {
-                "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 4
+                "L-34B43A08": 4
             },
             "vpc": {
-                "Network interfaces per Region": 1
+                "L-DF5E4CA3": 1
             }
         }
     },
@@ -58,10 +58,10 @@
         "name": "Graphics Windows",
         "service_requirements": {
             "ec2": {
-                "All G and VT Spot Instance Requests": 4
+                "L-3819A6DF": 4
             },
             "vpc": {
-                "Network interfaces per Region": 1
+                "L-DF5E4CA3": 1
             }
         }
     }

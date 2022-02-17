@@ -31,16 +31,16 @@ MAX_SUBNET_IPS = 251
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html
 SERVICE_QUOTA_REQUIREMENTS = {
     'vpc': {
-        "Internet gateways per Region": 1,
-        "NAT gateways per Availability Zone": 1,
-        "VPC security groups per Region": 5,
-        "VPCs per Region": 1,
-        "Network interfaces per Region": 3
+        "L-A4707A72": 1, # Internet gateways per Region
+        "L-FE5A380F": 1, # NAT gateways per Availability Zone
+        "L-E79EC296": 5, # VPC security groups per Region
+        "L-F678F1CE": 1, # VPCs per Region
+        "L-DF5E4CA3": 3  # Network interfaces per Region
     },
     'ec2': {
-        "EC2-VPC Elastic IPs": 1,
-        "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests": 0,
-        "All G and VT Spot Instance Requests": 0
+        "L-0263D0A3": 1, # EC2-VPC Elastic IPs
+        "L-34B43A08": 0, # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
+        "L-3819A6DF": 0  # All G and VT Spot Instance Requests
     }
 }
 
@@ -130,35 +130,41 @@ def configurations_get(ws_types, username, quickstart_path):
         # that is currently in use and the name of the list within the response 
         # that contains the resources currently in use
         QUOTA_CHECK_MAPPING = {
-            'Internet gateways per Region': {
+            # Internet gateways per Region
+            'L-A4707A72': {
                 'function': ec2.describe_internet_gateways,
                 'query': 'InternetGateways'
             },
-            'NAT gateways per Availability Zone': {
+            # NAT gateways per Availability Zone
+            'L-FE5A380F': {
                 'function': ec2.describe_nat_gateways,
                 'query': 'NatGateways'
             },
-            'VPC security groups per Region': {
+            # VPC security groups per Region
+            'L-E79EC296': {
                 'function': ec2.describe_security_groups,
                 'query': 'SecurityGroups'
             },
-            'VPCs per Region': {
+            # VPCs per Region
+            'L-F678F1CE': {
                 'function': ec2.describe_vpcs,
                 'query': 'Vpcs'
             },
-            'Network interfaces per Region': {
+            # Network interfaces per Region
+            'L-DF5E4CA3': {
                 'function': ec2.describe_network_interfaces,
                 'query': 'NetworkInterfaces'
             },
-            'EC2-VPC Elastic IPs': {
+            # EC2-VPC Elastic IPs
+            'L-0263D0A3': {
                 'function': ec2.describe_addresses,
                 'query': 'Addresses'
             }
         }
 
-        if requirement == "All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests":
+        if requirement == "L-34B43A08": # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
             return instance_requests_count(['a','c','d','h','i','m','r','t','z'])
-        if requirement == "All G and VT Spot Instance Requests":
+        if requirement == "L-3819A6DF": # All G and VT Spot Instance Requests
             return instance_requests_count(['g'])
 
         function = QUOTA_CHECK_MAPPING[requirement]['function']
@@ -188,7 +194,7 @@ def configurations_get(ws_types, username, quickstart_path):
             available_service_quota[service] = {}
             for r in SERVICE_QUOTA_REQUIREMENTS[service]:
                 for q in service_quota_list:
-                    if r == q['QuotaName']:
+                    if r == q['QuotaCode']:
                         available_service_quota[service][r] = q['Value'] - service_quota_in_use_get(r, aws_region)
         return available_service_quota
 

@@ -110,7 +110,7 @@ aws iam detach-role-policy --role-name <prefix>-cas-manager_role --policy-arn ar
 aws iam delete-policy --policy-arn arn:aws:iam::<account-id>:policy/<prefix>-cas-manager_role_policy
 aws iam delete-role --role-name <prefix>-cas-manager_role
 aws iam delete-access-key --user-name <prefix>-cas-manager --access-key-id <access-key-id>
-aws iam detach-user-policy --user-name <prefix>-cas-manager --policy-arn arn:aws:iam::aws:policy/AdministratorAcces
+aws iam detach-user-policy --user-name <prefix>-cas-manager --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
 aws iam delete-user --user-name <prefix>-cas-manager
 ```
 
