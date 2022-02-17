@@ -59,7 +59,7 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the Workstation"
-  default     = "aws-marketplace"
+  default     = "792107900819"
 }
 
 variable "ami_name" {

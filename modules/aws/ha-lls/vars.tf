@@ -52,7 +52,7 @@ variable "lls_disk_size_gb" {
 
 variable "haproxy_ami_owner" {
   description = "Owner of AMI for the HAProxy"
-  default     = "aws-marketplace"
+  default     = "792107900819"
 }
 
 variable "haproxy_ami_name" {
@@ -62,7 +62,7 @@ variable "haproxy_ami_name" {
 
 variable "lls_ami_owner" {
   description = "Owner of AMI for the PCoIP License Server"
-  default     = "aws-marketplace"
+  default     = "792107900819"
 }
 
 variable "lls_ami_name" {
