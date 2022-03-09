@@ -14,27 +14,27 @@ log() {
 }
 
 retry() {
-    local timeout="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-    while true
+    local retry_num=0
+    until eval $shell_command
     do
-        log "$log_message"
-        eval $command && break
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
 
-        if [ $timeout -le 0 ]
+        if [ $retry_remain -eq 0 ]
         then
-            log "$err_message"
-            exit 1
+            log $error_message
+            return $rc
         fi
 
-        log "Retrying in $interval seconds... (Timeout in $timeout seconds)"
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
 
-        timeout=$((timeout-interval))
-        sleep $interval
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
 }
 
@@ -43,7 +43,10 @@ setup_cloudwatch(){
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
-        aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} .
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}."
         chmod +x ${cloudwatch_setup_script}
         dos2unix ${cloudwatch_setup_script}
 
@@ -62,10 +65,10 @@ s3_get() {
     local dst="$2"
     local executable="$3"
 
-    retry 300 10 \
-        "aws s3 cp s3://$src $dst" \
-        "Downloading s3://$src to $dst..." \
-        "ERROR: Failed to download s3://$src."
+    retry 30 `# 30 retries` \
+          10 `# 10s interval` \
+          "aws s3 cp s3://$src $dst" \
+          "ERROR: Failed to download s3://$src."
 
     dos2unix $dst
     [ $executable ] && chmod +x $dst

@@ -35,25 +35,27 @@ log() {
 
 # Try command until zero exit status or exit(1) when non-zero status after max tries
 retry() {
-    local counter="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
-    local count=0
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-    while [ true ]
+    local retry_num=0
+    until eval $shell_command
     do
-        ((count=count+1))
-        eval $command && break
-        if [ $count -gt $counter ]
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
         then
-            log "$err_message"
-            return 1
-        else
-            log "$log_message Retrying in $interval seconds"
-            sleep $interval
+            log $error_message
+            return $rc
         fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
 }
 
@@ -89,17 +91,15 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry   3 \
-            5 \
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
             "yum install -y usb-vhci" \
-            "--> Non-zero exit status." \
             "--> Warning: Failed to install usb-vhci."
 
     log "--> Installing PCoIP standard agent..."
-    retry   3 \
-            5 \
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
             "yum -y install pcoip-agent-standard" \
-            "--> Non-zero exit status." \
             "--> ERROR: Failed to download PCoIP agent."
     if [ $? -eq 1 ]; then
         exit 1

@@ -7,7 +7,9 @@
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AWS_REGION=${aws_region}
+BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
 CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
@@ -30,25 +32,27 @@ log() {
 
 # Try command until zero exit status or exit(1) when non-zero status after max tries
 retry() {
-    local counter="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
-    local count=0
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-    while [ true ]
+    local retry_num=0
+    until eval $shell_command
     do
-        ((count=count+1))
-        eval $command && break
-        if [ $count -gt $counter ]
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
         then
-            log "$err_message"
-            return 1
-        else
-            log "$log_message Retrying in $interval seconds"
-            sleep $interval
+            log $error_message
+            return $rc
         fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
 }
 
@@ -57,13 +61,14 @@ setup_cloudwatch(){
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
-        retry 3 5 "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
-            "--> " \
-            "--> ERROR: Failed to download CloudWatch setup script."
-        chmod +x ${cloudwatch_setup_script}
-        dos2unix ${cloudwatch_setup_script}
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT."
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
-        . ${cloudwatch_setup_script} ${aws_region} \
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
             $LOG_FILE                        "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/messages"              "%b %d %H:%M:%S" \
             "/var/log/pcoip-agent/agent.log" "%Y-%m-%dT%H:%M:%S.%fZ" \
@@ -133,17 +138,15 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry   3 \
-            5 \
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
             "yum install -y usb-vhci" \
-            "--> Non-zero exit status." \
             "--> Warning: Failed to install usb-vhci."
 
     log "--> Installing PCoIP standard agent..."
-    retry   3 \
-            5 \
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
             "yum -y install pcoip-agent-standard" \
-            "--> Non-zero exit status." \
             "--> ERROR: Failed to download PCoIP agent."
     if [ $? -eq 1 ]; then
         exit 1
@@ -178,10 +181,9 @@ install_idle_shutdown() {
     log "--> Installing idle shutdown..."
     mkdir /tmp/idleShutdown
 
-    retry 3 \
-          5 \
-          "curl 'https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh' --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
-          "-->" \
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "curl https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
           "--> ERROR: Failed to download Install-Idle-Shutdown.sh."
 
     awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
@@ -192,11 +194,13 @@ install_idle_shutdown() {
         INSTALL_OPTS="$INSTALL_OPTS --disabled"
     fi
 
-    retry 3 5 "/tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS"
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "/tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS" \
+          "--> ERROR: Failed to install idle shutdown."
 
-    exitCode=$?
-    if [[ $exitCode -ne 0 ]]; then
-        log "--> ERROR: Failed to install idle shutdown."
+    if [[ $? -ne 0 ]]; then
+        log "--> Exiting provisioning script due to an error."
         exit 1
     fi
 
@@ -243,8 +247,7 @@ join_domain() {
         do
             echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="$AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME" "$DOMAIN_NAME" --verbose >&2
 
-            local rc=$?
-            if [[ $rc -eq 0 ]]
+            if [[ $? -eq 0 ]]
             then
                 log "--> Successfully joined domain '$DOMAIN_NAME'."
                 break

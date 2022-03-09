@@ -24,48 +24,44 @@ log() {
 }
 
 retry() {
-    local timeout="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-    log "$log_message"
-
-    until $command
+    local retry_num=0
+    until eval $shell_command
     do
-        if [ $timeout -le 0 ]
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
         then
-            log $err_message
-            break
+            log $error_message
+            return $rc
         fi
 
-        log "$log_message Retrying in $interval seconds... (Timeout in $timeout seconds)"
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
 
-        timeout=$((timeout-interval))
-        sleep $interval
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
 }
 
 setup_ops() {
-    local timeout=25
-    local interval=5
-
     if [[ -f "/etc/google-cloud-ops-agent/config.yaml" ]]
     then
         log "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
     else
         log "--> Setting up GCP OPs Agent..."
 
-        retry $timeout \
-              $interval \
+        retry 25 `# 25 retries` \
+              5  `# 5s interval` \
               "gsutil cp gs://${bucket_name}/${ops_setup_script} ." \
-              "--> Downloading Logging Agent from the bucket ${bucket_name}..." \
-              "--> ERROR: Failed to download Logging Agent from bucket ${bucket_name}."
+              "--> ERROR: Failed to download Logging Agent from gs://${bucket_name}/${ops_setup_script}."
 
         if [ $? -ne 0 ]; then
             log "--> ERROR: Failed to install GCP OPs Agent."
-            exit 1
         fi 
 
         chmod +x ${ops_setup_script}
@@ -101,10 +97,10 @@ install_prereqs() {
 get_credentials() {
     if [ "${gcp_sa_file}" ]
     then
-        retry 7200 10 \
-            "gsutil cp gs://${bucket_name}/${gcp_sa_file} $INSTALL_DIR" \
-            "--> Downloading GCP Service Account key from the bucket ${bucket_name}..." \
-            "--> ERROR: Failed to download GCP Service Account key from bucket ${bucket_name}."
+        retry 720 `# 720 retries` \
+              10  `# 10s interval` \
+              "gsutil cp gs://${bucket_name}/${gcp_sa_file} $INSTALL_DIR" \
+              "--> ERROR: Failed to download GCP Service Account key from bucket ${bucket_name}."
     fi
 
     # Disable logging of secrets by wrapping the region with set +x and set -x
@@ -206,10 +202,10 @@ cas_mgr_setup() {
 
     log "--> Running CAS Manager setup script..."
 
-    retry 7200 10 \
+    retry 720 `# 720 retries` \
+          10  `# 10s interval` \
           "gsutil cp gs://${bucket_name}/${cas_mgr_setup_script} $INSTALL_DIR" \
-          "--> Downloading CAS Manager setup script from bucket ${bucket_name}..." \
-          "--> ERROR: Failed to download CAS Manager setup script from bucket ${bucket_name}."
+          "--> ERROR: Failed to download CAS Manager setup script from gs://${bucket_name}/${cas_mgr_setup_script}."
 
     dos2unix $INSTALL_DIR/${cas_mgr_setup_script}
     chmod +x $INSTALL_DIR/${cas_mgr_setup_script}
@@ -266,11 +262,14 @@ upload_dsa_key() {
 
     log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
 
-    gsutil cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} gs://${bucket_name}/
+    retry 5 `# 5 retries`\
+          5 `# 5s interval` \
+          "gsutil cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} gs://${bucket_name}/"
+          "--> ERROR: Failed to upload Deployment Service Account Key to bucket ${bucket_name}"
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to upload CAS Manager deployment service account key to bucket ${bucket_name}. Exiting provisioning script..."
+        log "--> Exiting provisioning script due to an error."
         exit 1
     fi
 }

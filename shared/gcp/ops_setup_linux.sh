@@ -16,25 +16,29 @@ args=( "$@" )
 LOGGING_AGENT_SETUP_URL="https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh"
 
 # Try command until zero exit status or exit(1) when non-zero status after max tries
-ops_retry() {
-    local retries=0
-    local max_retries=3
-    until [[ $retries -ge $max_retries ]]
-    do  
-    # Break if command succeeds, or log then retry if command fails.
-        $@ && break || {
+retry_ops() {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-            log "--> Failed to run command. $@"
-            log "--> Retries left... $(( $max_retries - $retries ))"
-            ((retries++))
-            sleep 10;
-        }
+    local retry_num=0
+    until eval $shell_command
+    do
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
+        then
+            log $error_message
+            return $rc
+        fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
-
-    if [[ $retries -eq $max_retries ]]
-    then
-        return 1
-    fi
 }
 
 # To build structure of logging receivers and logging pipelines. 
@@ -87,19 +91,17 @@ EOF
 }
 
 log "Downloading Logging Agent from $LOGGING_AGENT_SETUP_URL..."
-ops_retry curl -sSO $LOGGING_AGENT_SETUP_URL
+retry_ops 3  `# 3 retries` \
+          10 `# 10s interval` \
+          "curl -sSO $LOGGING_AGENT_SETUP_URL" \
+          "--> ERROR: Failed to download Logging Agent from from $LOGGING_AGENT_SETUP_URL"
+
 bash add-google-cloud-ops-agent-repo.sh --also-install
 
 log "Configuring OPs Agent..."
 
 collect_list=""
 receivers_list=""
-
-while [ -z "${instance_name}" ]
-do
-    instance_name=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/hostname | cut -d. -f1)
-    sleep 5;
-done
 
 for ((i=0; i<${#args[@]}; i+=1))
 do

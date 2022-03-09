@@ -97,10 +97,6 @@ Retry -Action {$wc.DownloadFile($OPS_AGENT_INSTALLER_URL, "$OPS_AGENT_DIR\$OPS_A
 Invoke-Expression "$OPS_AGENT_DIR_INSTALL\$OPS_AGENT_INSTALLER -AlsoInstall"
 
 "--> Configuring OPS Agent..."
-while ($global:instance_name -eq $null) {
-  $global:instance_name = Invoke-RestMethod -Headers @{'Metadata-Flavor'='Google'} -Uri 'http://metadata.google.internal/computeMetadata/v1/instance/name'
-  Start-Sleep -Seconds 5
-}
 
 $global:collect_list = @()
 $global:receivers_list = @()

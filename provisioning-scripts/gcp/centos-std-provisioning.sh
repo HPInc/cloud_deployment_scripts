@@ -33,24 +33,28 @@ log() {
 }
 
 retry() {
-    local retries=0
-    local max_retries=3
-    until [[ $retries -ge $max_retries ]]
-    do  
-    # Break if command succeeds, or log then retry if command fails.
-        $@ && break || {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-            log "--> Failed to run command. $@"
-            log "--> Retries left... $(( $max_retries - $retries ))"
-            ((retries++))
-            sleep 10;
-        }
+    local retry_num=0
+    until eval $shell_command
+    do
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
+        then
+            log $error_message
+            return $rc
+        fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
-
-    if [[ $retries -eq $max_retries ]]
-    then
-        return 1
-    fi
 }
 
 check_required_vars() {
@@ -84,14 +88,20 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry "yum install -y usb-vhci"
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum install -y usb-vhci" \
+            "--> Warning: Failed to install usb-vhci."
     if [ $? -ne 0 ]; then
         log "--> Warning: Failed to install usb-vhci."
     fi
     log "--> usb-vhci successfully installed."
 
     log "--> Installing PCoIP standard agent..."
-    retry yum -y install pcoip-agent-standard
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum -y install pcoip-agent-standard" \
+            "--> ERROR: Failed to download PCoIP agent."
     if [ $? -ne 0 ]; then
         log "--> ERROR: Failed to install PCoIP agent."
         exit 1

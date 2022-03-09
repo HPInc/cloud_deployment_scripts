@@ -53,7 +53,7 @@ function Setup-Ops {
     if (Test-Path "C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml") {
         "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
     } else {
-        gsutil cp gs://${bucket_name}/${ops_setup_script} "C:\Teradici\"
+        Retry -Action {gsutil cp gs://${bucket_name}/${ops_setup_script} "C:\Teradici\"}
         
         powershell "C:\Teradici\${ops_setup_script}" "C:\Teradici\provisioning.log"
     }
