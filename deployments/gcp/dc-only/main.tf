@@ -11,6 +11,9 @@ locals {
 
   gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
+  ops_linux_setup_script = "ops_setup_linux.sh"
+  ops_win_setup_script = "ops_setup_win.ps1"
+  log_bucket_name = "${local.prefix}logging-bucket"
 }
 
 resource "random_id" "bucket-name" {
@@ -22,6 +25,39 @@ resource "google_storage_bucket" "scripts" {
   location      = var.gcp_region
   storage_class = "REGIONAL"
   force_destroy = true
+}
+
+resource "google_storage_bucket_object" "ops-setup-linux-script" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.ops_linux_setup_script
+  source = "../../../shared/gcp/${local.ops_linux_setup_script}"
+}
+
+resource "google_storage_bucket_object" "ops-setup-win-script" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.ops_win_setup_script
+  source = "../../../shared/gcp/${local.ops_win_setup_script}"
+}
+
+# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though 
+# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually, 
+# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at: 
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_bucket_config
+# _Default log bucket created by Google cannot be deleted and need to be disabled before creating the deployment to avoid saving the same logs
+# in both _Defualt log bucket and the log bucket created by Terraform
+resource "google_logging_project_bucket_config" "main" {
+  bucket_id = local.log_bucket_name
+  project   = local.gcp_project_id
+  location  = "global"
+}
+
+# Create a sink to route instance logs to desinated log bucket
+resource "google_logging_project_sink" "instance-sink" {
+  name        = "${local.prefix}sink"
+  destination = "logging.googleapis.com/${google_logging_project_bucket_config.main.id}"
+  filter      = "resource.type = gce_instance AND resource.labels.project_id = ${local.gcp_project_id}"
+
+  unique_writer_identity = true
 }
 
 module "dc" {
@@ -53,6 +89,8 @@ module "dc" {
     google_compute_firewall.allow-rdp.name,
     google_compute_firewall.allow-winrm.name,
   ]
+
+  ops_setup_script = local.ops_win_setup_script
 
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb

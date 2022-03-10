@@ -47,6 +47,37 @@ retry() {
     done
 }
 
+setup_ops() {
+    local timeout=25
+    local interval=5
+
+    if [[ -f "/etc/google-cloud-ops-agent/config.yaml" ]]
+    then
+        log "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
+    else
+        log "--> Setting up GCP OPs Agent..."
+
+        retry $timeout \
+              $interval \
+              "gsutil cp gs://${bucket_name}/${ops_setup_script} ." \
+              "--> Downloading Logging Agent from the bucket ${bucket_name}..." \
+              "--> ERROR: Failed to download Logging Agent from bucket ${bucket_name}."
+
+        if [ $? -ne 0 ]; then
+            log "--> ERROR: Failed to install GCP OPs Agent."
+            exit 1
+        fi 
+
+        chmod +x ${ops_setup_script}
+
+        . ${ops_setup_script} \
+            $LOG_FILE \
+            "/var/log/cloud-init-output.log" \
+            "/var/log/syslog" \
+            "/var/log/teradici/cac-install.log"
+    fi
+}
+
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
     yum update -y
@@ -260,6 +291,7 @@ set -x
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+setup_ops
 install_prereqs
 get_credentials
 check_required_vars
