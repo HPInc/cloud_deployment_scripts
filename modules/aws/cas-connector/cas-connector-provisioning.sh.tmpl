@@ -1,0 +1,417 @@
+# © Copyright 2022 HP Development Company, L.P.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+#!/bin/bash
+
+CAS_CONNECTOR_BIN_PATH="/usr/local/bin/cas-connector"
+CAS_CONNECTOR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager-beta/cfg/setup/bash.rpm.sh"
+CAS_CONNECTOR_INSTALL_LOG="/var/log/teradici/cas-connector-install.log"
+CONNECTOR_TOKEN_FILE=$PROVISIONING_DIR/connector_token
+LOG_FILE="/var/log/teradici/provisioning.log"
+PROVISIONING_DIR="/root"
+
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
+
+retry() {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
+
+    local retry_num=0
+    until eval $shell_command
+    do
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
+        then
+            log $error_message
+            return $rc
+        fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
+    done
+}
+
+install_prereqs() {
+    log "--> Installing dos2unix, python3, firewalld..."
+    dnf update -y
+    dnf install -y dos2unix python3 firewalld
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install prerequisites. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}"
+        chmod +x ${cloudwatch_setup_script}
+        dos2unix ${cloudwatch_setup_script}
+
+        . ${cloudwatch_setup_script} ${aws_region} \
+            $LOG_FILE                                   "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/cloud-init-output.log"            "at %a, %d %b %Y %H:%M:%S %z." \
+            "/var/log/messages"                         "%b %d %H:%M:%S" \
+            $CAS_CONNECTOR_INSTALL_LOG                  "%b %d %H:%M:%S" \
+            "/var/log/teradici/user-data.log"           "%a %b %d %H:%M:%S %Z %Y"
+    fi
+}
+
+get_credentials() {
+    # In some cases, the CAS Manager Deployment Service Account key is generated
+    # by a new CAS Manager VM that is being created in parallel as the CAS
+    # Connector. Loop until the file is found in the storage bucket.
+
+    retry 120 `# 120 retries` \
+          60  `# 60s interval` \
+          "aws s3 cp s3://${bucket_name}/${cas_mgr_deployment_sa_file} $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download CAS Manager deployment Service Account key from bucket ${bucket_name}."
+
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
+
+    if [[ -z "${customer_master_key_id}" ]]
+    then
+        log "--> Script is not using encryption for secrets."
+
+        AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
+
+    else
+        log "--> Script is using encryption key: ${customer_master_key_id}"
+
+        log "--> Decrypting AD service account password..."
+        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting CAS Manager Deployment Service Account JSON file..."
+        CAS_MGR_CREDENTIALS=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://"$PROVISIONING_DIR/${cas_mgr_deployment_sa_file}" --output text --query Plaintext | base64 -d)
+        echo $CAS_MGR_CREDENTIALS > $PROVISIONING_DIR/${cas_mgr_deployment_sa_file}
+    fi
+    set -x
+}
+
+get_connector_token() {
+    log "--> Retrieving connector token before CAS Connector install..."
+
+    local args=""
+
+    log "--> Downloading CAS Manager python script from the bucket..."
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "aws s3 cp s3://${bucket_name}/${cas_mgr_script} $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download CAS Manager python script from s3://${bucket_name}/${cas_mgr_script}"
+    chmod +x $PROVISIONING_DIR/${cas_mgr_script}
+
+    # Ensure line endings are in Unix format
+    dos2unix $PROVISIONING_DIR/${cas_mgr_script}
+    dos2unix $PROVISIONING_DIR/${cas_mgr_deployment_sa_file}
+
+    # Set CONNECTOR_TOKEN variable using the script's output
+    if [ "${cas_mgr_insecure}" ]
+    then
+        args="--insecure"
+    fi
+
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/${cas_mgr_script} $PROVISIONING_DIR/${cas_mgr_deployment_sa_file} --url ${cas_mgr_url} --out $CONNECTOR_TOKEN_FILE $args
+    set +x
+    CONNECTOR_TOKEN=`cat $CONNECTOR_TOKEN_FILE`
+    set -x
+    rm $CONNECTOR_TOKEN_FILE
+
+    # Check and exit provisioning script if retrieving connector token failed
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to retrieve connector token using CAS Manager script. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+check_required_vars() {
+    set +x
+    if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
+        log "--> ERROR: Missing Active Directory Service Account Password."
+        missing_vars="true"
+    fi
+
+    if [[ -z "$CONNECTOR_TOKEN" ]]; then
+        log "--> ERROR: Missing CAS Connector Token."
+        missing_vars="true"
+    fi
+    set -x
+
+    if [[ "$missing_vars" == "true" ]]; then
+        log "--> Exiting..."
+        exit 1
+    fi
+}
+
+configure_firewall(){
+    # Ran into the following dbus error when using firewall-cmd. Using firewall-offline-cmd as a workaround.
+    # ERROR:dbus.proxies:Introspect error on :1.30:/org/fedoraproject/FirewallD1: dbus.exceptions.DBusException: org.freedesktop.DBus.Error.NoReply
+
+    firewall-offline-cmd --set-default-zone trusted
+    firewall-offline-cmd --add-port=6443/tcp # virtual network flannel
+    firewall-offline-cmd --add-port=4172/tcp # PCoIP SG port
+    firewall-offline-cmd --add-port=4172/udp # PCoIP SG port
+    firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 # This subnet is for the pods
+    firewall-offline-cmd --zone=trusted --add-source=10.43.0.0/16 # This subnet is for the services
+
+    systemctl enable firewalld
+    systemctl start firewalld
+}
+
+check_connector_installed() {
+    if [[ -f "$CAS_COONNECTOR_BIN_PATH" ]]; then
+        log "--> CAS Connector already installed. Skipping provisioning script..."
+        exit 0
+    fi
+}
+
+add_cas_mgr_repo() {
+    log "--> Adding CAS Manager repo..."
+    curl -1sLf $CAS_CONNECTOR_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
+    dnf repolist --enabled teradici-cas-manager*
+}
+
+config_selinux() {
+    log "--> Configuring SE Linux..."
+    dnf install -y selinux-policy-base container-selinux
+    dnf install -y https://github.com/k3s-io/k3s-selinux/releases/download/v1.1.stable.1/k3s-selinux-1.1-1.el8.noarch.rpm
+    dnf install -y cas-manager-selinux
+}
+
+install_cas_connector() {
+    log "--> Installing CAS Connector..."
+    # TODO: figure out the /dev/tty error
+    dnf install -y cas-connector 2>&1 | tee -a $CAS_CONNECTOR_INSTALL_LOG
+
+    # Install manually
+    # TODO Remove
+    /usr/local/bin/cas-connector generate --config-files --debug
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install CAS Connector..."
+        exit 1
+    fi
+}
+
+wait_for_dc() {
+    # Wait for service account to be added. Do this last because it takes
+    # a while for new AD user to be added in a new Domain Controller.
+    # Note: using the domain controller IP instead of the domain name for
+    #       the host is more resilient.
+
+    log "--> Installing utility packages..."
+    retry 5 `# 5 retries` \
+          5 `# 5s interval` \
+          "dnf -y install bind-utils nc openldap-clients" \
+          "--> ERROR: Failed to install utility packages."
+
+    set +x
+    log "--> Ensure AD account is available..."
+    retry 120 `# 120 retries` \
+          10  `# 10s interval` \
+          "ldapwhoami \
+            -H ldap://${domain_controller_ip} \
+            -D ${ad_service_account_username}@${domain_name} \
+            -w $AD_SERVICE_ACCOUNT_PASSWORD \
+            -o nettimeout=1" \
+          "--> ERROR: AD account ${ad_service_account_username}@${domain_name} is not available."
+    set -x
+    # Check that the domain name can be resolved and that the LDAP port is accepting
+    # connections. This could have been all done with the ldapwhoami command, but
+    # due to a number of occasional CAS connector installation issues, such as "domain
+    # controller unreachable" or "DNS error occurred" errors, check these explicitly
+    # for logging and debug purposes.
+    log "--> Ensure domain ${domain_name} can be resolved..."
+    retry 120 `# 120 retries` \
+          10  `# 10s interval` \
+          "host ${domain_name}" \
+          "--> ERROR: Failed to resolve ${domain_name}."
+
+    log "--> Ensure domain ${domain_name} port 636 is reacheable..."
+    retry 120 `# 120 retries` \
+          10  `# 10s interval` \
+          "nc -vz ${domain_name} 636" \
+          "--> ERROR: Falied to contact ${domain_name}:636."
+}
+
+download_ldaps_cert() {
+    log "--> Downloading LDAPS Cert..."
+    aws s3 cp s3://${bucket_name}/${ldaps_cert_filename} $PROVISIONING_DIR
+}
+
+wait_for_lls() {
+    local lls_health_check_url="http://${lls_ip}:7070/api/1.0/health"
+
+    log "--> Performing LLS health check using endpoint $lls_health_check_url..."
+    retry 120 `# 120 retries` \
+          10  `# 10s interval` \
+          # Need to escape Terraform template directive using %%
+          "[ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]" \
+          "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
+}
+
+configure_cas_connector() {
+    log "--> Configuring CAS Connector..."
+    local args=""
+
+    log "--> Running command: $CAS_CONNECTOR_BIN_PATH configure"
+    log "--> CAS Connector install options:"
+    log "  --token <connector_token>"
+    log "  --accept-policies"
+    log "  --computers-dn \"${computers_dn}\""
+    log "  --users-dn \"${users_dn}\""
+    log "  --sa-user <ad_service_account_username>"
+    log "  --sa-password <ad_service_account_password>"
+    log "  --domain ${domain_name}"
+    log "  --ldaps-ca-cert $PROVISIONING_DIR/${ldaps_cert_filename}"
+    log "  --retrieve-agent-state true"
+    log "  --show-agent-state true"
+    log "  --sync-interval 5"
+    log "  --casm-url ${cas_mgr_url}"
+    log "  ${cas_connector_extra_install_flags}"
+
+    # Set pipefail option to return status of the connector install command
+    set -o pipefail
+
+    if [ "${tls_key}" ]
+    then
+        log "  --tls-key <tls_key>"
+        log "  --tls-cert <tls_cert>"
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://${bucket_name}/${tls_key} $PROVISIONING_DIR" \
+              "--> ERROR: Failed to download TLS key from ${bucket_name}"
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://${bucket_name}/${tls_cert} $PROVISIONING_DIR" \
+              "--> ERROR: Failed to download TLS cert from ${bucket_name}"
+
+        args=$args"--tls-key $PROVISIONING_DIR/${tls_key} "
+        args=$args"--tls-cert $PROVISIONING_DIR/${tls_cert} "
+    else
+        log "  --self-signed"
+        args=$args"--self-signed "
+    fi
+
+    if [ "${cas_mgr_insecure}" ]
+    then
+        log "  --casm-insecure"
+        args=$args"--casm-insecure "
+    fi
+
+    if [ "${lls_ip}" ]
+    then
+        log "  --local-license-server-url http://${lls_ip}:7070/request"
+        args=$args"--local-license-server-url http://${lls_ip}:7070/request "
+    fi
+
+#TODO uncomment set +x
+    #set +x
+    retry 10 `# 10 retries` \
+        10 `# 10s interval` \
+        "$CAS_CONNECTOR_BIN_PATH configure \
+        --debug \
+        --token $CONNECTOR_TOKEN \
+        --accept-policies \
+        --computers-dn \"${computers_dn}\" \
+        --users-dn \"${users_dn}\" \
+        --sa-user \"${ad_service_account_username}\" \
+        --sa-password \"$AD_SERVICE_ACCOUNT_PASSWORD\" \
+        --domain ${domain_name} \
+        --ldaps-ca-cert $PROVISIONING_DIR/${ldaps_cert_filename} \
+        --retrieve-agent-state true \
+        --show-agent-state true \
+        --sync-interval 5 \
+        --casm-url ${cas_mgr_url} \
+        ${cas_connector_extra_install_flags} \
+        $args \
+        2>&1 | tee -a $CAS_CONNECTOR_INSTALL_LOG" \
+        "--> ERROR: Failed to configure CAS Connector."
+    set -x
+
+    if [ $? -ne 0 ]
+    then
+        log "--> Exiting provisioning script due to an error."
+        exit 1
+    fi
+
+    log "--> Successfully configured CAS Connector."
+}
+
+cleanup() {
+    rm $PROVISIONING_DIR/${ldaps_cert_filename}
+}
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
+fi
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
+log "$(date) Running $0 as $(whoami)..."
+
+cd $PROVISIONING_DIR
+
+install_prereqs
+
+if [[ "${cloudwatch_enable}" == "true" ]]
+then
+    setup_cloudwatch
+fi
+
+get_credentials
+
+configure_firewall
+
+check_connector_installed
+
+add_cas_mgr_repo
+
+config_selinux
+
+install_cas_connector
+
+wait_for_dc
+
+download_ldaps_cert
+
+if [ "${lls_ip}" ]
+then
+    wait_for_lls
+fi
+
+get_connector_token
+
+check_required_vars
+
+configure_cas_connector
+
+cleanup
+
+log "--> Provisioning script completed successfully."
