@@ -173,13 +173,13 @@ MYIP=$(hostname -I)
 if [ $MYIP == "${haproxy_master_ip}" ]
 then
     log "Setting up master HAProxy Server..."
-    KA_STATE="master"
+    KA_STATE="MASTER"
     KA_PRIORITY="101"
     KA_PEER_IP="${haproxy_backup_ip}"
 elif [ $MYIP == "${haproxy_backup_ip}" ]
 then
     log "Setting up backup HAProxy Server..."
-    KA_STATE="backup"
+    KA_STATE="BACKUP"
     KA_PRIORITY="100"
     KA_PEER_IP="${haproxy_master_ip}"
 else
