@@ -38,6 +38,7 @@ resource "google_storage_bucket_object" "centos-gfx-provisioning-script" {
       bucket_name                 = var.bucket_name, 
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
+      gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
       kms_cryptokey_id            = var.kms_cryptokey_id,
       nvidia_driver_url           = var.nvidia_driver_url,
       ops_setup_script            = var.ops_setup_script,

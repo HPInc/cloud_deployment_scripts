@@ -38,6 +38,7 @@ data "template_file" "dc-provisioning-script" {
     domain_name              = var.domain_name
     kms_cryptokey_id         = var.kms_cryptokey_id
     bucket_name              = var.bucket_name
+    gcp_ops_agent_enable     = var.gcp_ops_agent_enable
     ops_setup_script         = var.ops_setup_script
     pcoip_agent_version      = var.pcoip_agent_version
     pcoip_registration_code  = var.pcoip_registration_code

@@ -39,12 +39,16 @@ resource "google_storage_bucket_object" "gcp-sa-file" {
 }
 
 resource "google_storage_bucket_object" "ops-setup-linux-script" {
+  count = var.gcp_ops_agent_enable ? 1 : 0
+  
   bucket = google_storage_bucket.scripts.name
   name   = local.ops_linux_setup_script
   source = "../../../shared/gcp/${local.ops_linux_setup_script}"
 }
 
 resource "google_storage_bucket_object" "ops-setup-win-script" {
+  count = var.gcp_ops_agent_enable ? 1 : 0
+  
   bucket = google_storage_bucket.scripts.name
   name   = local.ops_win_setup_script
   source = "../../../shared/gcp/${local.ops_win_setup_script}"
@@ -57,6 +61,8 @@ resource "google_storage_bucket_object" "ops-setup-win-script" {
 # _Default log bucket created by Google cannot be deleted and need to be disabled before creating the deployment to avoid saving the same logs
 # in both _Defualt log bucket and the log bucket created by Terraform
 resource "google_logging_project_bucket_config" "main" {
+  count = var.gcp_ops_agent_enable ? 1 : 0
+  
   bucket_id = local.log_bucket_name
   project   = local.gcp_project_id
   location  = "global"
@@ -64,8 +70,10 @@ resource "google_logging_project_bucket_config" "main" {
 
 # Create a sink to route instance logs to desinated log bucket
 resource "google_logging_project_sink" "instance-sink" {
+  count = var.gcp_ops_agent_enable ? 1 : 0
+  
   name        = "${local.prefix}sink"
-  destination = "logging.googleapis.com/${google_logging_project_bucket_config.main.id}"
+  destination = "logging.googleapis.com/${google_logging_project_bucket_config.main[0].id}"
   filter      = "resource.type = gce_instance AND resource.labels.project_id = ${local.gcp_project_id}"
 
   unique_writer_identity = true
@@ -103,7 +111,8 @@ module "dc" {
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
 
-  ops_setup_script = local.ops_win_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_win_setup_script
 
   disk_image = var.dc_disk_image
 }
@@ -137,7 +146,8 @@ module "cas-mgr" {
 
   disk_image = var.cas_mgr_disk_image
 
-  ops_setup_script = local.ops_linux_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_linux_setup_script
 
   cas_mgr_admin_user             = var.cas_mgr_admin_user
   cas_mgr_admin_ssh_pub_key_file = var.cas_mgr_admin_ssh_pub_key_file
@@ -183,7 +193,8 @@ module "cac" {
   ssl_key  = var.cac_ssl_key
   ssl_cert = var.cac_ssl_cert
 
-  ops_setup_script = local.ops_linux_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_linux_setup_script
 
   cac_extra_install_flags = var.cac_extra_install_flags
 }
@@ -227,7 +238,8 @@ module "win-gfx" {
   disk_size_gb        = var.win_gfx_disk_size_gb
   disk_image          = var.win_gfx_disk_image
 
-  ops_setup_script = local.ops_win_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_win_setup_script
 
   depends_on = [google_compute_router_nat.nat]
 }
@@ -269,7 +281,8 @@ module "win-std" {
   disk_size_gb        = var.win_std_disk_size_gb
   disk_image          = var.win_std_disk_image
 
-  ops_setup_script = local.ops_win_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_win_setup_script
 
   depends_on = [google_compute_router_nat.nat]
 }
@@ -315,7 +328,8 @@ module "centos-gfx" {
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
 
-  ops_setup_script = local.ops_linux_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_linux_setup_script
 
   depends_on = [google_compute_router_nat.nat]
 }
@@ -359,7 +373,8 @@ module "centos-std" {
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
 
-  ops_setup_script = local.ops_linux_setup_script
+  gcp_ops_agent_enable = var.gcp_ops_agent_enable
+  ops_setup_script     = local.ops_linux_setup_script
 
   depends_on = [google_compute_router_nat.nat]
 }

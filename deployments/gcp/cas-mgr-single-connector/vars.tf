@@ -457,3 +457,8 @@ variable "kms_cryptokey_id" {
   description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
   default     = ""
 }
+
+variable "gcp_ops_agent_enable" {
+  description = "Enable GCP Ops Agent for sending logs to GCP"
+  default     = true
+}

@@ -290,7 +290,11 @@ set -x
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-setup_ops
+if [[ "${gcp_ops_agent_enable}" == "true" ]]
+then
+    setup_ops
+fi
+
 install_prereqs
 get_credentials
 check_required_vars

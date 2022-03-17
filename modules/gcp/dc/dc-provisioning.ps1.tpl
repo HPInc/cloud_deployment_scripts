@@ -173,7 +173,9 @@ function PCoIP-Agent-Register {
 
 Start-Transcript -path $LOG_FILE -append
 
-Setup-Ops
+if ([System.Convert]::ToBoolean("${gcp_ops_agent_enable}")) {
+    Setup-Ops
+} 
 
 "--> Script running as user '$(whoami)'."
 

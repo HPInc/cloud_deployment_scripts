@@ -8,6 +8,7 @@ $AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
+$GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
@@ -383,7 +384,9 @@ if (Test-Path $LOG_FILE) {
 
 Start-Transcript -path $LOG_FILE -append
 
-Setup-Ops
+if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
+    Setup-Ops
+} 
 
 "--> Script running as user '$(whoami)'."
 

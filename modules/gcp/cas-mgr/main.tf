@@ -29,6 +29,7 @@ resource "google_storage_bucket_object" "cas-mgr-provisioning-script" {
       cas_mgr_deployment_sa_file = var.cas_mgr_deployment_sa_file,
       cas_mgr_admin_password     = var.cas_mgr_admin_password,
       cas_mgr_setup_script       = local.cas_mgr_setup_script,
+      gcp_ops_agent_enable       = var.gcp_ops_agent_enable,
       gcp_sa_file                = var.gcp_sa_file,
       kms_cryptokey_id           = var.kms_cryptokey_id,
       ops_setup_script           = var.ops_setup_script,

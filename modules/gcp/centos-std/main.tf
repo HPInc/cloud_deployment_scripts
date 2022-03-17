@@ -38,6 +38,7 @@ resource "google_storage_bucket_object" "centos-std-provisioning-script" {
       bucket_name                 = var.bucket_name, 
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
+      gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
       kms_cryptokey_id            = var.kms_cryptokey_id,
       ops_setup_script            = var.ops_setup_script,
       pcoip_registration_code     = var.pcoip_registration_code,
