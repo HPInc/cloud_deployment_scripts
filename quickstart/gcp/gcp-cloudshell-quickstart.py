@@ -32,7 +32,8 @@ REQUIRED_PACKAGES = {
 SA_ID       = 'cas-manager'
 SA_ROLES    = [
     'roles/editor',
-    'roles/cloudkms.cryptoKeyEncrypterDecrypter'
+    'roles/cloudkms.cryptoKeyEncrypterDecrypter',
+    'roles/logging.configWriter'
 ]
 
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
@@ -44,6 +45,8 @@ REQUIRED_APIS = [
     'dns.googleapis.com',
     'iam.googleapis.com',
     'iap.googleapis.com',
+    'logging.googleapis.com',
+    'monitoring.googleapis.com',
 ]
 
 iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
@@ -322,6 +325,8 @@ def apis_enable(apis):
         print(f'  {api}...')
         subprocess.run(['gcloud', 'services', 'enable', api], check=True)
 
+def disable_default_sink():
+    subprocess.run(['gcloud', 'logging', 'sinks', 'update', '_Default', '--disabled'], check=True)
 
 def ssh_key_create(path):
     print('Creating SSH key...')
@@ -360,6 +365,11 @@ if __name__ == '__main__':
     ensure_requirements()
 
     apis_enable(REQUIRED_APIS)
+
+    # The _Default sink save VM instance logs to _Default log bucket. We disable
+    # the _Default sink to avoid having duplicated VM instance logs in the log 
+    # bucket created by Terraform and _Default log bucket. 
+    disable_default_sink()
     
     cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
 
@@ -568,8 +578,10 @@ if __name__ == '__main__':
     2. In GCP cloudshell, change directory using the command "cd ~/cloudshell_open/cloud_deployment_scripts/{DEPLOYMENT_PATH}"
     3. Remove resources deployed by Terraform using the command "terraform destroy". Enter "yes" when prompted.
         "{'terraform' if TERRAFORM_BIN_PATH == shutil.which('terraform') else TERRAFORM_BIN_PATH} destroy"
-    4. Log in to https://cas.teradici.com and delete the deployment named
+    4. Go to https://console.cloud.google.com/logs/storage and delete the log bucket named "{prefix}-logging-bucket"
+    5. Log in to https://cas.teradici.com and delete the deployment named
         "quickstart_deployment_<timestamp>"
+    6. (Optional) We disabled _Default sink to avoid having duplicated logs. To re-enable the sink, run the GCP command "gcloud logging sinks update _Default --no-disabled"
     """
 
     print(next_steps)
