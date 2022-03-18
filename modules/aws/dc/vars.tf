@@ -53,6 +53,11 @@ variable "bucket_name" {
   type        = string
 }
 
+variable "ldaps_cert_filename" {
+  description = "Filename of Certificate used in LDAPS."
+  type        = string
+} 
+
 variable "subnet" {
   description = "Subnet to deploy the Domain Controller"
   type        = string

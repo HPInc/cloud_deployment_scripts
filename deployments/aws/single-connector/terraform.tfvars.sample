@@ -36,10 +36,10 @@ aws_credentials_file = "/path/to/aws_key"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-# cac_instance_type = "t2.xlarge"
-# cac_disk_size_gb  = "50"
+# cas_connector_instance_type = "t2.xlarge"
+# cas_connector_disk_size_gb  = "60"
 
-# Optional: Specify SSL certificate for Connector
+# Optional: Specify SSL certificate for CAS Connector
 # ssl_key  = "/path/to/privkey.pem"
 # ssl_cert = "/path/to/fullchain.pem"
 
