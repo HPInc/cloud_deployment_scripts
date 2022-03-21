@@ -259,7 +259,7 @@ upload_dsa_key() {
 
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "aws s3 cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} s3://${bucket_name}/"
+          "aws s3 cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} s3://${bucket_name}/" \
           "--> ERROR: Failed to upload Deployment Service Account Key to bucket ${bucket_name}"
 
     if [ $? -ne 0 ]

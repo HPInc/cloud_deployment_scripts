@@ -264,7 +264,7 @@ upload_dsa_key() {
 
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "gsutil cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} gs://${bucket_name}/"
+          "gsutil cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} gs://${bucket_name}/" \
           "--> ERROR: Failed to upload Deployment Service Account Key to bucket ${bucket_name}"
 
     if [ $? -ne 0 ]
