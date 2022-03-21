@@ -7,6 +7,7 @@
 
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+BUCKET_NAME=${bucket_name}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
@@ -14,6 +15,7 @@ IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_s
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
 KMS_CRYPTOKEY_ID=${kms_cryptokey_id}
 NVIDIA_DRIVER_URL=${nvidia_driver_url}
+OPS_SETUP_SCRIPT=${ops_setup_script}
 PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
@@ -31,23 +33,51 @@ log() {
 }
 
 retry() {
-    local retries=0
-    local max_retries=3
-    until [[ $retries -ge $max_retries ]]
-    do  
-    # Break if command succeeds, or log the retry if command fails.
-        $@ && break || {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-            log "--> Failed to run command. $@"
-            log "--> Retries left... $(( $max_retries - $retries ))"
-            ((retries++))
-            sleep 10;
-        }
+    local retry_num=0
+    until eval $shell_command
+    do
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
+        then
+            log $error_message
+            return $rc
+        fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
+}
 
-    if [[ $retries -eq $max_retries ]]
+setup_ops() {
+    if [[ -f "/etc/google-cloud-ops-agent/config.yaml" ]]
     then
-        return 1
+        log "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
+    else
+        log "--> Setting up GCP OPs Agent..."
+
+        retry 25 `# 25 retries` \
+              5  `# 5s interval` \
+              "gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download Logging Agent from gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT."
+
+        chmod +x $OPS_SETUP_SCRIPT
+
+        . $OPS_SETUP_SCRIPT \
+            $LOG_FILE \
+            "/var/log/messages" \
+            "/var/log/nvidia-installer.log" \
+            "/var/log/pcoip-agent/agent.log" \
+            "/var/log/user-data.log" \
+            "/var/log/yum.log"
     fi
 }
 
@@ -103,15 +133,13 @@ exit_and_restart() {
 install_kernel_header() {
     log "--> Installing kernel headers and development packages..."
     yum install kernel-devel kernel-headers -y
-    exitCode=$?
-    if [[ $exitCode -ne 0 ]]; then
+    if [[ $? -ne 0 ]]; then
         log "--> ERROR: Failed to install kernel header."
         exit 1
     fi
 
     yum install gcc -y
-    exitCode=$?
-    if [[ $exitCode -ne 0 ]]; then
+    if [[ $? -ne 0 ]]; then
         log "--> ERROR: Failed to install gcc."
         exit 1
     fi
@@ -134,7 +162,10 @@ install_gpu_driver() {
         systemctl stop gdm
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
-        retry "curl -f -o $gpu_installer $NVIDIA_DRIVER_URL"
+        retry 3 `# 3retries` \
+              5 `#5s interval` \
+              "curl -f -o $gpu_installer $NVIDIA_DRIVER_URL" \
+              "--> ERROR: Failed to download GPU driver installer."
         chmod u+x "$gpu_installer"
         log "--> Running GPU driver installer..."
 
@@ -194,14 +225,20 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry "yum install -y usb-vhci"
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum install -y usb-vhci" \
+          "--> Warning: Failed to install usb-vhci."
     if [ $? -ne 0 ]; then
         log "--> Warning: Failed to install usb-vhci."
     fi
     log "--> usb-vhci successfully installed."
 
     log "--> Installing PCoIP graphics agent..."
-    retry yum -y install pcoip-agent-graphics
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum -y install pcoip-agent-graphics" \
+          "--> ERROR: Failed to download PCoIP agent."
     if [ $? -ne 0 ]; then
         log "--> ERROR: Failed to install PCoIP agent."
         exit 1
@@ -231,7 +268,10 @@ install_idle_shutdown() {
     log "--> Installing idle shutdown..."
     mkdir /tmp/idleShutdown
 
-    retry curl "https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh" --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "curl 'https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh' --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
+          "--> ERROR: Failed to download Install-Idle-Shutdown.sh."
 
     awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
 
@@ -241,11 +281,13 @@ install_idle_shutdown() {
         INSTALL_OPTS="$INSTALL_OPTS --disabled"
     fi
 
-    retry /tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "/tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS" \
+          "--> ERROR: Failed to install idle shutdown."
 
-    exitCode=$?
-    if [[ $exitCode -ne 0 ]]; then
-        log "--> ERROR: Failed to install idle shutdown."
+    if [[ $? -ne 0 ]]; then
+        log "--> Exiting provisioning script due to an error."
         exit 1
     fi
 
@@ -289,8 +331,7 @@ join_domain() {
         do
             echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="$AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME" "$DOMAIN_NAME" --verbose >&2
 
-            local rc=$?
-            if [[ $rc -eq 0 ]]
+            if [[ $? -eq 0 ]]
             then
                 log "--> Successfully joined domain '$DOMAIN_NAME'."
                 break
@@ -361,13 +402,15 @@ else
     RE_ENTER=1
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
+
+log "$(date) Running $0 as $(whoami)..."
+
+setup_ops
 
 get_credentials
 

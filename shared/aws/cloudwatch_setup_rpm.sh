@@ -17,26 +17,28 @@ CLOUDWATCH_AGENT_SETUP_URL="https://s3.$REGION.amazonaws.com/amazoncloudwatch-ag
 CLOUDWATCH_CONFIG_FILE="cloudwatch.conf"
 
 # Try command until zero exit status or exit(1) when non-zero status after max tries
-retry() {
-    local counter="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
-    local count=0
+retry_cw() {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-    while [ true ]
+    local retry_num=0
+    until eval $shell_command
     do
-        ((count=count+1))
-        eval $command && break
-        if [ $count -gt $counter ]
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
         then
-            log "$err_message"
-            return 1
-        else
-            log "$log_message Retrying in $interval seconds"
-            sleep $interval
+            log $error_message
+            return $rc
         fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
 }
 
@@ -74,14 +76,20 @@ write_cloudwatch_config(){
 }
 
 log "Downloading CloudWatch Agent from $CLOUDWATCH_AGENT_SETUP_URL..."
-retry 3 5 "curl -O $CLOUDWATCH_AGENT_SETUP_URL" "-->" "--> ERROR: Failed to download the CloudWatch Agent."
+retry_cw 3 `# 3 retries` \
+         5 `# 5s interval` \
+         "curl -O $CLOUDWATCH_AGENT_SETUP_URL"\
+         "--> ERROR: Failed to download the CloudWatch Agent."
 rpm -U ./$(basename $CLOUDWATCH_AGENT_SETUP_URL)
 
 log "Configuring CloudWatch Agent..."
 
 collect_list=""
 
-instance_id=$(retry 3 5 "curl http://169.254.169.254/latest/meta-data/instance-id" "-->" "--> ERROR: Failed to get the instance id.")
+instance_id=$(retry_cw 3 `#3 retries` \
+                       5 `# 5s interval` \
+                       "curl http://169.254.169.254/latest/meta-data/instance-id" \
+                       "--> ERROR: Failed to get the instance id.")
 
 while [ -z "${instance_name}" ]
 do

@@ -31,6 +31,7 @@ resource "google_storage_bucket_object" "cas-mgr-provisioning-script" {
       cas_mgr_setup_script       = local.cas_mgr_setup_script,
       gcp_sa_file                = var.gcp_sa_file,
       kms_cryptokey_id           = var.kms_cryptokey_id,
+      ops_setup_script           = var.ops_setup_script,
       pcoip_registration_code    = var.pcoip_registration_code,
       teradici_download_token    = var.teradici_download_token,
     }

@@ -85,6 +85,8 @@ module "cac-regional" {
 
   gcp_service_account = var.gcp_service_account
 
+  ops_setup_script = var.ops_setup_script
+
   depends_on = [
     google_storage_bucket_object.ssl-key,
     google_storage_bucket_object.ssl-cert,

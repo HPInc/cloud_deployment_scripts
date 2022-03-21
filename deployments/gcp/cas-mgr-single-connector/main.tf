@@ -16,6 +16,9 @@ locals {
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   # Name of GCP service account key file in bucket
   gcp_sa_file = "gcp-sa-key.json"
+  ops_linux_setup_script = "ops_setup_linux.sh"
+  ops_win_setup_script = "ops_setup_win.ps1"
+  log_bucket_name = "${local.prefix}logging-bucket"
 }
 
 resource "random_id" "bucket-name" {
@@ -33,6 +36,39 @@ resource "google_storage_bucket_object" "gcp-sa-file" {
   bucket = google_storage_bucket.scripts.name
   name   = local.gcp_sa_file
   source = var.cas_mgr_gcp_credentials_file
+}
+
+resource "google_storage_bucket_object" "ops-setup-linux-script" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.ops_linux_setup_script
+  source = "../../../shared/gcp/${local.ops_linux_setup_script}"
+}
+
+resource "google_storage_bucket_object" "ops-setup-win-script" {
+  bucket = google_storage_bucket.scripts.name
+  name   = local.ops_win_setup_script
+  source = "../../../shared/gcp/${local.ops_win_setup_script}"
+}
+
+# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though 
+# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually, 
+# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at: 
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_bucket_config
+# _Default log bucket created by Google cannot be deleted and need to be disabled before creating the deployment to avoid saving the same logs
+# in both _Defualt log bucket and the log bucket created by Terraform
+resource "google_logging_project_bucket_config" "main" {
+  bucket_id = local.log_bucket_name
+  project   = local.gcp_project_id
+  location  = "global"
+}
+
+# Create a sink to route instance logs to desinated log bucket
+resource "google_logging_project_sink" "instance-sink" {
+  name        = "${local.prefix}sink"
+  destination = "logging.googleapis.com/${google_logging_project_bucket_config.main.id}"
+  filter      = "resource.type = gce_instance AND resource.labels.project_id = ${local.gcp_project_id}"
+
+  unique_writer_identity = true
 }
 
 module "dc" {
@@ -67,6 +103,8 @@ module "dc" {
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
 
+  ops_setup_script = local.ops_win_setup_script
+
   disk_image = var.dc_disk_image
 }
 
@@ -98,6 +136,8 @@ module "cas-mgr" {
   disk_size_gb   = var.cas_mgr_disk_size_gb
 
   disk_image = var.cas_mgr_disk_image
+
+  ops_setup_script = local.ops_linux_setup_script
 
   cas_mgr_admin_user             = var.cas_mgr_admin_user
   cas_mgr_admin_ssh_pub_key_file = var.cas_mgr_admin_ssh_pub_key_file
@@ -143,6 +183,8 @@ module "cac" {
   ssl_key  = var.cac_ssl_key
   ssl_cert = var.cac_ssl_cert
 
+  ops_setup_script = local.ops_linux_setup_script
+
   cac_extra_install_flags = var.cac_extra_install_flags
 }
 
@@ -185,6 +227,8 @@ module "win-gfx" {
   disk_size_gb        = var.win_gfx_disk_size_gb
   disk_image          = var.win_gfx_disk_image
 
+  ops_setup_script = local.ops_win_setup_script
+
   depends_on = [google_compute_router_nat.nat]
 }
 
@@ -224,6 +268,8 @@ module "win-std" {
   machine_type        = var.win_std_machine_type
   disk_size_gb        = var.win_std_disk_size_gb
   disk_image          = var.win_std_disk_image
+
+  ops_setup_script = local.ops_win_setup_script
 
   depends_on = [google_compute_router_nat.nat]
 }
@@ -269,6 +315,8 @@ module "centos-gfx" {
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
 
+  ops_setup_script = local.ops_linux_setup_script
+
   depends_on = [google_compute_router_nat.nat]
 }
 
@@ -310,6 +358,8 @@ module "centos-std" {
 
   ws_admin_user              = var.centos_admin_user
   ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
+
+  ops_setup_script = local.ops_linux_setup_script
 
   depends_on = [google_compute_router_nat.nat]
 }

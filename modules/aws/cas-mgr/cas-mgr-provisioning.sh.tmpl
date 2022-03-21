@@ -21,26 +21,27 @@ log() {
 }
 
 retry() {
-    local timeout="$1"
-    local interval="$2"
-    local command="$3"
-    local log_message="$4"
-    local err_message="$5"
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
 
-    log "$log_message"
-
-    while [ true ]
+    local retry_num=0
+    until eval $shell_command
     do
-        ((count=count+1))
-        eval $command && break
-        if [ $count -gt $counter ]
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
         then
-            log "$err_message"
-            return 1
-        else
-            log "$log_message Retrying in $interval seconds"
-            sleep $interval
+            log $error_message
+            return $rc
         fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
     done
 }
 
@@ -69,7 +70,10 @@ setup_cloudwatch(){
     then
         log "--> Setting up AWS CloudWatch Logs..."
 
-        aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} .
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}."
         chmod +x ${cloudwatch_setup_script}
         dos2unix ${cloudwatch_setup_script}
 
@@ -87,10 +91,10 @@ get_credentials() {
 
     if [ "${cas_mgr_aws_credentials_file}" ]
     then
-        retry 7200 10 \
-            "aws s3 cp s3://${bucket_name}/${cas_mgr_aws_credentials_file} $INSTALL_DIR" \
-            "--> Downloading AWS credentials file from bucket ${bucket_name}..." \
-            "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
+        retry 720 `# 720 retries` \
+              10  `# 10s interval` \
+              "aws s3 cp s3://${bucket_name}/${cas_mgr_aws_credentials_file} $INSTALL_DIR" \
+              "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
     fi
 
     if [[ -z "${customer_master_key_id}" ]]
@@ -189,10 +193,10 @@ cas_mgr_setup() {
 
     log "--> Running CAS Manager setup script..."
 
-    retry 7200 10 \
+    retry 720 `# 720 retries` \
+          10  `# 10s interval` \
           "aws s3 cp s3://${bucket_name}/${cas_mgr_setup_script} $INSTALL_DIR" \
-          "--> Downloading CAS Manager setup script from bucket ${bucket_name}..." \
-          "--> ERROR: Failed to download CAS Manager setup script from bucket ${bucket_name}."
+          "--> ERROR: Failed to download CAS Manager setup script from s3://${bucket_name}/${cas_mgr_setup_script}."
 
     dos2unix $INSTALL_DIR/${cas_mgr_setup_script}
     chmod +x $INSTALL_DIR/${cas_mgr_setup_script}
@@ -253,11 +257,14 @@ upload_dsa_key() {
 
     log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
 
-    aws s3 cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} s3://${bucket_name}/
+    retry 5 `# 5 retries`\
+          5 `# 5s interval` \
+          "aws s3 cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} s3://${bucket_name}/"
+          "--> ERROR: Failed to upload Deployment Service Account Key to bucket ${bucket_name}"
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to upload CAS Manager deployment service account key to bucket ${bucket_name}. Exiting provisioning script..."
+        log "--> Exiting provisioning script due to an error."
         exit 1
     fi
 }

@@ -46,6 +46,19 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
   }
 }
 
+function Setup-Ops {
+    "################################################################"
+    "Running Ops Agent setup script from gs://${bucket_name}/${ops_setup_script} "
+    "################################################################"
+    if (Test-Path "C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml") {
+        "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
+    } else {
+        Retry -Action {gsutil cp gs://${bucket_name}/${ops_setup_script} "C:\Teradici\"}
+        
+        powershell "C:\Teradici\${ops_setup_script}" "C:\Teradici\provisioning.log"
+    }
+}
+
 function Get-AuthToken {
     try {
         $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
@@ -159,6 +172,10 @@ function PCoIP-Agent-Register {
 }
 
 Start-Transcript -path $LOG_FILE -append
+
+Setup-Ops
+
+"--> Script running as user '$(whoami)'."
 
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
     "--> Script is not using encryption for secrets."

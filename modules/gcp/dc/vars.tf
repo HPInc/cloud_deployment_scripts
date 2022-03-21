@@ -114,3 +114,7 @@ variable "pcoip_registration_code" {
   sensitive   = true
 }
 
+variable "ops_setup_script" {
+  description = "The script that sets up the GCP Ops Agent"
+  type        = string
+}
