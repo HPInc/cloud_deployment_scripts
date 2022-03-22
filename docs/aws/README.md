@@ -36,6 +36,12 @@ The quickest way to create a reference deployment on AWS is to run the Quickstar
 
 To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
 
+### Requirements
+- the user must have Administrator permissions in an AWS account
+- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- the user must have Python installed. Please see [Download Python](https://www.python.org/downloads/) for instructions. 
+- the user must have AWS CLI installed and configured if running Quickstart script in local CLI. Please visit [AWS CLI Installation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [AWS CLI Configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for instructions.
+
 ## Manual Terraform Configuration
 
 Before starting, consider watching [this video](https://www.youtube.com/watch?v=hwEOoG4pmMQ) on how to use this repo to deploy a single-connector deployment on AWS from a Windows environment. The video guides the viewer through the entire deployment process from set up to tear down. It also shows how the deployment can be managed through CAS Manager as a Service (CAS-MS) and how end-users can connect to their machines using a PCoIP client. While the video shows the single-connector deployment, the process of creating other deployments is very similar. For deployment from a Linux environment, please see the relevant portions of our [GCP video](https://www.youtube.com/watch?v=ESzon04cW4Y). Note that since this repository is constantly being updated, there might be minor differences between what is shown in the video compared to the latest version on GitHub.
