@@ -78,7 +78,9 @@ function Setup-Ops {
     } else {
         Retry -Action {gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "C:\Teradici\"}
         
-        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\Teradici\provisioning.log"
+        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
+                                                   "C:\Teradici\provisioning.log"
+                                                   
     }
 }
 
