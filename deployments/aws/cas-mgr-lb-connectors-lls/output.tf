@@ -18,19 +18,19 @@ output "lls-internal-ip" {
 }
 
 output "load-balancer-url" {
-  value = aws_lb.cac-alb.dns_name
+  value = aws_lb.cas-connector-alb.dns_name
 }
 
 output "cas-mgr-public-ip" {
   value = module.cas-mgr.public-ip
 }
 
-output "cac-internal-ip" {
-  value = module.cac.internal-ip
+output "cas-connector-internal-ip" {
+  value = module.cas-connector.internal-ip
 }
 
-output "cac-public-ip" {
-  value = module.cac.public-ip
+output "cas-connector-public-ip" {
+  value = module.cas-connector.public-ip
 }
 
 output "win-gfx-internal-ip" {
