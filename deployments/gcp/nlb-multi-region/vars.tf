@@ -447,3 +447,8 @@ variable "gcp_ops_agent_enable" {
   description = "Enable GCP Ops Agent for sending logs to GCP"
   default     = true
 }
+
+variable "gcp_iap_enable" {
+  description = "Enable GCP IAP for connecting instances via IAP"
+  default     = true
+}
