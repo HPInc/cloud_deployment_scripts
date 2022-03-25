@@ -7,6 +7,7 @@
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
@@ -492,7 +493,10 @@ else
     
     update_firewall
 
-    setup_ssm
+    if [[ "$AWS_SSM_ENABLE" == "true" ]]
+    then
+        setup_ssm
+    fi
 
     install_idle_shutdown
 
