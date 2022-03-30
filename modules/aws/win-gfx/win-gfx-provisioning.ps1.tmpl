@@ -343,6 +343,12 @@ function Join-Domain {
     $global:restart = $true
 }
 
+function Audio-Enable {
+    "--> Enabling audio service..."
+    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
+    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
+    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
+}
 
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
@@ -410,6 +416,8 @@ if (Cam-Idle-Shutdown-is-Installed){
 }
 
 Join-Domain
+
+Audio-Enable
 
 if ($global:restart) {
     "--> Restart required. Restarting..."

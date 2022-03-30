@@ -315,6 +315,13 @@ if (Test-Path $LOG_FILE) {
     exit 0
 }
 
+function Audio-Enable {
+    "--> Enabling audio service..."
+    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
+    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
+    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
+}
+
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
 if ($CLOUDWATCH_ENABLE) {
@@ -358,6 +365,8 @@ if (Cam-Idle-Shutdown-is-Installed){
 }
 
 Join-Domain
+
+Audio-Enable
 
 if ($global:restart) {
     "--> Restart required. Restarting..."
