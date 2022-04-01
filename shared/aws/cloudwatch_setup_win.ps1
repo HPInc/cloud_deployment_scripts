@@ -37,7 +37,8 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
 }
 
 function Add-CloudWatch-Config($log_file_path, $datetime_format){
-    $log_file_name = $log_file_path -replace '[:]',""
+    # remove special character ':' and '*' to meet log_stream_name regex pattern [^:*]*
+    $log_file_name = $log_file_path -replace "[:]","" -replace "[*]",""
 
     $c = @{
         "file_path"=$log_file_path;

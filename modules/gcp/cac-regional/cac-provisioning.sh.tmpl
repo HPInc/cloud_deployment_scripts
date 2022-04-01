@@ -357,7 +357,10 @@ exec &>>$LOG_FILE
 
 install_prereqs
 
-setup_ops
+if [[ "${gcp_ops_agent_enable}" == "true" ]]
+then
+    setup_ops
+fi
 
 get_credentials
 

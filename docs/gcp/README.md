@@ -20,6 +20,9 @@
     - [Start PCoIP Session](#start-pcoip-session)
     - [Changing the deployment](#changing-the-deployment)
     - [Deleting the deployment](#deleting-the-deployment)
+  - [Optional GCP Service Integrations](#optional-gcp-service-integrations)
+    - [GCP Cloud Logging](#gcp-cloud-logging)
+    - [GCP Identity-Aware Proxy (IAP)](#gcp-identity-aware-proxy-iap)
   - [Troubleshooting](#troubleshooting)
 
 ---
@@ -169,6 +172,22 @@ Terraform is a declarative language to describe the desired state of resources. 
 
 ### Deleting the deployment
 Run `terraform destroy` to remove all resources created by Terraform, then go to [GCP Logs Storage](https://console.cloud.google.com/logs/storage) and delete the log bucket named `<prefix>-logging-bucket`.
+
+## Optional GCP Service Integrations
+
+### GCP Cloud Logging
+Cloud Logging is a service that can be used to store, search, analyze, monitor, and alert on logging data and events from GCP and AWS. For more information, please visit https://cloud.google.com/logging
+
+When Cloud Logging is enabled, Ops Agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to Cloud Logging. The selected logs can be found at `Logs Explorer` in the Cloud Logging navigation pane. 
+
+Cloud Logging is enabled by default to provide better experience of accessing the logs. It can be disabled by adding `gcp_ops_agent_enable = False` to `terraform.tfvars` before running `terraform apply`. 
+
+### GCP Identity-Aware Proxy (IAP)
+IAP is a service that provides a single point of control for managing user access to web applications and cloud resources. For more information on IAP, please visit https://cloud.google.com/iap
+
+When IAP is enabled, Terraform adds IP range `35.235.240.0/20` to firewall rules. This range contains all IP addresses that IAP uses for TCP forwarding. IAP allows Administrators to establish SSH and RDP connections even when an instance doesn't have a public IP address. (Optional) Download IAP Desktop by following instructions at https://github.com/GoogleCloudPlatform/iap-desktop
+
+IAP is enabled by default to allow Administrators to connect to instances easily. It can be disabled by adding `gcp_iap_enable = False` to `terraform.tfvars` before running `terraform apply`. 
 
 ## Troubleshooting
 Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.

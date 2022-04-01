@@ -150,3 +150,13 @@ variable "allowed_client_cidrs" {
   description = "Open VPC firewall to allow PCoIP connections from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d', 'e.f.g.0/24']"
   default     = ["0.0.0.0/0"]
 }
+
+variable "gcp_ops_agent_enable" {
+  description = "Enable GCP Ops Agent for sending logs to GCP"
+  default     = true
+}
+
+variable "gcp_iap_enable" {
+  description = "Enable GCP IAP for connecting instances via IAP"
+  default     = true
+}

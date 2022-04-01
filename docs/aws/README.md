@@ -20,6 +20,9 @@
     - [Start PCoIP Session](#start-pcoip-session)
     - [Changing the deployment](#changing-the-deployment)
     - [Deleting the deployment](#deleting-the-deployment)
+  - [Optional AWS Service Integrations](#optional-aws-service-integrations)
+    - [AWS Cloudwatch](#aws-cloudwatch)
+    - [AWS Session Manager](#aws-session-manager)
   - [Troubleshooting](#troubleshooting)
 
 ---
@@ -35,6 +38,12 @@ There are two ways to create a Cloud Access Software (CAS) deployment using this
 The quickest way to create a reference deployment on AWS is to run the Quickstart Python script in the AWS CloudShell or your local CLI. The goal is to automate the creation of a [single-connector deployment](#single-connector) as much as possible by using auto-generated values for required parameters.
 
 To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
+
+### Requirements
+- the user must have Administrator permissions in an AWS account
+- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- the user must have Python installed. Please see [Download Python](https://www.python.org/downloads/) for instructions. 
+- the user must have AWS CLI installed and configured if running Quickstart script in local CLI. Please visit [AWS CLI Installation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [AWS CLI Configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for instructions.
 
 ## Manual Terraform Configuration
 
@@ -179,6 +188,22 @@ Run `terraform destroy` to remove all resources created by Terraform.
 Be sure to SSH into the PCoIP License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the activated PCoIP licenses will be lost.
 
 For more information on the LLS, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
+
+## Optional AWS Service Integrations
+
+### AWS CloudWatch
+CloudWatch is a monitoring and management service that provides data and actionable insights for AWS, hybrid, and on-premises applications and infrastructure resources. For more information, please visit https://aws.amazon.com/cloudwatch/
+
+When CloudWatch is enabled, CloudWatch agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to CloudWatch. The selected logs can be found at `Log groups` in the CloudWatch navigation pane. 
+
+CloudWatch is enabled by default to provide better experience of accessing the logs. It can be disabled by adding `cloudwatch_enable = False` to `terraform.tfvars` before running `terraform apply`. 
+
+### AWS Session Manager
+Session Manager is an AWS Systems Manager capability that can be used to connect to instances using either an interactive one-click browser-based shell or AWS Command Line Interface. For more information, please visit https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html
+
+When Session Manager is enabled, Terraform adds the minimal permission to IAM roles used by EC2 instances. This allows Administrators to establish SSH and RDP connections with Admin access even when a EC2 instance doesn't have a public IP address.
+
+Session Manager is enabled by default to allow Administrators to connect to instances easily. It can be disabled by adding `aws_ssm_enable` to `terraform.tfvars` before running `terraform apply`.
 
 ## Troubleshooting
 Please visit the [Troubleshooting](/docs/troubleshooting.md) page for further instructions.

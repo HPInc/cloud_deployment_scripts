@@ -10,6 +10,7 @@ AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 BUCKET_NAME=${bucket_name}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
+GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
 IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
@@ -76,7 +77,6 @@ setup_ops() {
             "/var/log/messages" \
             "/var/log/nvidia-installer.log" \
             "/var/log/pcoip-agent/agent.log" \
-            "/var/log/user-data.log" \
             "/var/log/yum.log"
     fi
 }
@@ -410,7 +410,10 @@ exec &>>$LOG_FILE
 
 log "$(date) Running $0 as $(whoami)..."
 
-setup_ops
+if [[ "$GCP_OPS_AGENT_ENABLE" == "true" ]]
+then
+    setup_ops
+fi
 
 get_credentials
 

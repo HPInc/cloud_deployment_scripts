@@ -8,6 +8,7 @@ $AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
+$GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
@@ -77,7 +78,9 @@ function Setup-Ops {
     } else {
         Retry -Action {gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "C:\Teradici\"}
         
-        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\Teradici\provisioning.log"
+        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
+                                                   "C:\Teradici\provisioning.log"
+                                                   
     }
 }
 
@@ -327,6 +330,13 @@ function Join-Domain {
     "--> Successfully registered with DNS."
 }
 
+function Audio-Enable {
+    "--> Enabling audio service..."
+    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
+    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
+    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
+}
+
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
     "--> $LOG_FILE exists. Assuming this provisioning script has run, exiting..."
@@ -335,7 +345,9 @@ if (Test-Path $LOG_FILE) {
 
 Start-Transcript -path $LOG_FILE -append
 
-Setup-Ops
+if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
+    Setup-Ops
+} 
 
 "--> Script running as user '$(whoami)'."
 
@@ -372,6 +384,8 @@ if (Cam-Idle-Shutdown-is-Installed){
 }
 
 Join-Domain
+
+Audio-Enable
 
 if ($global:restart) {
     "--> Restart required. Restarting..."

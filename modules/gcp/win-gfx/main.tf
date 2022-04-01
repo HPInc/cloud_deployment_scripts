@@ -38,6 +38,7 @@ resource "google_storage_bucket_object" "win-gfx-provisioning-script" {
       ad_service_account_username = var.ad_service_account_username,
       bucket_name                 = var.bucket_name,
       domain_name                 = var.domain_name,
+      gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
       kms_cryptokey_id            = var.kms_cryptokey_id,
       nvidia_driver_filename      = var.nvidia_driver_filename,
       nvidia_driver_url           = var.nvidia_driver_url,

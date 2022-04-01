@@ -7,6 +7,7 @@
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
@@ -69,11 +70,11 @@ setup_cloudwatch(){
         dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
         . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
-            $LOG_FILE                        "[%a %b %d %H:%M:%S %Z %Y]" \
-            "/var/log/messages"              "%b %d %H:%M:%S" \
-            "/var/log/pcoip-agent/agent.log" "%Y-%m-%dT%H:%M:%S.%fZ" \
-            "/var/log/user-data.log"         "%a %b %d %H:%M:%S %Z %Y" \
-            "/var/log/yum.log"               "%b %d %H:%M:%S"
+            $LOG_FILE                         "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/messages"               "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/agent.log"  "%Y-%m-%dT%H:%M:%S.%fZ" \
+            "/var/log/teradici/user-data.log" "%a %b %d %H:%M:%S %Z %Y" \
+            "/var/log/yum.log"                "%b %d %H:%M:%S"
     fi
 }
 
@@ -310,6 +311,22 @@ update_firewall() {
     systemctl start firewalld
 }
 
+setup_ssm() {
+    yum install -y https://s3.$AWS_REGION.amazonaws.com/amazon-ssm-$AWS_REGION/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+
+    # According to https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent-technical-details.html#ssm-user-account, 
+    # the ssm agent supposed to create ssm-user account with root permissions, but the ssm agent occasionally doesn't assign ssm-user
+    # with root permissions in centos vms and it results in ssm-user not able to use sudo commands, so we assign root permissions to 
+    # ssm-users by creating /etc/sudoers.d/ssm-agent-users and add ssm-user to it as a workaround, please see the following link for more info:
+    # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-ssm-user-permissions.html#ssm-user-permissions-linux
+    cat << EOF > /etc/sudoers.d/ssm-agent-users
+# User rules for ssm-user
+ssm-user ALL=(ALL) NOPASSWD:ALL
+EOF
+}
+
 if (rpm -q pcoip-agent-standard); then
     exit
 fi
@@ -363,6 +380,11 @@ else
 fi
 
 update_firewall
+
+if [[ "$AWS_SSM_ENABLE" == "true" ]]
+then
+    setup_ssm
+fi
 
 install_idle_shutdown
 

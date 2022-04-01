@@ -180,3 +180,8 @@ variable "ops_setup_script" {
   description = "The script that sets up the GCP OPs agent"
   type        = string
 }
+
+variable "gcp_ops_agent_enable" {
+  description = "Enable GCP Ops Agent for sending logs to GCP"
+  default     = true
+}

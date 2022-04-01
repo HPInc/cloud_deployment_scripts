@@ -164,6 +164,20 @@ data "aws_iam_policy_document" "cac-policy-doc" {
     effect    = "Allow"
   }
 
+  # add minimal permissions to allow users to connect to instances using Session Manager
+  dynamic statement {
+    for_each = var.aws_ssm_enable ? [1] : []
+    content {
+      actions   = ["ssm:UpdateInstanceInformation",
+                  "ssmmessages:CreateControlChannel",
+                  "ssmmessages:CreateDataChannel",
+                  "ssmmessages:OpenControlChannel",
+                  "ssmmessages:OpenDataChannel"]
+      resources = ["*"]
+      effect    = "Allow"
+    }
+  }
+
   dynamic statement {
     for_each = aws_s3_bucket_object.ssl-key
     iterator = i

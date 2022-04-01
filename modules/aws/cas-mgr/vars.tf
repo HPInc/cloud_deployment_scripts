@@ -107,3 +107,8 @@ variable "cloudwatch_enable" {
   description = "Enable AWS CloudWatch Agent for sending logs to AWS CloudWatch"
   default     = true
 }
+
+variable "aws_ssm_enable" {
+  description = "Enable AWS Session Manager integration for easier SSH/RDP admin access to EC2 instances"
+  default     = true
+}

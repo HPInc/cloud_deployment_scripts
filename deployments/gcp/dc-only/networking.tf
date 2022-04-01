@@ -76,7 +76,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs, local.iap_cidr)
+  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
 }
 
 resource "google_compute_firewall" "allow-winrm" {

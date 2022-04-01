@@ -55,7 +55,9 @@ function Setup-Ops {
     } else {
         Retry -Action {gsutil cp gs://${bucket_name}/${ops_setup_script} "C:\Teradici\"}
         
-        powershell "C:\Teradici\${ops_setup_script}" "C:\Teradici\provisioning.log"
+        powershell "C:\Teradici\${ops_setup_script}" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
+                                                     "C:\Teradici\provisioning.log"
+                                                    
     }
 }
 
@@ -173,7 +175,9 @@ function PCoIP-Agent-Register {
 
 Start-Transcript -path $LOG_FILE -append
 
-Setup-Ops
+if ([System.Convert]::ToBoolean("${gcp_ops_agent_enable}")) {
+    Setup-Ops
+} 
 
 "--> Script running as user '$(whoami)'."
 

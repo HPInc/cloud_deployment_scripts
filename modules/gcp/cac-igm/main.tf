@@ -68,6 +68,7 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       external_pcoip_ip           = var.external_pcoip_ip,
+      gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
       kms_cryptokey_id            = var.kms_cryptokey_id,
       ops_setup_script            = var.ops_setup_script,
       ssl_cert                    = var.ssl_cert,
