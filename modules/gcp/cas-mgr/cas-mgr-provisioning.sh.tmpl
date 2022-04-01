@@ -69,8 +69,8 @@ setup_ops() {
         . ${ops_setup_script} \
             $LOG_FILE \
             "/var/log/cloud-init-output.log" \
-            "/var/log/syslog" \
-            "/var/log/teradici/cac-install.log"
+            "/var/log/messages" \
+            "/var/log/teradici/cas-mgr-install.log"
     fi
 }
 

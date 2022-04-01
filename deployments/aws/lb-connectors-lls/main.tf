@@ -90,6 +90,8 @@ module "dc" {
 
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
+  
+  aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
@@ -124,6 +126,8 @@ module "lls" {
   ami_name  = var.lls_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+  
+  aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
@@ -260,8 +264,10 @@ module "cas-connector" {
 
   cas_connector_extra_install_flags = var.cas_connector_extra_install_flags
   
+  aws_ssm_enable = var.aws_ssm_enable
+
   cloudwatch_enable       = var.cloudwatch_enable
-  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
+  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
 }
 
 resource "aws_lb_target_group_attachment" "cas-connector-tg-attachment" {
@@ -309,6 +315,8 @@ module "win-gfx" {
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
   
+  aws_ssm_enable = var.aws_ssm_enable
+  
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
@@ -351,6 +359,8 @@ module "win-std" {
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
+  
+  aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
@@ -396,6 +406,8 @@ module "centos-gfx" {
   ami_name  = var.centos_gfx_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+  
+  aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
@@ -441,6 +453,8 @@ module "centos-std" {
   ami_name  = var.centos_std_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
+  
+  aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script

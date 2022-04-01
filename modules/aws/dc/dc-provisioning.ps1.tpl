@@ -46,7 +46,8 @@ function Setup-CloudWatch {
     "Setting Up AWS CloudWatch..."
     "################################################################"
     Read-S3Object -BucketName $BUCKET_NAME -Key ${cloudwatch_setup_script} -File ${cloudwatch_setup_script}
-    powershell .\${cloudwatch_setup_script} C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+    powershell .\${cloudwatch_setup_script} C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
+                                            C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
 }
 
 function Decrypt-Credentials {
@@ -148,12 +149,15 @@ Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 # but this account isn't created automatically on Windows Server domain controller.  
 # To connect to domain controller using SSM, we create ssm-user for the SSM agent. 
 # More info can be found at https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html
-"================================================================"
-"Creating Local Account ssm-user For AWS Session Manager..."
-"================================================================"
-New-LocalUser -Name ssm-user -Description "local account for AWS Session Manager" -NoPassword
-"--> Assigning ssm-user to Administrators group"
-net localgroup "Administrators" "ssm-user" /add
+
+if ([System.Convert]::ToBoolean("${aws_ssm_enable}")) {
+    "================================================================"
+    "Creating Local Account ssm-user For AWS Session Manager..."
+    "================================================================"
+    New-LocalUser -Name ssm-user -Description "local account for AWS Session Manager" -NoPassword
+    "--> Assigning ssm-user to Administrators group"
+    net localgroup "Administrators" "ssm-user" /add
+} 
 
 if ([System.Convert]::ToBoolean("${cloudwatch_enable}")) {
     Setup-CloudWatch

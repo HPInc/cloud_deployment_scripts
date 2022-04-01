@@ -54,6 +54,7 @@ data "template_file" "dc-provisioning-script" {
   template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
+    aws_ssm_enable           = var.aws_ssm_enable
     bucket_name              = var.bucket_name
     cloudwatch_enable        = var.cloudwatch_enable
     cloudwatch_setup_script  = var.cloudwatch_setup_script
@@ -154,16 +155,19 @@ data "aws_iam_policy_document" "dc-policy-doc" {
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
-  
+
   # add minimal permissions to allow users to connect to instances using Session Manager
-  statement {
-    actions   = ["ssm:UpdateInstanceInformation",
-                "ssmmessages:CreateControlChannel",
-                "ssmmessages:CreateDataChannel",
-                "ssmmessages:OpenControlChannel",
-                "ssmmessages:OpenDataChannel"]
-    resources = ["*"]
-    effect    = "Allow"
+  dynamic statement {
+    for_each = var.aws_ssm_enable ? [1] : []
+    content {
+      actions   = ["ssm:UpdateInstanceInformation",
+                  "ssmmessages:CreateControlChannel",
+                  "ssmmessages:CreateDataChannel",
+                  "ssmmessages:OpenControlChannel",
+                  "ssmmessages:OpenDataChannel"]
+      resources = ["*"]
+      effect    = "Allow"
+    }
   }
 
   dynamic statement {

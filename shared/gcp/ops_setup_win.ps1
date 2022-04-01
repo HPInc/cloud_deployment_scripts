@@ -46,7 +46,7 @@ function Add-Ops-Config($log_file_path) {
   # So we replace / with - as a workaround. Need to investigate about using full path as log name since 
   # got the following message when trying to escape character: 
   # "Log name contains illegal character. Allowed characters are alphanumerics and ./_-"
-  $receiver_id = $log_file_path -replace '[:]',"" -replace '\\','-' 
+  $receiver_id = $log_file_path -replace '[:]',"" -replace '\\','-' -replace "[*]",""
 
   $c="${receiver_id}:
       type: files

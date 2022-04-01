@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -163,6 +163,13 @@ function PCoIP-Agent-Register {
     "--> PCoIP agent registered successfully."
 }
 
+function Audio-Enable {
+    "--> Enabling audio service..."
+    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
+    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
+    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
+}
+
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
     "--> $LOG_FILE exists. Assuming this provisioning script has run, exiting..."
@@ -192,10 +199,11 @@ if (PCoIP-Agent-is-Installed) {
 
 PCoIP-Agent-Register
 
+Audio-Enable
+
 if ($global:restart) {
     "--> Restart required. Restarting..."
     Restart-Computer -Force
 } else {
     "--> No restart required."
 }
-

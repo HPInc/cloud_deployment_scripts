@@ -78,7 +78,9 @@ function Setup-Ops {
     } else {
         Retry -Action {gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "C:\Teradici\"}
         
-        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\Teradici\provisioning.log"
+        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
+                                                   "C:\Teradici\provisioning.log"
+                                                   
     }
 }
 
@@ -328,6 +330,13 @@ function Join-Domain {
     "--> Successfully registered with DNS."
 }
 
+function Audio-Enable {
+    "--> Enabling audio service..."
+    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
+    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
+    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
+}
+
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
     "--> $LOG_FILE exists. Assuming this provisioning script has run, exiting..."
@@ -375,6 +384,8 @@ if (Cam-Idle-Shutdown-is-Installed){
 }
 
 Join-Domain
+
+Audio-Enable
 
 if ($global:restart) {
     "--> Restart required. Restarting..."
