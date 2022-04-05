@@ -39,9 +39,9 @@ aws_credentials_file = "/path/to/aws_key"
 # cas_connector_instance_type = "t2.xlarge"
 # cas_connector_disk_size_gb  = "60"
 
-# Optional: Specify SSL certificate for CAS Connector
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# Optional: Specify TLS certificate for CAS Connector
+# tls_key  = "/path/to/privkey.pem"
+# tls_cert = "/path/to/fullchain.pem"
 
 admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 

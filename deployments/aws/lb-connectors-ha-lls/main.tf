@@ -272,7 +272,7 @@ module "cas-connector" {
   aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
-  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
 resource "aws_lb_target_group_attachment" "cas-connector-tg-attachment" {

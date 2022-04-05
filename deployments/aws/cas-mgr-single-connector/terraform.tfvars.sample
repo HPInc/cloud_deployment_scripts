@@ -47,7 +47,7 @@ admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 #   CAS Manager   #
 ###################
 # cas_mgr_instance_type = "t2.xlarge"
-# cas_mgr_disk_size_gb  = "50"
+# cas_mgr_disk_size_gb  = "60"
 
 #####################
 #   CAS Connector   #

@@ -53,7 +53,7 @@ lls_license_count = 0
 #   CAS Manager   #
 ###################
 # cas_mgr_instance_type = "t2.xlarge"
-# cas_mgr_disk_size_gb  = "50"
+# cas_mgr_disk_size_gb  = "60"
 
 #####################
 #   CAS Connector   #

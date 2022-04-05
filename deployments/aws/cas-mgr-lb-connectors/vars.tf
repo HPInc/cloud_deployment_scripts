@@ -276,7 +276,7 @@ variable "tls_cert" {
 }
 
 variable "cas_connector_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+  description = "Additional flags for installing CAS Connector"
   default     = ""
 }
 

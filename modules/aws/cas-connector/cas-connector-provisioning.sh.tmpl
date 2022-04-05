@@ -198,12 +198,7 @@ config_selinux() {
 
 install_cas_connector() {
     log "--> Installing CAS Connector..."
-    # TODO: figure out the /dev/tty error
     dnf install -y cas-connector 2>&1 | tee -a $CAS_CONNECTOR_INSTALL_LOG
-
-    # Install manually
-    # TODO Remove
-    /usr/local/bin/cas-connector generate --config-files --debug
 
     if [ $? -ne 0 ]
     then
