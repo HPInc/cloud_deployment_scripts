@@ -22,63 +22,63 @@ locals {
   myip = "${chomp(data.http.myip.body)}/32"
 }
 
-resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_support   = true
-  enable_dns_hostnames = false
+#resource "aws_vpc" "vpc" {
+#  cidr_block           = var.vpc_cidr
+#  enable_dns_support   = true
+#  enable_dns_hostnames = false
 
-  tags = {
-    Name = "${local.prefix}${var.vpc_name}"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}${var.vpc_name}"
+#  }
+#}
 
-resource "aws_subnet" "dc-subnet" {
-  cidr_block        = var.dc_subnet_cidr
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = data.aws_availability_zones.available_az.names[0]
+#resource "aws_subnet" "dc-subnet" {
+#  cidr_block        = var.dc_subnet_cidr
+#  vpc_id            = aws_vpc.vpc.id
+#  availability_zone = data.aws_availability_zones.available_az.names[0]
 
-  tags = {
-    Name = "${local.prefix}${var.dc_subnet_name}"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}${var.dc_subnet_name}"
+#  }
+#}
 
-resource "aws_subnet" "cas-mgr-subnet" {
-  cidr_block        = var.cas_mgr_subnet_cidr
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = data.aws_availability_zones.available_az.names[0]
+#resource "aws_subnet" "cas-mgr-subnet" {
+#  cidr_block        = var.cas_mgr_subnet_cidr
+#  vpc_id            = aws_vpc.vpc.id
+#  availability_zone = data.aws_availability_zones.available_az.names[0]
 
-  tags = {
-    Name = "${local.prefix}${var.cas_mgr_subnet_name}"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}${var.cas_mgr_subnet_name}"
+#  }
+#}
 
-resource "aws_subnet" "cac-subnet" {
-  cidr_block        = var.cac_subnet_cidr
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = data.aws_availability_zones.available_az.names[0]
+#resource "aws_subnet" "cac-subnet" {
+#  cidr_block        = var.cac_subnet_cidr
+#  vpc_id            = aws_vpc.vpc.id
+#  availability_zone = data.aws_availability_zones.available_az.names[0]
 
-  tags = {
-    Name = "${local.prefix}${var.cac_subnet_name}"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}${var.cac_subnet_name}"
+#  }
+#}
 
-resource "aws_subnet" "ws-subnet" {
-  cidr_block        = var.ws_subnet_cidr
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = data.aws_availability_zones.available_az.names[0]
+#resource "aws_subnet" "ws-subnet" {
+#  cidr_block        = var.ws_subnet_cidr
+#  vpc_id            = aws_vpc.vpc.id
+#  availability_zone = data.aws_availability_zones.available_az.names[0]
 
-  tags = {
-    Name = "${local.prefix}${var.ws_subnet_name}"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}${var.ws_subnet_name}"
+#  }
+#}
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc.id
+#resource "aws_internet_gateway" "igw" {
+#  vpc_id = aws_vpc.vpc.id
 
-  tags = {
-    Name = "${local.prefix}igw"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}igw"
+#  }
+#}
 
 resource "aws_eip" "nat-ip" {
   vpc      = true
@@ -88,71 +88,71 @@ resource "aws_eip" "nat-ip" {
   }
 }
 
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat-ip.id
-  subnet_id     = aws_subnet.cac-subnet.id
+#resource "aws_nat_gateway" "nat" {
+#  allocation_id = aws_eip.nat-ip.id
+#  subnet_id     = aws_subnet.cac-subnet.id
 
-  tags = {
-    Name = "${local.prefix}nat"
-  }
+#  tags = {
+#    Name = "${local.prefix}nat"
+#  }
 
-  depends_on = [aws_internet_gateway.igw]
-}
+#  depends_on = [aws_internet_gateway.igw]
+#}
 
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.vpc.id
+#resource "aws_route_table" "public" {
+#  vpc_id = aws_vpc.vpc.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
+#  route {
+#    cidr_block = "0.0.0.0/0"
+#    gateway_id = aws_internet_gateway.igw.id
+#  }
 
-  tags = {
-    Name = "${local.prefix}rt-public"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}rt-public"
+#  }
+#}
 
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.vpc.id
+#resource "aws_route_table" "private" {
+#  vpc_id = aws_vpc.vpc.id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
-  }
+#  route {
+#    cidr_block     = "0.0.0.0/0"
+#    nat_gateway_id = aws_nat_gateway.nat.id
+#  }
 
-  tags = {
-    Name = "${local.prefix}rt-private"
-  }
-}
+#  tags = {
+#    Name = "${local.prefix}rt-private"
+#  }
+#}
 
-resource "aws_route_table_association" "rt-dc" {
-  subnet_id      = aws_subnet.dc-subnet.id
-  route_table_id = aws_route_table.public.id
-}
+#resource "aws_route_table_association" "rt-dc" {
+#  subnet_id      = aws_subnet.dc-subnet.id
+#  route_table_id = aws_route_table.public.id
+#}
 
-resource "aws_route_table_association" "rt-cas-mgr" {
-  subnet_id      = aws_subnet.cas-mgr-subnet.id
-  route_table_id = aws_route_table.public.id
-}
+#resource "aws_route_table_association" "rt-cas-mgr" {
+#  subnet_id      = aws_subnet.cas-mgr-subnet.id
+#  route_table_id = aws_route_table.public.id
+#}
 
-resource "aws_route_table_association" "rt-cac" {
-  subnet_id      = aws_subnet.cac-subnet.id
-  route_table_id = aws_route_table.public.id
-}
+#resource "aws_route_table_association" "rt-cac" {
+#  subnet_id      = aws_subnet.cac-subnet.id
+#  route_table_id = aws_route_table.public.id
+#}
 
-resource "aws_route_table_association" "rt-ws" {
-  subnet_id      = aws_subnet.ws-subnet.id
-  route_table_id = aws_route_table.private.id
-}
+#resource "aws_route_table_association" "rt-ws" {
+#  subnet_id      = aws_subnet.ws-subnet.id
+#  route_table_id = aws_route_table.private.id
+#}
 
 data "aws_security_group" "default" {
   name   = "default"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 }
 
 resource "aws_security_group" "allow-http" {
   name   = "allow-http"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 
   ingress {
     protocol    = "tcp"
@@ -175,7 +175,7 @@ resource "aws_security_group" "allow-http" {
 
 resource "aws_security_group" "allow-ssh" {
   name   = "allow-ssh"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 
   ingress {
     protocol    = "tcp"
@@ -191,7 +191,7 @@ resource "aws_security_group" "allow-ssh" {
 
 resource "aws_security_group" "allow-rdp" {
   name   = "allow-rdp"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 
   ingress {
     protocol    = "tcp"
@@ -214,7 +214,7 @@ resource "aws_security_group" "allow-rdp" {
 
 resource "aws_security_group" "allow-winrm" {
   name   = "allow-winrm"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 
   ingress {
     protocol    = "tcp"
@@ -235,7 +235,7 @@ resource "aws_security_group" "allow-winrm" {
 
 resource "aws_security_group" "allow-icmp" {
   name   = "allow-icmp"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 
   ingress {
     protocol    = "icmp"
@@ -251,7 +251,7 @@ resource "aws_security_group" "allow-icmp" {
 
 resource "aws_security_group" "allow-pcoip" {
   name   = "allow-pcoip"
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = var.vpc_id # aws_vpc.vpc.id
 
   ingress {
     protocol    = "tcp"
@@ -279,33 +279,39 @@ resource "aws_security_group" "allow-pcoip" {
   }
 }
 
+### NOTE: Teradici CAC seems to need this resolver so it gets the _private_ IP for the
+### DC when it tries to resolve the domain_name
 resource "aws_route53_resolver_endpoint" "outbound" {
-  name      = replace("${local.prefix}${var.domain_name}-endpoint", ".", "-")
+  name      = replace("${var.prefix}-${var.domain_name}-endpoint", ".", "-")
   direction = "OUTBOUND"
 
   security_group_ids = [
     data.aws_security_group.default.id,
   ]
 
+  # NOTE: We need to ensure there are 2 AZs created, and that CAC and DC are in
+  # separate subnets
   ip_address {
-    subnet_id = aws_subnet.dc-subnet.id
+    subnet_id = var.public_subnet_ids[1]
+    # subnet_id = aws_subnet.dc-subnet.id
   }
 
   # TODO: Terraform errors out with "ip_address: attribute supports 2 item as a
   # minimum, config has 1 declared" without the second ip_address block with a
   # different subnet.
   ip_address {
-    subnet_id = aws_subnet.cac-subnet.id
+    subnet_id = var.public_subnet_ids[0]
+    # subnet_id = aws_subnet.cac-subnet.id
   }
 
   tags = {
-    Name = "${local.prefix}${var.domain_name}-endpoint"
+    Name = "${var.prefix}-${var.domain_name}-endpoint"
   }
 }
 
 resource "aws_route53_resolver_rule" "rule" {
   domain_name = var.domain_name
-  name        = replace("${local.prefix}${var.domain_name}-forwarder", ".", "-")
+  name        = replace("${var.prefix}-${var.domain_name}-forwarder", ".", "-")
 
   rule_type            = "FORWARD"
   resolver_endpoint_id = aws_route53_resolver_endpoint.outbound.id
@@ -315,11 +321,11 @@ resource "aws_route53_resolver_rule" "rule" {
   }
 
   tags = {
-    Name = "${local.prefix}${var.domain_name}-rule"
+    Name = "${var.prefix}-${var.domain_name}-rule"
   } 
 }
 
 resource "aws_route53_resolver_rule_association" "association" {
   resolver_rule_id = aws_route53_resolver_rule.rule.id
-  vpc_id           = aws_vpc.vpc.id
+  vpc_id           = var.vpc_id # aws_vpc.vpc.id
 }

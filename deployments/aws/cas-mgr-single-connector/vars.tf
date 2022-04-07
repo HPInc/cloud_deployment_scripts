@@ -455,3 +455,22 @@ variable "aws_ssm_enable" {
   description = "Enable AWS Session Manager integration for easier SSH/RDP admin access to EC2 instances"
   default     = true
 }
+
+###########
+# Accept networking defined upstream
+###########
+variable "vpc_id" {
+  description = ""
+  type        = string
+}
+
+variable "public_subnet_ids" {
+  description = ""
+  type        = list
+}
+
+variable "private_subnet_ids" {
+  description = ""
+  type        = list
+}
+

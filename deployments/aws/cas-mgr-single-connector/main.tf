@@ -48,7 +48,7 @@ resource "aws_s3_bucket_object" "cloudwatch-setup-rpm-script" {
 
   bucket = aws_s3_bucket.scripts.id
   key    = local.cloudwatch_setup_rpm_script
-  source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
+  source = "${path.module}/../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
 }
 
 resource "aws_s3_bucket_object" "cloudwatch-setup-deb-script" {
@@ -56,7 +56,7 @@ resource "aws_s3_bucket_object" "cloudwatch-setup-deb-script" {
 
   bucket = aws_s3_bucket.scripts.id
   key    = local.cloudwatch_setup_deb_script
-  source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
+  source = "${path.module}/../../../shared/aws/${local.cloudwatch_setup_deb_script}"
 }
 
 resource "aws_s3_bucket_object" "cloudwatch-setup-win-script" {
@@ -64,7 +64,7 @@ resource "aws_s3_bucket_object" "cloudwatch-setup-win-script" {
 
   bucket = aws_s3_bucket.scripts.id
   key    = local.cloudwatch_setup_win_script
-  source = "../../../shared/aws/${local.cloudwatch_setup_win_script}"
+  source = "${path.module}/../../../shared/aws/${local.cloudwatch_setup_win_script}"
 }
 
 module "dc" {
@@ -85,7 +85,9 @@ module "dc" {
   domain_users_list           = var.domain_users_list
 
   bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.dc-subnet.id
+  # NOTE: artifically forcing the DC into a separate subnet; see notes in
+  # the networking.tf module
+  subnet             = var.public_subnet_ids[1] # aws_subnet.dc-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-rdp.id,
@@ -158,8 +160,8 @@ module "cac" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  zone_list           = [aws_subnet.cac-subnet.availability_zone]
-  subnet_list         = [aws_subnet.cac-subnet.id]
+  zone_list           = [data.aws_availability_zones.available_az.names[0]] # [aws_subnet.cac-subnet.availability_zone]
+  subnet_list         = var.public_subnet_ids # [aws_subnet.cac-subnet.id]
   instance_count_list = [var.cac_instance_count]
 
   security_group_ids = [
@@ -209,7 +211,7 @@ module "win-gfx" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
+  subnet             = var.public_subnet_ids[0] # aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
@@ -234,7 +236,7 @@ module "win-gfx" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
-  depends_on = [aws_nat_gateway.nat]
+  #depends_on = [aws_nat_gateway.nat]
 }
 
 module "win-std" {
@@ -254,7 +256,7 @@ module "win-std" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
+  subnet             = var.public_subnet_ids[0] # aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
@@ -279,7 +281,7 @@ module "win-std" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
-  depends_on = [aws_nat_gateway.nat]
+  #depends_on = [aws_nat_gateway.nat]
 }
 
 module "centos-gfx" {
@@ -299,7 +301,7 @@ module "centos-gfx" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
+  subnet             = var.public_subnet_ids[0] # aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
@@ -326,7 +328,7 @@ module "centos-gfx" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
-  depends_on = [aws_nat_gateway.nat]
+  #depends_on = [aws_nat_gateway.nat]
 }
 
 module "centos-std" {
@@ -346,7 +348,7 @@ module "centos-std" {
   ad_service_account_password = var.ad_service_account_password
 
   bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
+  subnet             = var.public_subnet_ids[0] # aws_subnet.ws-subnet.id
   enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
@@ -373,5 +375,5 @@ module "centos-std" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
-  depends_on = [aws_nat_gateway.nat]
+  #depends_on = [aws_nat_gateway.nat]
 }
