@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,7 +21,7 @@ variable "cas_mgr_url" {
 }
 
 variable "cas_mgr_insecure" {
-  description = "Allow unverified SSL access to CAS Manager"
+  description = "Allow unverified TLS access to CAS Manager"
   type        = bool
   default     = false
 }
@@ -66,6 +66,21 @@ variable "ad_service_account_password" {
   sensitive   = true
 }
 
+variable "ldaps_cert_filename" {
+  description = "Filename of Certificate used in LDAPS."
+  type        = string
+} 
+
+variable "computers_dn" {
+  description = "Base DN to search for computers within Active Directory."
+  type        = string
+}
+
+variable "users_dn" {
+  description = "Base DN to search for users within Active Directory."
+  type        = string
+}
+
 variable "lls_ip" {
   description = "Internal IP of the PCoIP License Server"
   default     = ""
@@ -77,48 +92,48 @@ variable "bucket_name" {
 }
 
 variable "zone_list" {
-  description = "Availability Zones in which to deploy Connectors"
+  description = "Availability Zones in which to deploy CAS Connectors"
   type        = list(string)
 }
 
 variable "subnet_list" {
-  description = "Subnets to deploy the Cloud Access Connector"
+  description = "Subnets to deploy the CAS Connector"
   type        = list(string)
 }
 
 variable "instance_count_list" {
-  description = "Number of Cloud Access Connector instances to deploy in each Availability Zone"
+  description = "Number of CAS Connector instances to deploy in each Availability Zone"
   type        = list(number)
 }
 
 variable "security_group_ids" {
-  description = "Security Groups to be applied to the Cloud Access Connector"
+  description = "Security Groups to be applied to the CAS Connector"
   type        = list(string)
 }
 
 variable "instance_type" {
-  description = "Instance type for the Cloud Access Connector (min 4 GB RAM, 2 vCPUs)"
+  description = "Instance type for the CAS Connector (min 8 GB RAM, 4 vCPUs)"
   default     = "t2.xlarge"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Connector (min 12 GB)"
-  default     = "50"
+  description = "Disk size (GB) of the CAS Connector (min 12 GB)"
+  default     = "60"
 }
 
 variable "ami_owner" {
-  description = "Owner of AMI for the Cloud Access Connector"
-  default     = "099720109477"
+  description = "Owner of AMI for the CAS Connector"
+  default     = "792107900819"
 }
 
 variable "ami_name" {
-  description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"
+  description = "Name of the AMI to create CAS Connector from"
+  default     = "Rocky-8-ec2*x86_64*"
 }
 
 variable "host_name" {
   description = "Name to give the host"
-  default     = "vm-cac"
+  default     = "vm-cas-connector"
 }
 
 variable "admin_ssh_key_name" {
@@ -126,38 +141,33 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "cac_version" {
-  description = "Version of the Cloud Access Connector to install"
-  default     = "latest"
-}
-
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
 }
 
-variable "ssl_key" {
-  description = "SSL private key for the Connector"
+variable "tls_key" {
+  description = "TLS private key for the CAS Connector"
   default     = ""
   
   validation {
-    condition = var.ssl_key == "" ? true : fileexists(var.ssl_key)
-    error_message = "The ssl_key file specified does not exist. Please check the file path."
+    condition = var.tls_key == "" ? true : fileexists(var.tls_key)
+    error_message = "The tls_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector"
+variable "tls_cert" {
+  description = "TLS certificate for the CAS Connector"
   default     = ""
 
   validation {
-    condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
-    error_message = "The ssl_cert file specified does not exist. Please check the file path."
+    condition = var.tls_cert == "" ? true : fileexists(var.tls_cert)
+    error_message = "The tls_cert file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+variable "cas_connector_extra_install_flags" {
+  description = "Additional flags for installing CAS Connector"
   default     = ""
 }
 

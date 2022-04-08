@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -43,7 +43,7 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the Cloud Access Software deployment"
+  description = "Name for VPC containing the CAS deployment"
   default     = "vpc-cas"
 }
 
@@ -140,44 +140,39 @@ variable "domain_users_list" {
   }
 }
 
-variable "cac_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Connector"
-  default     = "subnet-cac"
+variable "cas_connector_subnet_name" {
+  description = "Name for subnet containing the CAS Connector"
+  default     = "subnet-cas-connector"
 }
 
-variable "cac_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Connector"
+variable "cas_connector_subnet_cidr" {
+  description = "CIDR for subnet containing the CAS Connector"
   default     = "10.0.1.0/24"
 }
 
-variable "cac_instance_count" {
-  description = "Number of Cloud Access Connector instances"
+variable "cas_connector_instance_count" {
+  description = "Number of CAS Connector instances"
   default     = 1
 }
 
-variable "cac_instance_type" {
-  description = "Instance type for the Cloud Access Connector"
+variable "cas_connector_instance_type" {
+  description = "Instance type for the CAS Connector"
   default     = "t2.xlarge"
 }
 
-variable "cac_disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Connector"
-  default     = "50"
+variable "cas_connector_disk_size_gb" {
+  description = "Disk size (GB) of the CAS Connector"
+  default     = "60"
 }
 
-variable "cac_ami_owner" {
-  description = "Owner of AMI for the Cloud Access Connector"
-  default     = "099720109477"
+variable "cas_connector_ami_owner" {
+  description = "Owner of AMI for the CAS Connector"
+  default     = "792107900819"
 }
 
-variable "cac_ami_name" {
-  description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220308"
-}
-
-variable "cac_version" {
-  description = "Version of the Cloud Access Connector to install"
-  default     = "latest"
+variable "cas_connector_ami_name" {
+  description = "Name of the AMI to create CAS Connector from"
+  default     = "Rocky-8-ec2-8.5-20211114.2.x86_64"
 }
 
 variable "admin_ssh_key_name" {
@@ -195,28 +190,28 @@ variable "admin_ssh_pub_key_file" {
   }
 }
 
-variable "ssl_key" {
-  description = "SSL private key for the Connector"
+variable "tls_key" {
+  description = "TLS private key for the Connector"
   default     = ""
 
   validation {
-    condition = var.ssl_key == "" ? true : fileexists(var.ssl_key)
-    error_message = "The ssl_key file specified does not exist. Please check the file path."
+    condition = var.tls_key == "" ? true : fileexists(var.tls_key)
+    error_message = "The tls_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector"
+variable "tls_cert" {
+  description = "TLS certificate for the Connector"
   default     = ""
 
   validation {
-    condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
-    error_message = "The ssl_cert file specified does not exist. Please check the file path."
+    condition = var.tls_cert == "" ? true : fileexists(var.tls_cert)
+    error_message = "The tls_cert file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+variable "cas_connector_extra_install_flags" {
+  description = "Additional flags for installing CAS Connector"
   default     = ""
 }
 
@@ -226,7 +221,7 @@ variable "cas_mgr_url" {
 }
 
 variable "cas_mgr_insecure" {
-  description = "Allow unverified SSL access to CAS Manager"
+  description = "Allow unverified TLS access to CAS Manager"
   type        = bool
   default     = false
 }
