@@ -37,9 +37,15 @@ There are two ways to create a Cloud Access Software (CAS) deployment using this
 
 The quickest way to create a reference deployment on GCP is to run the Quickstart Python script in the Google Cloud Shell. The goal is to automate the creation of a [single-connector deployment](#single-connector) as much as possible by using auto-generated values for required parameters.
 
-Click on the button below to clone this repository in your GCP Cloud Shell and launch the tutorial. The tutorial can be found on the panel to the right once the GCP Cloud Shell opens. [This video](https://www.youtube.com/watch?v=lN2GesgvLKA) is also available to guide the viewer through the GCP Quickstart deployment process.
+Click on the button below to clone this repository in your GCP Cloud Shell and launch the tutorial. The tutorial can be found on the panel to the right once the GCP Cloud Shell opens. 
 
 [![Open in Google Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://ssh.cloud.google.com/cloudshell/open?cloudshell_git_repo=https://github.com/teradici/cloud_deployment_scripts&cloudshell_tutorial=quickstart/gcp/tutorial.md&show=terminal)
+
+The following videos are also available to guide the viewer through the GCP Quickstart deployment process.
+- [Cloud Deployment Scripts Overview and Introduction](https://youtu.be/ZIwrdf6xRl4)
+- [Deploying CAS on GCP Using the GCP Quickstart Script](https://youtu.be/GA-dZ0AWxOw)
+- [Connecting to CAS Workstations](https://youtu.be/wodU8xZlZWM)
+- [Cleaning Up GCP CAS Deployment](https://youtu.be/7todYnvRsls)
 
 ## Manual Terraform Configuration
 
