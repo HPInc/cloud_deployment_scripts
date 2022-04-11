@@ -15,6 +15,7 @@ REGION="${args[0]}"
 # Please find the link here: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-cloudwatch-agent-commandline.html
 CLOUDWATCH_AGENT_SETUP_URL="https://s3.$REGION.amazonaws.com/amazoncloudwatch-agent-$REGION/centos/amd64/latest/amazon-cloudwatch-agent.rpm"
 CLOUDWATCH_CONFIG_FILE="cloudwatch.conf"
+CONTAINER_LOG_DIR="/opt/teradici/casc/logs"
 
 # Try command until zero exit status or exit(1) when non-zero status after max tries
 retry_cw() {
@@ -42,24 +43,46 @@ retry_cw() {
     done
 }
 
-add_cloudwatch_config(){
+add_container_logs() {
+    log_prefix="k3s.connector."
+    log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
+
+    for log in ${log_list[@]}
+    do
+        # To remove * from log name to meet the log_stream_name regex pattern [^:*]*
+        log_name="$(echo $log | tr -d '*-')"
+        c="{
+                        \"file_path\": \"$CONTAINER_LOG_DIR/$log_prefix$log\",
+                        \"log_group_name\": \"$instance_name-container_logs\",
+                        \"log_stream_name\": \"$log_name.log\",
+                        \"timestamp_format\": \"%b %d %H:%M:%S\",
+                        \"timezone\": \"LOCAL\",
+                        \"multi_line_start_pattern\": \"{timestamp_format}\",
+                        \"encoding\": \"ascii\"
+                    },"
+        collect_list+=$c
+    done
+}
+
+add_cloudwatch_config() {
     log_file_path="$1"
     datetime_format="$2"
+    log_name="$(echo $log_file_path | tr -d '*')"
 
     c="{
                         \"file_path\": \"$log_file_path\",
                         \"log_group_name\": \"$instance_name\",
-                        \"log_stream_name\": \"$log_file_path\",
+                        \"log_stream_name\": \"$log_name\",
                         \"timestamp_format\": \"$datetime_format\",
                         \"timezone\": \"LOCAL\",
                         \"multi_line_start_pattern\": \"{timestamp_format}\",
                         \"encoding\": \"ascii\"
-                    }"
+                    },"
 
     collect_list+=$c
 }
 
-write_cloudwatch_config(){
+write_cloudwatch_config() {
     cat <<- EOF > $CLOUDWATCH_CONFIG_FILE
 {
     "logs": {   
@@ -99,11 +122,14 @@ done
 for ((i=1; i<${#args[@]}; i+=2))
 do
     add_cloudwatch_config "${args[i]}" "${args[i+1]}"
-    if [ $((i+2)) -ne ${#args[@]} ]
-    then
-        collect_list+=","
-    fi
 done
+
+if [[ $instance_name == *"cas-connector"* ]]
+then
+    add_container_logs
+fi
+
+collect_list=${collect_list::-1}
 
 log "Writing configurations to $CLOUDWATCH_CONFIG_FILE"
 write_cloudwatch_config
