@@ -115,7 +115,7 @@ module "cas-mgr" {
   cas_mgr_aws_credentials_file = local.cas_mgr_aws_credentials_file
   cas_mgr_deployment_sa_file   = local.cas_mgr_deployment_sa_file
 
-  subnet = aws_subnet.cas-mgr-subnet.id
+  subnet = var.public_subnet_ids[0] # aws_subnet.cas-mgr-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-http.id,
