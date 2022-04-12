@@ -177,7 +177,7 @@ configure_firewall(){
 }
 
 check_connector_installed() {
-    if [[ -f "$CAS_COONNECTOR_BIN_PATH" ]]; then
+    if [[ -f "$CAS_CONNECTOR_BIN_PATH" ]]; then
         log "--> CAS Connector already installed. Skipping provisioning script..."
         exit 0
     fi
@@ -269,7 +269,7 @@ configure_cas_connector() {
     local args=""
 
     log "--> Running command: $CAS_CONNECTOR_BIN_PATH configure"
-    log "--> CAS Connector install options:"
+    log "--> CAS Connector configure options:"
     log "  --token <connector_token>"
     log "  --accept-policies"
     log "  --computers-dn \"${computers_dn}\""
@@ -319,8 +319,7 @@ configure_cas_connector() {
         args=$args"--local-license-server-url http://${lls_ip}:7070/request "
     fi
 
-#TODO uncomment set +x
-    #set +x
+    set +x
     retry 10 `# 10 retries` \
         10 `# 10s interval` \
         "$CAS_CONNECTOR_BIN_PATH configure \
