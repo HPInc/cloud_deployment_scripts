@@ -231,6 +231,7 @@ module "win-gfx" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
+  # Removing this dependency since the nat gateway is being created upstream
   #depends_on = [aws_nat_gateway.nat]
 }
 
@@ -276,6 +277,7 @@ module "win-std" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
+  # Removing this dependency since the nat gateway is being created upstream
   #depends_on = [aws_nat_gateway.nat]
 }
 
@@ -323,6 +325,7 @@ module "centos-gfx" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
+  # Removing this dependency since the nat gateway is being created upstream
   #depends_on = [aws_nat_gateway.nat]
 }
 
@@ -370,5 +373,6 @@ module "centos-std" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
+  # Removing this dependency since the nat gateway is being created upstream
   #depends_on = [aws_nat_gateway.nat]
 }
