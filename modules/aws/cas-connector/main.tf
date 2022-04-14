@@ -222,8 +222,15 @@ resource "aws_cloudwatch_log_group" "instance-log-group" {
   name = "${local.prefix}${var.host_name}-${count.index}"
 }
 
+resource "aws_cloudwatch_log_group" "container-log-group" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  name = "${local.prefix}${var.host_name}-${count.index}-container_logs"
+}
+
 resource "time_sleep" "delay_destroy_log_group" {
-  depends_on = [aws_cloudwatch_log_group.instance-log-group]
+  depends_on = [aws_cloudwatch_log_group.instance-log-group,
+                aws_cloudwatch_log_group.container-log-group]
 
   destroy_duration = "5s"
 }
@@ -265,4 +272,69 @@ resource "aws_instance" "cas-connector" {
   tags = {
     Name = "${local.prefix}${var.host_name}-${count.index}"
   }
+}
+
+resource "aws_cloudwatch_dashboard" "connection" {
+  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
+
+  dashboard_name = "${local.prefix}${var.host_name}-${count.index}"
+  
+  dashboard_body = <<EOF
+{
+    "widgets": [
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "ADSync-users",
+                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[count.index].id}' | filter @message like /Users in local cache/ | parse @message '* [*] ActiveDirectorySync Found * users in active directory using' as time, type, num | stats latest(num) by bin(20m) as user_num | sort user_num",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "ADSync-machines",
+                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[count.index].id}' | filter @message like /Machines in local cache/ | parse @message '* [*] ActiveDirectorySync Found * ActiveDirectorySync Found * machines in active directory' as time, type, user, num | stats latest(num) by bin(20m) as machine_num | sort machine_num",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Active-connections",
+                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[count.index].id}' | filter @message like /get_statistics returning/ | parse @message '* get_statistics returning * UDP connections currently working' as m, num | stats latest(num) by bin(20m) as connection_num | sort connection_num",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "User-login",
+                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[count.index].id}' | filter @message like /User authenticated successfully/ | parse @message '<broker-info><product-name>PCoIP*Agent for*<hostname>*</hostname>*<username>*</username>' as a, b, hostname, c, username | display username, hostname, @timestamp",
+                "view": "table"
+            }
+        }
+    ]
+}
+EOF
 }
