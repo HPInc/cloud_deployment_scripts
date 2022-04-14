@@ -112,12 +112,12 @@ variable "security_group_ids" {
 }
 
 variable "instance_type" {
-  description = "Instance type for the CAS Connector (min 8 GB RAM, 4 vCPUs)"
+  description = "Instance type for the CAS Connector (min 4 vCPUs, 8 GB RAM)"
   default     = "t2.xlarge"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the CAS Connector (min 12 GB)"
+  description = "Disk size (GB) of the CAS Connector (min 60 GB)"
   default     = "60"
 }
 
