@@ -133,12 +133,12 @@ variable "admin_password" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID12.0/"
+  default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID13.1/"
 }
 
 variable "nvidia_driver_filename" {
   description = "Filename of NVIDIA GRID driver"
-  default     = "461.09_grid_win10_server2016_server2019_64bit_international.exe"
+  default     = "472.39_grid_win10_win11_server2016_server2019_server2022_64bit_international.exe"
 }
 
 variable "teradici_download_token" {
