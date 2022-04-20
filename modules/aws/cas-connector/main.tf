@@ -223,7 +223,7 @@ resource "aws_cloudwatch_log_group" "instance-log-group" {
 }
 
 resource "aws_cloudwatch_log_group" "container-log-group" {
-  count = var.cloudwatch_enable ? 1 : 0
+  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
 
   name = "${local.prefix}${var.host_name}-${count.index}-container_logs"
 }
@@ -274,10 +274,10 @@ resource "aws_instance" "cas-connector" {
   }
 }
 
-resource "aws_cloudwatch_dashboard" "connection" {
-  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
+resource "aws_cloudwatch_dashboard" "ad" {
+  count = var.cloudwatch_enable ? 1 : 0
 
-  dashboard_name = "${local.prefix}${var.host_name}-${count.index}"
+  dashboard_name = "${local.prefix}AD"
   
   dashboard_body = <<EOF
 {
@@ -291,7 +291,7 @@ resource "aws_cloudwatch_dashboard" "connection" {
             "properties": {
                 "region": "${var.aws_region}",
                 "title": "ADSync-users",
-                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[count.index].id}' | filter @message like /Users in local cache/ | parse @message '* [*] ActiveDirectorySync Found * users in active directory using' as time, type, num | stats latest(num) by bin(20m) as user_num | sort user_num",
+                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[0].id}' | filter @message like /Users in local cache/ | parse @message '* [*] ActiveDirectorySync Found * users in active directory using' as time, type, num | stats latest(num) by bin(20m) as user_num | sort user_num",
                 "view": "bar"
             }
         },
@@ -304,10 +304,23 @@ resource "aws_cloudwatch_dashboard" "connection" {
             "properties": {
                 "region": "${var.aws_region}",
                 "title": "ADSync-machines",
-                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[count.index].id}' | filter @message like /Machines in local cache/ | parse @message '* [*] ActiveDirectorySync Found * ActiveDirectorySync Found * machines in active directory' as time, type, user, num | stats latest(num) by bin(20m) as machine_num | sort machine_num",
+                "query": "SOURCE '${aws_cloudwatch_log_group.container-log-group[0].id}' | filter @message like /Machines in local cache/ | parse @message '* [*] ActiveDirectorySync Found * ActiveDirectorySync Found * machines in active directory' as time, type, user, num | stats latest(num) by bin(20m) as machine_num | sort machine_num",
                 "view": "bar"
             }
-        },
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_cloudwatch_dashboard" "connection" {
+  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
+
+  dashboard_name = "${local.prefix}${var.host_name}-${count.index}"
+  
+  dashboard_body = <<EOF
+{
+    "widgets": [
         {
             "type": "log",
             "x": 12,

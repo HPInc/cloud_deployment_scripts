@@ -45,7 +45,7 @@ retry_cw() {
 
 add_container_logs() {
     log_prefix="k3s.connector."
-    log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
+    # log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
 
     for log in ${log_list[@]}
     do
@@ -126,7 +126,12 @@ done
 
 if [[ $instance_name == *"cas-connector"* ]]
 then
-    add_container_logs
+    log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
+    if [[ ! $instance_name == *"cas-connector-0" ]]
+    then
+        unset log_list[0]
+    fi
+    add_container_logs $log_list
 fi
 
 collect_list=${collect_list::-1}
