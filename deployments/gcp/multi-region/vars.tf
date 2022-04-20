@@ -457,3 +457,8 @@ variable "gcp_iap_enable" {
   description = "Enable GCP IAP for connecting instances via IAP"
   default     = true
 }
+
+variable "gcp_logging_retention_days" {
+  description = "Retention period for created logging storage bucket"
+  default     = 30
+}
