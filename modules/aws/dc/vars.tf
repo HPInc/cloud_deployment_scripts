@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -52,6 +52,11 @@ variable "bucket_name" {
   description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
+
+variable "ldaps_cert_filename" {
+  description = "Filename of Certificate used in LDAPS."
+  type        = string
+} 
 
 variable "subnet" {
   description = "Subnet to deploy the Domain Controller"
