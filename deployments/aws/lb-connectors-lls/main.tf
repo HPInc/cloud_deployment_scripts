@@ -179,7 +179,6 @@ resource "tls_private_key" "tls-key" {
 resource "tls_self_signed_cert" "tls-cert" {
   count = var.tls_cert == "" ? 1 : 0
 
-  key_algorithm   = tls_private_key.tls-key[0].algorithm
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
 
   subject {
