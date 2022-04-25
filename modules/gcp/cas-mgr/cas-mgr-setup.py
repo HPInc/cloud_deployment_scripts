@@ -158,6 +158,15 @@ if __name__ == '__main__':
     # Set up session to be used for all subsequent calls to CAS Manager
     session = requests.Session()
     session.verify = False
+    retry_strategy = requests.adapters.Retry(
+        total=10,
+        backoff_factor=1,
+        status_forcelist=[500,502,503,504],
+        method_whitelist=["POST"]
+    )
+    session.mount(
+        "https://", requests.adapters.HTTPAdapter(max_retries=retry_strategy)
+    )
 
     print("Setting CAS Manager Administrator password...")
     user, password = get_temp_creds()
