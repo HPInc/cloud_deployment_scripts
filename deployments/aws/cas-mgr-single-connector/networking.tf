@@ -52,13 +52,13 @@ locals {
 #  }
 #}
 
-#resource "aws_subnet" "cas-connectorc-subnet" {
-#  cidr_block        = var.cac_subnet_cidr
+#resource "aws_subnet" "cas-connector-subnet" {
+#  cidr_block        = var.cas_connector_subnet_cidr
 #  vpc_id            = aws_vpc.vpc.id
 #  availability_zone = data.aws_availability_zones.available_az.names[0]
 
 #  tags = {
-#    Name = "${local.prefix}${var.cas-connectorc_subnet_name}"
+#    Name = "${local.prefix}${var.cas-connector_subnet_name}"
 #  }
 #}
 
@@ -90,7 +90,7 @@ resource "aws_eip" "nat-ip" {
 
 #resource "aws_nat_gateway" "nat" {
 #  allocation_id = aws_eip.nat-ip.id
-#  subnet_id     = aws_subnet.cas-connectorc-subnet.id
+#  subnet_id     = aws_subnet.cas-connector-subnet.id
 
 #  tags = {
 #    Name = "${local.prefix}nat"
