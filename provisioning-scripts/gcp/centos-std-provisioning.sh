@@ -107,23 +107,19 @@ install_pcoip_agent() {
         exit 1
     fi
     log "--> PCoIP agent installed successfully."
+}
 
+register_pcoip_agent() {
     log "--> Registering PCoIP agent license..."
-    n=0
-    set +x
-    while true; do
-        /usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break
-        n=$[$n+1]
 
-        if [ $n -ge 10 ]; then
-            log "--> ERROR: Failed to register PCoIP agent after $n tries."
-            exit 1
-        fi
-
-        log "--> ERROR: Failed to register PCoIP agent. Retrying in 10s..."
-        sleep 10
-    done
-    set -x
+    retry   10 `# 10 retries` \
+            10 `# 10s interval` \
+            "/usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break" \
+            "--> ERROR: Failed to register PCoIP agent."
+    
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
     log "--> PCoIP agent registered successfully."
 }
 
@@ -180,6 +176,15 @@ then
 else
     install_pcoip_agent
 fi
+
+set +x
+if [[ -z "$PCOIP_REGISTRATION_CODE" ]]
+then
+    log "--> No PCoIP Registration Code provided. Skipping PCoIP agent registration..."
+else
+    register_pcoip_agent
+fi
+set -x
 
 log "--> Installation is complete!"
 
