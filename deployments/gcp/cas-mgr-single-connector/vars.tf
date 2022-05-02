@@ -171,7 +171,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220331a"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220419"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -466,4 +466,9 @@ variable "gcp_ops_agent_enable" {
 variable "gcp_iap_enable" {
   description = "Enable GCP IAP for connecting instances via IAP"
   default     = true
+}
+
+variable "gcp_logging_retention_days" {
+  description = "Retention period for created logging storage bucket"
+  default     = 30
 }

@@ -60,9 +60,10 @@ resource "google_storage_bucket_object" "ops-setup-win-script" {
 resource "google_logging_project_bucket_config" "main" {
   count = var.gcp_ops_agent_enable ? 1 : 0
   
-  bucket_id = local.log_bucket_name
-  project   = local.gcp_project_id
-  location  = "global"
+  bucket_id      = local.log_bucket_name
+  project        = local.gcp_project_id
+  location       = "global"
+  retention_days = var.gcp_logging_retention_days
 }
 
 # Create a sink to route instance logs to desinated log bucket
@@ -202,7 +203,6 @@ resource "tls_private_key" "tls-key" {
 resource "tls_self_signed_cert" "tls-cert" {
   count = var.glb_ssl_cert == "" ? 1 : 0
 
-  key_algorithm   = tls_private_key.tls-key[0].algorithm
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
 
   subject {
