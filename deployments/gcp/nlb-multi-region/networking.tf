@@ -10,10 +10,11 @@ locals {
 
   #Allows ingress traffic from the IP range 35.235.240.0/20. This range contains all IP addresses that IAP uses for TCP forwarding.
   iap_cidr = ["35.235.240.0/20"]
+  myip = chomp(data.http.myip.response_headers.Client-Ip)
 }
 
 data "http" "myip" {
-  url = "https://api.ipify.org"
+  url = "https://cas.teradici.com/api/v1/health"
 }
 
 resource "google_compute_network" "vpc" {
@@ -76,7 +77,7 @@ resource "google_compute_firewall" "allow-ssh" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-ssh"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
 }
 
 # Open TCP/443 for Google Load balancers to perform health checks
@@ -108,7 +109,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -121,7 +122,7 @@ resource "google_compute_firewall" "allow-winrm" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-winrm"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-icmp" {
@@ -133,7 +134,7 @@ resource "google_compute_firewall" "allow-icmp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-icmp"]
-  source_ranges = concat([chomp(data.http.myip.body)], var.allowed_admin_cidrs)
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-pcoip" {
