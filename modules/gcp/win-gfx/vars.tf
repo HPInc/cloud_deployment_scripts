@@ -11,7 +11,7 @@ variable "gcp_service_account" {
 }
 
 variable "prefix" {
-  description = "Prefix to add to name of new resources. Must be <= 9 characters."
+  description = "Prefix to add to name of new resources"
   default     = ""
 }
 
