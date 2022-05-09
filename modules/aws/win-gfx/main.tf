@@ -197,3 +197,81 @@ resource "aws_instance" "win-gfx" {
     Name = "${local.host_name}-${count.index}"
   }
 }
+
+resource "aws_cloudwatch_dashboard" "main" {
+  count = var.cloudwatch_enable ? var.instance_count : 0
+
+  dashboard_name = "${local.host_name}-${count.index}"
+  
+  dashboard_body = <<EOF
+{
+    "widgets": [
+        {
+            "type": "log",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Latency (ms)",
+                "query": "SOURCE '${local.host_name}-${count.index}' | filter @message like /round trip/ | parse @message 'Tx thread info: round trip time (ms) = *, variance' as rtt | stats pct(rtt, 50), pct(rtt, 80), pct(rtt, 90) by bin(10m)",
+                "view": "timeSeries"
+            }
+        }, 
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "TxLoss (%)",
+                "query": "SOURCE '${local.host_name}-${count.index}' | filter @message like /Loss=/ | parse @message '(A/I/O) Loss=*%/*% (R/T)' as RxLoss, TxLoss | stats pct(TxLoss, 90), pct(TxLoss, 95) by bin(2m)",
+                "view": "timeSeries"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "RxLoss (%)",
+                "query": "SOURCE '${local.host_name}-${count.index}' | filter @message like /Loss=/ | parse @message '(A/I/O) Loss=*%/*% (R/T)' as RxLoss, TxLoss | stats pct(RxLoss, 90), pct(RxLoss, 95) by bin(2m)",
+                "view": "timeSeries"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Data Transmitted (MiB)",
+                "query": "SOURCE '${local.host_name}-${count.index}' | filter @message like /MGMT_PCOIP_DATA :Tx thread info: bw limit/ | parse @message 'MGMT_PCOIP_DATA :Tx thread info: bw limit = *, avg tx = *, avg rx = * (kbit' as bwlimit, avgtx, avgrx | stats sum(avgtx)*60/8/1024 as Transmit_MiB by bin(10m)",
+                "view": "timeSeries"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 24,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Data Reveived (MiB)",
+                "query": "SOURCE '${local.host_name}-${count.index}' | filter @message like /MGMT_PCOIP_DATA :Tx thread info: bw limit/ | parse @message 'MGMT_PCOIP_DATA :Tx thread info: bw limit = *, avg tx = *, avg rx = * (kbit' as bwlimit, avgtx, avgrx | stats sum(avgrx)*60/8/1024 as Reveive_MiB by bin(10m)",
+                "view": "timeSeries"
+            }
+        }
+    ]
+}
+EOF
+}
