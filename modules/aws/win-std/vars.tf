@@ -5,8 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+variable "aws_region" {
+  description = "AWS region"
+  default     = "us-west-1"
+}
+
 variable "prefix" {
-  description = "Prefix to add to name of new resources. Must be <= 9 characters."
+  description = "Prefix to add to name of new resources"
   default     = ""
 }
 

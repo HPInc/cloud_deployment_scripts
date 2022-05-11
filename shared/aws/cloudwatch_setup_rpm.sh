@@ -42,14 +42,15 @@ retry_cw() {
     done
 }
 
-add_cloudwatch_config(){
+add_cloudwatch_config() {
     log_file_path="$1"
     datetime_format="$2"
+    log_name="$(echo $log_file_path | tr -d '*')"
 
     c="{
                         \"file_path\": \"$log_file_path\",
                         \"log_group_name\": \"$instance_name\",
-                        \"log_stream_name\": \"$log_file_path\",
+                        \"log_stream_name\": \"$log_name\",
                         \"timestamp_format\": \"$datetime_format\",
                         \"timezone\": \"LOCAL\",
                         \"multi_line_start_pattern\": \"{timestamp_format}\",
@@ -59,7 +60,7 @@ add_cloudwatch_config(){
     collect_list+=$c
 }
 
-write_cloudwatch_config(){
+write_cloudwatch_config() {
     cat <<- EOF > $CLOUDWATCH_CONFIG_FILE
 {
     "logs": {   

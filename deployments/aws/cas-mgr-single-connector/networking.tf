@@ -6,7 +6,7 @@
  */
 
 data "http" "myip" {
-  url = "https://api.ipify.org"
+  url = "https://cas.teradici.com/api/v1/health"
 }
 
 data "aws_availability_zones" "available_az" {
@@ -19,7 +19,7 @@ data "aws_availability_zones" "available_az" {
 }
 
 locals {
-  myip = "${chomp(data.http.myip.body)}/32"
+  myip = "${chomp(data.http.myip.response_headers.Client-Ip)}/32"
 }
 
 resource "aws_vpc" "vpc" {

@@ -27,9 +27,16 @@ variable "gcp_zone" {
   default = "us-west2-b"
 }
 
+# NetBIOS name is limited to 15 characters. 10 characters are reserved for workstation type
+# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters. 
 variable "prefix" {
-  description = "Prefix to add to name of new resources. Must be <= 9 characters."
+  description = "Prefix to add to name of new resources. Must be <= 5 characters."
   default     = ""
+
+  validation {
+    condition     = length(var.prefix) <= 5
+    error_message = "Prefix should have a maximum of 5 characters."
+  }
 }
 
 variable "allowed_admin_cidrs" {
@@ -171,7 +178,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220419"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?

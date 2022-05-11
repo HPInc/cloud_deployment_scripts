@@ -66,12 +66,36 @@ setup_cloudwatch(){
         chmod +x ${cloudwatch_setup_script}
         dos2unix ${cloudwatch_setup_script}
 
+        instance_id=$(retry 3 `#3 retries` \
+                            5 `# 5s interval` \
+                            "curl http://169.254.169.254/latest/meta-data/instance-id" \
+                            "--> ERROR: Failed to get the instance id.")
+
+        instance_name=$(retry 3 `#3 retries` \
+                              5 `# 5s interval` \
+                              "aws ec2 describe-tags --region ${aws_region} --filters 'Name=resource-id,Values=$instance_id' 'Name=key,Values=Name' --output text | cut -f5" \
+                              "--> ERROR: Failed to get the instance name.")
+
+        local container_logs=""
+        log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
+
+        if [[ ! $instance_name == *"cas-connector-0" ]]
+        then
+            unset log_list[0]
+        fi
+
+        for log_file in $${log_list[@]}
+        do
+            container_logs=$container_logs"/opt/teradici/casc/logs/k3s.connector.$log_file.log '%b %d %H:%M:%S' "
+        done
+
         . ${cloudwatch_setup_script} ${aws_region} \
             $LOG_FILE                         "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/cloud-init-output.log"  "at %a, %d %b %Y %H:%M:%S %z." \
             "/var/log/messages"               "%b %d %H:%M:%S" \
             $CAS_CONNECTOR_INSTALL_LOG        "%b %d %H:%M:%S" \
-            "/var/log/teradici/user-data.log" "%b %d %H:%M:%S"
+            "/var/log/teradici/user-data.log" "%b %d %H:%M:%S" \
+            $container_logs
     fi
 }
 

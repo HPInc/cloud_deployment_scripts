@@ -70,11 +70,13 @@ setup_cloudwatch(){
         dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
         . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
-            $LOG_FILE                         "[%a %b %d %H:%M:%S %Z %Y]" \
-            "/var/log/messages"               "%b %d %H:%M:%S" \
-            "/var/log/pcoip-agent/agent.log"  "%Y-%m-%dT%H:%M:%S.%fZ" \
-            "/var/log/teradici/user-data.log" "%a %b %d %H:%M:%S %Z %Y" \
-            "/var/log/yum.log"                "%b %d %H:%M:%S"
+            $LOG_FILE                                   "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/messages"                         "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/agent.log"            "%Y-%m-%dT%H:%M:%S.%fZ" \
+            "/var/log/pcoip-agent/server*.log"          "%Y-%m-%dT%H:%M:%S.%fZ" \
+            "/var/log/pcoip-agent/session-launcher.log" "%Y-%m-%dT%H:%M:%S.%fZ" \
+            "/var/log/teradici/user-data.log"           "%a %b %d %H:%M:%S %Z %Y" \
+            "/var/log/yum.log"                          "%b %d %H:%M:%S"
     fi
 }
 
