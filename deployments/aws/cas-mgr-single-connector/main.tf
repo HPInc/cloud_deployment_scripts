@@ -29,7 +29,6 @@ resource "random_id" "bucket-name" {
 
 resource "aws_s3_bucket" "scripts" {
   bucket        = local.bucket_name
-  acl           = "private"
   force_destroy = true
 
   tags = {
@@ -37,13 +36,18 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
-resource "aws_s3_bucket_object" "cas_mgr_aws_credentials_file" {
+resource "aws_s3_bucket_acl" "scripts" {
+  bucket = aws_s3_bucket.scripts.id
+  acl    = "private"
+}
+
+resource "aws_s3_object" "cas_mgr_aws_credentials_file" {
   bucket = aws_s3_bucket.scripts.bucket
   key    = local.cas_mgr_aws_credentials_file
   source = var.cas_mgr_aws_credentials_file
 }
 
-resource "aws_s3_bucket_object" "cloudwatch-setup-rpm-script" {
+resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
   bucket = aws_s3_bucket.scripts.id
@@ -51,7 +55,7 @@ resource "aws_s3_bucket_object" "cloudwatch-setup-rpm-script" {
   source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
 }
 
-resource "aws_s3_bucket_object" "cloudwatch-setup-win-script" {
+resource "aws_s3_object" "cloudwatch-setup-win-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
   bucket = aws_s3_bucket.scripts.id

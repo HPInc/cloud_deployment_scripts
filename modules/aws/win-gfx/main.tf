@@ -16,7 +16,7 @@ locals {
   provisioning_script = "win-gfx-provisioning.ps1"
 }
 
-resource "aws_s3_bucket_object" "win-gfx-provisioning-script" {
+resource "aws_s3_object" "win-gfx-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   key     = local.provisioning_script

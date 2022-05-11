@@ -15,7 +15,7 @@ locals {
   provisioning_script = "centos-gfx-provisioning.sh"
 }
 
-resource "aws_s3_bucket_object" "centos-gfx-provisioning-script" {
+resource "aws_s3_object" "centos-gfx-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   key     = local.provisioning_script

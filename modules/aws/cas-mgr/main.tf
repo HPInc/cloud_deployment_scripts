@@ -13,13 +13,13 @@ locals {
   provisioning_script = "cas-mgr-provisioning.sh"
 }
 
-resource "aws_s3_bucket_object" "cas-mgr-setup-script" {
+resource "aws_s3_object" "cas-mgr-setup-script" {
   bucket = var.bucket_name
   key    = local.cas_mgr_setup_script
   source = "${path.module}/${local.cas_mgr_setup_script}"
 }
 
-resource "aws_s3_bucket_object" "cas-mgr-provisioning-script" {
+resource "aws_s3_object" "cas-mgr-provisioning-script" {
   bucket  = var.bucket_name
   key     = local.provisioning_script
   content = templatefile(
@@ -184,8 +184,8 @@ resource "time_sleep" "delay_destroy_log_group" {
 
 resource "aws_instance" "cas-mgr" {
   depends_on = [
-    aws_s3_bucket_object.cas-mgr-setup-script,
-    aws_s3_bucket_object.cas-mgr-provisioning-script,
+    aws_s3_object.cas-mgr-setup-script,
+    aws_s3_object.cas-mgr-provisioning-script,
     # wait 5 seconds before deleting the log group to account for delays in 
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group

@@ -13,7 +13,7 @@ locals {
   keepalived_notify_master_script = "notify_master.sh"
 }
 
-resource "aws_s3_bucket_object" "haproxy-provisioning-script" {
+resource "aws_s3_object" "haproxy-provisioning-script" {
   key     = local.haproxy_provisioning_script
   bucket  = var.bucket_name
   content = templatefile(
@@ -36,19 +36,19 @@ resource "aws_s3_bucket_object" "haproxy-provisioning-script" {
   )
 }
 
-resource "aws_s3_bucket_object" "haproxy-config" {
+resource "aws_s3_object" "haproxy-config" {
   key     = local.haproxy_config
   bucket  = var.bucket_name
   content = file("${path.module}/${local.haproxy_config}")
 }
 
-resource "aws_s3_bucket_object" "keepalived-config" {
+resource "aws_s3_object" "keepalived-config" {
   key     = local.keepalived_config
   bucket  = var.bucket_name
   content = file("${path.module}/${local.keepalived_config}")
 }
 
-resource "aws_s3_bucket_object" "keepalived-notify-master-script" {
+resource "aws_s3_object" "keepalived-notify-master-script" {
   key     = local.keepalived_notify_master_script
   bucket  = var.bucket_name
   content = file("${path.module}/${local.keepalived_notify_master_script}")
