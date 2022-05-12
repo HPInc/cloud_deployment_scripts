@@ -114,10 +114,11 @@ get_credentials() {
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
 
+        # NOTE: credentials file is no longer binary, so changing format passed as ciphertext-blob from fileb to file
         if [ "${cas_mgr_aws_credentials_file}" ]
         then
             log "--> Decrypting AWS Service Account credentials file..."
-            aws kms decrypt --region ${aws_region} --ciphertext-blob "fileb://$INSTALL_DIR/${cas_mgr_aws_credentials_file}" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cas_mgr_aws_credentials_file}.decrypted"
+            aws kms decrypt --region ${aws_region} --ciphertext-blob "file://$INSTALL_DIR/${cas_mgr_aws_credentials_file}" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cas_mgr_aws_credentials_file}.decrypted"
             mv "${cas_mgr_aws_credentials_file}.decrypted" "$INSTALL_DIR/${cas_mgr_aws_credentials_file}"
         fi
     fi

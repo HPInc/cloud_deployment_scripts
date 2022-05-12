@@ -10,15 +10,19 @@ locals {
   bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
   # Name of CAS Manager deployment service account key file in bucket
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
-  admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
+  # ES - Use a predefined keypair if one is passed in, otherwise create one
+  admin_ssh_key_name = var.keypair_name != "" ? var.keypair_name : "${local.prefix}${var.admin_ssh_key_name}"
   cas_mgr_aws_credentials_file = "cas-mgr-aws-credentials.ini"
+  cas_mgr_aws_credentials_string = var.cas_mgr_aws_credentials_string
   
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
   ldaps_cert_filename = "ldaps_cert.pem"
 }
 
+# Use a predefined keypair if one is passed in, otherwise create one
 resource "aws_key_pair" "cas_admin" {
+  count = var.keypair_name != "" ? 0 : 1
   key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
 }
@@ -37,10 +41,15 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
+resource "local_file" "aws_credentials_tmp" {
+    content  = var.cas_mgr_aws_credentials_string
+    filename = "${path.module}/aws_credentials.tmp"
+}
+
 resource "aws_s3_bucket_object" "cas_mgr_aws_credentials_file" {
   bucket = aws_s3_bucket.scripts.bucket
   key    = local.cas_mgr_aws_credentials_file
-  source = var.cas_mgr_aws_credentials_file
+  source = var.cas_mgr_aws_credentials_string != "" ? local_file.aws_credentials_tmp.filename :  var.cas_mgr_aws_credentials_file
 }
 
 resource "aws_s3_bucket_object" "cloudwatch-setup-rpm-script" {

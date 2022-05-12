@@ -20,6 +20,16 @@ variable "aws_region" {
   default     = "us-west-1"
 }
 
+variable "keypair_name" {
+  description = "AWS Keypair used to SSH onto EC2 instances"
+  default     = ""
+}
+
+variable "cas_mgr_aws_credentials_string" {
+  description = "String version of the aws credentials file"
+  default     = ""
+}
+
 # "usw2-az4" failed to provision t2.xlarge EC2 instances in April 2020
 # "use1-az3" failed to provision g4dn.xlarge Windows EC2 instances in April 2020
 variable "az_id_exclude_list" {
