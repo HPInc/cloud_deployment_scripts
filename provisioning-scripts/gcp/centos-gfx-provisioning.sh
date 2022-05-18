@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -20,7 +20,7 @@ PCOIP_REGISTRATION_CODE=""
 USERNAME=""
 TEMP_PASSWORD=""
 # You can use the default value set here or change it
-NVIDIA_DRIVER_URL="https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID12.0/NVIDIA-Linux-x86_64-460.32.03-grid.run"
+NVIDIA_DRIVER_URL="https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID13.1/NVIDIA-Linux-x86_64-470.82.01-grid.run"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
 
