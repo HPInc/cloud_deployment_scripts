@@ -1,5 +1,5 @@
 <powershell>
-# Copyright Teradici Corporation 2021-2022;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -11,7 +11,7 @@
 $PCOIP_REGISTRATION_CODE = ""
 
 # OPTIONAL: You can use the default values set here or change them
-$PCOIP_AGENT_VERSION = "latest"
+$PCOIP_AGENT_VERSION     = "latest"
 $TERADICI_DOWNLOAD_TOKEN = "yj39yHtgj68Uv2Qf"
 
 
@@ -116,19 +116,19 @@ function PCoIP-Agent-Register {
     "--> PCoIP agent registered successfully."
 }
 
-function Audio-Enable {
-    "--> Enabling audio service..."
-    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
-    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
-    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
-}
-
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
     "--> $LOG_FILE exists. Assuming this provisioning script had ran, exiting..."
 
     exit 0
+}
+
+function Audio-Enable {
+    "--> Enabling audio service..."
+    Get-Service | Where {$_.Name -match "AudioSrv"} | start-service
+    Get-Service | Where {$_.Name -match "AudioSrv"} | set-service -StartupType "Automatic"
+    Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
 }
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
@@ -149,7 +149,6 @@ if (PCoIP-Agent-is-Installed) {
 } else {
     PCoIP-Agent-Install
 }
-
 
 if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
     PCoIP-Agent-Register

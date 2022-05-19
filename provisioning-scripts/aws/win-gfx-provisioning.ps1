@@ -11,9 +11,9 @@
 $PCOIP_REGISTRATION_CODE = ""
 
 # OPTIONAL: You can use the default values set here or change them
-$PCOIP_AGENT_VERSION = "latest"
-$NVIDIA_DRIVER_FILENAME = "511.65_grid_win10_win11_server2016_server2019_server2022_64bit_aws_swl.exe"
-$NVIDIA_DRIVER_URL = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/grid-14.0/"
+$PCOIP_AGENT_VERSION     = "latest"
+$NVIDIA_DRIVER_FILENAME  = "511.65_grid_win10_win11_server2016_server2019_server2022_64bit_aws_swl.exe"
+$NVIDIA_DRIVER_URL       = "https://s3.amazonaws.com/ec2-windows-nvidia-drivers/grid-14.0/"
 $TERADICI_DOWNLOAD_TOKEN = "yj39yHtgj68Uv2Qf"
 
 
@@ -197,7 +197,6 @@ if (PCoIP-Agent-is-Installed) {
 } else {
     PCoIP-Agent-Install
 }
-
 
 if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
     PCoIP-Agent-Register

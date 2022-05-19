@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2021-2022;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -10,8 +10,8 @@
 $PCOIP_REGISTRATION_CODE = ""
 
 # OPTIONAL: You can use the default values set here or change them
-$PCOIP_AGENT_VERSION              = "latest"
-$TERADICI_DOWNLOAD_TOKEN          = "yj39yHtgj68Uv2Qf"
+$PCOIP_AGENT_VERSION     = "latest"
+$TERADICI_DOWNLOAD_TOKEN = "yj39yHtgj68Uv2Qf"
 
 
 $LOG_FILE = "C:\Teradici\provisioning.log"

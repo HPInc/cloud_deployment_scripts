@@ -112,10 +112,10 @@ install_gpu_driver() {
         systemctl stop gdm
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
-        retry   3 `# 3 retries` \
-                5 `# 5s interval` \
-                "curl -f -o $gpu_installer $NVIDIA_DRIVER_URL" \
-                "--> ERROR: Failed to download GPU driver installer."
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "curl -f -o $gpu_installer $NVIDIA_DRIVER_URL" \
+              "--> ERROR: Failed to download GPU driver installer."
         chmod u+x "$gpu_installer"
         log "--> Running GPU driver installer..."
 
@@ -175,20 +175,20 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry   3 `# 3 retries` \
-            5 `# 5s interval` \
-            "yum install -y usb-vhci" \
-            "--> Warning: Failed to install usb-vhci."
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum install -y usb-vhci" \
+          "--> Warning: Failed to install usb-vhci."
     if [ $? -ne 0 ]; then
         log "--> Warning: Failed to install usb-vhci."
     fi
     log "--> usb-vhci successfully installed."
 
     log "--> Installing PCoIP graphics agent..."
-    retry   3 `# 3 retries` \
-            5 `# 5s interval` \
-            "yum -y install pcoip-agent-graphics" \
-            "--> ERROR: Failed to download PCoIP agent."
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum -y install pcoip-agent-graphics" \
+          "--> ERROR: Failed to download PCoIP agent."
     if [ $? -ne 0 ]; then
         log "--> ERROR: Failed to install PCoIP agent."
         exit 1
@@ -226,14 +226,13 @@ else
     RE_ENTER=1
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+log "$(date) Running $0 as $(whoami)..."
 check_required_vars
 
 if [[ $RE_ENTER -eq 0 ]]
@@ -253,8 +252,6 @@ then
 
     set -x
     yum -y update
-
-    yum install -y wget
 
     # Install GNOME and set it as the desktop
     log "--> Installing Linux GUI..."

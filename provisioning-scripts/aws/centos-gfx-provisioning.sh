@@ -85,10 +85,9 @@ check_required_vars() {
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
     fi
-
     set -x
 
-    if [[ "$missing_vars" = "true" ]]; then
+    if [[ "$missing_vars" == "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
@@ -262,14 +261,13 @@ else
     RE_ENTER=1
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+log "$(date) Running $0 as $(whoami)..."
 check_required_vars
 
 if [[ $RE_ENTER -eq 0 ]]
@@ -291,7 +289,7 @@ then
     # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
     yum -y install epel-release
     yum -y update
-    yum install -y wget awscli jq
+    yum install -y awscli jq
 
     # Install GNOME and set it as the desktop
     log "--> Installing Linux GUI..."
@@ -309,7 +307,7 @@ else
     install_gpu_driver
 
     enable_persistence_mode
-    
+
     if (rpm -q pcoip-agent-graphics)
     then
         log "--> pcoip-agent-graphics is already installed."
