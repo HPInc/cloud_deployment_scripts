@@ -360,6 +360,7 @@ configure_cas_connector() {
         --show-agent-state true \
         --sync-interval 5 \
         --casm-url ${cas_mgr_url} \
+        --registry-password ${teradici_download_token} \
         ${cas_connector_extra_install_flags} \
         $args \
         2>&1 | tee -a $CAS_CONNECTOR_INSTALL_LOG" \
