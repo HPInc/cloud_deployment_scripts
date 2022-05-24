@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -88,20 +88,20 @@ install_pcoip_agent() {
     log "--> PCoIP agent repo installed successfully."
 
     log "--> Installing USB dependencies..."
-    retry   3 `# 3 retries` \
-            5 `# 5s interval` \
-            "yum install -y usb-vhci" \
-            "--> Warning: Failed to install usb-vhci."
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum install -y usb-vhci" \
+          "--> Warning: Failed to install usb-vhci."
     if [ $? -ne 0 ]; then
         log "--> Warning: Failed to install usb-vhci."
     fi
     log "--> usb-vhci successfully installed."
 
     log "--> Installing PCoIP standard agent..."
-    retry   3 `# 3 retries` \
-            5 `# 5s interval` \
-            "yum -y install pcoip-agent-standard" \
-            "--> ERROR: Failed to download PCoIP agent."
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum -y install pcoip-agent-standard" \
+          "--> ERROR: Failed to download PCoIP agent."
     if [ $? -ne 0 ]; then
         log "--> ERROR: Failed to install PCoIP agent."
         exit 1
@@ -134,13 +134,13 @@ then
     chmod +644 "$LOG_FILE"
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
+
+log "$(date) Running $0 as $(whoami)..."
 
 # Add a user and give the user a password so a user can start 
 # a PCoIP session without having to first create password via SSH
@@ -159,8 +159,6 @@ set -x
 check_required_vars
 
 yum -y update
-
-yum install -y wget
 
 # Install GNOME and set it as the desktop
 log "--> Installing Linux GUI..."

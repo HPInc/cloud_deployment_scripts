@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -61,7 +61,6 @@ retry() {
 
 check_required_vars() {
     set +x
-
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]; then
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
@@ -69,7 +68,7 @@ check_required_vars() {
 
     set -x
 
-    if [[ "$missing_vars" = "true" ]]; then
+    if [[ "$missing_vars" == "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
@@ -140,14 +139,13 @@ then
     chmod +644 "$LOG_FILE"
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+log "$(date) Running $0 as $(whoami)..."
 # Add a user and give the user a password so a user can start 
 # a PCoIP session without having to first create password via SSH
 # if USERNAME and TEMP_PASSWORD were provided
@@ -165,7 +163,7 @@ set -x
 # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
 yum -y install epel-release
 yum -y update
-yum install -y wget awscli jq
+yum install -y awscli jq
 
 check_required_vars
 

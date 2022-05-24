@@ -11,7 +11,7 @@ locals {
   provisioning_script = "lls-provisioning.sh"
 }
 
-resource "aws_s3_bucket_object" "lls-provisioning-script" {
+resource "aws_s3_object" "lls-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   key     = local.provisioning_script

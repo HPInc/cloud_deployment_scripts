@@ -81,7 +81,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220513"
 }
 
 variable "dc_admin_password" {
@@ -312,7 +312,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220513"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -342,7 +342,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220414"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220513"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -382,7 +382,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220406"
+  default     = "projects/centos-cloud/global/images/centos-7-v20220519"
 }
 
 variable "centos_std_instance_count" {
@@ -407,7 +407,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220406"
+  default     = "projects/centos-cloud/global/images/centos-7-v20220519"
 }
 
 variable "centos_admin_user" {

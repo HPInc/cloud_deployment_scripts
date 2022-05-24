@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Teradici Corporation
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -162,8 +162,8 @@ install_gpu_driver() {
         systemctl stop gdm
 
         log "--> Downloading GPU driver $nvidia_driver_filename to $gpu_installer..."
-        retry 3 `# 3retries` \
-              5 `#5s interval` \
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
               "curl -f -o $gpu_installer $NVIDIA_DRIVER_URL" \
               "--> ERROR: Failed to download GPU driver installer."
         chmod u+x "$gpu_installer"

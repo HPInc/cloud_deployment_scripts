@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -103,6 +103,7 @@ get_credentials() {
 }
 
 check_required_vars() {
+    # not checking PCoIP registration code because there won't be any if users use LLS
     set +x
     if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
         log "--> ERROR: Missing Active Directory Service Account Password."
@@ -483,7 +484,7 @@ else
     else
         install_pcoip_agent
     fi
-    
+
     set +x
     if [[ -z "$PCOIP_REGISTRATION_CODE" ]]
     then
@@ -492,7 +493,7 @@ else
         register_pcoip_agent
     fi
     set -x
-    
+
     update_firewall
 
     if [[ "$AWS_SSM_ENABLE" == "true" ]]

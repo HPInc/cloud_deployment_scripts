@@ -10,7 +10,7 @@ locals {
   lls_provisioning_script = "lls-provisioning.sh"
 }
 
-resource "aws_s3_bucket_object" "lls-provisioning-script" {
+resource "aws_s3_object" "lls-provisioning-script" {
   key     = local.lls_provisioning_script
   bucket  = var.bucket_name
   content = templatefile(

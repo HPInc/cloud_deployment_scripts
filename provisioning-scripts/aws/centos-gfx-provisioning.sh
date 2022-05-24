@@ -19,7 +19,7 @@ Content-Disposition: attachment; filename="userdata.txt"
 
 #!/bin/bash
 
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -39,7 +39,7 @@ PCOIP_REGISTRATION_CODE=""
 USERNAME=""
 TEMP_PASSWORD=""
 # You can use the default value set here or change it
-NVIDIA_DRIVER_URL="https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-12.0/NVIDIA-Linux-x86_64-460.32.03-grid-aws.run"
+NVIDIA_DRIVER_URL="https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-14.0/NVIDIA-Linux-x86_64-510.47.03-grid-aws.run"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
@@ -85,10 +85,9 @@ check_required_vars() {
         log "--> ERROR: Missing PCoIP Registration Code."
         missing_vars="true"
     fi
-
     set -x
 
-    if [[ "$missing_vars" = "true" ]]; then
+    if [[ "$missing_vars" == "true" ]]; then
         log "--> Exiting..."
         exit 1
     fi
@@ -262,14 +261,13 @@ else
     RE_ENTER=1
 fi
 
-log "$(date)"
-
 # Print all executed commands to the terminal
 set -x
 
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
+log "$(date) Running $0 as $(whoami)..."
 check_required_vars
 
 if [[ $RE_ENTER -eq 0 ]]
@@ -291,7 +289,7 @@ then
     # EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
     yum -y install epel-release
     yum -y update
-    yum install -y wget awscli jq
+    yum install -y awscli jq
 
     # Install GNOME and set it as the desktop
     log "--> Installing Linux GUI..."
@@ -309,7 +307,7 @@ else
     install_gpu_driver
 
     enable_persistence_mode
-    
+
     if (rpm -q pcoip-agent-graphics)
     then
         log "--> pcoip-agent-graphics is already installed."

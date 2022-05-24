@@ -28,7 +28,7 @@ data "aws_kms_secrets" "decrypted_secrets" {
   }
 }
 
-resource "aws_s3_bucket_object" "dc-sysprep-script" {
+resource "aws_s3_object" "dc-sysprep-script" {
   key     = local.sysprep_script
   bucket  = var.bucket_name
   content = templatefile(

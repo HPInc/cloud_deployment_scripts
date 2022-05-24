@@ -25,7 +25,7 @@ locals {
   tls_cert_filename = var.tls_cert == "" ? "" : basename(var.tls_cert)
 }
 
-resource "aws_s3_bucket_object" "get-connector-token-script" {
+resource "aws_s3_object" "get-connector-token-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   bucket = var.bucket_name
@@ -33,7 +33,7 @@ resource "aws_s3_bucket_object" "get-connector-token-script" {
   source = "${path.module}/${local.cas_mgr_script}"
 }
 
-resource "aws_s3_bucket_object" "tls-key" {
+resource "aws_s3_object" "tls-key" {
   count = length(local.instance_info_list) == 0 ? 0 : var.tls_key == "" ? 0 : 1
 
   bucket = var.bucket_name
@@ -41,7 +41,7 @@ resource "aws_s3_bucket_object" "tls-key" {
   source = var.tls_key
 }
 
-resource "aws_s3_bucket_object" "tls-cert" {
+resource "aws_s3_object" "tls-cert" {
   count = length(local.instance_info_list) == 0 ? 0 : var.tls_cert == "" ? 0 : 1
 
   bucket = var.bucket_name
@@ -49,7 +49,7 @@ resource "aws_s3_bucket_object" "tls-cert" {
   source = var.tls_cert
 }
 
-resource "aws_s3_bucket_object" "cas-connector-provisioning-script" {
+resource "aws_s3_object" "cas-connector-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   key     = local.provisioning_script
@@ -160,7 +160,7 @@ data "aws_iam_policy_document" "cas-connector-policy-doc" {
   }
 
   dynamic statement {
-    for_each = aws_s3_bucket_object.tls-key
+    for_each = aws_s3_object.tls-key
     iterator = i
     content {
       actions   = ["s3:GetObject"]
@@ -170,7 +170,7 @@ data "aws_iam_policy_document" "cas-connector-policy-doc" {
   }
 
   dynamic statement {
-    for_each = aws_s3_bucket_object.tls-cert
+    for_each = aws_s3_object.tls-cert
     iterator = i
     content {
       actions   = ["s3:GetObject"]
@@ -232,10 +232,10 @@ resource "aws_instance" "cas-connector" {
   count = length(local.instance_info_list)
 
   depends_on = [
-    aws_s3_bucket_object.tls-key,
-    aws_s3_bucket_object.tls-cert,
-    aws_s3_bucket_object.get-connector-token-script,
-    aws_s3_bucket_object.cas-connector-provisioning-script,
+    aws_s3_object.tls-key,
+    aws_s3_object.tls-cert,
+    aws_s3_object.get-connector-token-script,
+    aws_s3_object.cas-connector-provisioning-script,
     # wait 5 seconds before deleting the log group to account for delays in 
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group
