@@ -309,6 +309,7 @@ module "cac" {
 
   cac_extra_install_flags = var.cac_extra_install_flags
 
+  aws_ssm_enable          = var.aws_ssm_enable
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_deb_script
 }
