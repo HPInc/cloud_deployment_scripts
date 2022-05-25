@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright (c) 2020 Teradici Corporation
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,13 +42,13 @@ resource "aws_subnet" "dc-subnet" {
   }
 }
 
-resource "aws_subnet" "cas-connector-subnet" {
-  cidr_block        = var.cas_connector_subnet_cidr
+resource "aws_subnet" "cac-subnet" {
+  cidr_block        = var.cac_subnet_cidr
   vpc_id            = aws_vpc.vpc.id
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}${var.cas_connector_subnet_name}"
+    Name = "${local.prefix}${var.cac_subnet_name}"
   }
 }
 
@@ -80,7 +80,7 @@ resource "aws_eip" "nat-ip" {
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat-ip.id
-  subnet_id     = aws_subnet.cas-connector-subnet.id
+  subnet_id     = aws_subnet.cac-subnet.id
 
   tags = {
     Name = "${local.prefix}nat"
@@ -120,8 +120,8 @@ resource "aws_route_table_association" "rt-dc" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "rt-cas-connector" {
-  subnet_id      = aws_subnet.cas-connector-subnet.id
+resource "aws_route_table_association" "rt-cac" {
+  subnet_id      = aws_subnet.cac-subnet.id
   route_table_id = aws_route_table.public.id
 }
 
@@ -257,7 +257,7 @@ resource "aws_route53_resolver_endpoint" "outbound" {
   # minimum, config has 1 declared" without the second ip_address block with a
   # different subnet.
   ip_address {
-    subnet_id = aws_subnet.cas-connector-subnet.id
+    subnet_id = aws_subnet.cac-subnet.id
   }
 
   tags = {
