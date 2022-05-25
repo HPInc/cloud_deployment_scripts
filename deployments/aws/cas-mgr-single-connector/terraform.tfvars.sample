@@ -49,15 +49,15 @@ admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cas_mgr_instance_type = "t2.xlarge"
 # cas_mgr_disk_size_gb  = "60"
 
-#####################
-#   CAS Connector   #
-#####################
-# cas_connector_instance_type = "t2.xlarge"
-# cas_connector_disk_size_gb  = "60"
+##############################
+#   Cloud Access Connector   #
+##############################
+# cac_instance_type = "t2.xlarge"
+# cac_disk_size_gb  = "50"
 
-# Optional: Specify TLS certificate for CAS Connector
-# tls_key  = "/path/to/privkey.pem"
-# tls_cert = "/path/to/fullchain.pem"
+# Optional: Specify SSL certificate for Connector
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
 
 ####################
 #   Workstations   #
