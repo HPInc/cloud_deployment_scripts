@@ -56,12 +56,12 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 
 | VM Instance      | Login User    | Log File Path                               | Description                                                 |
 | :--------------- | :------------ | :------------------------------------------ | :---------------------------------------------------------- |
-| cas-connector    | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
-|                  |               | /var/log/teradici/cas-connector-install.log | Detailed log for CASC installation                          |
+| cac              | ubuntu        | /var/log/syslog                             | Detailed system log for startup and provisioning            |
+|                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-|                  |               | /var/log/cas-connector/configure.log        | (duplicate log from cas-connector-install.log)              |
+|                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
 | cas-mgr          | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
