@@ -189,7 +189,7 @@ variable "cas_mgr_ami_owner" {
 
 variable "cas_mgr_ami_name" {
   description = "Name of the AMI to create CAS Manager from"
-  default     = "Rocky-8-ec2-8.5-20211114.2.x86_64"
+  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
 }
 
 variable "cas_mgr_admin_password" {
@@ -240,7 +240,7 @@ variable "cas_connector_ami_owner" {
 
 variable "cas_connector_ami_name" {
   description = "Name of the AMI to create CAS Connector from"
-  default     = "Rocky-8-ec2-8.5-20211114.2.x86_64"
+  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
 }
 
 variable "tls_key" {
