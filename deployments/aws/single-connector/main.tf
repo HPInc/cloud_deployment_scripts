@@ -53,7 +53,7 @@ resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
 }
 
-resource "aws_s3_bucket_object" "cloudwatch-setup-deb-script" {
+resource "aws_s3_object" "cloudwatch-setup-deb-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
   bucket = aws_s3_bucket.scripts.id
@@ -61,7 +61,7 @@ resource "aws_s3_bucket_object" "cloudwatch-setup-deb-script" {
   source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
 }
 
-resource "aws_s3_bucket_object" "cloudwatch-setup-win-script" {
+resource "aws_s3_object" "cloudwatch-setup-win-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
   bucket = aws_s3_bucket.scripts.id

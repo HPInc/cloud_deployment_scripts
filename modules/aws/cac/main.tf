@@ -25,7 +25,7 @@ locals {
   ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
 }
 
-resource "aws_s3_bucket_object" "get-cac-token-script" {
+resource "aws_s3_object" "get-cac-token-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   bucket = var.bucket_name
@@ -33,7 +33,7 @@ resource "aws_s3_bucket_object" "get-cac-token-script" {
   source = "${path.module}/${local.cas_mgr_script}"
 }
 
-resource "aws_s3_bucket_object" "ssl-key" {
+resource "aws_s3_object" "ssl-key" {
   count = length(local.instance_info_list) == 0 ? 0 : var.ssl_key == "" ? 0 : 1
 
   bucket = var.bucket_name
@@ -41,7 +41,7 @@ resource "aws_s3_bucket_object" "ssl-key" {
   source = var.ssl_key
 }
 
-resource "aws_s3_bucket_object" "ssl-cert" {
+resource "aws_s3_object" "ssl-cert" {
   count = length(local.instance_info_list) == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
 
   bucket = var.bucket_name
@@ -49,7 +49,7 @@ resource "aws_s3_bucket_object" "ssl-cert" {
   source = var.ssl_cert
 }
 
-resource "aws_s3_bucket_object" "cac-provisioning-script" {
+resource "aws_s3_object" "cac-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   key     = local.provisioning_script
@@ -176,7 +176,7 @@ data "aws_iam_policy_document" "cac-policy-doc" {
   }
 
   dynamic statement {
-    for_each = aws_s3_bucket_object.ssl-key
+    for_each = aws_s3_object.ssl-key
     iterator = i
     content {
       actions   = ["s3:GetObject"]
@@ -186,7 +186,7 @@ data "aws_iam_policy_document" "cac-policy-doc" {
   }
 
   dynamic statement {
-    for_each = aws_s3_bucket_object.ssl-cert
+    for_each = aws_s3_object.ssl-cert
     iterator = i
     content {
       actions   = ["s3:GetObject"]
@@ -237,10 +237,10 @@ resource "aws_instance" "cac" {
   count = length(local.instance_info_list)
 
   depends_on = [
-    aws_s3_bucket_object.ssl-key,
-    aws_s3_bucket_object.ssl-cert,
-    aws_s3_bucket_object.get-cac-token-script,
-    aws_s3_bucket_object.cac-provisioning-script,
+    aws_s3_object.ssl-key,
+    aws_s3_object.ssl-cert,
+    aws_s3_object.get-cac-token-script,
+    aws_s3_object.cac-provisioning-script,
     # wait 5 seconds before deleting the log group to account for delays in 
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group
