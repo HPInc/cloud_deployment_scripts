@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -50,7 +50,7 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the CAS deployment"
+  description = "Name for VPC containing the Cloud Access Software deployment"
   default     = "vpc-cas"
 }
 
@@ -199,44 +199,49 @@ variable "lls_license_count" {
   default     = 0
 }
 
-variable "cas_connector_zone_list" {
+variable "cac_zone_list" {
   description = "Zones in which to deploy Connectors"
   type        = list(string)
 }
 
-variable "cas_connector_subnet_name" {
-  description = "Name for subnets containing the CAS Connector"
-  default     = "subnet-cas-connector"
+variable "cac_subnet_name" {
+  description = "Name for subnets containing the Cloud Access Connector"
+  default     = "subnet-cac"
 }
 
-variable "cas_connector_subnet_cidr_list" {
-  description = "CIDRs for subnets containing the CAS Connector"
+variable "cac_subnet_cidr_list" {
+  description = "CIDRs for subnets containing the Cloud Access Connector"
   type        = list(string)
 }
 
-variable "cas_connector_instance_count_list" {
-  description = "Number of CAS Connector instances to deploy in each region"
+variable "cac_instance_count_list" {
+  description = "Number of Cloud Access Connector instances to deploy in each region"
   type        = list(number)
 }
 
-variable "cas_connector_instance_type" {
-  description = "Instance type for the CAS Connector"
+variable "cac_instance_type" {
+  description = "Instance type for the Cloud Access Connector"
   default     = "t2.xlarge"
 }
 
-variable "cas_connector_disk_size_gb" {
-  description = "Disk size (GB) of the CAS Connector"
-  default     = "60"
+variable "cac_disk_size_gb" {
+  description = "Disk size (GB) of the Cloud Access Connector"
+  default     = "50"
 }
 
-variable "cas_connector_ami_owner" {
-  description = "Owner of AMI for the CAS Connector"
-  default     = "792107900819"
+variable "cac_ami_owner" {
+  description = "Owner of AMI for the Cloud Access Connector"
+  default     = "099720109477"
 }
 
-variable "cas_connector_ami_name" {
-  description = "Name of the AMI to create CAS Connector from"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+variable "cac_ami_name" {
+  description = "Name of the AMI to create Cloud Access Connector from"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220308"
+}
+
+variable "cac_version" {
+  description = "Version of the Cloud Access Connector to install"
+  default     = "latest"
 }
 
 variable "admin_ssh_key_name" {
@@ -257,10 +262,10 @@ variable "admin_ssh_pub_key_file" {
 # Note the following limits for health check:
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5
-variable "cas_connector_health_check" {
-  description = "Health check configuration for CAS Connector"
+variable "cac_health_check" {
+  description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/health"
+    path         = "/pcoip-broker/xml"
     protocol     = "HTTPS"
     port         = 443
     interval_sec = 30
@@ -268,28 +273,28 @@ variable "cas_connector_health_check" {
   }
 }
 
-variable "tls_key" {
-  description = "TLS private key for the Connector in PEM format"
+variable "ssl_key" {
+  description = "SSL private key for the Connector in PEM format"
   default     = ""
 
   validation {
-    condition = var.tls_key == "" ? true : fileexists(var.tls_key)
-    error_message = "The tls_key file specified does not exist. Please check the file path."
+    condition = var.ssl_key == "" ? true : fileexists(var.ssl_key)
+    error_message = "The ssl_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "tls_cert" {
-  description = "TLS certificate for the Connector in PEM format"
+variable "ssl_cert" {
+  description = "SSL certificate for the Connector in PEM format"
   default     = ""
 
   validation {
-    condition = var.tls_cert == "" ? true : fileexists(var.tls_cert)
-    error_message = "The tls_cert file specified does not exist. Please check the file path."
+    condition = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
+    error_message = "The ssl_cert file specified does not exist. Please check the file path."
   }
 }
 
-variable "cas_connector_extra_install_flags" {
-  description = "Additional flags for installing CAS Connector"
+variable "cac_extra_install_flags" {
+  description = "Additional flags for installing CAC"
   default     = ""
 }
 
@@ -299,7 +304,7 @@ variable "cas_mgr_url" {
 }
 
 variable "cas_mgr_insecure" {
-  description = "Allow unverified TLS access to CAS Manager"
+  description = "Allow unverified SSL access to CAS Manager"
   type        = bool
   default     = false
 }

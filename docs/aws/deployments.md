@@ -46,10 +46,10 @@ Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici
 
 This is the simplest deployment; it creates a VPC with 3 subnets in the same region. The subnets are
 - `subnet-dc`: for the Domain Controller
-- `subnet-cas-connector`: for the CAS Connector
+- `subnet-cac`: for the Connector
 - `subnet-ws`: for the workstations
 
-`subnet-cas-connector` is a public subnet because this is where PCoIP clients connect from the public networks. `subnet-dc` is ideally in a private subnet, but is made public to provide progress feedback during Terraform deployment and ease of access for debug purposes. `subnet-ws` is a private subnet where workstations are deployed. Workstations have access to the internet via a NAT gateway.
+`subnet-cac` is a public subnet because this is where PCoIP clients connect from the public networks. `subnet-dc` is ideally in a private subnet, but is made public to provide progress feedback during Terraform deployment and ease of access for debug purposes. `subnet-ws` is a private subnet where workstations are deployed. Workstations have access to the internet via a NAT gateway.
 
 Security Group rules are created to allow wide-open access within the VPC, and selected ports are open to the public for operation and for debug purposes.
 
@@ -75,7 +75,7 @@ This deployment is essentially the same as [single-connector](#single-connector)
 
 The difference between [single-connector](#single-connector) and lb-connectors deployments is that instead of creating only one Cloud Access Connector, the lb-connectors deployment creates a group of Cloud Access Connectors in two or more availability zones (AZs) within an AWS region behind an AWS Application Load Balancer (ALB). In this setup, a client initiates a PCoIP session with the public DNS name of the ALB, and the ALB will select one of the Cloud Access Connectors to establish the PCoIP connection. In-session PCoIP traffic goes through the selected Cloud Access Connector directly, bypassing the ALB.
 
-The AZs and number of Cloud Access Connectors for each AZs are specified by the `cas_connector_zone_list` and `cas_connector_instance_count_list` variables, respectively. At least two AZ and one Cloud Access Connector instance must be specified.
+The AZs and number of Cloud Access Connectors for each AZs are specified by the `cac_zone_list` and `cac_instance_count_list` variables, respectively. At least two AZ and one Cloud Access Connector instance must be specified.
 
 The following diagram shows what a lb-connectors deployment looks like with 2 AZs specified:
 

@@ -55,27 +55,27 @@ lls_license_count = 0
 # cas_mgr_instance_type = "t2.xlarge"
 # cas_mgr_disk_size_gb  = "60"
 
-#####################
-#   CAS Connector   #
-#####################
+##############################
+#   Cloud Access Connector   #
+##############################
 # Specify the zones (min. 2 zones, ensure the zones are available in your AWS
 # account), subnet CIDRs and number of connectors to create per zone.
 # For example:
-# cas_connector_zone_list           = ["us-west-1a",  "us-west-1c"]
-# cas_connector_subnet_cidr_list    = ["10.0.1.0/25", "10.0.1.128/25"]
-# cas_connector_instance_count_list = [1,             1]
+# cac_zone_list           = ["us-west-1a",  "us-west-1c"]
+# cac_subnet_cidr_list    = ["10.0.1.0/25", "10.0.1.128/25"]
+# cac_instance_count_list = [1,             1]
 
-cas_connector_zone_list           = []
-cas_connector_subnet_cidr_list    = []
-cas_connector_instance_count_list = []
+cac_zone_list           = []
+cac_subnet_cidr_list    = []
+cac_instance_count_list = []
 
-# cas_connector_instance_type = "t2.xlarge"
-# cas_connector_disk_size_gb  = "60"
+# cac_instance_type = "t2.xlarge"
+# cac_disk_size_gb  = "50"
 
-# TLS Private Key & Certificate for Load Balancer. Note: AWS requires CN to be
+# SSL Private Key & Certificate for Load Balancer. Note: AWS requires CN to be
 # a domain name. e.g. "example.com"
-# tls_key  = "/path/to/privkey.pem"
-# tls_cert = "/path/to/fullchain.pem"
+# ssl_key  = "/path/to/privkey.pem"
+# ssl_cert = "/path/to/fullchain.pem"
 
 ####################
 #   Workstations   #
