@@ -48,7 +48,7 @@ retry() {
 install_prereqs() {
     log "--> Installing dos2unix, python3, firewalld..."
     yum update -y
-    yum install -y dos2unix python3 firewalld
+    yum install -y dos2unix python38 firewalld
 
     if [ $? -ne 0 ]
     then
