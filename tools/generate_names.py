@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Teradici Corporation
+# Copyright Teradici Corporation 2019;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -8,8 +8,10 @@ import names
 import random
 import string
 
+PUNCT_NO_COMMA = string.punctuation.replace(",", "")
+
 def randomStr(length=12):
-    letters = string.ascii_letters + string.digits + string.punctuation
+    letters = string.ascii_letters + string.digits + PUNCT_NO_COMMA
     return ''.join(random.choice(letters) for i in range(length))
 
 def main():
@@ -29,3 +31,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

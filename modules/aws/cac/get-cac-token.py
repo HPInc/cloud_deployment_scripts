@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# © Copyright 2022 HP Development Company, L.P.
+# Copyright (c) 2020 Teradici Corporation
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -82,8 +82,8 @@ def cas_mgr_login(key):
     session.headers.update({"Authorization": token})
 
 
-def get_connector_token(key, connector_name):
-    print(f"Creating a connector token in deployment {key['deploymentId']}...")
+def get_cac_token(key, connector_name):
+    print(f"Creating a CAC token in deployment {key['deploymentId']}...")
 
     payload = {
         'deploymentId': key['deploymentId'], 
@@ -99,16 +99,16 @@ def get_connector_token(key, connector_name):
 
 
 def token_write(token, path):
-    print(f"Writing connector token to {path}...")
+    print(f"Writing CAC token to {path}...")
     with open(path, 'w') as f:
         f.write(token)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="This script uses CAS Manager Deployment Service Account JSON file to create a new connector token.")
+    parser = argparse.ArgumentParser(description="This script uses CAS Manager Deployment Service Account JSON file to create a new CAC token.")
 
     parser.add_argument("cas_mgr", help="specify the path to CAS Manager Deployment Service Account JSON file")
-    parser.add_argument("--out", required=True, help="File to write the connector token")
+    parser.add_argument("--out", required=True, help="File to write the CAC token")
     parser.add_argument("--url", default="https://cas.teradici.com", help="specify the api url")
     parser.add_argument("--insecure", action="store_true", help="Allow unverified HTTPS connection to CAS Manager")
 
@@ -124,5 +124,5 @@ if __name__ == '__main__':
     dsa_key = load_service_account_key(args.cas_mgr)
     cas_mgr_login(dsa_key)
     connector_name = create_connector_name()
-    connector_token = get_connector_token(dsa_key, connector_name)
-    token_write(connector_token, args.out)
+    cac_token = get_cac_token(dsa_key, connector_name)
+    token_write(cac_token, args.out)

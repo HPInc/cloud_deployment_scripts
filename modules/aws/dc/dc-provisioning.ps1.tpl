@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -7,7 +7,6 @@
 
 $BUCKET_NAME                 = "${bucket_name}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
-$LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
@@ -211,23 +210,6 @@ if (!(Test-Path $certStoreLoc)) {
     New-Item $certStoreLoc -Force
 }
 Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thumbprint -Destination $certStoreLoc;
-
-"================================================================"
-"Uploading LDAPS Cert to Bucket..."
-"================================================================"
-# Save LDAPS Cert as a Base64 encoded DER certificate
-$derCert = "C:\Teradici\LdapsCert.der"
-$pemCert = "C:\Teradici\LdapsCert.pem"
-$myCertLoc = 'cert:\LocalMachine\My\' + $thumbprint
-Export-Certificate -Cert $myCertLoc -FilePath $derCert -Type CERT
-certutil -encode $derCert $pemCert
-
-# Upload to S3 Bucket
-msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /quiet /passive
-Write-S3Object -BucketName $BUCKET_NAME -File $pemCert -Key $LDAPS_CERT_FILENAME
-
-Remove-Item -Path $derCert
-Remove-Item -Path $pemCert
 
 "================================================================"
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."
