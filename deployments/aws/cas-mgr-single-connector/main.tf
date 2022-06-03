@@ -12,6 +12,7 @@ locals {
   cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
   # ES - Use a predefined keypair if one is passed in, otherwise create one
   admin_ssh_key_name = var.keypair_name != "" ? var.keypair_name : "${local.prefix}${var.admin_ssh_key_name}"
+  aws_credentials_string = var.aws_credentials_string
   cas_mgr_aws_credentials_file = "cas-mgr-aws-credentials.ini"
   cas_mgr_aws_credentials_string = var.cas_mgr_aws_credentials_string
   

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/* Eliminating the requirement for this variable, as it was only used in providers.tf which
+ * is not part of the EditShare version of the repo
 variable "aws_credentials_file" {
     description = "Location of AWS credentials file"
     type        = string
@@ -14,6 +16,7 @@ variable "aws_credentials_file" {
       error_message = "The aws_credentials_file specified does not exist. Please check the file path."
     }
 }
+*/
 
 variable "aws_region" {
   description = "AWS region"
@@ -26,6 +29,11 @@ variable "keypair_name" {
 }
 
 variable "cas_mgr_aws_credentials_string" {
+  description = "String version of the aws credentials file"
+  default     = ""
+}
+
+variable "aws_credentials_string" {
   description = "String version of the aws credentials file"
   default     = ""
 }
@@ -205,10 +213,13 @@ variable "cas_mgr_aws_credentials_file" {
     description = "Location of AWS credentials file for CAS Manager"
     type        = string
 
-    validation {
-      condition = fileexists(var.cas_mgr_aws_credentials_file)
-      error_message = "The cas_mgr_aws_credentials_file specified does not exist. Please check the file path."
-    }
+    # Removing validation as the file is not required for the editshare version of code
+    # Supplying a default so we don't have to supply a variable
+    default     = ""
+    # validation {
+    #   condition = fileexists(var.cas_mgr_aws_credentials_file)
+    #   error_message = "The cas_mgr_aws_credentials_file specified does not exist. Please check the file path."
+    # }
 }
 
 variable "cas_connector_subnet_name" {
