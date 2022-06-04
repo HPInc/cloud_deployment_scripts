@@ -5,11 +5,27 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-LOG_FILE="/var/log/teradici/provisioning.log"
-LLS_CONFIG_FILE="/opt/flexnetls/TERADICI/local-configuration.yaml"
-LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/cfg/setup/bash.rpm.sh"
+##### Template Variables #####
+AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
+BUCKET_NAME=${bucket_name}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
+HAPROXY_BACKUP_IP=${haproxy_backup_ip}
+HAPROXY_MASTER_IP=${haproxy_master_ip}
+LLS_ACTIVATION_CODE=${lls_activation_code}
+LLS_ADMIN_PASSWORD=${lls_admin_password}
+LLS_BACKUP_IP=${lls_backup_ip}
+LLS_LICENSE_COUNT=${lls_license_count}
+LLS_MAIN_IP=${lls_main_ip}
+TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
+
 FLEXNETLSADMIN="/opt/flexnetls/TERADICI/admintools/flexnetlsadmin.sh"
 INSTALL_DIR="/root"
+LLS_CONFIG_FILE="/opt/flexnetls/TERADICI/local-configuration.yaml"
+LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-license-server/cfg/setup/bash.rpm.sh"
+LOG_FILE="/var/log/teradici/provisioning.log"
 NCAT_PORT=7072
 
 log() {
@@ -48,12 +64,12 @@ setup_cloudwatch(){
 
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
-              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}."
-        chmod +x ${cloudwatch_setup_script}
-        dos2unix ${cloudwatch_setup_script}
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT."
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
-        . ${cloudwatch_setup_script} ${aws_region} \
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
             $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
             "/var/log/messages"                 "%b %d %H:%M:%S" \
@@ -64,21 +80,18 @@ setup_cloudwatch(){
 get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
-    if [[ -z "${customer_master_key_id}" ]]
+    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
     then
         log "--> Script is not using encryption for secrets."
 
-        LLS_ADMIN_PASSWORD=${lls_admin_password}
-        LLS_ACTIVATION_CODE=${lls_activation_code}
-
     else
-        log "--> Script is using encryption key: ${customer_master_key_id}"
+        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
 
         log "--> Decrypting LLS Administrator Password..."
-        LLS_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+        LLS_ADMIN_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$LLS_ADMIN_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting LLS Activation Code..."
-        LLS_ACTIVATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${lls_activation_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+        LLS_ACTIVATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$LLS_ACTIVATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
     fi
     set -x
 }
@@ -154,7 +167,7 @@ setup_main_lls() {
     # Not needed since it is already started
     # systemctl start flexnetls-TERADICI
 
-    local backup_server_id=$(get_msg_from ${lls_backup_ip})
+    local backup_server_id=$(get_msg_from $LLS_BACKUP_IP)
 
     cp $LLS_CONFIG_FILE $LLS_CONFIG_FILE.backup
     chmod 644 $LLS_CONFIG_FILE
@@ -171,19 +184,19 @@ setup_main_lls() {
     set -x
 
     # Not needed as the backup LLS will be restarted later
-    #send_msg_to ${lls_backup_ip} START_LLS
+    #send_msg_to $LLS_BACKUP_IP START_LLS
 
     # Step 4 (No-op)
 
     # Step 5 (Optional)
     set +x
-    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set licensing.backup.uri=http://${lls_backup_ip}:7070/fne/bin/capability
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set licensing.backup.uri=http://$LLS_BACKUP_IP:7070/fne/bin/capability
 
-    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set licensing.main.uri=http://${lls_main_ip}:7070/fne/bin/capability
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set licensing.main.uri=http://$LLS_MAIN_IP:7070/fne/bin/capability
     set -x
 
     # Step 6
-    local command=$(get_msg_from ${lls_backup_ip})
+    local command=$(get_msg_from $LLS_BACKUP_IP)
     if [ ! $command == "ACTIVATE_LICENSES" ]
     then
         log "ERROR: unexpected command from Backup PCoIP License Server: $command"
@@ -191,15 +204,15 @@ setup_main_lls() {
     fi
 
     set +x
-    pcoip-activate-online-license -a "$LLS_ACTIVATION_CODE" -c ${lls_license_count} -p "$LLS_ADMIN_PASSWORD"
+    pcoip-activate-online-license -a "$LLS_ACTIVATION_CODE" -c $LLS_LICENSE_COUNT -p "$LLS_ADMIN_PASSWORD"
     set -x
     
     # Signal Backup to restart to sync the new licenses
-    send_msg_to ${lls_backup_ip} RESTART_LLS
+    send_msg_to $LLS_BACKUP_IP RESTART_LLS
 
     # Signal HAProxy to start
-    send_msg_to ${haproxy_master_ip} START_HAPROXY
-    send_msg_to ${haproxy_backup_ip} START_HAPROXY
+    send_msg_to $HAPROXY_MASTER_IP START_HAPROXY
+    send_msg_to $HAPROXY_BACKUP_IP START_HAPROXY
 }
 
 setup_backup_lls() {
@@ -217,14 +230,14 @@ setup_backup_lls() {
     # get the id part of result like "VM_UUID (i-0961ea1fe15e6b6ee)"
     server_id=$(echo $server_id | sed -r "s/VM_UUID \((.*)\)/\1/")
 
-    send_msg_to ${lls_main_ip} $server_id
+    send_msg_to $LLS_MAIN_IP $server_id
 
     # Not needed since we will restart service later after license activation
     # systemctl stop flexnetls-TERADICI
 
     # Step 3
     # Not needed since we will restart service later after license activation
-    #local command=$(get_msg_from ${lls_main_ip})
+    #local command=$(get_msg_from $LLS_MAIN_IP)
     #if [ ! $command == "START_LLS" ]
     #then
     #    log "ERROR: unexpected command from Main PCoIP License Server: $command"
@@ -235,7 +248,7 @@ setup_backup_lls() {
     
     # Step 4
     set +x
-    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set fne.syncTo.mainUri=http://${lls_main_ip}:7070/fne/bin/capability
+    $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set fne.syncTo.mainUri=http://$LLS_MAIN_IP:7070/fne/bin/capability
 
     $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set fne.syncTo.enabled=true
     set -x
@@ -243,9 +256,9 @@ setup_backup_lls() {
     # Step 5 (No-op)
 
     # Step 6
-    send_msg_to ${lls_main_ip} "ACTIVATE_LICENSES"
+    send_msg_to $LLS_MAIN_IP "ACTIVATE_LICENSES"
 
-    command=$(get_msg_from ${lls_main_ip})
+    command=$(get_msg_from $LLS_MAIN_IP)
     if [ ! $command == "RESTART_LLS" ]
     then
         log "ERROR: unexpected command from Main PCoIP License Server: $command"
@@ -282,7 +295,7 @@ cd $INSTALL_DIR
 yum update -y
 yum install -y nc
 
-if [[ "${cloudwatch_enable}" == "true" ]]
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
     setup_cloudwatch
 fi
@@ -301,10 +314,10 @@ install_pcoip_license_server
 # Figure out if this instance is master or backup
 MYIP=$(hostname -I)
 
-if [ $MYIP == "${lls_main_ip}" ]
+if [ $MYIP == "$LLS_MAIN_IP" ]
 then
     setup_main_lls
-elif [ $MYIP == "${lls_backup_ip}" ]
+elif [ $MYIP == "$LLS_BACKUP_IP" ]
 then
     setup_backup_lls
 else

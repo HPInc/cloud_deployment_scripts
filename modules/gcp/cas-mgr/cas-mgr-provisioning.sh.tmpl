@@ -6,13 +6,25 @@
 
 #!/bin/bash
 
+##### Template Variables #####
+BUCKET_NAME=${bucket_name}
+CAS_MGR_ADMIN_PASSWORD=${cas_mgr_admin_password}
+CAS_MGR_DEPLOYMENT_SA_FILE=${cas_mgr_deployment_sa_file}
+CAS_MGR_SETUP_SCRIPT=${cas_mgr_setup_script}
+GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
+GCP_SA_FILE=${gcp_sa_file}
+KMS_CRYPTOKEY_ID=${kms_cryptokey_id}
+OPS_SETUP_SCRIPT=${ops_setup_script}
+PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
+
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 INSTALL_DIR="/root"
 CAS_MGR_DEPLOYMENT_KEY_NAME="terraform-key"
 CAS_MGR_DEPLOYMENT_NAME="terraform-deployment"
 CAS_MGR_INSTALL_LOG="/var/log/teradici/cas-mgr-install.log"
-CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/cfg/setup/bash.rpm.sh"
+CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cas-manager/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
@@ -57,16 +69,16 @@ setup_ops() {
 
         retry 25 `# 25 retries` \
               5  `# 5s interval` \
-              "gsutil cp gs://${bucket_name}/${ops_setup_script} ." \
-              "--> ERROR: Failed to download Logging Agent from gs://${bucket_name}/${ops_setup_script}."
+              "gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download Logging Agent from gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT."
 
         if [ $? -ne 0 ]; then
             log "--> ERROR: Failed to install GCP OPs Agent."
         fi 
 
-        chmod +x ${ops_setup_script}
+        chmod +x $OPS_SETUP_SCRIPT
 
-        . ${ops_setup_script} \
+        . $OPS_SETUP_SCRIPT \
             $LOG_FILE \
             "/var/log/cloud-init-output.log" \
             "/var/log/messages" \
@@ -95,42 +107,39 @@ install_prereqs() {
 }
 
 get_credentials() {
-    if [ "${gcp_sa_file}" ]
+    if [ "$GCP_SA_FILE" ]
     then
         retry 720 `# 720 retries` \
               10  `# 10s interval` \
-              "gsutil cp gs://${bucket_name}/${gcp_sa_file} $INSTALL_DIR" \
-              "--> ERROR: Failed to download GCP Service Account key from bucket ${bucket_name}."
+              "gsutil cp gs://$BUCKET_NAME/$GCP_SA_FILE $INSTALL_DIR" \
+              "--> ERROR: Failed to download GCP Service Account key from bucket $BUCKET_NAME."
     fi
 
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    if [[ -z "${kms_cryptokey_id}" ]]; then
+    if [[ -z "$KMS_CRYPTOKEY_ID" ]]; then
         log "--> Script is not using encryption for secrets."
 
-        CAS_MGR_ADMIN_PASSWORD=${cas_mgr_admin_password}
-        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-
     else
-        log "--> Script is using encryption key: ${kms_cryptokey_id}"
+        log "--> Script is using encryption key: $KMS_CRYPTOKEY_ID"
 
         # Gets key informations needed for decode from kms_cryptokey_id
         # kms_cryptokey_id: projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>
-        local kms_location="$(echo ${kms_cryptokey_id} | cut -d'/' -f4)"
-        local kms_keyring="$(echo ${kms_cryptokey_id} | cut -d'/' -f6)"
-        local kms_key="$(echo ${kms_cryptokey_id} | cut -d'/' -f8)"
+        local kms_location="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f4)"
+        local kms_keyring="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f6)"
+        local kms_key="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f8)"
 
         log "--> Decrypting CAS Manager Administrator password..."
-        CAS_MGR_ADMIN_PASSWORD=$(echo -n ${cas_mgr_admin_password} | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
+        CAS_MGR_ADMIN_PASSWORD=$(echo -n $CAS_MGR_ADMIN_PASSWORD | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
 
         log "--> Decrypting PCoIP registration code..."
-        PCOIP_REGISTRATION_CODE=$(echo -n ${pcoip_registration_code} | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
+        PCOIP_REGISTRATION_CODE=$(echo -n $PCOIP_REGISTRATION_CODE | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
 
-        if [ "${gcp_sa_file}" ]
+        if [ "$GCP_SA_FILE" ]
         then
             log "--> Decrypting GCP Service Account key file..."
-            cat $INSTALL_DIR/${gcp_sa_file} | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file $INSTALL_DIR/${gcp_sa_file}
+            cat $INSTALL_DIR/$GCP_SA_FILE | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file $INSTALL_DIR/$GCP_SA_FILE
         fi
     fi
     set -x
@@ -204,21 +213,21 @@ cas_mgr_setup() {
 
     retry 720 `# 720 retries` \
           10  `# 10s interval` \
-          "gsutil cp gs://${bucket_name}/${cas_mgr_setup_script} $INSTALL_DIR" \
-          "--> ERROR: Failed to download CAS Manager setup script from gs://${bucket_name}/${cas_mgr_setup_script}."
+          "gsutil cp gs://$BUCKET_NAME/$CAS_MGR_SETUP_SCRIPT $INSTALL_DIR" \
+          "--> ERROR: Failed to download CAS Manager setup script from gs://$BUCKET_NAME/$CAS_MGR_SETUP_SCRIPT."
 
-    dos2unix $INSTALL_DIR/${cas_mgr_setup_script}
-    chmod +x $INSTALL_DIR/${cas_mgr_setup_script}
+    dos2unix $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT
+    chmod +x $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT
 
-    if [ "${gcp_sa_file}" ]
+    if [ "$GCP_SA_FILE" ]
     then
-        dos2unix $INSTALL_DIR/${gcp_sa_file}
-        optional_args=$optional_args"--gcp_key $INSTALL_DIR/${gcp_sa_file} "
+        dos2unix $INSTALL_DIR/$GCP_SA_FILE
+        optional_args=$optional_args"--gcp_key $INSTALL_DIR/$GCP_SA_FILE "
     fi
 
     log "--> Running CAS Manager setup script with the following options:"
     log "  --deployment_name $CAS_MGR_DEPLOYMENT_NAME"
-    log "  --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file}"
+    log "  --key_file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE"
     log "  --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME"
     log "  --password <CAS Manager Administrator Password>"
     log "  --reg_code <PCoIP Registration Code>"
@@ -226,9 +235,9 @@ cas_mgr_setup() {
 
     set +x
     PYTHONWARNINGS="ignore:Unverified HTTPS request" \
-      $INSTALL_DIR/${cas_mgr_setup_script} \
+      $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT \
       --deployment_name $CAS_MGR_DEPLOYMENT_NAME \
-      --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file} \
+      --key_file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE \
       --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME \
       --password $CAS_MGR_ADMIN_PASSWORD \
       --reg_code $PCOIP_REGISTRATION_CODE \
@@ -241,7 +250,7 @@ cas_mgr_setup() {
         exit 1
     fi
 
-    if [ ! -f "$INSTALL_DIR/${cas_mgr_deployment_sa_file}" ]
+    if [ ! -f "$INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE" ]
     then
         log "--> ERROR: CAS Manager Deployment service account key not created. Exiting provisioning script..."
         exit 1
@@ -249,23 +258,23 @@ cas_mgr_setup() {
 }
 
 upload_dsa_key() {
-    if [[ "${kms_cryptokey_id}" ]]
+    if [[ "$KMS_CRYPTOKEY_ID" ]]
     then
-        log "--> Encrypting Deployment Service Account key with ${kms_cryptokey_id}"
+        log "--> Encrypting Deployment Service Account key with $KMS_CRYPTOKEY_ID"
 
-        local kms_location="$(echo ${kms_cryptokey_id} | cut -d'/' -f4)"
-        local kms_keyring="$(echo ${kms_cryptokey_id} | cut -d'/' -f6)"
-        local kms_key="$(echo ${kms_cryptokey_id} | cut -d'/' -f8)"
+        local kms_location="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f4)"
+        local kms_keyring="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f6)"
+        local kms_key="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f8)"
 
-        cat $INSTALL_DIR/${cas_mgr_deployment_sa_file} | gcloud kms encrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --plaintext-file - --ciphertext-file $INSTALL_DIR/${cas_mgr_deployment_sa_file}
+        cat $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE | gcloud kms encrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --plaintext-file - --ciphertext-file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
     fi
 
-    log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
+    log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
 
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "gsutil cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} gs://${bucket_name}/" \
-          "--> ERROR: Failed to upload Deployment Service Account Key to bucket ${bucket_name}"
+          "gsutil cp $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE gs://$BUCKET_NAME/" \
+          "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
 
     if [ $? -ne 0 ]
     then
@@ -290,7 +299,7 @@ set -x
 # Redirect stdout and stderr to the log file
 exec &>>$LOG_FILE
 
-if [[ "${gcp_ops_agent_enable}" == "true" ]]
+if [[ "$GCP_OPS_AGENT_ENABLE" == "true" ]]
 then
     setup_ops
 fi

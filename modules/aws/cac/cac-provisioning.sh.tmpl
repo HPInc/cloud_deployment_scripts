@@ -5,14 +5,37 @@
 
 #!/bin/bash
 
-LOG_FILE="/var/log/teradici/provisioning.log"
+##### Template Variables #####
+AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
+AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
+BUCKET_NAME=${bucket_name}
+CAC_EXTRA_INSTALL_FLAGS=${cac_extra_install_flags}
+CAC_VERSION=${cac_version}
+CAS_MGR_DEPLOYMENT_SA_FILE=${cas_mgr_deployment_sa_file}
+CAS_MGR_INSECURE=${cas_mgr_insecure}
+CAS_MGR_SCRIPT=${cas_mgr_script}
+CAS_MGR_URL=${cas_mgr_url}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
+DOMAIN_CONTROLLER_IP=${domain_controller_ip}
+DOMAIN_NAME=${domain_name}
+LLS_IP=${lls_ip}
+SSL_CERT=${ssl_cert}
+SSL_KEY=${ssl_key}
+TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
+
+LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
+
 CAC_BIN_PATH="/usr/sbin/cloud-access-connector"
-CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
+CAC_FILENAME="cloud-access-connector_$CAC_VERSION_Linux.tar.gz"
 CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
-CAC_LOCATION_URL="https://dl.teradici.com/${teradici_download_token}/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/${cac_version}"
-CAC_FILENAME="cloud-access-connector_${cac_version}_Linux.tar.gz"
+CAC_LOCATION_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/$CAC_VERSION"
+CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
 cd $PROVISIONING_DIR
 
 PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
@@ -68,12 +91,12 @@ setup_cloudwatch(){
 
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
-              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}"
-        chmod +x ${cloudwatch_setup_script}
-        dos2unix ${cloudwatch_setup_script}
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT"
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
-        . ${cloudwatch_setup_script} ${aws_region} \
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
             $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
             "/var/log/syslog"                   "%b %d %H:%M:%S" \
@@ -88,26 +111,24 @@ get_credentials() {
 
     retry 120 `# 120 retries` \
           60  `# 60s interval` \
-          "aws s3 cp s3://${bucket_name}/${cas_mgr_deployment_sa_file} $PROVISIONING_DIR" \
-          "--> ERROR: Failed to download CAS Manager deployment Service Account key from bucket ${bucket_name}."
+          "aws s3 cp s3://$BUCKET_NAME/$CAS_MGR_DEPLOYMENT_SA_FILE $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download CAS Manager deployment Service Account key from bucket $BUCKET_NAME."
 
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    if [[ -z "${customer_master_key_id}" ]]; then
+    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]; then
         log "--> Script is not using encryption for secrets."
 
-        AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
-
     else
-        log "--> Script is using encryption key: ${customer_master_key_id}"
+        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
 
         log "--> Decrypting AD service account password..."
-        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${ad_service_account_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AD_SERVICE_ACCOUNT_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting CAS Manager Deployment Service Account JSON file..."
-        CAS_MGR_CREDENTIALS=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://"$PROVISIONING_DIR/${cas_mgr_deployment_sa_file}" --output text --query Plaintext | base64 -d)
-        echo $CAS_MGR_CREDENTIALS > $PROVISIONING_DIR/${cas_mgr_deployment_sa_file}
+        CAS_MGR_CREDENTIALS=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://"$PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE" --output text --query Plaintext | base64 -d)
+        echo $CAS_MGR_CREDENTIALS > $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
     fi
     set -x
 }
@@ -120,21 +141,21 @@ get_cac_token() {
     log "--> Downloading CAS Manager python script from the bucket..."
     retry 3 `# 3 retries` \
           5 `# 5s interval` \
-          "aws s3 cp s3://${bucket_name}/${cas_mgr_script} $PROVISIONING_DIR" \
-          "--> ERROR: Failed to download CAS Manager python script from s3://${bucket_name}/${cas_mgr_script}"
-    chmod +x $PROVISIONING_DIR/${cas_mgr_script}
+          "aws s3 cp s3://$BUCKET_NAME/$CAS_MGR_SCRIPT $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download CAS Manager python script from s3://$BUCKET_NAME/$CAS_MGR_SCRIPT"
+    chmod +x $PROVISIONING_DIR/$CAS_MGR_SCRIPT
 
     # Ensure line endings are in Unix format
-    dos2unix $PROVISIONING_DIR/${cas_mgr_script}
-    dos2unix $PROVISIONING_DIR/${cas_mgr_deployment_sa_file}
+    dos2unix $PROVISIONING_DIR/$CAS_MGR_SCRIPT
+    dos2unix $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
 
     # Set CAC_TOKEN variable using the script's output
-    if [ "${cas_mgr_insecure}" ]
+    if [ "$CAS_MGR_INSECURE" ]
     then
         args="--insecure"
     fi
 
-    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/${cas_mgr_script} $PROVISIONING_DIR/${cas_mgr_deployment_sa_file} --url ${cas_mgr_url} --out $CAC_TOKEN_FILE $args
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/$CAS_MGR_SCRIPT $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE --url $CAS_MGR_URL --out $CAC_TOKEN_FILE $args
     set +x
     CAC_TOKEN=`cat $CAC_TOKEN_FILE`
     set -x
@@ -221,32 +242,32 @@ wait_for_dc() {
     retry 120 `# 120 retries` \
           10  `# 10s interval` \
           "ldapwhoami \
-            -H ldap://${domain_controller_ip} \
-            -D ${ad_service_account_username}@${domain_name} \
+            -H ldap://$DOMAIN_CONTROLLER_IP \
+            -D $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME \
             -w $AD_SERVICE_ACCOUNT_PASSWORD \
             -o nettimeout=1" \
-          "--> ERROR: AD account ${ad_service_account_username}@${domain_name} is not available."
+          "--> ERROR: AD account $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME is not available."
     set -x
     # Check that the domain name can be resolved and that the LDAP port is accepting
     # connections. This could have been all done with the ldapwhoami command, but
     # due to a number of occasional cac-installation issues, such as "domain
     # controller unreachable" or "DNS error occurred" errors, check these explicitly
     # for logging and debug purposes.
-    log "--> Ensure domain ${domain_name} can be resolved..."
+    log "--> Ensure domain $DOMAIN_NAME can be resolved..."
     retry 120 `# 120 retries` \
           10  `# 10s interval` \
-          "host ${domain_name}" \
-          "--> ERROR: Failed to resolve ${domain_name}."
+          "host $DOMAIN_NAME" \
+          "--> ERROR: Failed to resolve $DOMAIN_NAME."
 
-    log "--> Ensure domain ${domain_name} port 636 is reacheable..."
+    log "--> Ensure domain $DOMAIN_NAME port 636 is reacheable..."
     retry 120 `# 120 retries` \
           10  `# 10s interval` \
-          "netcat -vz ${domain_name} 636" \
-          "--> ERROR: Falied to contact ${domain_name}:636."
+          "netcat -vz $DOMAIN_NAME 636" \
+          "--> ERROR: Falied to contact $DOMAIN_NAME:636."
 }
 
 wait_for_lls() {
-    local lls_health_check_url="http://${lls_ip}:7070/api/1.0/health"
+    local lls_health_check_url="http://$LLS_IP:7070/api/1.0/health"
 
     log "--> Performing LLS health check using endpoint $lls_health_check_url..."
     retry 120 `# 120 retries` \
@@ -266,45 +287,45 @@ install_cac() {
     log "  --accept-policies"
     log "  --sa-user <ad_service_account_username>"
     log "  --sa-password <ad_service_account_password>"
-    log "  --domain ${domain_name}"
+    log "  --domain $DOMAIN_NAME"
     log "  --retrieve-agent-state true"
     log "  --sync-interval 5"
-    log "  --casm-url ${cas_mgr_url}"
-    log "  ${cac_extra_install_flags}"
+    log "  --casm-url $CAS_MGR_URL"
+    log "  $CAC_EXTRA_INSTALL_FLAGS"
 
     # Set pipefail option to return status of the connector install command
     set -o pipefail
 
-    if [ "${ssl_key}" ]
+    if [ "$SSL_KEY" ]
     then
         log "  --ssl-key <ssl_key>"
         log "  --ssl-cert <ssl_cert>"
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://${bucket_name}/${ssl_key} $PROVISIONING_DIR" \
-              "--> ERROR: Failed to download ssl key from ${bucket_name}"
+              "aws s3 cp s3://$BUCKET_NAME/$SSL_KEY $PROVISIONING_DIR" \
+              "--> ERROR: Failed to download ssl key from $BUCKET_NAME"
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://${bucket_name}/${ssl_cert} $PROVISIONING_DIR" \
-              "--> ERROR: Failed to download ssl cert from ${bucket_name}"
+              "aws s3 cp s3://$BUCKET_NAME/$SSL_CERT $PROVISIONING_DIR" \
+              "--> ERROR: Failed to download ssl cert from $BUCKET_NAME"
 
-        args=$args"--ssl-key $PROVISIONING_DIR/${ssl_key} "
-        args=$args"--ssl-cert $PROVISIONING_DIR/${ssl_cert} "
+        args=$args"--ssl-key $PROVISIONING_DIR/$SSL_KEY "
+        args=$args"--ssl-cert $PROVISIONING_DIR/$SSL_CERT "
     else
         log "  --self-signed"
         args=$args"--self-signed "
     fi
 
-    if [ "${cas_mgr_insecure}" ]
+    if [ "$CAS_MGR_INSECURE" ]
     then
         log "  --casm-insecure"
         args=$args"--casm-insecure "
     fi
 
-    if [ "${lls_ip}" ]
+    if [ "$LLS_IP" ]
     then
-        log "  --local-license-server-url http://${lls_ip}:7070/request"
-        args=$args"--local-license-server-url http://${lls_ip}:7070/request "
+        log "  --local-license-server-url http://$LLS_IP:7070/request"
+        args=$args"--local-license-server-url http://$LLS_IP:7070/request "
     fi
 
     set +x
@@ -313,13 +334,13 @@ install_cac() {
           "$CAC_BIN_PATH install \
           -t $CAC_TOKEN \
           --accept-policies \
-          --sa-user ${ad_service_account_username} \
+          --sa-user $AD_SERVICE_ACCOUNT_USERNAME \
           --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-          --domain ${domain_name} \
+          --domain $DOMAIN_NAME \
           --retrieve-agent-state true \
           --sync-interval 5 \
-          --casm-url ${cas_mgr_url} \
-          ${cac_extra_install_flags} \
+          --casm-url $CAS_MGR_URL \
+          $CAC_EXTRA_INSTALL_FLAGS \
           $args \
           2>&1 | tee -a $CAC_INSTALL_LOG" \
           "--> ERROR: Failed to install Cloud Access Connector."
@@ -357,12 +378,12 @@ log "$(date) Running $0 as $(whoami)..."
 
 install_prereqs
 
-if [[ "${cloudwatch_enable}" == "true" ]]
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
     setup_cloudwatch
 fi
 
-if [[ "${aws_ssm_enable}" == "true" ]]
+if [[ "$AWS_SSM_ENABLE" == "true" ]]
 then
     setup_ssm
 fi
@@ -381,7 +402,7 @@ download_cac
 
 wait_for_dc
 
-if [ "${lls_ip}" ]
+if [ "$LLS_IP" ]
 then
     wait_for_lls
 fi
