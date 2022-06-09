@@ -36,6 +36,10 @@ resource "aws_s3_object" "centos-std-provisioning-script" {
       pcoip_registration_code     = var.pcoip_registration_code,
       teradici_download_token     = var.teradici_download_token,
 
+      auto_logoff_cpu_utilization                = var.auto_logoff_cpu_utilization,
+      auto_logoff_enable                         = var.auto_logoff_enable,
+      auto_logoff_minutes_idle_before_logoff     = var.auto_logoff_minutes_idle_before_logoff,
+      auto_logoff_polling_interval_minutes       = var.auto_logoff_polling_interval_minutes,
       idle_shutdown_enable                       = var.idle_shutdown_enable,
       idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown,
       idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes,

@@ -505,6 +505,26 @@ variable "customer_master_key_id" {
   default     = ""
 }
 
+variable "auto_logoff_enable" {
+  description = "Enable auto log-off for Workstations"
+  default     = true
+}
+
+variable "auto_logoff_minutes_idle_before_logoff" {
+  description = "Minimum idle time for Workstations before auto log-off, must be between 5 and 10000"
+  default     = 20
+}
+
+variable "auto_logoff_polling_interval_minutes" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 100"
+  default     = 5
+}
+
+variable "auto_logoff_cpu_utilization" {
+  description = "CPU utilization percentage, must be between 1 and 100"
+  default     = 20
+}
+
 variable "idle_shutdown_enable" {
   description = "Enable auto idle shutdown for Workstations"
   default     = true

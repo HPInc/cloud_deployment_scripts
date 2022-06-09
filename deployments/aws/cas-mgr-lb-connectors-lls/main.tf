@@ -439,6 +439,11 @@ module "centos-gfx" {
     aws_security_group.allow-ssh.id,
   ]
 
+  auto_logoff_cpu_utilization            = var.auto_logoff_cpu_utilization
+  auto_logoff_enable                     = var.auto_logoff_enable
+  auto_logoff_minutes_idle_before_logoff = var.auto_logoff_minutes_idle_before_logoff
+  auto_logoff_polling_interval_minutes   = var.auto_logoff_polling_interval_minutes
+
   idle_shutdown_enable                       = var.idle_shutdown_enable
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
@@ -485,6 +490,11 @@ module "centos-std" {
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
+
+  auto_logoff_cpu_utilization            = var.auto_logoff_cpu_utilization
+  auto_logoff_enable                     = var.auto_logoff_enable
+  auto_logoff_minutes_idle_before_logoff = var.auto_logoff_minutes_idle_before_logoff
+  auto_logoff_polling_interval_minutes   = var.auto_logoff_polling_interval_minutes
 
   idle_shutdown_enable                       = var.idle_shutdown_enable
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
