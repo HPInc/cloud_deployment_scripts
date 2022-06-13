@@ -335,6 +335,11 @@ variable "idle_shutdown_polling_interval_minutes" {
   default     = 15
 }
 
+variable "idle_shutdown_cpu_utilization" {
+  description = "CPU utilization percentage, must be between 1 and 100"
+  default     = 20
+}
+
 variable "win_gfx_instance_count" {
   description = "Number of Windows Graphics Workstations"
   default     = 0

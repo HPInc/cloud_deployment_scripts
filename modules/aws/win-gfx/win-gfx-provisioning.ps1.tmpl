@@ -9,6 +9,7 @@ $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
 $CLOUDWATCH_ENABLE           = [System.Convert]::ToBoolean("${cloudwatch_enable}")
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
+$IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
@@ -219,6 +220,9 @@ function Cam-Idle-Shutdown-is-Installed {
 }
 
 function Install-Idle-Shutdown {
+    # Idle shutdown service power off the workstations when they are considered idle. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/cas_manager_as_a_service/reference/install_configure_cam_idle_shutdown/
+
     "################################################################"
     "Installing Idle Shutdown..."
     "################################################################"
@@ -236,12 +240,14 @@ function Install-Idle-Shutdown {
     $idleShutdownRegKeyPath       = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
     $idleTimerRegKeyName          = "MinutesIdleBeforeShutdown"
     $cpuPollingIntervalRegKeyName = "PollingIntervalMinutes"
+    $cpuUtilizationRegKeyName     = "CPUUtilizationLimit"
 
     if (!(Test-Path $idleShutdownRegKeyPath)) {
         New-Item -Path $idleShutdownRegKeyPath -Force
     }
     New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN -PropertyType DWORD -Force
     New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuUtilizationRegKeyName -Value $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -PropertyType DWORD -Force
 
     if (!$IDLE_SHUTDOWN_ENABLE) {
         $svc = Get-Service -Name "CAMIdleShutdown"

@@ -260,6 +260,7 @@ module "win-gfx" {
   subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
+  idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization
   idle_shutdown_enable                       = var.idle_shutdown_enable
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
@@ -305,6 +306,7 @@ module "win-std" {
   subnet_list      = google_compute_subnetwork.ws-subnets[*].self_link
   enable_public_ip = var.enable_workstation_public_ip
 
+  idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization
   idle_shutdown_enable                       = var.idle_shutdown_enable
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
@@ -352,6 +354,7 @@ module "centos-gfx" {
   auto_logoff_minutes_idle_before_logoff = var.auto_logoff_minutes_idle_before_logoff
   auto_logoff_polling_interval_minutes   = var.auto_logoff_polling_interval_minutes
 
+  idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization
   idle_shutdown_enable                       = var.idle_shutdown_enable
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
@@ -404,6 +407,7 @@ module "centos-std" {
   auto_logoff_minutes_idle_before_logoff = var.auto_logoff_minutes_idle_before_logoff
   auto_logoff_polling_interval_minutes   = var.auto_logoff_polling_interval_minutes
 
+  idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization
   idle_shutdown_enable                       = var.idle_shutdown_enable
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes

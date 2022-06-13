@@ -15,6 +15,7 @@ BUCKET_NAME=${bucket_name}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
+IDLE_SHUTDOWN_CPU_UTILIZATION=${idle_shutdown_cpu_utilization}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
 IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
@@ -287,6 +288,9 @@ install_auto_logoff() {
 }
 
 install_idle_shutdown() {
+    # Idle shutdown service power off the workstations when they are considered idle. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/cas_manager_as_a_service/reference/install_configure_cam_idle_shutdown/
+
     log "--> Installing idle shutdown..."
     mkdir /tmp/idleShutdown
 
@@ -313,11 +317,13 @@ install_idle_shutdown() {
         exit 1
     fi
 
-    if [[ $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -ne 15 ]]; then
-        log "--> Setting CPU polling interval to $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES minutes..."
-        sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
-        systemctl daemon-reload
-    fi
+    log "--> Setting CPU polling interval to $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES minutes..."
+    sed -i "s/OnUnitActiveSec=\(.*\)min/OnUnitActiveSec=$${IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
+
+    log "--> Setting CPU utilization to $IDLE_SHUTDOWN_CPU_UTILIZATION%..."
+    sed -i "s/Environment=\"CPUUtilizationLimit=\(.*\)\"/Environment=\"CPUUtilizationLimit=$IDLE_SHUTDOWN_CPU_UTILIZATION\"/g" /etc/systemd/system/CAMIdleShutdown.service.d/CAMIdleShutdown.conf
+
+    systemctl daemon-reload
 }
 
 join_domain() {
