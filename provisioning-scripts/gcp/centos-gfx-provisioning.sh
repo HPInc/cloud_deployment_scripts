@@ -20,6 +20,10 @@ PCOIP_REGISTRATION_CODE=""
 USERNAME=""
 TEMP_PASSWORD=""
 # You can use the default value set here or change it
+AUTO_LOGOFF_CPU_UTILIZATION=20
+AUTO_LOGOFF_ENABLE=true
+AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=20
+AUTO_LOGOFF_POLLING_INTERVAL_MINUTES=5
 NVIDIA_DRIVER_URL="https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID13.1/NVIDIA-Linux-x86_64-470.82.01-grid.run"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
@@ -210,6 +214,28 @@ register_pcoip_agent() {
     log "--> PCoIP agent registered successfully."
 }
 
+install_auto_logoff() {
+    # Auto logoff tool terminates a user session after the PCoIP session has been terminated. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/cas_manager/current/admin_console/workstation_pools/#auto-log-off-service
+
+    log "--> Installing PCoIP agent auto-logoff..."
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum install -y pcoip-agent-autologoff" \
+            "--> ERROR: Failed to download PCoIP agent auto-logoff."
+
+    log "--> Setting Minumim Idle time to $AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF minutes..."
+    sed -i "s/Environment=\"MinutesIdleBeforeLogOff=\(.*\)\"/Environment=\"MinutesIdleBeforeLogOff=$AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF\"/g" /etc/systemd/system/pcoip-agent-autologoff.service.d/override.conf
+
+    log "--> Setting CPU Utilization limit to $AUTO_LOGOFF_CPU_UTILIZATION%..."
+    sed -i "s/Environment=\"CPUUtilizationLimit=\(.*\)\"/Environment=\"CPUUtilizationLimit=$AUTO_LOGOFF_CPU_UTILIZATION\"/g" /etc/systemd/system/pcoip-agent-autologoff.service.d/override.conf
+
+    log "--> Setting CPU polling interval to $AUTO_LOGOFF_POLLING_INTERVAL_MINUTES minutes..."
+    sed -i "s/OnUnitActiveSec=\(.*\)min/OnUnitActiveSec=$${AUTO_LOGOFF_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/pcoip-agent-autologoff.timer.d/override.conf
+
+    /opt/teradici/pcoip-agent-autologoff/pcoip-agent-autologoff-mgmt --enable
+}
+
 # A flag to indicate if this is run from reboot
 RE_ENTER=0
 
@@ -283,6 +309,11 @@ else
         register_pcoip_agent
     fi
     set -x
+
+    if [[ "$AUTO_LOGOFF_ENABLE" == "true" ]]
+    then
+        install_auto_logoff
+    fi
 
     log "--> Installation is complete!"
 
