@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
 
 # Setup the AWS CloudWatch Logs agent for an EC2 instance.
 # Array with the following information is required:
@@ -14,7 +14,10 @@ $CLOUDWATCH_AGENT_INSTALLER     = "amazon-cloudwatch-agent.msi"
 $CLOUDWATCH_AGENT_DIR           = "C:\Program Files\Amazon\AmazonCloudWatchAgent"
 
 $CLOUDWATCH_CONFIG_FILE = "cloudwatch_config.json"
-$CLOUDWATCH_CONFIG_PATH = "C:\Program Files\Amazon\AmazonCloudWatchAgent\cloudwatch_config.json"
+# need to escape space when specify path of configuration file when starting the agent to avoid path quoting error, but using space escaped 
+# variable when creating the configuration file would cause another path quoting error. So separating these 2 variables.
+$CLOUDWATCH_CONFIG_PATH = "$CLOUDWATCH_AGENT_DIR\$CLOUDWATCH_CONFIG_FILE"
+$CLOUDWATCH_CONFIG_PATH_ESCAPE_SPACE = '"C:\Program Files\Amazon\AmazonCloudWatchAgent\cloudwatch_config.json"'
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -90,10 +93,10 @@ for ( $i = 0; $i -lt $args.count; $i+=2 ) {
     Add-CloudWatch-Config -log_file_path $args[$i] -datetime_format $args[$i+1]
 }
 
-"--> Writing configurations to $CLOUDWATCH_CONFIG_PATH..."
+"--> Writing configurations to $CLOUDWATCH_CONFIG_PATH_ESCAPE_SPACE..."
 Write-CloudWatch-Config
 
 "--> Starting CloudWatch Agent..."
-& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:$CLOUDWATCH_CONFIG_PATH
+& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:$CLOUDWATCH_CONFIG_PATH_ESCAPE_SPACE
 " "
 
