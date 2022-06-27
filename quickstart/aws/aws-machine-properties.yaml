@@ -1,0 +1,51 @@
+# There is no official document shows the mapping for AWS service quota code on Jun 30th, 2022.
+# AWS service quota code mapping can be retrieved using the following AWS CLI command:
+# aws service-quotas list-service-quotas --query 'Quotas[*].{Adjustable:Adjustable,Name:QuotaName,Value:Value,Code:QuotaCode}' --service-code <service code> --output table
+
+# The following AWS CLI command can be used for getting details about a specific service quota:
+# aws service-quotas get-service-quota --service-code <service code> --quota-code <service quota code>
+# Please see the following link for more details about service quota CLI:
+# https://docs.aws.amazon.com/cli/latest/reference/service-quotas/index.html#cli-aws-service-quotas 
+
+dc:
+  name: Domain Controller
+  service_requirements:
+    ec2:
+      L-34B43A08: 4 # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
+    vpc:
+      L-DF5E4CA3: 1 # Network interfaces per Region
+cac:
+  name: Cloud Access Connector
+  service_requirements:
+    ec2:
+      L-34B43A08: 4 # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
+    vpc:
+      L-DF5E4CA3: 1 # Network interfaces per Region
+scent:
+  name: Standard CentOS
+  service_requirements:
+    ec2:
+      L-34B43A08: 4 # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
+    vpc:
+      L-DF5E4CA3: 1 # Network interfaces per Region
+gcent:
+  name: Graphics CentOS
+  service_requirements:
+    ec2:
+      L-3819A6DF: 4 # All G and VT Spot Instance Requests
+    vpc:
+      L-DF5E4CA3: 1 # Network interfaces per Region
+swin:
+  name: Standard Windows
+  service_requirements:
+    ec2:
+      L-34B43A08: 4 # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
+    vpc:
+      L-DF5E4CA3: 1 # Network interfaces per Region
+gwin:
+  name: Graphics Windows
+  service_requirements:
+    ec2:
+      L-3819A6DF: 4 # All G and VT Spot Instance Requests
+    vpc:
+      L-DF5E4CA3: 1 # Network interfaces per Region

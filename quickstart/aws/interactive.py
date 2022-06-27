@@ -9,18 +9,18 @@ import aws_iam_wrapper as aws
 import boto3
 import casmgr
 import getpass
-import json
 import math
 import re
 import sys
 import textwrap
+import yaml
 
 DEFAULT_REGION      = "us-west-1"
 DEFAULT_NUMBEROF_WS = 0
 DEFAULT_PREFIX      = "quick"
 
 # Machine name and metric specs
-MACHINE_PROPERTIES_JSON = "aws-machine-properties.json"
+MACHINE_PROPERTIES_YAML = "aws-machine-properties.yaml"
 
 # The number of available IP address in subnet. To see reserved IPs, please
 # see: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html#VPC_Sizing
@@ -49,8 +49,8 @@ def configurations_get(ws_types, username, quickstart_path):
     ec2 = boto3.client('ec2')
 
     # TODO: Dynamically read the vars.tf terraform file instead
-    with open(f"{quickstart_path}{MACHINE_PROPERTIES_JSON}", 'r') as f:
-        machine_properties = json.load(f)
+    with open(f"{quickstart_path}{MACHINE_PROPERTIES_YAML}", 'r') as f:
+        machine_properties = yaml.load(f, Loader=yaml.Loader)
 
     def reg_code_get(order_number):
         print(f"{order_number}.  Please enter your PCoIP Registration Code.")
