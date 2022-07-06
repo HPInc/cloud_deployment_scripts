@@ -10,7 +10,6 @@ LLS_CONFIG_FILE="/opt/flexnetls/TERADICI/local-configuration.yaml"
 LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/cfg/setup/bash.rpm.sh"
 FLEXNETLSADMIN="/opt/flexnetls/TERADICI/admintools/flexnetlsadmin.sh"
 INSTALL_DIR="/root"
-LLS_YUM_PKG="pcoip-license-server"
 NCAT_PORT=7072
 
 log() {
@@ -105,10 +104,17 @@ check_required_vars() {
 
 install_pcoip_license_server() {
     curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
-    dnf install -y $LLS_YUM_PKG
-
+    retry 5 `# 10 retries` \
+          10 `# 10s interval` \
+          "dnf install -y java-11-openjdk pcoip-license-server" \
+          "--> ERROR: Failed to install pcoip-license-server."
     set +x
-    pcoip-set-password -p "1P@ssw0rd!" -n "$LLS_ADMIN_PASSWORD"
+    # PCoIP License Server takes approximately 30-60s to start. Need to wait for PCoIP License Server to
+    # start before running any LLS commands. 
+    retry 10 `# 10 retries` \
+          10 `# 10s interval` \
+          "pcoip-set-password -p 1P@ssw0rd! -n $LLS_ADMIN_PASSWORD" \
+          "--> ERROR: Failed to set new password."
     set -x
 }
 

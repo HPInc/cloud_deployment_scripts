@@ -9,7 +9,6 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 
-LLS_YUM_PKG="pcoip-license-server"
 LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/pcoip-license-server/cfg/setup/bash.rpm.sh"
 
 log() {
@@ -116,7 +115,7 @@ then
     chmod 600 "$LOG_FILE"
 fi
 
-yum info $LLS_YUM_PKG
+yum info pcoip-license-server
 if [[ $? -eq 0 ]]
 then
     log "PCoIP licence Server already installed. Skipping startup script."
@@ -148,10 +147,19 @@ get_credentials
 check_required_vars
 
 curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
-dnf install -y $LLS_YUM_PKG
+
+retry 5 `# 10 retries` \
+      10 `# 10s interval` \
+      "dnf install -y java-11-openjdk pcoip-license-server" \
+      "--> ERROR: Failed to install pcoip-license-server."
 
 set +x
-pcoip-set-password -p "1P@ssw0rd!" -n "$LLS_ADMIN_PASSWORD"
+# PCoIP License Server takes approximately 30-60s to start. Need to wait for PCoIP License Server to
+# start before running any LLS commands. 
+retry 10 `# 10 retries` \
+      10 `# 10s interval` \
+      "pcoip-set-password -p 1P@ssw0rd! -n $LLS_ADMIN_PASSWORD" \
+      "--> ERROR: Failed to set new password."
 
 pcoip-activate-online-license -a "$LLS_ACTIVATION_CODE" -c ${lls_license_count} -p "$LLS_ADMIN_PASSWORD"
 set -x
