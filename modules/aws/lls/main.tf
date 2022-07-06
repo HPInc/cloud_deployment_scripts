@@ -20,6 +20,7 @@ resource "aws_s3_object" "lls-provisioning-script" {
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       aws_region              = var.aws_region, 
+      aws_ssm_enable          = var.aws_ssm_enable,
       bucket_name             = var.bucket_name,
       cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,

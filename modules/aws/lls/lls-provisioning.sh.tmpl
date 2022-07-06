@@ -103,6 +103,12 @@ check_required_vars() {
     fi
 }
 
+setup_ssm() {
+    yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+}
+
 if [[ ! -f "$LOG_FILE" ]]
 then
     mkdir -p "$(dirname $LOG_FILE)"
@@ -130,6 +136,11 @@ yum update -y
 if [[ "${cloudwatch_enable}" == "true" ]]
 then
     setup_cloudwatch
+fi
+
+if [[ "${aws_ssm_enable}" == "true" ]]
+then
+    setup_ssm
 fi
 
 get_credentials

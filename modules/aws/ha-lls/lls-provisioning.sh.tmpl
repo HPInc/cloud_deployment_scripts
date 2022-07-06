@@ -249,6 +249,12 @@ setup_backup_lls() {
     time systemctl restart flexnetls-TERADICI
 }
 
+setup_ssm() {
+    yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+}
+
 set -x
 
 if [[ -f "$LOG_FILE" ]]
@@ -273,6 +279,11 @@ yum install -y nc
 if [[ "${cloudwatch_enable}" == "true" ]]
 then
     setup_cloudwatch
+fi
+
+if [[ "${aws_ssm_enable}" == "true" ]]
+then
+    setup_ssm
 fi
 
 get_credentials
