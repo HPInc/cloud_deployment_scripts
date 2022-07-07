@@ -13,6 +13,9 @@ $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 
+$AWS_SSM_URL       = "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe"
+$AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
+
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
@@ -142,6 +145,22 @@ function PCoIP-Agent-Register {
     "--> PCoIP agent registered successfully."
 }
 
+function Install-SSM {
+    "################################################################"
+    "Installing AWS Session Manager agent..."
+    "################################################################"
+    $wc = New-Object System.Net.WebClient
+
+    "--> Downloading AWS Session Manager agent from $AWS_SSM_URL..."
+    Retry -Action {$wc.DownloadFile($AWS_SSM_URL, $AWS_SSM_INSTALLER)}
+
+    "--> Installing AWS Session Manager agent..."
+    Start-Process -FilePath $AWS_SSM_INSTALLER -ArgumentList "/S /nopostreboot _?$AWS_SSM_INSTALLER" -PassThru -Wait
+
+    "--> AWS Session Manager agent installed successfully."
+    $global:restart = $true
+}
+
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
 # SSM agent creates ssm-user account on the managed node when SSM agent starts, 
@@ -150,6 +169,7 @@ Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 # More info can be found at https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html
 
 if ([System.Convert]::ToBoolean("${aws_ssm_enable}")) {
+    Install-SSM
     "================================================================"
     "Creating Local Account ssm-user For AWS Session Manager..."
     "================================================================"

@@ -27,6 +27,7 @@ resource "aws_s3_object" "win-std-provisioning-script" {
       admin_password              = var.admin_password,
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      aws_ssm_enable              = var.aws_ssm_enable,
       bucket_name                 = var.bucket_name,
       cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,

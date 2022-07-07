@@ -335,6 +335,11 @@ install_cac() {
     set -x
 }
 
+setup_ssm() {
+    snap install amazon-ssm-agent --classic
+    snap start amazon-ssm-agent
+}
+
 if [[ ! -f "$LOG_FILE" ]]
 then
     mkdir -p "$(dirname $LOG_FILE)"
@@ -355,6 +360,11 @@ install_prereqs
 if [[ "${cloudwatch_enable}" == "true" ]]
 then
     setup_cloudwatch
+fi
+
+if [[ "${aws_ssm_enable}" == "true" ]]
+then
+    setup_ssm
 fi
 
 get_credentials
