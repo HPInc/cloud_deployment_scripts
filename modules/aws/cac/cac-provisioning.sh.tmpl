@@ -270,9 +270,9 @@ wait_for_lls() {
     local lls_health_check_url="http://$LLS_IP:7070/api/1.0/health"
 
     log "--> Performing LLS health check using endpoint $lls_health_check_url..."
+    # Need to escape Terraform template directive using %%
     retry 120 `# 120 retries` \
           10  `# 10s interval` \
-          # Need to escape Terraform template directive using %%
           "[ $(curl --silent --write-out "%%{http_code}\n" --output /dev/null $lls_health_check_url) -eq 200 ]" \
           "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
 }
