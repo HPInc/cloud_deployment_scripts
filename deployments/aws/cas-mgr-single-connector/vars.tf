@@ -101,7 +101,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.06.15"
+  default     = "Windows_Server-2019-English-Full-Base-2022.07.13"
 }
 
 variable "dc_pcoip_agent_version" {
@@ -328,7 +328,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.06.15"
+  default     = "Windows_Server-2019-English-Full-Base-2022.07.13"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -363,7 +363,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.06.15"
+  default     = "Windows_Server-2019-English-Full-Base-2022.07.13"
 }
 
 variable "win_std_pcoip_agent_version" {
