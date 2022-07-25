@@ -5,12 +5,18 @@
 
 #!/bin/bash
 
+##### Template Variables #####
 AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
+AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
+AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=${auto_logoff_minutes_idle_before_logoff}
+AUTO_LOGOFF_POLLING_INTERVAL_MINUTES=${auto_logoff_polling_interval_minutes}
 BUCKET_NAME=${bucket_name}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
+IDLE_SHUTDOWN_CPU_UTILIZATION=${idle_shutdown_cpu_utilization}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
 IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
@@ -260,7 +266,32 @@ register_pcoip_agent() {
     log "--> PCoIP agent registered successfully."
 }
 
+install_auto_logoff() {
+    # Auto logoff tool terminates a user session after the PCoIP session has been terminated. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/cas_manager/current/admin_console/workstation_pools/#auto-log-off-service
+
+    log "--> Installing PCoIP agent auto-logoff..."
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum install -y pcoip-agent-autologoff" \
+            "--> ERROR: Failed to download PCoIP agent auto-logoff."
+
+    log "--> Setting Minumim Idle time to $AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF minutes..."
+    sed -i "s/Environment=\"MinutesIdleBeforeLogOff=\(.*\)\"/Environment=\"MinutesIdleBeforeLogOff=$AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF\"/g" /etc/systemd/system/pcoip-agent-autologoff.service.d/override.conf
+
+    log "--> Setting CPU Utilization limit to $AUTO_LOGOFF_CPU_UTILIZATION%..."
+    sed -i "s/Environment=\"CPUUtilizationLimit=\(.*\)\"/Environment=\"CPUUtilizationLimit=$AUTO_LOGOFF_CPU_UTILIZATION\"/g" /etc/systemd/system/pcoip-agent-autologoff.service.d/override.conf
+
+    log "--> Setting CPU polling interval to $AUTO_LOGOFF_POLLING_INTERVAL_MINUTES minutes..."
+    sed -i "s/OnUnitActiveSec=\(.*\)min/OnUnitActiveSec=$${AUTO_LOGOFF_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/pcoip-agent-autologoff.timer.d/override.conf
+
+    /opt/teradici/pcoip-agent-autologoff/pcoip-agent-autologoff-mgmt --enable
+}
+
 install_idle_shutdown() {
+    # Idle shutdown service power off the workstations when they are considered idle. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/cas_manager_as_a_service/reference/install_configure_cam_idle_shutdown/
+
     log "--> Installing idle shutdown..."
     mkdir /tmp/idleShutdown
 
@@ -287,11 +318,13 @@ install_idle_shutdown() {
         exit 1
     fi
 
-    if [[ $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -ne 15 ]]; then
-        log "--> Setting CPU polling interval to $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES minutes..."
-        sed -i "s/OnUnitActiveSec=15min/OnUnitActiveSec=$${IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
-        systemctl daemon-reload
-    fi
+    log "--> Setting CPU polling interval to $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES minutes..."
+    sed -i "s/OnUnitActiveSec=\(.*\)min/OnUnitActiveSec=$${IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
+
+    log "--> Setting CPU utilization to $IDLE_SHUTDOWN_CPU_UTILIZATION%..."
+    sed -i "s/Environment=\"CPUUtilizationLimit=\(.*\)\"/Environment=\"CPUUtilizationLimit=$IDLE_SHUTDOWN_CPU_UTILIZATION\"/g" /etc/systemd/system/CAMIdleShutdown.service.d/CAMIdleShutdown.conf
+
+    systemctl daemon-reload
 }
 
 join_domain() {
@@ -451,6 +484,11 @@ else
         register_pcoip_agent
     fi
     set -x
+
+    if [[ "$AUTO_LOGOFF_ENABLE" == "true" ]]
+    then
+        install_auto_logoff
+    fi
 
     install_idle_shutdown
 

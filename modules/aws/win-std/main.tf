@@ -27,6 +27,7 @@ resource "aws_s3_object" "win-std-provisioning-script" {
       admin_password              = var.admin_password,
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      aws_ssm_enable              = var.aws_ssm_enable,
       bucket_name                 = var.bucket_name,
       cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
@@ -36,6 +37,7 @@ resource "aws_s3_object" "win-std-provisioning-script" {
       pcoip_registration_code     = var.pcoip_registration_code,
       teradici_download_token     = var.teradici_download_token,
 
+      idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization,
       idle_shutdown_enable                       = var.idle_shutdown_enable,
       idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown,
       idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes,

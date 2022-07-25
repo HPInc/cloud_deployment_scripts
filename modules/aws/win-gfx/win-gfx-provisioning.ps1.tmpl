@@ -3,12 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+##### Template Variables #####
 $ADMIN_PASSWORD              = "${admin_password}"
 $AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$AWS_SSM_ENABLE              = "${aws_ssm_enable}"
+$BUCKET_NAME                 = "${bucket_name}"
 $CLOUDWATCH_ENABLE           = [System.Convert]::ToBoolean("${cloudwatch_enable}")
+$CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
+$IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
@@ -20,6 +25,9 @@ $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 $NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
+
+$AWS_SSM_URL       = "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe"
+$AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
 
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-graphics-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-graphics_$PCOIP_AGENT_VERSION.exe"
@@ -55,12 +63,12 @@ function Setup-CloudWatch {
     "################################################################"
     "Setting Up AWS CloudWatch..."
     "################################################################"
-    Read-S3Object -BucketName ${bucket_name} -Key ${cloudwatch_setup_script} -File ${cloudwatch_setup_script}
-    powershell ${cloudwatch_setup_script} C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
-                                          C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_control_panel*.txt "%Y%m%d%H%M%S" `
-                                          C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_kmdod*.txt "%Y%m%d%H%M%S" `
-                                          C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_server*.txt "%Y%m%d%H%M%S" `
-                                          C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+    Read-S3Object -BucketName $BUCKET_NAME -Key $CLOUDWATCH_SETUP_SCRIPT -File $CLOUDWATCH_SETUP_SCRIPT
+    powershell $CLOUDWATCH_SETUP_SCRIPT C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
+                                        C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_control_panel*.txt "%Y%m%d%H%M%S" `
+                                        C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_kmdod*.txt "%Y%m%d%H%M%S" `
+                                        C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_server*.txt "%Y%m%d%H%M%S" `
+                                        C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
                                           
 }
 
@@ -219,6 +227,9 @@ function Cam-Idle-Shutdown-is-Installed {
 }
 
 function Install-Idle-Shutdown {
+    # Idle shutdown service power off the workstations when they are considered idle. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/cas_manager_as_a_service/reference/install_configure_cam_idle_shutdown/
+
     "################################################################"
     "Installing Idle Shutdown..."
     "################################################################"
@@ -236,12 +247,14 @@ function Install-Idle-Shutdown {
     $idleShutdownRegKeyPath       = "HKLM:SOFTWARE\Teradici\CAMShutdownIdleMachineAgent"
     $idleTimerRegKeyName          = "MinutesIdleBeforeShutdown"
     $cpuPollingIntervalRegKeyName = "PollingIntervalMinutes"
+    $cpuUtilizationRegKeyName     = "CPUUtilizationLimit"
 
     if (!(Test-Path $idleShutdownRegKeyPath)) {
         New-Item -Path $idleShutdownRegKeyPath -Force
     }
     New-ItemProperty -Path $idleShutdownRegKeyPath -Name $idleTimerRegKeyName -Value $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN -PropertyType DWORD -Force
     New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuPollingIntervalRegKeyName -Value $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -PropertyType DWORD -Force
+    New-ItemProperty -Path $idleShutdownRegKeyPath -Name $cpuUtilizationRegKeyName -Value $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES -PropertyType DWORD -Force
 
     if (!$IDLE_SHUTDOWN_ENABLE) {
         $svc = Get-Service -Name "CAMIdleShutdown"
@@ -353,6 +366,22 @@ function Audio-Enable {
     Get-WmiObject -class win32_service -filter "Name='AudioSrv'"
 }
 
+function Install-SSM {
+    "################################################################"
+    "Installing AWS Session Manager agent..."
+    "################################################################"
+    $wc = New-Object System.Net.WebClient
+
+    "--> Downloading AWS Session Manager agent from $AWS_SSM_URL..."
+    Retry -Action {$wc.DownloadFile($AWS_SSM_URL, $AWS_SSM_INSTALLER)}
+
+    "--> Installing AWS Session Manager agent..."
+    Start-Process -FilePath $AWS_SSM_INSTALLER -ArgumentList "/S /nopostreboot _?$AWS_SSM_INSTALLER" -PassThru -Wait
+
+    "--> AWS Session Manager agent installed successfully."
+    $global:restart = $true
+}
+
 if (Test-Path $LOG_FILE) {
     Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
@@ -421,6 +450,10 @@ if (Cam-Idle-Shutdown-is-Installed){
 Join-Domain
 
 Audio-Enable
+
+if ($AWS_SSM_ENABLE) {
+    Install-SSM
+}
 
 if ($global:restart) {
     "--> Restart required. Restarting..."

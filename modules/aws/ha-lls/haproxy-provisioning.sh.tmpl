@@ -1,12 +1,28 @@
 #!/usr/bin/env bash
 
-# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-LOG_FILE="/var/log/teradici/provisioning.log"
+##### Template Variables #####
+AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
+BUCKET_NAME=${bucket_name}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+HAPROXY_BACKUP_IP=${haproxy_backup_ip}
+HAPROXY_CONFIG=${haproxy_config}
+HAPROXY_MASTER_IP=${haproxy_master_ip}
+HAPROXY_VIP=${haproxy_vip}
+HAPROXY_VIP_CIDR=${haproxy_vip_cidr}
+KEEPALIVED_CONFIG=${keepalived_config}
+LLS_BACKUP_IP=${lls_backup_ip}
+LLS_MAIN_IP=${lls_main_ip}
+NOTIFY_MASTER=${notify_master}
+
 INSTALL_DIR="/root"
+LOG_FILE="/var/log/teradici/provisioning.log"
 NCAT_PORT=7072
 
 log() {
@@ -45,12 +61,12 @@ setup_cloudwatch(){
 
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
-              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}."
-        chmod +x ${cloudwatch_setup_script}
-        dos2unix ${cloudwatch_setup_script}
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT."
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
-        . ${cloudwatch_setup_script} ${aws_region} \
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
             $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
             "/var/log/messages"                 "%b %d %H:%M:%S" \
@@ -92,25 +108,25 @@ get_msg_from() {
 
 wait_for_lls() {
     log "Waiting for main PCoIP License Server to be ready before proceeding..."
-    local message=$(get_msg_from ${lls_main_ip})
+    local message=$(get_msg_from $LLS_MAIN_IP)
     if [ ! $message == "START_HAPROXY" ]
     then
         log "ERROR: unexpected command from main PCoIP License Server: $command"
         exit 1
     fi
 }
-#####   "curl --max-time 1 http://${lls_main_ip}:7070/api/1.0/health" \
+#####   "curl --max-time 1 http://$LLS_MAIN_IP:7070/api/1.0/health" \
 
 setup_haproxy() {
     local cfg_file="/etc/haproxy/haproxy.cfg"
 
     # download config file from S3 bucket
     cp $cfg_file $cfg_file.backup
-    s3_get ${bucket_name}/${haproxy_config} $cfg_file
+    s3_get $BUCKET_NAME/$HAPROXY_CONFIG $cfg_file
     
     # Update config file with IPs
-    sed -i "s/\$${lls_main_ip}/${lls_main_ip}/" $cfg_file
-    sed -i "s/\$${lls_backup_ip}/${lls_backup_ip}/" $cfg_file
+    sed -i "s/\$${lls_main_ip}/$LLS_MAIN_IP/" $cfg_file
+    sed -i "s/\$${lls_backup_ip}/$LLS_BACKUP_IP/" $cfg_file
 
     # This command allows haproxy to work
     setsebool -P haproxy_connect_any 1
@@ -128,20 +144,26 @@ setup_keepalived() {
     local notify_master="/etc/keepalived/notify_master.sh"
 
     # download notify_master script from S3 bucket and render script
-    s3_get ${bucket_name}/${notify_master} $notify_master true
-    sed -i "s/\$${vip}/${haproxy_vip}/" $notify_master
+    s3_get $BUCKET_NAME/$NOTIFY_MASTER $notify_master true
+    sed -i "s/\$${vip}/$HAPROXY_VIP/" $notify_master
 
     # download config file from S3 bucket
     cp $cfg_file $cfg_file.backup
-    s3_get ${bucket_name}/${keepalived_config} $cfg_file
+    s3_get $BUCKET_NAME/$KEEPALIVED_CONFIG $cfg_file
     
     # Update config file
     sed -i "s/\$${state}/$${KA_STATE}/" $cfg_file
     sed -i "s/\$${priority}/$${KA_PRIORITY}/" $cfg_file
     sed -i "s/\$${peer_ip}/$${KA_PEER_IP}/" $cfg_file
-    sed -i "s:\$${vip_cidr}:${haproxy_vip_cidr}:" $cfg_file
+    sed -i "s:\$${vip_cidr}:$HAPROXY_VIP_CIDR:" $cfg_file
 
     systemctl enable --now keepalived
+}
+
+setup_ssm() {
+    yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
 }
 
 set -x
@@ -165,26 +187,31 @@ cd $INSTALL_DIR
 yum update -y
 yum install -y haproxy keepalived nc
 
-if [[ "${cloudwatch_enable}" == "true" ]]
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
     setup_cloudwatch
+fi
+
+if [[ "$AWS_SSM_ENABLE" == "true" ]]
+then
+    setup_ssm
 fi
 
 # Figure out if this instance is master or backup
 MYIP=$(hostname -I)
 
-if [ $MYIP == "${haproxy_master_ip}" ]
+if [ $MYIP == "$HAPROXY_MASTER_IP" ]
 then
     log "Setting up master HAProxy Server..."
     KA_STATE="MASTER"
     KA_PRIORITY="101"
-    KA_PEER_IP="${haproxy_backup_ip}"
-elif [ $MYIP == "${haproxy_backup_ip}" ]
+    KA_PEER_IP="$HAPROXY_BACKUP_IP"
+elif [ $MYIP == "$HAPROXY_BACKUP_IP" ]
 then
     log "Setting up backup HAProxy Server..."
     KA_STATE="BACKUP"
     KA_PRIORITY="100"
-    KA_PEER_IP="${haproxy_master_ip}"
+    KA_PEER_IP="$HAPROXY_MASTER_IP"
 else
     log "ERROR: IP address of this instance $MYIP doesn't match Terraform configuration."
     exit 1

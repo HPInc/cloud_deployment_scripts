@@ -86,7 +86,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.05.25"
+  default     = "Windows_Server-2019-English-Full-Base-2022.07.13"
 }
 
 variable "dc_pcoip_agent_version" {
@@ -236,7 +236,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220610"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220711"
 }
 
 variable "cac_version" {
@@ -368,7 +368,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.05.25"
+  default     = "Windows_Server-2019-English-Full-Base-2022.07.13"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -403,7 +403,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.05.25"
+  default     = "Windows_Server-2019-English-Full-Base-2022.07.13"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -478,6 +478,26 @@ variable "customer_master_key_id" {
   default     = ""
 }
 
+variable "auto_logoff_enable" {
+  description = "Enable auto log-off for Workstations"
+  default     = true
+}
+
+variable "auto_logoff_minutes_idle_before_logoff" {
+  description = "Minimum idle time for Workstations before auto log-off, must be between 5 and 10000"
+  default     = 20
+}
+
+variable "auto_logoff_polling_interval_minutes" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 100"
+  default     = 5
+}
+
+variable "auto_logoff_cpu_utilization" {
+  description = "CPU utilization percentage, must be between 1 and 100"
+  default     = 20
+}
+
 variable "idle_shutdown_enable" {
   description = "Enable auto idle shutdown for Workstations"
   default     = true
@@ -491,6 +511,11 @@ variable "idle_shutdown_minutes_idle_before_shutdown" {
 variable "idle_shutdown_polling_interval_minutes" {
   description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
   default     = 15
+}
+
+variable "idle_shutdown_cpu_utilization" {
+  description = "CPU utilization percentage, must be between 1 and 100"
+  default     = 20
 }
 
 variable "cloudwatch_enable" {

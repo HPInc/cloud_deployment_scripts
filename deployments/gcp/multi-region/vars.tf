@@ -81,7 +81,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220513"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220712"
 }
 
 variable "dc_admin_password" {
@@ -174,7 +174,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220610"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220712"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -290,6 +290,26 @@ variable "enable_workstation_public_ip" {
   default     = false
 }
 
+variable "auto_logoff_enable" {
+  description = "Enable auto log-off for Workstations"
+  default     = true
+}
+
+variable "auto_logoff_minutes_idle_before_logoff" {
+  description = "Minimum idle time for Workstations before auto log-off, must be between 5 and 10000"
+  default     = 20
+}
+
+variable "auto_logoff_polling_interval_minutes" {
+  description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 100"
+  default     = 5
+}
+
+variable "auto_logoff_cpu_utilization" {
+  description = "CPU utilization percentage, must be between 1 and 100"
+  default     = 20
+}
+
 variable "idle_shutdown_enable" {
   description = "Enable auto idle shutdown for Workstations"
   default     = true
@@ -303,6 +323,11 @@ variable "idle_shutdown_minutes_idle_before_shutdown" {
 variable "idle_shutdown_polling_interval_minutes" {
   description = "Polling interval for checking CPU utilization to determine if machine is idle, must be between 1 and 60"
   default     = 15
+}
+
+variable "idle_shutdown_cpu_utilization" {
+  description = "CPU utilization percentage, must be between 1 and 100"
+  default     = 20
 }
 
 variable "win_gfx_instance_count_list" {
@@ -337,7 +362,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220513"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220712"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -367,7 +392,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220513"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20220712"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -407,7 +432,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220519"
+  default     = "projects/centos-cloud/global/images/centos-7-v20220719"
 }
 
 variable "centos_std_instance_count_list" {
@@ -432,7 +457,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220519"
+  default     = "projects/centos-cloud/global/images/centos-7-v20220719"
 }
 
 variable "centos_admin_user" {

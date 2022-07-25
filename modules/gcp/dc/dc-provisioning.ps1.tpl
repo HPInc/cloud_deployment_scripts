@@ -1,20 +1,26 @@
-# Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 # Make sure this file has Windows line endings
 
+##### Template Variables #####
+$BUCKET_NAME                 = "${bucket_name}"
+$DOMAIN_NAME                 = "${domain_name}"
+$GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
 $KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
+$OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -24,7 +30,7 @@ $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("safe_mode_admin_password", "${safe_mode_admin_password}")
+$DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -48,14 +54,14 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
 
 function Setup-Ops {
     "################################################################"
-    "Running Ops Agent setup script from gs://${bucket_name}/${ops_setup_script} "
+    "Running Ops Agent setup script from gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "
     "################################################################"
     if (Test-Path "C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml") {
         "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
     } else {
-        Retry -Action {gsutil cp gs://${bucket_name}/${ops_setup_script} "C:\Teradici\"}
+        Retry -Action {gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "C:\Teradici\"}
         
-        powershell "C:\Teradici\${ops_setup_script}" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
+        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
                                                      "C:\Teradici\provisioning.log"
                                                     
     }
@@ -85,14 +91,14 @@ function Decrypt-Credentials {
     try {
         "--> Decrypting safe_mode_admin_password..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${safe_mode_admin_password}")
+        $resource.Add("ciphertext", "$SAFE_MODE_ADMIN_PASSWORD")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."safe_mode_admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
 
         "--> Decrypting pcoip_registration_code..."
         $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${pcoip_registration_code}")
+        $resource.Add("ciphertext", "$PCOIP_REGISTRATION_CODE")
         $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
         $credsB64 = $response."plaintext"
         $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
@@ -175,20 +181,20 @@ function PCoIP-Agent-Register {
 
 Start-Transcript -path $LOG_FILE -append
 
-if ([System.Convert]::ToBoolean("${gcp_ops_agent_enable}")) {
+if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
     Setup-Ops
 } 
 
 "--> Script running as user '$(whoami)'."
 
-if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
+if ([string]::IsNullOrWhiteSpace("$KMS_CRYPTOKEY_ID")) {
     "--> Script is not using encryption for secrets."
 } else {
-    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
+    "--> Script is using encryption key $KMS_CRYPTOKEY_ID for secrets."
     Decrypt-Credentials
 }
 
-$DomainName = "${domain_name}"
+$DomainName = "$DOMAIN_NAME"
 $DomainMode = "7"
 $ForestMode = "7"
 $DatabasePath = "C:\Windows\NTDS"

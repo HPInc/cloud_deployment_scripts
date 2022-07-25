@@ -47,6 +47,7 @@ resource "google_storage_bucket_object" "win-gfx-provisioning-script" {
       pcoip_registration_code     = var.pcoip_registration_code,
       teradici_download_token     = var.teradici_download_token,
 
+      idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization,
       idle_shutdown_enable                       = var.idle_shutdown_enable,
       idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown,
       idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes,

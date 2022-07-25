@@ -26,6 +26,7 @@ resource "aws_s3_object" "cas-mgr-provisioning-script" {
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       aws_region                   = var.aws_region,
+      aws_ssm_enable               = var.aws_ssm_enable,
       bucket_name                  = var.bucket_name,
       cas_mgr_admin_password       = var.cas_mgr_admin_password,
       cas_mgr_aws_credentials_file = var.cas_mgr_aws_credentials_file,

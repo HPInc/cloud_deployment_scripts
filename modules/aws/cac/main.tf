@@ -60,6 +60,7 @@ resource "aws_s3_object" "cac-provisioning-script" {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
       aws_region                  = var.aws_region,
+      aws_ssm_enable              = var.aws_ssm_enable,
       bucket_name                 = var.bucket_name,
       cac_extra_install_flags     = var.cac_extra_install_flags,
       cac_version                 = var.cac_version,

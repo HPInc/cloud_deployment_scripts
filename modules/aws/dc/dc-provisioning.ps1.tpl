@@ -1,24 +1,33 @@
-# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 # Make sure this file has Windows line endings
 
+##### Template Variables #####
+$AWS_SSM_ENABLE              = "${aws_ssm_enable}"
 $BUCKET_NAME                 = "${bucket_name}"
+$CLOUDWATCH_ENABLE           = "${cloudwatch_enable}"
+$CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
+$DOMAIN_NAME                 = "${domain_name}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
+
+$AWS_SSM_URL       = "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe"
+$AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
 
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("safe_mode_admin_password", "${safe_mode_admin_password}")
+$DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -44,22 +53,22 @@ function Setup-CloudWatch {
     "################################################################"
     "Setting Up AWS CloudWatch..."
     "################################################################"
-    Read-S3Object -BucketName $BUCKET_NAME -Key ${cloudwatch_setup_script} -File ${cloudwatch_setup_script}
-    powershell .\${cloudwatch_setup_script} C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
+    Read-S3Object -BucketName $BUCKET_NAME -Key $CLOUDWATCH_SETUP_SCRIPT -File $CLOUDWATCH_SETUP_SCRIPT
+    powershell .\$CLOUDWATCH_SETUP_SCRIPT C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
                                             C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
 }
 
 function Decrypt-Credentials {
     try {
         "--> Decrypting safe_mode_admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("${safe_mode_admin_password}")
+        $ByteAry = [System.Convert]::FromBase64String("$SAFE_MODE_ADMIN_PASSWORD")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
         $DATA."safe_mode_admin_password" = $StreamRead.ReadToEnd()
 
         "--> Decrypting pcoip_registration_code..."
-        $ByteAry = [System.Convert]::FromBase64String("${pcoip_registration_code}")
+        $ByteAry = [System.Convert]::FromBase64String("$PCOIP_REGISTRATION_CODE")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
         $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
         $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
@@ -142,6 +151,22 @@ function PCoIP-Agent-Register {
     "--> PCoIP agent registered successfully."
 }
 
+function Install-SSM {
+    "################################################################"
+    "Installing AWS Session Manager agent..."
+    "################################################################"
+    $wc = New-Object System.Net.WebClient
+
+    "--> Downloading AWS Session Manager agent from $AWS_SSM_URL..."
+    Retry -Action {$wc.DownloadFile($AWS_SSM_URL, $AWS_SSM_INSTALLER)}
+
+    "--> Installing AWS Session Manager agent..."
+    Start-Process -FilePath $AWS_SSM_INSTALLER -ArgumentList "/S /nopostreboot _?$AWS_SSM_INSTALLER" -PassThru -Wait
+
+    "--> AWS Session Manager agent installed successfully."
+    $global:restart = $true
+}
+
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
 # SSM agent creates ssm-user account on the managed node when SSM agent starts, 
@@ -149,7 +174,8 @@ Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 # To connect to domain controller using SSM, we create ssm-user for the SSM agent. 
 # More info can be found at https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html
 
-if ([System.Convert]::ToBoolean("${aws_ssm_enable}")) {
+if ([System.Convert]::ToBoolean("$AWS_SSM_ENABLE")) {
+    Install-SSM
     "================================================================"
     "Creating Local Account ssm-user For AWS Session Manager..."
     "================================================================"
@@ -158,18 +184,18 @@ if ([System.Convert]::ToBoolean("${aws_ssm_enable}")) {
     net localgroup "Administrators" "ssm-user" /add
 } 
 
-if ([System.Convert]::ToBoolean("${cloudwatch_enable}")) {
+if ([System.Convert]::ToBoolean("$CLOUDWATCH_ENABLE")) {
     Setup-CloudWatch
 } 
 
-if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
+if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
     "--> Script is not using encryption for secrets."
 } else {
-    "--> Script is using encryption key ${customer_master_key_id} for secrets."
+    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
     Decrypt-Credentials
 }
 
-$DomainName = "${domain_name}"
+$DomainName = "$DOMAIN_NAME"
 $DomainMode = "7"
 $ForestMode = "7"
 $DatabasePath = "C:\Windows\NTDS"

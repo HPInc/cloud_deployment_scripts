@@ -1,16 +1,30 @@
-# Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 #!/bin/bash
 
+##### Template Variables #####
+AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
+BUCKET_NAME=${bucket_name}
+CAS_MGR_ADMIN_PASSWORD=${cas_mgr_admin_password}
+CAS_MGR_AWS_CREDENTIALS_FILE=${cas_mgr_aws_credentials_file}
+CAS_MGR_DEPLOYMENT_SA_FILE=${cas_mgr_deployment_sa_file}
+CAS_MGR_SETUP_SCRIPT=${cas_mgr_setup_script}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
+PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
+
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 CAS_MGR_DEPLOYMENT_KEY_NAME="terraform-key"
 CAS_MGR_DEPLOYMENT_NAME="terraform-deployment"
 CAS_MGR_INSTALL_LOG="/var/log/teradici/cas-mgr-install.log"
-CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/${teradici_download_token}/cas-manager/cfg/setup/bash.rpm.sh"
+CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cas-manager/cfg/setup/bash.rpm.sh"
 
 INSTALL_DIR="/root"
 cd $INSTALL_DIR
@@ -72,12 +86,12 @@ setup_cloudwatch(){
 
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://${bucket_name}/${cloudwatch_setup_script} ." \
-              "--> ERROR: Failed to download CloudWatch setup script from s3://${bucket_name}/${cloudwatch_setup_script}."
-        chmod +x ${cloudwatch_setup_script}
-        dos2unix ${cloudwatch_setup_script}
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT."
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
-        . ${cloudwatch_setup_script} ${aws_region} \
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
             $LOG_FILE                                   "[%a %b %d %H:%M:%S %Z %Y]" \
             "/var/log/cloud-init-output.log"            "at %a, %d %b %Y %H:%M:%S %z." \
             "/var/log/messages"                         "%b %d %H:%M:%S" \
@@ -90,35 +104,33 @@ get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    if [ "${cas_mgr_aws_credentials_file}" ]
+    if [ "$CAS_MGR_AWS_CREDENTIALS_FILE" ]
     then
         retry 720 `# 720 retries` \
               10  `# 10s interval` \
-              "aws s3 cp s3://${bucket_name}/${cas_mgr_aws_credentials_file} $INSTALL_DIR" \
-              "--> ERROR: Failed to download AWS credentials file from bucket ${bucket_name}."
+              "aws s3 cp s3://$BUCKET_NAME/$CAS_MGR_AWS_CREDENTIALS_FILE $INSTALL_DIR" \
+              "--> ERROR: Failed to download AWS credentials file from bucket $BUCKET_NAME."
     fi
 
-    if [[ -z "${customer_master_key_id}" ]]
+    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
     then
+        CAS_MGR_GUI_ADMIN_PASSWORD=$CAS_MGR_ADMIN_PASSWORD
         log "--> Script is not using encryption for secrets."
 
-        CAS_MGR_GUI_ADMIN_PASSWORD=${cas_mgr_admin_password}
-        PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
-
     else
-        log "--> Script is using encryption key: ${customer_master_key_id}"
+        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
 
         log "--> Decrypting CAS Manager GUI Administrator password..."
-        CAS_MGR_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${cas_mgr_admin_password}" | base64 -d) --output text --query Plaintext | base64 -d)
+        CAS_MGR_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$CAS_MGR_ADMIN_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
 
         log "--> Decrypting PCoIP registration code..."
-        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region ${aws_region} --ciphertext-blob fileb://<(echo "${pcoip_registration_code}" | base64 -d) --output text --query Plaintext | base64 -d)
+        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$PCOIP_REGISTRATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
 
-        if [ "${cas_mgr_aws_credentials_file}" ]
+        if [ "$CAS_MGR_AWS_CREDENTIALS_FILE" ]
         then
             log "--> Decrypting AWS Service Account credentials file..."
-            aws kms decrypt --region ${aws_region} --ciphertext-blob "fileb://$INSTALL_DIR/${cas_mgr_aws_credentials_file}" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/${cas_mgr_aws_credentials_file}.decrypted"
-            mv "${cas_mgr_aws_credentials_file}.decrypted" "$INSTALL_DIR/${cas_mgr_aws_credentials_file}"
+            aws kms decrypt --region $AWS_REGION --ciphertext-blob "fileb://$INSTALL_DIR/$CAS_MGR_AWS_CREDENTIALS_FILE" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/$CAS_MGR_AWS_CREDENTIALS_FILE.decrypted"
+            mv "$CAS_MGR_AWS_CREDENTIALS_FILE.decrypted" "$INSTALL_DIR/$CAS_MGR_AWS_CREDENTIALS_FILE"
         fi
     fi
 
@@ -196,22 +208,22 @@ cas_mgr_setup() {
 
     retry 720 `# 720 retries` \
           10  `# 10s interval` \
-          "aws s3 cp s3://${bucket_name}/${cas_mgr_setup_script} $INSTALL_DIR" \
-          "--> ERROR: Failed to download CAS Manager setup script from s3://${bucket_name}/${cas_mgr_setup_script}."
+          "aws s3 cp s3://$BUCKET_NAME/$CAS_MGR_SETUP_SCRIPT $INSTALL_DIR" \
+          "--> ERROR: Failed to download CAS Manager setup script from s3://$BUCKET_NAME/$CAS_MGR_SETUP_SCRIPT."
 
-    dos2unix $INSTALL_DIR/${cas_mgr_setup_script}
-    chmod +x $INSTALL_DIR/${cas_mgr_setup_script}
+    dos2unix $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT
+    chmod +x $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT
 
-    if [ "${cas_mgr_aws_credentials_file}" ]
+    if [ "$CAS_MGR_AWS_CREDENTIALS_FILE" ]
     then
-        dos2unix $INSTALL_DIR/${cas_mgr_aws_credentials_file}
-        chmod 600 $INSTALL_DIR/${cas_mgr_aws_credentials_file}
-        optional_args=$optional_args"--aws_key $INSTALL_DIR/${cas_mgr_aws_credentials_file}"
+        dos2unix $INSTALL_DIR/$CAS_MGR_AWS_CREDENTIALS_FILE
+        chmod 600 $INSTALL_DIR/$CAS_MGR_AWS_CREDENTIALS_FILE
+        optional_args=$optional_args"--aws_key $INSTALL_DIR/$CAS_MGR_AWS_CREDENTIALS_FILE"
     fi
 
     log "--> Running CAS Manager setup script with the following options:"
     log "  --deployment_name $CAS_MGR_DEPLOYMENT_NAME"
-    log "  --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file}"
+    log "  --key_file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE"
     log "  --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME"
     log "  --password <CAS Manager GUI Administrator Password>"
     log "  --reg_code <PCoIP Registration Code>"
@@ -219,9 +231,9 @@ cas_mgr_setup() {
 
     set +x
     PYTHONWARNINGS="ignore:Unverified HTTPS request" \
-      $INSTALL_DIR/${cas_mgr_setup_script} \
+      $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT \
       --deployment_name $CAS_MGR_DEPLOYMENT_NAME \
-      --key_file $INSTALL_DIR/${cas_mgr_deployment_sa_file} \
+      --key_file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE \
       --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME \
       --password $CAS_MGR_GUI_ADMIN_PASSWORD \
       --reg_code $PCOIP_REGISTRATION_CODE \
@@ -234,7 +246,7 @@ cas_mgr_setup() {
         exit 1
     fi
 
-    if [ ! -f "$INSTALL_DIR/${cas_mgr_deployment_sa_file}" ]
+    if [ ! -f "$INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE" ]
     then
         log "--> ERROR: CAS Manager Deployment service account key not created. Exiting provisioning script..."
         exit 1
@@ -242,26 +254,26 @@ cas_mgr_setup() {
 }
 
 upload_dsa_key() {
-    if [[ "${customer_master_key_id}" ]]
+    if [[ "$CUSTOMER_MASTER_KEY_ID" ]]
     then
-        log "--> Encrypting Deployment Service Account key with ${customer_master_key_id}"
+        log "--> Encrypting Deployment Service Account key with $CUSTOMER_MASTER_KEY_ID"
 
-        mv $INSTALL_DIR/${cas_mgr_deployment_sa_file} $INSTALL_DIR/${cas_mgr_deployment_sa_file}.orig
+        mv $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE.orig
 
         aws kms encrypt \
-            --region ${aws_region} \
-            --key-id ${customer_master_key_id} \
-            --plaintext fileb://$INSTALL_DIR/${cas_mgr_deployment_sa_file}.orig \
+            --region $AWS_REGION \
+            --key-id $CUSTOMER_MASTER_KEY_ID \
+            --plaintext fileb://$INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE.orig \
             --output text \
-            --query CiphertextBlob | base64 -d > $INSTALL_DIR/${cas_mgr_deployment_sa_file}
+            --query CiphertextBlob | base64 -d > $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
     fi
 
-    log "--> Uploading Deployment Service Account Key to bucket ${bucket_name}..."
+    log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
 
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "aws s3 cp $INSTALL_DIR/${cas_mgr_deployment_sa_file} s3://${bucket_name}/" \
-          "--> ERROR: Failed to upload Deployment Service Account Key to bucket ${bucket_name}"
+          "aws s3 cp $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE s3://$BUCKET_NAME/" \
+          "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
 
     if [ $? -ne 0 ]
     then
@@ -270,6 +282,11 @@ upload_dsa_key() {
     fi
 }
 
+setup_ssm() {
+    yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+}
 
 if [[ ! -f "$LOG_FILE" ]]
 then
@@ -287,9 +304,14 @@ exec &>>$LOG_FILE
 log "$(date) Running $0 as $(whoami)..."
 install_prereqs
 
-if [[ "${cloudwatch_enable}" == "true" ]]
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
     setup_cloudwatch
+fi
+
+if [[ "$AWS_SSM_ENABLE" == "true" ]]
+then
+    setup_ssm
 fi
 
 get_credentials
