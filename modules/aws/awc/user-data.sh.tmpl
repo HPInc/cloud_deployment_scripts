@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Teradici Corporation
+# © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -31,8 +31,8 @@ cd $INSTALL_DIR
 
 if [[ ! -f "${provisioning_script}" ]]
 then
-    apt-get -qq update
-    apt install -y dos2unix unzip
+    yum -y update
+    yum -y install dos2unix unzip
 
     if [[ ! $(which aws) ]]
     then
@@ -79,4 +79,3 @@ log "--> Executing provisioning script..."
 . ${provisioning_script}
 
 log "--> $0 finished."
-

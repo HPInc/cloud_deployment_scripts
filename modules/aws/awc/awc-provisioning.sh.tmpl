@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+# © Copyright 2022 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -11,36 +11,31 @@ AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AWS_REGION=${aws_region}
 AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
-CAC_EXTRA_INSTALL_FLAGS=${cac_extra_install_flags}
-CAC_VERSION=${cac_version}
+AWC_EXTRA_INSTALL_FLAGS=${awc_extra_install_flags}
 CAS_MGR_DEPLOYMENT_SA_FILE=${cas_mgr_deployment_sa_file}
 CAS_MGR_INSECURE=${cas_mgr_insecure}
 CAS_MGR_SCRIPT=${cas_mgr_script}
 CAS_MGR_URL=${cas_mgr_url}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+COMPUTERS_DN=${computers_dn}
 CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
+LDAPS_CERT_FILENAME=${ldaps_cert_filename}
 LLS_IP=${lls_ip}
-SSL_CERT=${ssl_cert}
-SSL_KEY=${ssl_key}
+TLS_CERT=${tls_cert}
+TLS_KEY=${tls_key}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
-
+USERS_DN=${users_dn}
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
 
-CAC_BIN_PATH="/usr/sbin/cloud-access-connector"
-CAC_FILENAME="cloud-access-connector_$CAC_VERSION_Linux.tar.gz"
-CAC_INSTALL_LOG="/var/log/teradici/cac-install.log"
-CAC_LOCATION_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cloud-access-connector/raw/names/cloud-access-connector-linux-tgz/versions/$CAC_VERSION"
-CAC_TOKEN_FILE=$PROVISIONING_DIR/cac_token
-cd $PROVISIONING_DIR
-
-PCOIP_NETWORK_CONF_FILE="/etc/sysctl.d/01-pcoip-cac-network.conf"
-
-export DEBIAN_FRONTEND=noninteractive
+AWC_BIN_PATH="/usr/local/bin/cas-connector"
+AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cas-manager-beta/cfg/setup/bash.rpm.sh"
+AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
+CONNECTOR_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 
 log() {
     local message="$1"
@@ -73,9 +68,9 @@ retry() {
 }
 
 install_prereqs() {
-    log "--> Installing dos2unix, python3..."
-    apt-get -qq update
-    apt install -y dos2unix python3 
+    log "--> Installing dos2unix, python3, firewalld..."
+    dnf update -y
+    dnf install -y dos2unix python3 firewalld
 
     if [ $? -ne 0 ]
     then
@@ -96,18 +91,43 @@ setup_cloudwatch(){
         chmod +x $CLOUDWATCH_SETUP_SCRIPT
         dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
+        instance_id=$(retry 3 `#3 retries` \
+                            5 `# 5s interval` \
+                            "curl http://169.254.169.254/latest/meta-data/instance-id" \
+                            "--> ERROR: Failed to get the instance id.")
+
+        instance_name=$(retry 3 `#3 retries` \
+                              5 `# 5s interval` \
+                              "aws ec2 describe-tags --region $AWS_REGION --filters 'Name=resource-id,Values=$instance_id' 'Name=key,Values=Name' --output text | cut -f5" \
+                              "--> ERROR: Failed to get the instance name.")
+
+        local container_logs=""
+        log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
+
+        if [[ ! $instance_name == *"awc-0" ]]
+        then
+            unset log_list[0]
+        fi
+
+        for log_file in $${log_list[@]}
+        do
+            container_logs=$container_logs"/opt/teradici/casc/logs/k3s.connector.$log_file.log \"%b %d %H:%M:%S\" "
+        done
+
         . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
-            $LOG_FILE                           "[%a %b %d %H:%M:%S %Z %Y]" \
-            "/var/log/cloud-init-output.log"    "at %a, %d %b %Y %H:%M:%S %z." \
-            "/var/log/syslog"                   "%b %d %H:%M:%S" \
-            "/var/log/teradici/cac-install.log" 'time=\"%Y-%m-%dT%H:%M:%SZ\"'
+            $LOG_FILE                         "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/cloud-init-output.log"  "at %a, %d %b %Y %H:%M:%S %z." \
+            "/var/log/messages"               "%b %d %H:%M:%S" \
+            $AWC_INSTALL_LOG                  "%b %d %H:%M:%S" \
+            "/var/log/teradici/user-data.log" "%b %d %H:%M:%S" \
+            $container_logs
     fi
 }
 
 get_credentials() {
     # In some cases, the CAS Manager Deployment Service Account key is generated
-    # by a new CAS Manager VM that is being created in parallel as the CAC. Loop
-    # until the file is found in the storage bucket.
+    # by a new CAS Manager VM that is being created in parallel as the CAS
+    # Connector. Loop until the file is found in the storage bucket.
 
     retry 120 `# 120 retries` \
           60  `# 60s interval` \
@@ -117,7 +137,8 @@ get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]; then
+    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
+    then
         log "--> Script is not using encryption for secrets."
 
     else
@@ -133,8 +154,8 @@ get_credentials() {
     set -x
 }
 
-get_cac_token() {
-    log "--> Retrieving connector token before CAC install..."
+get_connector_token() {
+    log "--> Retrieving connector token before Anyware Connector install..."
 
     local args=""
 
@@ -149,17 +170,17 @@ get_cac_token() {
     dos2unix $PROVISIONING_DIR/$CAS_MGR_SCRIPT
     dos2unix $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
 
-    # Set CAC_TOKEN variable using the script's output
+    # Set CONNECTOR_TOKEN variable using the script's output
     if [ "$CAS_MGR_INSECURE" ]
     then
         args="--insecure"
     fi
 
-    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/$CAS_MGR_SCRIPT $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE --url $CAS_MGR_URL --out $CAC_TOKEN_FILE $args
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/$CAS_MGR_SCRIPT $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE --url $CAS_MGR_URL --out $CONNECTOR_TOKEN_FILE $args
     set +x
-    CAC_TOKEN=`cat $CAC_TOKEN_FILE`
+    CONNECTOR_TOKEN=`cat $CONNECTOR_TOKEN_FILE`
     set -x
-    rm $CAC_TOKEN_FILE
+    rm $CONNECTOR_TOKEN_FILE
 
     # Check and exit provisioning script if retrieving connector token failed
     if [ $? -ne 0 ]; then
@@ -175,8 +196,8 @@ check_required_vars() {
         missing_vars="true"
     fi
 
-    if [[ -z "$CAC_TOKEN" ]]; then
-        log "--> ERROR: Missing Cloud Access Connector Token."
+    if [[ -z "$CONNECTOR_TOKEN" ]]; then
+        log "--> ERROR: Missing Anyware Connector Token."
         missing_vars="true"
     fi
     set -x
@@ -187,36 +208,50 @@ check_required_vars() {
     fi
 }
 
+configure_firewall(){
+    # Ran into the following dbus error when using firewall-cmd. Using firewall-offline-cmd as a workaround.
+    # ERROR:dbus.proxies:Introspect error on :1.30:/org/fedoraproject/FirewallD1: dbus.exceptions.DBusException: org.freedesktop.DBus.Error.NoReply
+
+    firewall-offline-cmd --set-default-zone trusted
+    firewall-offline-cmd --add-port=6443/tcp # virtual network flannel
+    firewall-offline-cmd --add-port=4172/tcp # PCoIP SG port
+    firewall-offline-cmd --add-port=4172/udp # PCoIP SG port
+    firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 # This subnet is for the pods
+    firewall-offline-cmd --zone=trusted --add-source=10.43.0.0/16 # This subnet is for the services
+
+    systemctl enable firewalld
+    systemctl start firewalld
+}
+
 check_connector_installed() {
-    if [[ -f "$CAC_BIN_PATH" ]]; then
-        log "--> Connector already installed. Skipping provisioning script..."
+    if [[ -f "$AWC_BIN_PATH" ]]; then
+        log "--> Anyware Connector already installed. Skipping provisioning script..."
         exit 0
     fi
 }
 
-config_network() {
-    if [[ ! -f $PCOIP_NETWORK_CONF_FILE ]]; then
-        log "--> Configuring network..."
-        # Note the indented HEREDOC lines must be preceded by tabs, not spaces
-        cat <<- EOF > $PCOIP_NETWORK_CONF_FILE
-			# System Control network settings for CAC
-			net.core.rmem_max=160000000
-			net.core.rmem_default=160000000
-			net.core.wmem_max=160000000
-			net.core.wmem_default=160000000
-			net.ipv4.udp_mem=120000 240000 600000
-			net.core.netdev_max_backlog=2000
-			EOF
-
-        sysctl -p $PCOIP_NETWORK_CONF_FILE
-    fi
+add_cas_mgr_repo() {
+    log "--> Adding CAS Manager repo..."
+    curl -1sLf $AWC_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
+    dnf repolist --enabled teradici-cas-manager*
 }
 
-download_cac() {
-    log "--> Downloading CAC installer..."
-    cac_installer_url="$CAC_LOCATION_URL/$CAC_FILENAME"
-    curl -L $cac_installer_url -o $PROVISIONING_DIR/cloud-access-connector.tar.gz
-    tar xzvf $PROVISIONING_DIR/cloud-access-connector.tar.gz -C /
+config_selinux() {
+    log "--> Configuring SE Linux..."
+    dnf install -y selinux-policy-base container-selinux
+    dnf install -y https://github.com/k3s-io/k3s-selinux/releases/download/v1.1.stable.1/k3s-selinux-1.1-1.el8.noarch.rpm
+    dnf install -y cas-manager-selinux
+}
+
+install_awc() {
+    log "--> Installing Anyware Connector..."
+    dnf install -y cas-connector 2>&1 | tee -a $AWC_INSTALL_LOG
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install Anyware Connector..."
+        exit 1
+    fi
 }
 
 wait_for_dc() {
@@ -225,17 +260,11 @@ wait_for_dc() {
     # Note: using the domain controller IP instead of the domain name for
     #       the host is more resilient.
 
-    log "--> Updating apt-get package list..."
+    log "--> Installing utility packages..."
     retry 5 `# 5 retries` \
           5 `# 5s interval` \
-          "apt-get -qq update" \
-          "--> ERROR: Failed to update apt-get package list."
-
-    log "--> Installing ldap_utils..."
-    retry 5 `# 5 retries` \
-          5 `# 5s interval` \
-          "apt-get -qq install ldap-utils" \
-          "--> ERROR: Failed to install ldap-utils."
+          "dnf -y install bind-utils nc openldap-clients" \
+          "--> ERROR: Failed to install utility packages."
 
     set +x
     log "--> Ensure AD account is available..."
@@ -250,7 +279,7 @@ wait_for_dc() {
     set -x
     # Check that the domain name can be resolved and that the LDAP port is accepting
     # connections. This could have been all done with the ldapwhoami command, but
-    # due to a number of occasional cac-installation issues, such as "domain
+    # due to a number of occasional Anyware Connector installation issues, such as "domain
     # controller unreachable" or "DNS error occurred" errors, check these explicitly
     # for logging and debug purposes.
     log "--> Ensure domain $DOMAIN_NAME can be resolved..."
@@ -262,8 +291,16 @@ wait_for_dc() {
     log "--> Ensure domain $DOMAIN_NAME port 636 is reacheable..."
     retry 120 `# 120 retries` \
           10  `# 10s interval` \
-          "netcat -vz $DOMAIN_NAME 636" \
+          "nc -vz $DOMAIN_NAME 636" \
           "--> ERROR: Falied to contact $DOMAIN_NAME:636."
+}
+
+download_ldaps_cert() {
+    log "--> Downloading LDAPS Cert..."
+    retry 10 `# 10 retries` \
+          10 `# 10s interval` \
+          "aws s3 cp s3://$BUCKET_NAME/$LDAPS_CERT_FILENAME $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download LDAPS Cert."
 }
 
 wait_for_lls() {
@@ -277,40 +314,44 @@ wait_for_lls() {
           "--> ERROR: Timed out trying to perform health check using endpoint $lls_health_check_url. Continuing..."
 }
 
-install_cac() {
-    log "--> Installing Cloud Access Connector..."
+configure_awc() {
+    log "--> Configuring Anyware Connector..."
     local args=""
 
-    log "--> Running command: $CAC_BIN_PATH install"
-    log "--> CAC install options:"
-    log "  -t <cac_token>"
+    log "--> Running command: $AWC_BIN_PATH configure"
+    log "--> Anyware Connector configure options:"
+    log "  --token <connector_token>"
     log "  --accept-policies"
+    log "  --computers-dn \"$COMPUTERS_DN\""
+    log "  --users-dn \"$USERS_DN\""
     log "  --sa-user <ad_service_account_username>"
     log "  --sa-password <ad_service_account_password>"
     log "  --domain $DOMAIN_NAME"
+    log "  --ldaps-ca-cert $PROVISIONING_DIR/$LDAPS_CERT_FILENAME"
     log "  --retrieve-agent-state true"
+    log "  --show-agent-state true"
     log "  --sync-interval 5"
     log "  --casm-url $CAS_MGR_URL"
-    log "  $CAC_EXTRA_INSTALL_FLAGS"
+    log "  $AWC_EXTRA_INSTALL_FLAGS"
 
     # Set pipefail option to return status of the connector install command
     set -o pipefail
 
-    if [ "$SSL_KEY" ]
+    if [ "$TLS_KEY" ]
     then
-        log "  --ssl-key <ssl_key>"
-        log "  --ssl-cert <ssl_cert>"
+        log "  --tls-key <tls_key>"
+        log "  --tls-cert <tls_cert>"
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://$BUCKET_NAME/$SSL_KEY $PROVISIONING_DIR" \
-              "--> ERROR: Failed to download ssl key from $BUCKET_NAME"
+              "aws s3 cp s3://$BUCKET_NAME/$TLS_KEY $PROVISIONING_DIR" \
+              "--> ERROR: Failed to download TLS key from $BUCKET_NAME"
         retry 3 `# 3 retries` \
               5 `# 5s interval` \
-              "aws s3 cp s3://$BUCKET_NAME/$SSL_CERT $PROVISIONING_DIR" \
-              "--> ERROR: Failed to download ssl cert from $BUCKET_NAME"
+              "aws s3 cp s3://$BUCKET_NAME/$TLS_CERT $PROVISIONING_DIR" \
+              "--> ERROR: Failed to download TLS cert from $BUCKET_NAME"
 
-        args=$args"--ssl-key $PROVISIONING_DIR/$SSL_KEY "
-        args=$args"--ssl-cert $PROVISIONING_DIR/$SSL_CERT "
+        args=$args"--tls-key $PROVISIONING_DIR/$TLS_KEY "
+        args=$args"--tls-cert $PROVISIONING_DIR/$TLS_CERT "
     else
         log "  --self-signed"
         args=$args"--self-signed "
@@ -330,20 +371,27 @@ install_cac() {
 
     set +x
     retry 10 `# 10 retries` \
-          10 `# 10s interval` \
-          "$CAC_BIN_PATH install \
-          -t $CAC_TOKEN \
-          --accept-policies \
-          --sa-user $AD_SERVICE_ACCOUNT_USERNAME \
-          --sa-password "$AD_SERVICE_ACCOUNT_PASSWORD" \
-          --domain $DOMAIN_NAME \
-          --retrieve-agent-state true \
-          --sync-interval 5 \
-          --casm-url $CAS_MGR_URL \
-          $CAC_EXTRA_INSTALL_FLAGS \
-          $args \
-          2>&1 | tee -a $CAC_INSTALL_LOG" \
-          "--> ERROR: Failed to install Cloud Access Connector."
+        10 `# 10s interval` \
+        "$AWC_BIN_PATH configure \
+        --debug \
+        --token $CONNECTOR_TOKEN \
+        --accept-policies \
+        --computers-dn \"$COMPUTERS_DN\" \
+        --users-dn \"$USERS_DN\" \
+        --sa-user \"$AD_SERVICE_ACCOUNT_USERNAME\" \
+        --sa-password \"$AD_SERVICE_ACCOUNT_PASSWORD\" \
+        --domain $DOMAIN_NAME \
+        --ldaps-ca-cert $PROVISIONING_DIR/$LDAPS_CERT_FILENAME \
+        --retrieve-agent-state true \
+        --show-agent-state true \
+        --sync-interval 5 \
+        --casm-url $CAS_MGR_URL \
+        --registry-password $TERADICI_DOWNLOAD_TOKEN \
+        $AWC_EXTRA_INSTALL_FLAGS \
+        $args \
+        2>&1 | tee -a $AWC_INSTALL_LOG" \
+        "--> ERROR: Failed to configure Anyware Connector."
+    set -x
 
     if [ $? -ne 0 ]
     then
@@ -351,14 +399,17 @@ install_cac() {
         exit 1
     fi
 
-    log "--> Successfully installed Cloud Access Connector."
-    
-    set -x
+    log "--> Successfully configured Anyware Connector."
 }
 
 setup_ssm() {
-    snap install amazon-ssm-agent --classic
-    snap start amazon-ssm-agent
+    yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+}
+
+cleanup() {
+    rm $PROVISIONING_DIR/$LDAPS_CERT_FILENAME
 }
 
 if [[ ! -f "$LOG_FILE" ]]
@@ -376,6 +427,8 @@ exec &>>$LOG_FILE
 
 log "$(date) Running $0 as $(whoami)..."
 
+cd $PROVISIONING_DIR
+
 install_prereqs
 
 if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
@@ -390,25 +443,31 @@ fi
 
 get_credentials
 
-get_cac_token
-
-check_required_vars
+configure_firewall
 
 check_connector_installed
 
-config_network
+add_cas_mgr_repo
 
-download_cac
+config_selinux
+
+install_awc
 
 wait_for_dc
+
+download_ldaps_cert
 
 if [ "$LLS_IP" ]
 then
     wait_for_lls
 fi
 
-install_cac
+get_connector_token
 
-docker service ls
+check_required_vars
+
+configure_awc
+
+cleanup
 
 log "--> Provisioning script completed successfully."
