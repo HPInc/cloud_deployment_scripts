@@ -12,6 +12,7 @@ $CLOUDWATCH_ENABLE           = "${cloudwatch_enable}"
 $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
+$LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
@@ -236,6 +237,23 @@ if (!(Test-Path $certStoreLoc)) {
     New-Item $certStoreLoc -Force
 }
 Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thumbprint -Destination $certStoreLoc;
+
+"================================================================"
+"Uploading LDAPS Cert to Bucket..."
+"================================================================"
+# Save LDAPS Cert as a Base64 encoded DER certificate
+$derCert = "C:\Teradici\LdapsCert.der"
+$pemCert = "C:\Teradici\LdapsCert.pem"
+$myCertLoc = 'cert:\LocalMachine\My\' + $thumbprint
+Export-Certificate -Cert $myCertLoc -FilePath $derCert -Type CERT
+certutil -encode $derCert $pemCert
+
+# Upload to S3 Bucket
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /quiet /passive
+Write-S3Object -BucketName $BUCKET_NAME -File $pemCert -Key $LDAPS_CERT_FILENAME
+
+Remove-Item -Path $derCert
+Remove-Item -Path $pemCert
 
 "================================================================"
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."
