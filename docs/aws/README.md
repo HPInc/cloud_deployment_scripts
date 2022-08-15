@@ -55,7 +55,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - for CAS deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
 - for deployments using CAS Manager as a Service, a CAS Manager Deployment Service Account is needed. Please see the [CAS Manager as a Service Setup])#cas-manager-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
-- if custom SSL key and certificates are required, the SSL key and certificate files are needed in PEM format.
+- if custom TLS key and certificates are required, the TLS key and certificate files are needed in PEM format.
 - Terraform v1.0 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### Selecting a Deployment
@@ -166,7 +166,7 @@ With `terraform.tfvars` customized
 2. run `terraform apply` to display the resources that will be created by Terraform
 3. answer `yes` to start creating the deployment
 
-A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Cloud Access Connectors (CACs) should register themselves with CAS Manager and show up in the Admin Console in CAS Manager.
+A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Anyware Connectors (AWCs) should register themselves with CAS Manager and show up in the Admin Console in CAS Manager.
 
 **Security Note**: The Domain Controller has been assigned a public IP address by default, so that Terraform can show the progress of setting up the Domain Controller. Access to this public IP address is limited by AWS security groups to the IP address of the Terraform host and any IP addresses specified in the `allowed_admin_cidrs` variable in `terraform.tfvars`. It is recommended that access to the Domain Controller is reviewed and modified to align with the security policies of the user.     
 
@@ -176,7 +176,7 @@ A typical deployment should take 15 to 30 minutes. When finished, Terraform will
 Go to the CAS Manager Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
 
 ### Start PCoIP Session
-Once the workstations have been added to be managed by CAS Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the Cloud Access Connector or Load Balancer, if one is configured, to start a PCoIP session.
+Once the workstations have been added to be managed by CAS Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the Anyware Connector or Load Balancer, if one is configured, to start a PCoIP session.
 
 ### Changing the deployment
 Terraform is a declarative language to describe the desired state of resources. A user can modify `terraform.tfvars` and run `terraform apply` again, and Terraform will try to only apply the changes needed to acheive the new state.
@@ -185,7 +185,7 @@ Terraform is a declarative language to describe the desired state of resources. 
 Run `terraform destroy` to remove all resources created by Terraform.
 
 **Note for deployments using the PCoIP License Server (all deployments with names ending in "lls")**
-Be sure to SSH into the PCoIP License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the activated PCoIP licenses will be lost.
+Be sure to SSH into the PCoIP License Server (LLS), possibly using a Anyware Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the activated PCoIP licenses will be lost.
 
 For more information on the LLS, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
 
