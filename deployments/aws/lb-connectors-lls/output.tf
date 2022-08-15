@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,15 +18,15 @@ output "lls-internal-ip" {
 }
 
 output "load-balancer-url" {
-  value = aws_lb.cac-alb.dns_name
+  value = aws_lb.awc-alb.dns_name
 }
 
-output "cac-internal-ip" {
-  value = module.cac.internal-ip
+output "awc-internal-ip" {
+  value = module.awc.internal-ip
 }
 
-output "cac-public-ip" {
-  value = module.cac.public-ip
+output "awc-public-ip" {
+  value = module.awc.public-ip
 }
 
 output "win-gfx-internal-ip" {

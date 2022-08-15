@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -52,15 +52,15 @@ resource "aws_subnet" "lls-subnet" {
   }
 }
 
-resource "aws_subnet" "cac-subnets" {
-  count = length(var.cac_subnet_cidr_list)
+resource "aws_subnet" "awc-subnets" {
+  count = length(var.awc_subnet_cidr_list)
 
-  cidr_block        = var.cac_subnet_cidr_list[count.index]
+  cidr_block        = var.awc_subnet_cidr_list[count.index]
   vpc_id            = aws_vpc.vpc.id
-  availability_zone = var.cac_zone_list[count.index]
+  availability_zone = var.awc_zone_list[count.index]
 
   tags = {
-    Name = "${local.prefix}${var.cac_subnet_name}-${var.cac_zone_list[count.index]}"
+    Name = "${local.prefix}${var.awc_subnet_name}-${var.awc_zone_list[count.index]}"
   }
 }
 
@@ -92,7 +92,7 @@ resource "aws_eip" "nat-ip" {
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat-ip.id
-  subnet_id     = aws_subnet.cac-subnets[0].id
+  subnet_id     = aws_subnet.awc-subnets[0].id
 
   tags = {
     Name = "${local.prefix}nat"
@@ -137,10 +137,10 @@ resource "aws_route_table_association" "rt-lls" {
   route_table_id = aws_route_table.private.id
 }
 
-resource "aws_route_table_association" "rt-cac" {
-  count = length(var.cac_subnet_cidr_list)
+resource "aws_route_table_association" "rt-awc" {
+  count = length(var.awc_subnet_cidr_list)
 
-  subnet_id      = aws_subnet.cac-subnets[count.index].id
+  subnet_id      = aws_subnet.awc-subnets[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
@@ -276,7 +276,7 @@ resource "aws_route53_resolver_endpoint" "outbound" {
   # minimum, config has 1 declared" without the second ip_address block with a
   # different subnet.
   ip_address {
-    subnet_id = aws_subnet.cac-subnets[0].id
+    subnet_id = aws_subnet.awc-subnets[0].id
   }
 
   tags = {
