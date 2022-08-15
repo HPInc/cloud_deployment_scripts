@@ -50,14 +50,14 @@ admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # cas_mgr_disk_size_gb  = "60"
 
 ##############################
-#   Cloud Access Connector   #
+#   Anyware Connector   #
 ##############################
-# cac_instance_type = "t2.xlarge"
-# cac_disk_size_gb  = "50"
+# awc_instance_type = "t2.xlarge"
+# awc_disk_size_gb  = "60"
 
-# Optional: Specify SSL certificate for Connector
-# ssl_key  = "/path/to/privkey.pem"
-# ssl_cert = "/path/to/fullchain.pem"
+# Optional: Specify TLS certificate for Anyware Connector
+# tls_key  = "/path/to/privkey.pem"
+# tls_cert = "/path/to/fullchain.pem"
 
 ####################
 #   Workstations   #

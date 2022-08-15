@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,8 +14,8 @@ locals {
   cas_mgr_aws_credentials_file = "cas-mgr-aws-credentials.ini"
   
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
-  cloudwatch_setup_deb_script = "cloudwatch_setup_deb.sh"
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
+  ldaps_cert_filename = "ldaps_cert.pem"
 }
 
 resource "aws_key_pair" "cas_admin" {
@@ -55,14 +55,6 @@ resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
 }
 
-resource "aws_s3_object" "cloudwatch-setup-deb-script" {
-  count = var.cloudwatch_enable ? 1 : 0
-
-  bucket = aws_s3_bucket.scripts.id
-  key    = local.cloudwatch_setup_deb_script
-  source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
-}
-
 resource "aws_s3_object" "cloudwatch-setup-win-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
@@ -87,6 +79,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name        = aws_s3_bucket.scripts.id
   subnet             = aws_subnet.dc-subnet.id
@@ -146,8 +139,8 @@ module "cas-mgr" {
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
-module "cac" {
-  source = "../../../modules/aws/cac"
+module "awc" {
+  source = "../../../modules/aws/awc"
 
   prefix = var.prefix
 
@@ -161,10 +154,13 @@ module "cac" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
-  zone_list           = [aws_subnet.cac-subnet.availability_zone]
-  subnet_list         = [aws_subnet.cac-subnet.id]
-  instance_count_list = [var.cac_instance_count]
+  zone_list           = [aws_subnet.awc-subnet.availability_zone]
+  subnet_list         = [aws_subnet.awc-subnet.id]
+  instance_count_list = [var.awc_instance_count]
 
   security_group_ids = [
     data.aws_security_group.default.id,
@@ -174,25 +170,24 @@ module "cac" {
   ]
 
   bucket_name   = aws_s3_bucket.scripts.id
-  instance_type = var.cac_instance_type
-  disk_size_gb  = var.cac_disk_size_gb
+  instance_type = var.awc_instance_type
+  disk_size_gb  = var.awc_disk_size_gb
 
-  ami_owner = var.cac_ami_owner
-  ami_name  = var.cac_ami_name
-  
-  cac_version             = var.cac_version
+  ami_owner = var.awc_ami_owner
+  ami_name  = var.awc_ami_name
+
   teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  ssl_key  = var.ssl_key
-  ssl_cert = var.ssl_cert
+  tls_key  = var.tls_key
+  tls_cert = var.tls_cert
 
-  cac_extra_install_flags = var.cac_extra_install_flags
+  awc_extra_install_flags = var.awc_extra_install_flags
 
   aws_ssm_enable          = var.aws_ssm_enable
   cloudwatch_enable       = var.cloudwatch_enable
-  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
 module "win-gfx" {
