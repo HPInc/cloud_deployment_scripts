@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Teradici Corporation
+ * © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,45 +8,45 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  cas_mgr_script = "get-cac-token.py"
+  cas_mgr_script = "get-connector-token.py"
   
   num_regions = length(var.gcp_region_list)
-  num_cacs    = length(flatten(
+  num_instances    = length(flatten(
     [ for i in range(local.num_regions):
       range(var.instance_count_list[i])
     ]
   ))
 
-  ssl_key_filename  = var.ssl_key  == "" ? "" : basename(var.ssl_key)
-  ssl_cert_filename = var.ssl_cert == "" ? "" : basename(var.ssl_cert)
+  tls_key_filename  = var.tls_key  == "" ? "" : basename(var.tls_key)
+  tls_cert_filename = var.tls_cert == "" ? "" : basename(var.tls_cert)
 }
 
-resource "google_storage_bucket_object" "get-cac-token-script" {
-  count = local.num_cacs == 0 ? 0 : 1
+resource "google_storage_bucket_object" "get-connector-token-script" {
+  count = local.num_instances == 0 ? 0 : 1
 
   bucket  = var.bucket_name
   name   = local.cas_mgr_script
   source = "${path.module}/${local.cas_mgr_script}"
 }
 
-resource "google_storage_bucket_object" "ssl-key" {
-  count = local.num_cacs == 0 ? 0 : var.ssl_key == "" ? 0 : 1
+resource "google_storage_bucket_object" "tls-key" {
+  count = local.num_instances == 0 ? 0 : var.tls_key == "" ? 0 : 1
 
   bucket = var.bucket_name
-  name   = local.ssl_key_filename
-  source = var.ssl_key
+  name   = local.tls_key_filename
+  source = var.tls_key
 }
 
-resource "google_storage_bucket_object" "ssl-cert" {
-  count = local.num_cacs == 0 ? 0 : var.ssl_cert == "" ? 0 : 1
+resource "google_storage_bucket_object" "tls-cert" {
+  count = local.num_instances == 0 ? 0 : var.tls_cert == "" ? 0 : 1
 
   bucket = var.bucket_name
-  name   = local.ssl_cert_filename
-  source = var.ssl_cert
+  name   = local.tls_cert_filename
+  source = var.tls_cert
 }
 
-module "cac-regional" {
-  source = "../../../modules/gcp/cac-regional"
+module "awc-regional" {
+  source = "../../../modules/gcp/awc-regional"
 
   count = local.num_regions
 
@@ -67,20 +67,22 @@ module "cac-regional" {
   domain_name                 = var.domain_name
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = var.ldaps_cert_filename
+  computers_dn                = var.computers_dn
+  users_dn                    = var.users_dn
 
-  ssl_key_filename  = local.ssl_key_filename
-  ssl_cert_filename = local.ssl_cert_filename
+  tls_key_filename  = local.tls_key_filename
+  tls_cert_filename = local.tls_cert_filename
 
-  cac_extra_install_flags = var.cac_extra_install_flags
+  awc_extra_install_flags = var.awc_extra_install_flags
 
   network_tags = var.network_tags
   subnet = var.subnet_list[count.index]
   external_pcoip_ip = var.external_pcoip_ip_list == [] ? "" : var.external_pcoip_ip_list[count.index]
-  enable_cac_external_ip = var.enable_cac_external_ip
+  enable_awc_external_ip = var.enable_awc_external_ip
 
-  cac_admin_user = var.cac_admin_user
-  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
-  cac_version             = var.cac_version
+  awc_admin_user = var.awc_admin_user
+  awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file
   teradici_download_token = var.teradici_download_token
 
   gcp_service_account = var.gcp_service_account
@@ -89,8 +91,8 @@ module "cac-regional" {
   ops_setup_script     = var.ops_setup_script
 
   depends_on = [
-    google_storage_bucket_object.ssl-key,
-    google_storage_bucket_object.ssl-cert,
-    google_storage_bucket_object.get-cac-token-script,
+    google_storage_bucket_object.tls-key,
+    google_storage_bucket_object.tls-cert,
+    google_storage_bucket_object.get-connector-token-script,
   ]
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,9 +21,14 @@ variable "cas_mgr_url" {
 }
 
 variable "cas_mgr_insecure" {
-  description = "Allow unverified SSL access to CAS Manager"
+  description = "Allow unverified TLS access to CAS Manager"
   type        = bool
   default     = false
+}
+
+variable "cas_mgr_deployment_sa_file" {
+  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
+  type        = string
 }
 
 variable "domain_name" {
@@ -61,89 +66,94 @@ variable "ad_service_account_password" {
   sensitive   = true
 }
 
+variable "ldaps_cert_filename" {
+  description = "Filename of Certificate used in LDAPS."
+  type        = string
+} 
+
+variable "computers_dn" {
+  description = "Base DN to search for computers within Active Directory."
+  type        = string
+}
+
+variable "users_dn" {
+  description = "Base DN to search for users within Active Directory."
+  type        = string
+}
+
 variable "bucket_name" {
   description = "Name of bucket to retrieve provisioning script."
   type        = string
 }
 
-variable "cas_mgr_deployment_sa_file" {
-  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
-  type        = string
-}
-
 variable "gcp_region" {
-  description = "GCP Region to deploy the Cloud Access Connectors"
+  description = "GCP Region to deploy the Anyware Connectors"
   type        = string
 }
 
 variable "subnet" {
-  description = "Subnet to deploy the Cloud Access Connectors"
+  description = "Subnet to deploy the Anyware Connectors"
   type        = string
 }
 
 variable "external_pcoip_ip" {
-  description = "External IP addresses to use to connect to the Cloud Access Connectors."
+  description = "External IP addresses to use to connect to the Anyware Connectors."
   default     = ""
 }
 
-variable "enable_cac_external_ip" {
+variable "enable_awc_external_ip" {
   description = "Enable external IP address assignment to each Connector"
   default     = false
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the Cloud Access Connector"
+  description = "Tags to be applied to the Anyware Connector"
   type        = list(string)
 }
 
 variable "instance_count" {
-  description = "Number of Cloud Access Connector instances to deploy"
+  description = "Number of Anyware Connector instances to deploy"
   default     = 1
 }
 
 variable "host_name" {
   description = "Name to give the host"
-  default     = "vm-cac"
+  default     = "vm-awc"
 }
 
 variable "machine_type" {
-  description = "Machine type for the Cloud Access Connector (min 4 GB RAM, 2 vCPUs)"
-  default     = "n1-standard-2"
+  description = "Machine type for the Anyware Connector (min 4 CPUs, 8 GB RAM)"
+  default     = "e2-custom-4-8192"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Connector (min 12 GB)"
-  default     = "50"
+  description = "Disk size (GB) of the Anyware Connector (min 60 GB)"
+  default     = "60"
 }
 
 variable "disk_image" {
-  description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts"
+  description = "Disk image for the Anyware Connector"
+  default     = "projects/rocky-linux-cloud/global/images/family/rocky-linux-8"
 }
 
-variable "cac_admin_user" {
-  description = "Username of the Cloud Access Connector Administrator"
+variable "awc_admin_user" {
+  description = "Username of the Anyware Connector Administrator"
   type        = string
 }
 
-variable "cac_admin_ssh_pub_key_file" {
-  description = "SSH public key for the Cloud Access Connector Administrator"
+variable "awc_admin_ssh_pub_key_file" {
+  description = "SSH public key for the Anyware Connector Administrator"
   type        = string
 
   validation {
-    condition = fileexists(var.cac_admin_ssh_pub_key_file)
-    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+    condition = fileexists(var.awc_admin_ssh_pub_key_file)
+    error_message = "The awc_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+variable "awc_extra_install_flags" {
+  description = "Additional flags for installing AWC"
   default     = ""
-}
-
-variable "cac_version" {
-  description = "Version of the Cloud Access Connector to install"
-  default     = "latest"
 }
 
 variable "teradici_download_token" {
@@ -161,13 +171,13 @@ variable "cas_mgr_script" {
   type        = string
 }
 
-variable "ssl_key_filename" {
-  description = "SSL private key for the Connector"
+variable "tls_key_filename" {
+  description = "TLS private key for the Connector"
   type        = string
 }
 
-variable "ssl_cert_filename" {
-  description = "SSL certificate for the Connector"
+variable "tls_cert_filename" {
+  description = "TLS certificate for the Connector"
   type        = string
 }
 

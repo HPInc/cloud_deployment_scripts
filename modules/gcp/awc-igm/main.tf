@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Teradici Corporation
+ * © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,10 +8,10 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  provisioning_script = "cac-provisioning.sh"
-  cas_mgr_script      = "get-cac-token.py"
+  provisioning_script = "awc-provisioning.sh"
+  cas_mgr_script      = "get-connector-token.py"
 
-  num_cacs    = length(flatten([for i in var.instance_count_list: range(i)]))
+  num_instances = length(flatten([for i in var.instance_count_list: range(i)]))
   num_regions = length(var.gcp_region_list)
 
   enable_public_ip    = var.external_pcoip_ip == "" ? [true] : []
@@ -32,8 +32,8 @@ locals {
     )[0] : null
 }
 
-resource "google_storage_bucket_object" "get-cac-token-script" {
-  count = local.num_cacs == 0 ? 0 : 1
+resource "google_storage_bucket_object" "get-awc-token-script" {
+  count = local.num_instances == 0 ? 0 : 1
 
   bucket = var.bucket_name
   name   = local.cas_mgr_script
@@ -42,14 +42,14 @@ resource "google_storage_bucket_object" "get-cac-token-script" {
 
 # This is needed so new VMs will be based on the same image in case the public
 # images gets updated
-data "google_compute_image" "cac-base-img" {
+data "google_compute_image" "awc-base-img" {
   project = local.disk_image_project
   family  = local.disk_image_family
   name    = local.disk_image_name
 }
 
-resource "google_storage_bucket_object" "cac-provisioning-script" {
-  count = local.num_cacs == 0 ? 0 : 1
+resource "google_storage_bucket_object" "awc-provisioning-script" {
+  count = local.num_instances == 0 ? 0 : 1
 
   bucket  = var.bucket_name
   name    = local.provisioning_script
@@ -58,43 +58,45 @@ resource "google_storage_bucket_object" "cac-provisioning-script" {
     {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
+      awc_extra_install_flags     = var.awc_extra_install_flags,
       bucket_name                 = var.bucket_name,
-      cac_extra_install_flags     = var.cac_extra_install_flags,
-      cac_version                 = var.cac_version,
       cas_mgr_deployment_sa_file  = var.cas_mgr_deployment_sa_file,
       cas_mgr_insecure            = var.cas_mgr_insecure ? "true" : "",
       cas_mgr_script              = local.cas_mgr_script,
       cas_mgr_url                 = var.cas_mgr_url,
+      computers_dn                = var.computers_dn,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       external_pcoip_ip           = var.external_pcoip_ip,
       gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
       kms_cryptokey_id            = var.kms_cryptokey_id,
+      ldaps_cert_filename         = var.ldaps_cert_filename,
       ops_setup_script            = var.ops_setup_script,
-      ssl_cert                    = var.ssl_cert,
-      ssl_key                     = var.ssl_key,
+      tls_cert                    = var.tls_cert,
+      tls_key                     = var.tls_key,
       teradici_download_token     = var.teradici_download_token,
+      users_dn                    = var.users_dn,
     }
   )
 }
 
 # One template per region because of the different subnets
-resource "google_compute_instance_template" "cac-template" {
+resource "google_compute_instance_template" "awc-template" {
   count = local.num_regions
 
   depends_on = [
-    google_storage_bucket_object.get-cac-token-script,
+    google_storage_bucket_object.get-awc-token-script,
     # Provisioning script dependency should be inferred by Terraform
-    # google_storage_bucket_object.cac-provisioning-script,
+    # google_storage_bucket_object.awc-provisioning-script,
   ]
 
-  name_prefix = "${local.prefix}template-cac-${var.gcp_region_list[count.index]}"
+  name_prefix = "${local.prefix}template-awc-${var.gcp_region_list[count.index]}"
 
   machine_type = var.machine_type
 
   disk {
     boot         = true
-    source_image = data.google_compute_image.cac-base-img.self_link
+    source_image = data.google_compute_image.awc-base-img.self_link
     disk_type    = "pd-ssd"
     disk_size_gb = var.disk_size_gb
   }
@@ -115,8 +117,8 @@ resource "google_compute_instance_template" "cac-template" {
   }
 
   metadata = {
-    ssh-keys = "${var.cac_admin_user}:${file(var.cac_admin_ssh_pub_key_file)}"
-    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.cac-provisioning-script[0].output_name}"
+    ssh-keys = "${var.awc_admin_user}:${file(var.awc_admin_ssh_pub_key_file)}"
+    startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.awc-provisioning-script[0].output_name}"
   }
 
   service_account {
@@ -125,16 +127,16 @@ resource "google_compute_instance_template" "cac-template" {
   }
 }
 
-resource "google_compute_region_instance_group_manager" "cac-igm" {
+resource "google_compute_region_instance_group_manager" "awc-igm" {
   count = local.num_regions
 
-  name   = "${local.prefix}igm-cac-${var.gcp_region_list[count.index]}"
+  name   = "${local.prefix}igm-awc-${var.gcp_region_list[count.index]}"
   region = var.gcp_region_list[count.index]
 
   base_instance_name = "${local.prefix}${var.host_name}-${var.gcp_region_list[count.index]}"
 
   version {
-    instance_template = google_compute_instance_template.cac-template[count.index].self_link
+    instance_template = google_compute_instance_template.awc-template[count.index].self_link
   }
 
   named_port {
