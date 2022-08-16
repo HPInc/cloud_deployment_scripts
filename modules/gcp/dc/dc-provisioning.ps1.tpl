@@ -10,6 +10,7 @@ $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
 $KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
+$LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
@@ -235,6 +236,22 @@ if (!(Test-Path $certStoreLoc)) {
     New-Item $certStoreLoc -Force
 }
 Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thumbprint -Destination $certStoreLoc;
+
+"================================================================"
+"Uploading LDAPS Cert to Bucket..."
+"================================================================"
+# Save LDAPS Cert as a Base64 encoded DER certificate
+$derCert = "C:\Teradici\LdapsCert.der"
+$pemCert = "C:\Teradici\LdapsCert.pem"
+$myCertLoc = 'cert:\LocalMachine\My\' + $thumbprint
+Export-Certificate -Cert $myCertLoc -FilePath $derCert -Type CERT
+certutil -encode $derCert $pemCert
+
+# Upload to GCS Bucket
+Retry -Action {gsutil cp $pemCert gs://$BUCKET_NAME/$LDAPS_CERT_FILENAME}
+
+Remove-Item -Path $derCert
+Remove-Item -Path $pemCert
 
 "================================================================"
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."

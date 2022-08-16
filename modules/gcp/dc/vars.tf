@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,6 +42,11 @@ variable "ad_service_account_password" {
   type        = string
   sensitive   = true
 }
+
+variable "ldaps_cert_filename" {
+  description = "Filename of Certificate used in LDAPS."
+  type        = string
+} 
 
 variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"

@@ -15,6 +15,7 @@ locals {
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
   ops_linux_setup_script = "ops_setup_linux.sh"
   ops_win_setup_script = "ops_setup_win.ps1"
+  ldaps_cert_filename = "ldaps_cert.pem"
   log_bucket_name = "${local.prefix}logging-bucket"
 }
 
@@ -94,6 +95,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name  = google_storage_bucket.scripts.name
   gcp_zone     = var.gcp_zone
@@ -115,8 +117,8 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
-module "cac" {
-  source = "../../../modules/gcp/cac"
+module "awc" {
+  source = "../../../modules/gcp/awc"
 
   prefix = var.prefix
 
@@ -129,36 +131,38 @@ module "cac" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
   bucket_name                = google_storage_bucket.scripts.name
   cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
 
   gcp_region_list = [var.gcp_region]
-  subnet_list     = [google_compute_subnetwork.cac-subnet.self_link]
+  subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
   network_tags    = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,
   ]
 
-  instance_count_list = [var.cac_instance_count]
-  machine_type        = var.cac_machine_type
-  disk_size_gb        = var.cac_disk_size_gb
+  instance_count_list = [var.awc_instance_count]
+  machine_type        = var.awc_machine_type
+  disk_size_gb        = var.awc_disk_size_gb
 
-  disk_image = var.cac_disk_image
+  disk_image = var.awc_disk_image
 
-  cac_admin_user              = var.cac_admin_user
-  cac_admin_ssh_pub_key_file  = var.cac_admin_ssh_pub_key_file
-  cac_version                 = var.cac_version
+  awc_admin_user              = var.awc_admin_user
+  awc_admin_ssh_pub_key_file  = var.awc_admin_ssh_pub_key_file
   teradici_download_token     = var.teradici_download_token
 
-  ssl_key  = var.cac_ssl_key
-  ssl_cert = var.cac_ssl_cert
+  tls_key  = var.awc_tls_key
+  tls_cert = var.awc_tls_cert
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
 
-  cac_extra_install_flags = var.cac_extra_install_flags
+  awc_extra_install_flags = var.awc_extra_install_flags
 }
 
 module "win-gfx" {

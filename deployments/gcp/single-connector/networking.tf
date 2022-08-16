@@ -60,7 +60,7 @@ resource "google_compute_firewall" "allow-internal" {
     ports    = ["1-65535"]
   }
 
-  source_ranges = [var.dc_subnet_cidr, var.cac_subnet_cidr, var.ws_subnet_cidr]
+  source_ranges = [var.dc_subnet_cidr, var.awc_subnet_cidr, var.ws_subnet_cidr]
 }
 
 resource "google_compute_firewall" "allow-ssh" {
@@ -164,9 +164,9 @@ resource "google_compute_subnetwork" "dc-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cac-subnet" {
-  name          = "${local.prefix}${var.cac_subnet_name}"
-  ip_cidr_range = var.cac_subnet_cidr
+resource "google_compute_subnetwork" "awc-subnet" {
+  name          = "${local.prefix}${var.awc_subnet_name}"
+  ip_cidr_range = var.awc_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 

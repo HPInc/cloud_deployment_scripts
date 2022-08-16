@@ -13,8 +13,8 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
-output "cac-public-ip" {
-  value = module.cac.public-ip[0]
+output "awc-public-ip" {
+  value = module.awc.public-ip[0]
 }
 
 output "win-gfx-internal-ip" {
