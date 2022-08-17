@@ -13,6 +13,7 @@ locals {
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
   ops_linux_setup_script = "ops_setup_linux.sh"
   ops_win_setup_script = "ops_setup_win.ps1"
+  ldaps_cert_filename = "ldaps_cert.pem"
   log_bucket_name = "${local.prefix}logging-bucket"
 }
 
@@ -86,6 +87,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name  = google_storage_bucket.scripts.name
   gcp_zone     = var.gcp_zone
