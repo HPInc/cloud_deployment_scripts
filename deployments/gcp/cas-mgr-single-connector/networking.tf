@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -63,7 +63,7 @@ resource "google_compute_firewall" "allow-internal" {
   source_ranges = [
     var.dc_subnet_cidr,
     var.cas_mgr_subnet_cidr,
-    var.cac_subnet_cidr,
+    var.awc_subnet_cidr,
     var.ws_subnet_cidr,
   ]
 }
@@ -188,9 +188,9 @@ resource "google_compute_subnetwork" "cas-mgr-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cac-subnet" {
-  name          = "${local.prefix}${var.cac_subnet_name}"
-  ip_cidr_range = var.cac_subnet_cidr
+resource "google_compute_subnetwork" "awc-subnet" {
+  name          = "${local.prefix}${var.awc_subnet_name}"
+  ip_cidr_range = var.awc_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 
