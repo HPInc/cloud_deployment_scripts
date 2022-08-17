@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,17 +17,17 @@ output "cas-mgr-public-ip" {
   value = module.cas-mgr.public-ip
 }
 
-output "cac-load-balancer-ip" {
+output "awc-load-balancer-ip" {
   value = {
-    for i in range(length(var.cac_region_list)):
-      var.cac_region_list[i] =>  google_compute_address.nlb-ip[i].address
+    for i in range(length(var.awc_region_list)):
+      var.awc_region_list[i] =>  google_compute_address.nlb-ip[i].address
   }
 }
 
-output "cac-public-ip" {
+output "awc-public-ip" {
   value = {
-    for i in range(length(var.cac_region_list)):
-      var.cac_region_list[i] => module.cac.public-ip[i]
+    for i in range(length(var.awc_region_list)):
+      var.awc_region_list[i] => module.awc.public-ip[i]
   }
 }
 
