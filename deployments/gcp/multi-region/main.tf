@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,6 +15,7 @@ locals {
   gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
   ops_linux_setup_script = "ops_setup_linux.sh"
   ops_win_setup_script = "ops_setup_win.ps1"
+  ldaps_cert_filename = "ldaps_cert.pem"
   log_bucket_name = "${local.prefix}logging-bucket"
 }
 
@@ -94,6 +95,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name  = google_storage_bucket.scripts.name
   gcp_zone     = var.gcp_zone
@@ -115,8 +117,8 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
-module "cac-igm" {
-  source = "../../../modules/gcp/cac-igm"
+module "awc-igm" {
+  source = "../../../modules/gcp/awc-igm"
 
   prefix = var.prefix
 
@@ -129,12 +131,15 @@ module "cac-igm" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
   bucket_name                 = google_storage_bucket.scripts.name
   cas_mgr_deployment_sa_file  = local.cas_mgr_deployment_sa_file
 
-  gcp_region_list = var.cac_region_list
-  subnet_list     = google_compute_subnetwork.cac-subnets[*].self_link
+  gcp_region_list = var.awc_region_list
+  subnet_list     = google_compute_subnetwork.awc-subnets[*].self_link
   network_tags    = [
     google_compute_firewall.allow-google-health-check.name,
     google_compute_firewall.allow-ssh.name,
@@ -142,39 +147,38 @@ module "cac-igm" {
     google_compute_firewall.allow-pcoip.name,
   ]
 
-  instance_count_list = var.cac_instance_count_list
-  machine_type        = var.cac_machine_type
-  disk_size_gb        = var.cac_disk_size_gb
+  instance_count_list = var.awc_instance_count_list
+  machine_type        = var.awc_machine_type
+  disk_size_gb        = var.awc_disk_size_gb
 
-  disk_image = var.cac_disk_image
+  disk_image = var.awc_disk_image
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
 
-  cac_admin_user             = var.cac_admin_user
-  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
-  cac_extra_install_flags    = var.cac_extra_install_flags
-  cac_version                = var.cac_version
+  awc_admin_user             = var.awc_admin_user
+  awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file
+  awc_extra_install_flags    = var.awc_extra_install_flags
   teradici_download_token    = var.teradici_download_token
 }
 
-resource "google_compute_https_health_check" "cac-hchk" {
-  name               = "${local.prefix}hchk-cac"
-  request_path       = var.cac_health_check["path"]
-  port               = var.cac_health_check["port"]
-  check_interval_sec = var.cac_health_check["interval_sec"]
-  timeout_sec        = var.cac_health_check["timeout_sec"]
+resource "google_compute_https_health_check" "awc-hchk" {
+  name               = "${local.prefix}hchk-awc"
+  request_path       = var.awc_health_check["path"]
+  port               = var.awc_health_check["port"]
+  check_interval_sec = var.awc_health_check["interval_sec"]
+  timeout_sec        = var.awc_health_check["timeout_sec"]
 }
 
-resource "google_compute_backend_service" "cac-bkend-service" {
-  name                    = "${local.prefix}bkend-service-cac"
+resource "google_compute_backend_service" "awc-bkend-service" {
+  name                    = "${local.prefix}bkend-service-awc"
   port_name               = "https"
   protocol                = "HTTPS"
   session_affinity        = "GENERATED_COOKIE"
   affinity_cookie_ttl_sec = 3600
 
   dynamic backend {
-    for_each = module.cac-igm.cac-igm
+    for_each = module.awc-igm.awc-igm
     iterator = i
 
     content {
@@ -185,23 +189,23 @@ resource "google_compute_backend_service" "cac-bkend-service" {
     }
   }
 
-  health_checks = [google_compute_https_health_check.cac-hchk.self_link]
+  health_checks = [google_compute_https_health_check.awc-hchk.self_link]
 }
 
-resource "google_compute_url_map" "cac-urlmap" {
-  name            = "${local.prefix}urlmap-cac"
-  default_service = google_compute_backend_service.cac-bkend-service.self_link
+resource "google_compute_url_map" "awc-urlmap" {
+  name            = "${local.prefix}urlmap-awc"
+  default_service = google_compute_backend_service.awc-bkend-service.self_link
 }
 
 resource "tls_private_key" "tls-key" {
-  count = var.glb_ssl_key == "" ? 1 : 0
+  count = var.glb_tls_key == "" ? 1 : 0
 
   algorithm = "RSA"
   rsa_bits  = "2048"
 }
 
 resource "tls_self_signed_cert" "tls-cert" {
-  count = var.glb_ssl_cert == "" ? 1 : 0
+  count = var.glb_tls_cert == "" ? 1 : 0
 
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
 
@@ -218,24 +222,24 @@ resource "tls_self_signed_cert" "tls-cert" {
   ]
 }
 
-resource "google_compute_ssl_certificate" "ssl-cert" {
-  name        = "${local.prefix}ssl-cert"
-  private_key = var.glb_ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_ssl_key)
-  certificate = var.glb_ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.glb_ssl_cert)
+resource "google_compute_ssl_certificate" "tls-cert" {
+  name        = "${local.prefix}tls-cert"
+  private_key = var.glb_tls_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_tls_key)
+  certificate = var.glb_tls_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.glb_tls_cert)
 }
 
-resource "google_compute_target_https_proxy" "cac-proxy" {
-  name             = "${local.prefix}proxy-cac"
-  url_map          = google_compute_url_map.cac-urlmap.self_link
-  ssl_certificates = [google_compute_ssl_certificate.ssl-cert.self_link]
+resource "google_compute_target_https_proxy" "awc-proxy" {
+  name             = "${local.prefix}proxy-awc"
+  url_map          = google_compute_url_map.awc-urlmap.self_link
+  ssl_certificates = [google_compute_ssl_certificate.tls-cert.self_link]
 }
 
-resource "google_compute_global_forwarding_rule" "cac-fwdrule" {
-  name = "${local.prefix}fwdrule-cac"
+resource "google_compute_global_forwarding_rule" "awc-fwdrule" {
+  name = "${local.prefix}fwdrule-awc"
 
   #ip_protocol = "TCP"
   port_range = "443"
-  target     = google_compute_target_https_proxy.cac-proxy.self_link
+  target     = google_compute_target_https_proxy.awc-proxy.self_link
 }
 
 module "win-gfx" {
