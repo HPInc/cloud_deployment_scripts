@@ -58,7 +58,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - for deployments using CAS Manager as a Service, a CAS Manager Deployment Service Account is needed. Please see the [CAS Manager as a Service Setup](#cas-manager-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup](/docs/ssh-key-pair-setup.md) for instructions.
-- if custom SSL key and certificates are required, the SSL key and certificate files are needed in PEM format.
+- if custom TLS key and certificates are required, the TLS key and certificate files are needed in PEM format.
 - Terraform v1.0 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### Selecting a Deployment
@@ -161,7 +161,7 @@ With `terraform.tfvars` customized:
 2. run `terraform apply` to display the resources that will be created by Terraform
 3. answer `yes` to start creating the deployment
 
-A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Cloud Access Connectors (CACs) should register themselves with CAS Manager and show up in the Admin Console in CAS Manager.
+A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Anyware Connectors (AWCs) should register themselves with CAS Manager and show up in the Admin Console in CAS Manager.
 
 **Security Note**: The Domain Controller has been assigned a public IP address by default, so that Terraform can show the progress of setting up the Domain Controller. Access to this public IP address is limited by GCP firewall to the IP address of the Terraform host and any IP addresses specified in the `allowed_admin_cidrs` variable in `terraform.tfvars`. It is recommended that this public IP address be removed from the Domain Controller (see [here](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#IP_assign)) unless there is a specific need for access from public IP addresses. Also note that NAT will need to be set up when the public IP is removed to provide Internet access to the Domain Controller.     
 
@@ -171,7 +171,7 @@ A typical deployment should take 15 to 30 minutes. When finished, Terraform will
 Go to the CAS Manager Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
 
 ### Start PCoIP Session
-Once the workstations have been added to be managed by CAS Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the CAC, or Load Balancer if one is configured, to start a PCoIP session.
+Once the workstations have been added to be managed by CAS Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the AWC, or Load Balancer if one is configured, to start a PCoIP session.
 
 ### Changing the deployment
 Terraform is a declarative language to describe the desired state of resources. A user can modify `terraform.tfvars` and run `terraform apply` again, and Terraform will try to only apply the changes needed to achieve the new state.
