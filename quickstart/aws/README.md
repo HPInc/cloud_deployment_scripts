@@ -1,7 +1,7 @@
-# Cloud Access Connector Quickstart
+# Anyware Connector Quickstart
 
 ## Table of Contents
-- [Cloud Access Connector Quickstart](#cloud-access-connector-quickstart)
+- [Anyware Connector Quickstart](#cloud-access-connector-quickstart)
   - [Table of Contents](#table-of-contents)
   - [Getting Started](#getting-started)
     - [Requirements](#requirements)
@@ -81,7 +81,7 @@ Enter a unique prefix to make sure there are no existing AWS resources in the ac
 ## Next Steps
 ### Connecting to the Workstations
 
-1. From a PCoIP client, connect to the public IP Address of the Cloud Access Connector. To install a PCoIP client, please see: https://docs.teradici.com/find/product/software-and-mobile-clients
+1. From a PCoIP client, connect to the public IP Address of the Anyware Connector. To install a PCoIP client, please see: https://docs.teradici.com/find/product/software-and-mobile-clients
 2. Sign in with the **Administrator** user credentials
 
 **Note:** When connecting to a workstation immediately after this script completes, the workstation (especially graphics ones) may still be setting up. You may see "Remote Desktop is restarting..." in the client. Please wait a few minutes or reconnect if it times out.

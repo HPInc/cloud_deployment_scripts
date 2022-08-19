@@ -230,7 +230,7 @@ def configurations_get(ws_types, username, quickstart_path):
         print(f"    Checking that you have enough service quota required for this deployment...", end="")
         if not service_quota_reserve(aws_region, SERVICE_QUOTA_REQUIREMENTS):
             return False
-        for machine in ["cac", "dc"]:
+        for machine in ["awc", "dc"]:
             print(f"    Checking that you have enough service quota to deploy the {machine_properties[machine]['name']}...", end="")
             if not service_quota_reserve(aws_region, machine_properties[machine]["service_requirements"]):
                 return False

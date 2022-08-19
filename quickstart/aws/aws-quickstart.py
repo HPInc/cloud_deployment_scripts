@@ -371,10 +371,10 @@ if __name__ == '__main__':
     tf_cmd = f'{TERRAFORM_BIN_PATH} apply -auto-approve'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','cac-public-ip'],
+    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','awc-public-ip'],
                                check=True,
                                stdout=subprocess.PIPE)
-    cac_public_ip = comp_proc.stdout.decode().split('"')[1]
+    awc_public_ip = comp_proc.stdout.decode().split('"')[1]
 
     # Newly created AWS instances might need a few seconds to sync to CAS Manager
     time.sleep(10)
@@ -414,7 +414,7 @@ if __name__ == '__main__':
     Next steps:
 
     - Connecting to Workstations:
-    1.  From a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}. 
+    1.  From a PCoIP client, connect to the Anyware Connector at {awc_public_ip}. 
         To install a PCoIP client, please see: https://docs.teradici.com/find/product/software-and-mobile-clients
     2.  Sign in with the "{ENTITLE_USER}" user credentials
     3.  When connecting to a workstation immediately after this script completes,

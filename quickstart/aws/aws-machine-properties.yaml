@@ -14,8 +14,8 @@ dc:
       L-34B43A08: 4 # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
     vpc:
       L-DF5E4CA3: 1 # Network interfaces per Region
-cac:
-  name: Cloud Access Connector
+awc:
+  name: Anyware Connector
   service_requirements:
     ec2:
       L-34B43A08: 4 # All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests
