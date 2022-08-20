@@ -22,12 +22,12 @@
 ### Connecting to CentOS Workstations
 - One way to access CentOS Workstations is to use the Connector as a bastion host. Please refer to the log tables below for the corresponding <login-user> for each VM.
 - Use the -i flag to provide SSH with the private key that pairs with the public keys specified in terraform.tfvars.
-- For GCP, enter the private key path that pairs with cac_admin_ssh_pub_key_file for the Connector or centos_admin_ssh_pub_key_file for CentOS Workstations.
+- For GCP, enter the private key path that pairs with awc_admin_ssh_pub_key_file for the Connector or centos_admin_ssh_pub_key_file for CentOS Workstations.
 - For AWS, enter the private key path that pairs with admin_ssh_pub_key_file for the Connector and CentOS Workstations.
 
 Execute the following command to first SSH into the Connector:
 
-```ssh -A -i </path/to/ssh-private-key> <login-user>@<cac-public-ip>``` 
+```ssh -A -i </path/to/ssh-private-key> <login-user>@<awc-public-ip>``` 
 
 From inside the Connector, execute the following command to SSH into the CentOS Workstation:
 
@@ -56,12 +56,12 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 
 | VM Instance      | Login User    | Log File Path                               | Description                                                 |
 | :--------------- | :------------ | :------------------------------------------ | :---------------------------------------------------------- |
-| cac              | ubuntu        | /var/log/syslog                             | Detailed system log for startup and provisioning            |
-|                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
+| awc              | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
+|                  |               | /var/log/teradici/awc-install.log           | Detailed log for AWC installation                           |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-|                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
+|                  |               | /var/log/cas-connector/configure.log        | (duplicate log from awc-install.log)                        |
 | cas-mgr          | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
@@ -101,11 +101,11 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 
 | VM Instance      | Login User    | Log File Path                               | Description                                                 |
 | :--------------- | :------------ | :------------------------------------------ | :---------------------------------------------------------- |
-| cac              | cas_admin     | /var/log/syslog                             | Detailed system log for startup and provisioning            |
+| awc              | cas_admin     | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
-|                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
+|                  |               | /var/log/teradici/awc-install.log           | Detailed log for AWC installation                           |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-|                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
+|                  |               | /var/log/cas-connector/configure.log        | (duplicate log from awc-install.log)                        |
 | cas-mgr          | cas_admin     | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
@@ -130,10 +130,10 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | C:\ProgramData\Teradici\PCoIPAgent\logs     | Teradici Agent logs                                         |
 |                  |               | C:\Windows\System32\winevt\Logs             | Detailed system and event logs                              |
 
-## CAS Connector Missing
-If the CAS Connectors (cac) do not show up in the ```Connectors``` section in CAS Manager after Terraform deployment completed, then there is likely a problem with the provisioning script used to bring up the cac VM. Start debugging by looking at the [logs](#vm-log-locations) via an SSH session.
+## Anyware Connector Missing
+If the Anyware Connectors (AWC) do not show up in the ```Connectors``` section in CAS Manager after Terraform deployment completed, then there is likely a problem with the provisioning script used to bring up the AWC VM. Start debugging by looking at the [logs](#vm-log-locations) via an SSH session.
 - If you find errors like ```$'\r': command not found``` or ```syntax error near unexpected token `$'{\r''```, then the problem is due to Windows-style End of Line (EoL) characters in the provisioning script. The EoL character in Windows is ```\r\n``` whereas it is ```\n``` in Linux/Unix. Make sure the files checked out from the git repo on the Terraform host machine have the proper EoL. 
-- The CAS Manager Deployment Service Account JSON file (specified by the ```cas_mgr_deployment_sa_file``` variable in ```terraform.tfvars```) may be incorrect. There should be errors in /var/log/teradici/provisioning.log when CAC is being installed. Make sure the file specified is correct, or create and update ```terraform.tfvars``` to use a new Deployment Service Account JSON file from CAS Manager.
+- The CAS Manager Deployment Service Account JSON file (specified by the ```cas_mgr_deployment_sa_file``` variable in ```terraform.tfvars```) may be incorrect. There should be errors in /var/log/teradici/provisioning.log when AWC is being installed. Make sure the file specified is correct, or create and update ```terraform.tfvars``` to use a new Deployment Service Account JSON file from CAS Manager.
 The easiest way to correct these problems is to destroy and recreate the deployment by running ```terraform destroy``` followed by ```terraform apply```.
 
 ## Failed to SSH into VMs
