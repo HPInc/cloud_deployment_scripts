@@ -23,6 +23,27 @@ locals {
   )
   tls_key_filename  = var.tls_key  == "" ? "" : basename(var.tls_key)
   tls_cert_filename = var.tls_cert == "" ? "" : basename(var.tls_cert)
+
+  awc_log_groups = join("", 
+    [ for i in range(length(local.instance_info_list)): 
+      "SOURCE '${aws_cloudwatch_log_group.instance-log-group[i].id}' | "
+    ]
+  )
+
+  workstation_log_groups = join("",
+    [ for i in range(var.centos_gfx_instance_count):
+      "SOURCE '${local.prefix}gcent-${i}' | "
+    ],
+    [ for i in range(var.centos_std_instance_count):
+      "SOURCE '${local.prefix}scent-${i}' | "
+    ],
+    [ for i in range(var.win_gfx_instance_count):
+      "SOURCE '${local.prefix}gwin-${i}' | "
+    ],
+    [ for i in range(var.win_std_instance_count):
+      "SOURCE '${local.prefix}swin-${i}' | "
+    ]
+  )
 }
 
 resource "aws_s3_object" "get-connector-token-script" {
@@ -365,6 +386,123 @@ resource "aws_cloudwatch_dashboard" "awc" {
                 "stat": "Average",
                 "period": 300,
                 "stacked": false
+            }
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_cloudwatch_dashboard" "overall" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  dashboard_name = "${local.prefix}overall"
+  
+  dashboard_body = <<EOF
+{
+    "widgets": [
+        {
+            "type": "log",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Number of Users in AD",
+                "query": "SOURCE '${aws_cloudwatch_log_group.instance-log-group[0].id}' | filter @message like /Users in local cache/ | parse @message '* [*] ActiveDirectorySync Found * users in active directory using' as time, type, num | stats latest(num) as NumberOfUsers by bin(20m) as user_num | sort user_num",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Number of Machines in AD",
+                "query": "SOURCE '${aws_cloudwatch_log_group.instance-log-group[0].id}' | filter @message like /Machines in local cache/ | parse @message '* [*] ActiveDirectorySync Found * ActiveDirectorySync Found * machines in active directory' as time, type, user, num | stats latest(num) as NumberOfMachines by bin(20m) as machine_num| sort machine_num",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 4,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Active Connections",
+                "query": "${local.awc_log_groups}filter @message like /get_statistics returning/ | parse @message '* get_statistics returning * UDP connections currently working' as m, num | parse @log '*:*' as account_id, connector | stats latest(num) as NumberOfConnections by connector | sort NumberOfConnections desc",
+                "view": "table"
+            }
+        },
+        {
+            "type": "log",
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 4,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Top 5 PCoIP Agent Latency",
+                "query": "${local.workstation_log_groups}filter @message like /round trip/ | parse @message 'Tx thread info: round trip time (ms) = *, variance' as rtt | parse @log '*:*' as account_id, workstation | stats concat(ceil(avg(rtt)), 'ms') as RoundTripLatency by workstation | sort RoundTripLatency desc | limit 5",
+                "view": "table"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 6,
+            "width": 6,
+            "height": 4,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Top 5 PCoIP Agent Data Transmitted",
+                "query": "${local.workstation_log_groups}filter @message like /MGMT_PCOIP_DATA :Tx thread info: bw limit/ | parse @message 'MGMT_PCOIP_DATA :Tx thread info: bw limit = *, avg tx = *, avg rx = * (kbit' as bwlimit, avgtx, avgrx  | parse @log '*:*' as account_id, workstation | stats concat(ceil(sum(avgtx)*60/8/1024), 'MiB') as Transmitted by workstation | sort Transmitted desc | limit 5",
+                "view": "table"
+            }
+        },
+        {
+            "type": "log",
+            "x": 18,
+            "y": 6,
+            "width": 6,
+            "height": 4,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Top 5 PCoIP Agent Data Received",
+                "query": "${local.workstation_log_groups}filter @message like /MGMT_PCOIP_DATA :Tx thread info: bw limit/ | parse @message 'MGMT_PCOIP_DATA :Tx thread info: bw limit = *, avg tx = *, avg rx = * (kbit' as bwlimit, avgtx, avgrx  | parse @log '*:*' as account_id, workstation | stats concat(ceil(sum(avgrx)*60/8/1024), 'MiB') as Received by workstation | sort Received desc | limit 5",
+                "view": "table"
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Top 10 PCoIP Agent Packet Loss (Received)",
+                "query": "${local.workstation_log_groups}filter @message like /Loss=/ | parse @message '(A/I/O) Loss=*%/*% (R/T)' as rxloss, txloss | parse @log '*:*' as account_id, workstation | stats concat(avg(sum(rxloss)), '%') as RxLoss by workstation | sort RxLoss desc | limit 10",
+                "view": "table"
+            }
+        },
+        {
+            "type": "log",
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Top 10 PCoIP Agent Packet Loss (Transmitted)",
+                "query": "${local.workstation_log_groups}filter @message like /Loss=/ | parse @message '(A/I/O) Loss=*%/*% (R/T)' as rxloss, txloss | parse @log '*:*' as account_id, workstation | stats concat(avg(sum(txloss)), '%') as TxLoss by workstation | sort TxLoss desc | limit 10",
+                "view": "table"
             }
         }
     ]

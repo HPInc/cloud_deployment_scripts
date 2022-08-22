@@ -190,3 +190,23 @@ variable "aws_ssm_enable" {
   description = "Enable AWS Session Manager integration for easier SSH/RDP admin access to EC2 instances"
   default     = true
 }
+
+variable "centos_gfx_instance_count" {
+  description = "Number of CentOS Graphics Workstations"
+  default     = 0
+}
+
+variable "centos_std_instance_count" {
+  description = "Number of CentOS Standard Workstations"
+  default     = 0
+}
+
+variable "win_gfx_instance_count" {
+  description = "Number of Windows Graphics Workstations"
+  default     = 0
+}
+
+variable "win_std_instance_count" {
+  description = "Number of Windows Standard Workstations"
+  default     = 0
+}

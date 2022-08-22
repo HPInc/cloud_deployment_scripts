@@ -267,6 +267,11 @@ module "awc" {
   aws_ssm_enable          = var.aws_ssm_enable
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
+
+  centos_gfx_instance_count = var.centos_gfx_instance_count
+  centos_std_instance_count = var.centos_std_instance_count
+  win_gfx_instance_count    = var.win_gfx_instance_count
+  win_std_instance_count    = var.win_std_instance_count
 }
 
 resource "aws_lb_target_group_attachment" "awc-tg-attachment" {
