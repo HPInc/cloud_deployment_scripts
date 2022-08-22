@@ -106,11 +106,30 @@ setup_ops() {
 
         chmod +x $OPS_SETUP_SCRIPT
 
+        instance_name=$(retry 3 `#3 retries` \
+                              5 `# 5s interval` \
+                              "curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/hostname | cut -d. -f1" \
+                              "--> ERROR: Failed to get the instance name.")
+
+        local container_logs=""
+        log_list=("adsync*" "broker*" "cm-*" "cmsg*" "connectorgateway*" "healthcheck*" "rwtelemetry*" "sg*")
+
+        if [[ ! $instance_name == *"-0" ]]
+        then
+            unset log_list[0]
+        fi
+
+        for log_file in $${log_list[@]}
+        do
+            container_logs=$container_logs"/opt/teradici/casc/logs/k3s.connector.$log_file.log "
+        done
+
         . $OPS_SETUP_SCRIPT \
             $LOG_FILE \
             "/var/log/cloud-init-output.log" \
             "/var/log/messages" \
-            "$AWC_INSTALL_LOG"
+            "$AWC_INSTALL_LOG" \
+            $container_logs
     fi
 }
 
