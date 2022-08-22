@@ -22,6 +22,7 @@
     - [Deleting the deployment](#deleting-the-deployment)
   - [Optional AWS Service Integrations](#optional-aws-service-integrations)
     - [AWS Cloudwatch](#aws-cloudwatch)
+      - [AWS CloudWatch Dashboard](#aws-cloudwatch-dashboard)
     - [AWS Session Manager](#aws-session-manager)
   - [Troubleshooting](#troubleshooting)
 
@@ -194,9 +195,45 @@ For more information on the LLS, please visit https://www.teradici.com/web-help/
 ### AWS CloudWatch
 CloudWatch is a monitoring and management service that provides data and actionable insights for AWS, hybrid, and on-premises applications and infrastructure resources. For more information, please visit https://aws.amazon.com/cloudwatch/
 
-When CloudWatch is enabled, CloudWatch agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to CloudWatch. The selected logs can be found at `Log groups` in the CloudWatch navigation pane. 
+When CloudWatch is enabled, CloudWatch agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to CloudWatch. The selected logs can be found in `Log groups` in the CloudWatch navigation pane. 
 
 CloudWatch is enabled by default to provide better experience of accessing the logs. It can be disabled by adding `cloudwatch_enable = false` to `terraform.tfvars` before running `terraform apply`. 
+
+#### AWS CloudWatch Dashboard
+Amazon CloudWatch dashboards are customizable home pages in the CloudWatch console that can be used to monitor the resources in a single view. For more information, please visit https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Dashboards.html 
+
+When CloudWatch is enabled, Terraform will create one overall dashboard for the deployment, one dashboard for each Anyware Connector, and one dashboard for each workstation. Each dashboard contains queries that fetch the logs and data from the corresponding `Log groups`. The dashboards can be found in `Dashboard` in the CloudWatch navigation pane. 
+
+The overall dashboard provides high level graphs including:
+- `Number of users in AD`: Reports number of users in AD. Users in AD cannot be removed by Terraform. Users have to connect to DC to remove the users. 
+- `Number of machines in AD`: Repots number of machines in AD. Machines in AD cannot be removed by Terraform. Users have to connect to DC to remove the machines. 
+- `Active Connections`: Reports number of active connections in each Anyware Connector. 
+- `Top 5 PCoIP Agent Latency`: Reports the Workstation sessions with the 5 longest average Round Trip Times calculated over the measurement period. 
+- `Top 5 PCoIP Agent Data Transmitted`: Reports the top 5 Workstations volume of transmit data transfered (Host Workstation to Client MebiByte) during the measurement period. 
+- `Top 5 PCoIP Agent Data Received`: Reports the top 5 Workstations volume of receive data transfered (Client to Host Workstation MebiByte) during the measurement period.
+- `Top 10 PCoIP Agent Packet Loss (Transmitted)`: Reports the Workstations experiencing the 10 worst transmit (Host Workstation to Client) packet loss intervals during the measurement period. 
+- `Top 10 PCoIP Agent Packet Loss (Received)`: Reports the Workstations experiencing the 10 worst receive (Client to Host Workstation) packet loss intervals during the measurement period. 
+
+![Overall Dashboard](./overall_dashboard.png)
+
+The Anyware Connector dashboard includes 2 graphs:
+- `Active Connections`: Reports number of active connections over the measurement period. 
+- `User Login History`: Reports time, workstation, and username of connections over the measurement period. 
+- `CPU Utilization`: Reports the percentage of allocated EC2 compute units that are currently in use on the instance.
+- `Network In`: Reports the number of bytes received by the instance on all network interfaces.
+- `Network Out`: Reports the number of bytes sent out by the instance on all network interfaces.
+
+![Anyware Connector Dashbaord](./awc_dashboard.png)
+
+The workstation dashboard shows workstation relevant data such as:
+- `CPU Utilization`: Reports the percentage of allocated EC2 compute units that are currently in use on the instance.
+- `Latency (ms)`: Reports 50th, 80th and 90th percentile Round Trip Times across all logged PCoIP sessions over the measurement period. 
+- `TxLoss (%)`: Reports 90th and 95th percentile of transmit (Host Workstation to Client) packet loss of the workstation.
+- `RxLoss (%)`: Reports 90th and 95th percentile of receive (Client to Host Workstation) packet loss of the workstation.
+- `Data Transmitted (MiB)`: Reports volume of transmit data transfered (Host Workstation to Client MebiByte) during the measurement period. 
+- `Data Reveived (MiB)`: Reports volume of receive data transfered (Client to Host Workstation MebiByte) during the measurement period. 
+
+![Workstation Dashboard](./workstation_dashboard.png)
 
 ### AWS Session Manager
 Session Manager is an AWS Systems Manager capability that can be used to connect to instances using either an interactive one-click browser-based shell or AWS Command Line Interface. For more information, please visit https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html
