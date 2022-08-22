@@ -278,3 +278,96 @@ resource "aws_instance" "awc" {
     Name = "${local.prefix}${var.host_name}-${count.index}"
   }
 }
+
+resource "aws_cloudwatch_dashboard" "awc" {
+  count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
+
+  dashboard_name = "${local.prefix}${var.host_name}-${count.index}"
+  
+  dashboard_body = <<EOF
+{
+    "widgets": [
+        {
+            "type": "log",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Active Connections",
+                "query": "SOURCE '${aws_cloudwatch_log_group.instance-log-group[count.index].id}' | filter @message like /get_statistics returning/ | parse @message '* get_statistics returning * UDP connections currently working' as m, num | stats latest(num) as NumberOfConnections by bin(20m) as connection_num | sort connection_num",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "User Login History",
+                "query": "SOURCE '${aws_cloudwatch_log_group.instance-log-group[count.index].id}' | filter @message like /User authenticated successfully/ | parse @message '<broker-info><product-name>PCoIP*Agent for*<hostname>*</hostname>*<username>*</username>' as a, b, hostname, c, username | display username, hostname, @timestamp",
+                "view": "table"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "CPU Utilization (%)",
+                "metrics": [
+                    [ "AWS/EC2", "CPUUtilization", "InstanceId", "${aws_instance.awc[count.index].id}"]
+                ],
+                "view": "timeSeries",
+                "stat": "Average",
+                "period": 300,
+                "stacked": false
+            }
+        },
+        {
+            "type": "metric",
+            "x": 8,
+            "y": 6,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Network in (bytes)",
+                "metrics": [
+                    [ "AWS/EC2", "NetworkIn", "InstanceId", "${aws_instance.awc[count.index].id}"]
+                ],
+                "view": "timeSeries",
+                "stat": "Average",
+                "period": 300,
+                "stacked": false
+            }
+        },
+        {
+            "type": "metric",
+            "x": 16,
+            "y": 6,
+            "width": 8,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "Network out (bytes)",
+                "metrics": [
+                    [ "AWS/EC2", "NetworkOut", "InstanceId", "${aws_instance.awc[count.index].id}"]
+                ],
+                "view": "timeSeries",
+                "stat": "Average",
+                "period": 300,
+                "stacked": false
+            }
+        }
+    ]
+}
+EOF
+}

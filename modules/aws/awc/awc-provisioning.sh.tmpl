@@ -111,12 +111,12 @@ setup_cloudwatch(){
 
         for log_file in $${log_list[@]}
         do
-            container_logs=$container_logs"/opt/teradici/casc/logs/k3s.connector.$log_file.log \"%b %d %H:%M:%S\" "
+            container_logs=$container_logs"/opt/teradici/casc/logs/k3s.connector.$log_file.log '%b %d %H:%M:%S' "
         done
 
         . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
-            $LOG_FILE                         "[%a %b %d %H:%M:%S %Z %Y]" \
-            "/var/log/cloud-init-output.log"  "at %a, %d %b %Y %H:%M:%S %z." \
+            $LOG_FILE                         "%b %d %H:%M:%S" \
+            "/var/log/cloud-init-output.log"  "%b %d %H:%M:%S" \
             "/var/log/messages"               "%b %d %H:%M:%S" \
             $AWC_INSTALL_LOG                  "%b %d %H:%M:%S" \
             "/var/log/teradici/user-data.log" "%b %d %H:%M:%S" \
