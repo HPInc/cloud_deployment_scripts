@@ -21,7 +21,9 @@
     - [Changing the deployment](#changing-the-deployment)
     - [Deleting the deployment](#deleting-the-deployment)
   - [Optional GCP Service Integrations](#optional-gcp-service-integrations)
-    - [GCP Cloud Logging](#gcp-cloud-logging)
+    - [GCP Cloud Logging and Monitoring](#gcp-cloud-logging-and-monitoring)
+      - [GCP Cloud Logging](#gcp-cloud-logging)
+      - [GCP Cloud Monitoring](#gcp-cloud-monitoring)
     - [GCP Identity-Aware Proxy (IAP)](#gcp-identity-aware-proxy-iap)
   - [Troubleshooting](#troubleshooting)
 
@@ -181,12 +183,53 @@ Run `terraform destroy` to remove all resources created by Terraform, then go to
 
 ## Optional GCP Service Integrations
 
-### GCP Cloud Logging
-Cloud Logging is a service that can be used to store, search, analyze, monitor, and alert on logging data and events from GCP and AWS. For more information, please visit https://cloud.google.com/logging
+### GCP Cloud Logging and Monitoring
 
-When Cloud Logging is enabled, Ops Agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to Cloud Logging. The selected logs can be found at `Logs Explorer` in the Cloud Logging navigation pane. 
+- Cloud Logging is a service that can be used to store, search, analyze, monitor, and alert on logging data and events from GCP and AWS. For more information, please visit https://cloud.google.com/logging
 
-Cloud Logging is enabled by default to provide better experience of accessing the logs. It can be disabled by adding `gcp_ops_agent_enable = false` to `terraform.tfvars` before running `terraform apply`. 
+- Cloud Monitoring is a service for users to gain visibility into the performance, availability, and health of the applications and infrastructure. For more information, please visit https://cloud.google.com/monitoring
+
+Cloud Logging and Cloud Monitoring are enabled by default to provide better troubleshooting and monitoring experiences. These integrations can be disabled by adding `gcp_ops_agent_enable = false` to `terraform.tfvars` before running `terraform apply`. 
+
+#### GCP Cloud Logging
+
+When enabled, Ops Agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to Cloud Logging. The selected logs can be found in `Logs Explorer` in the Cloud Logging navigation pane. 
+
+#### GCP Cloud Monitoring
+
+When enabled, Terraform will create log-based metrics, one overall dashboard for the deployment, one dashboard for each Anyware Connector, and one dashboard for each workstation. Each log-based metric contains queries that fetch the log messages and data from the log file that were uploaded to Cloud Logging. The log-based metrics are used in widgets of dashboards to identify how the log messages and data are shown in the graph or table. The dashboards can be found in `Dashboard` in the Cloud Monitoring navigation pane.
+
+The overall dashboard provides high level graphs including:
+- `Number of users in AD`: Reports number of users in AD. Users in AD cannot be removed by Terraform. Users have to connect to DC to remove the users. 
+- `Number of machines in AD`: Repots number of machines in AD. Machines in AD cannot be removed by Terraform. Users have to connect to DC to remove the machines. 
+- `Active Connections`: Reports number of active connections in each Anyware Connector. 
+- `Top 5 PCoIP Agent Latency`: Reports the Workstation sessions with the 5 longest average Round Trip Times calculated over the measurement period. 
+- `Top 5 PCoIP Agent Data Transmitted`: Reports the top 5 Workstations volume of transmit data transfered (Host Workstation to Client) during the measurement period. 
+- `Top 5 PCoIP Agent Data Received`: Reports the top 5 Workstations volume of receive data transfered (Client to Host Workstation) during the measurement period.
+- `Top 10 PCoIP Agent Packet Loss (Transmitted)`: Reports the Workstations experiencing the 10 worst transmit (Host Workstation to Client) packet loss intervals during the measurement period. 
+- `Top 10 PCoIP Agent Packet Loss (Received)`: Reports the Workstations experiencing the 10 worst receive (Client to Host Workstation) packet loss intervals during the measurement period. 
+
+![Overall Dashboard](./overall_dashboard.png)
+
+The Anyware Connector dashboard includes 2 graphs:
+- `Active Connections`: Reports number of active connections over the measurement period. 
+- `CPU Utilization`: Reports the percentage of CPU Utilization that are currently in use on the instance.
+- `Received bytes`: Reports the number of bytes received by the instance on all network interfaces.
+- `Sent bytes`: Reports the number of bytes sent out by the instance on all network interfaces.
+
+![Anyware Connector Dashbaord](./awc_dashboard.png)
+
+The workstation dashboard shows workstation relevant data such as:
+- `CPU Utilization`: Reports the percentage of CPU Utilization that are currently in use on the instance.
+- `Latency (ms)`: Reports 50th, 80th and 90th percentile Round Trip Times across all logged PCoIP sessions over the measurement period. 
+- `TxLoss (%)`: Reports 90th and 95th percentile of transmit (Host Workstation to Client) packet loss of the workstation.
+- `RxLoss (%)`: Reports 90th and 95th percentile of receive (Client to Host Workstation) packet loss of the workstation.
+- `Data Transmitted (KB)`: Reports volume of transmit data transfered (Host Workstation to Client) during the measurement period. 
+- `Data Reveived (KB)`: Reports volume of receive data transfered (Client to Host Workstation) during the measurement period. 
+
+![Workstation Dashboard](./workstation_dashboard.png)
+
+Cloud Monitoring applys for `single-connector`, `cas-mgr-single-connector`, `nlb-multi-region`, and `cas-mgr-nlb-multi-region` deployments.
 
 ### GCP Identity-Aware Proxy (IAP)
 IAP is a service that provides a single point of control for managing user access to web applications and cloud resources. For more information on IAP, please visit https://cloud.google.com/iap
