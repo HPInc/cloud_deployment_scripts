@@ -51,7 +51,8 @@ add_ops_config() {
     # So we replace / with - as a workaround. Need to investigate about using full path as log name since 
     # got the following message when trying to escape character: 
     # "Log name contains illegal character. Allowed characters are alphanumerics and ./_-"
-    receiver_id=${log_file_path//\//\-}
+    # * is not allowed in receiver_id, so we need remove * from log file path when setting receiver_id.
+    receiver_id="$(echo ${log_file_path//\//\-} | tr -d '*')"
 
     c="${receiver_id}:
       type: files

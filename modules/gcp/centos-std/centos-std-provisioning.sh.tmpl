@@ -81,6 +81,8 @@ setup_ops() {
             $LOG_FILE \
             "/var/log/messages" \
             "/var/log/pcoip-agent/agent.log" \
+            "/var/log/pcoip-agent/server*.log" \
+            "/var/log/pcoip-agent/session-launcher.log" \
             "/var/log/yum.log"
     fi
 }
