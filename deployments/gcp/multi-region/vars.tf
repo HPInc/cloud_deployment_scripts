@@ -193,10 +193,12 @@ variable "cac_admin_ssh_pub_key_file" {
   }
 }
 
+# Further info about healthcheck: 
+# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "cac_health_check" {
   description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/pcoip-broker/xml"
+    path         = "/healthcheck"
     port         = 443
     interval_sec = 5
     timeout_sec  = 5
