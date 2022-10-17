@@ -86,7 +86,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.09.14"
+  default     = "Windows_Server-2019-English-Full-Base-2022.10.12"
 }
 
 variable "dc_pcoip_agent_version" {
@@ -184,7 +184,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220901"
+  default = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20220926"
 }
 
 variable "cac_version" {
@@ -210,10 +210,12 @@ variable "admin_ssh_pub_key_file" {
 # Note the following limits for health check:
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5
+# Further info about healthcheck: 
+# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "cac_health_check" {
   description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/pcoip-broker/xml"
+    path         = "/health"
     protocol     = "HTTPS"
     port         = 443
     interval_sec = 30
@@ -322,7 +324,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.09.14"
+  default     = "Windows_Server-2019-English-Full-Base-2022.10.12"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -357,7 +359,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.09.14"
+  default     = "Windows_Server-2019-English-Full-Base-2022.10.12"
 }
 
 variable "win_std_pcoip_agent_version" {

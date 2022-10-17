@@ -174,7 +174,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220901"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20221005"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -193,10 +193,12 @@ variable "cac_admin_ssh_pub_key_file" {
   }
 }
 
+# Further info about healthcheck: 
+# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "cac_health_check" {
   description = "Health check configuration for Cloud Access Connector"
   default = {
-    path         = "/pcoip-broker/xml"
+    path         = "/healthcheck"
     port         = 443
     interval_sec = 5
     timeout_sec  = 5
@@ -432,7 +434,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220822"
+  default     = "projects/centos-cloud/global/images/centos-7-v20221004"
 }
 
 variable "centos_std_instance_count_list" {
@@ -457,7 +459,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220822"
+  default     = "projects/centos-cloud/global/images/centos-7-v20221004"
 }
 
 variable "centos_admin_user" {

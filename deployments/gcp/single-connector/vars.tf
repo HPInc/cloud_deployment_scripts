@@ -122,7 +122,7 @@ variable "cac_disk_size_gb" {
 
 variable "cac_disk_image" {
   description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220901"
+  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20221005"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -407,7 +407,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220822"
+  default     = "projects/centos-cloud/global/images/centos-7-v20221004"
 }
 
 variable "centos_std_instance_count" {
@@ -432,7 +432,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220822"
+  default     = "projects/centos-cloud/global/images/centos-7-v20221004"
 }
 
 variable "centos_admin_user" {

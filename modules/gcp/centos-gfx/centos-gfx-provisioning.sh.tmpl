@@ -240,6 +240,16 @@ install_pcoip_agent() {
     fi
     log "--> usb-vhci successfully installed."
 
+    log "--> Installing EPEL repository..."
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "yum install -y epel-release" \
+          "--> Warning: Failed to install epel-release."
+    if [ $? -ne 0 ]; then
+        log "--> Warning: Failed to install epel-release."
+    fi
+    log "--> epel-release successfully installed."
+
     log "--> Installing PCoIP graphics agent..."
     retry 3 `# 3 retries` \
           5 `# 5s interval` \

@@ -71,7 +71,12 @@ if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
 do {
     Try {
         $Retry = $false
-        New-AdUser -Name "${account_name}" -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force) -Enabled $True -PasswordNeverExpires $True
+        New-ADUser `
+            -Name "${account_name}" `
+            -UserPrincipalName "${account_name}@${domain_name}" `
+            -Enabled $True `
+            -PasswordNeverExpires $True `
+            -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force)
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
         "--> $($_.Exception.Message)"
