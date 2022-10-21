@@ -62,10 +62,10 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
-| cas-mgr          | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
+| awm              | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
-|                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
-|                  |               | /var/log/cas-mgr/install.log                | (duplicate log from cas-mgr-install.log )                   |
+|                  |               | /var/log/teradici/awm-install.log           | Detailed log for Anyware Manager installation               |
+|                  |               | /var/log/anyware-manager/install.log        | (duplicate log from awm-install.log )                       |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 | centos-gfx       | centos        | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
@@ -101,22 +101,22 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 
 | VM Instance      | Login User    | Log File Path                               | Description                                                 |
 | :--------------- | :------------ | :------------------------------------------ | :---------------------------------------------------------- |
-| cac              | cas_admin     | /var/log/syslog                             | Detailed system log for startup and provisioning            |
+| cac              | anyware_admin | /var/log/syslog                             | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/cac-install.log           | Detailed log for CAC installation                           |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 |                  |               | /var/log/cloud-access-connector/install.log | (duplicate log from cac-install.log)                        |
-| cas-mgr          | cas_admin     | /var/log/messages                           | Detailed system log for startup and provisioning            |
+| awm              | anyware_admin | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
-|                  |               | /var/log/teradici/cas-mgr-install.log       | Detailed log for CAS Manager installation                   |
+|                  |               | /var/log/teradici/awm-install.log           | Detailed log for Anyware Manager installation               |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-|                  |               | /var/log/cas-mgr/install.log                | (duplicate log from cas-mgr-install.log )                   |
-| centos-gfx       | cas_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+|                  |               | /var/log/anyware-manager/install.log        | (duplicate log from awm-install.log )                       |
+| centos-gfx       | anyware_admin | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |
 |                  |               | /var/log/nvidia-installer.log               | Detailed log for NVIDIA driver installation                 |
-| centos-std       | cas_admin     | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| centos-std       | anyware_admin | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |
@@ -131,9 +131,9 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | C:\Windows\System32\winevt\Logs             | Detailed system and event logs                              |
 
 ## CAS Connector Missing
-If the CAS Connectors (cac) do not show up in the ```Connectors``` section in CAS Manager after Terraform deployment completed, then there is likely a problem with the provisioning script used to bring up the cac VM. Start debugging by looking at the [logs](#vm-log-locations) via an SSH session.
+If the CAS Connectors (cac) do not show up in the ```Connectors``` section in Anyware Manager after Terraform deployment completed, then there is likely a problem with the provisioning script used to bring up the cac VM. Start debugging by looking at the [logs](#vm-log-locations) via an SSH session.
 - If you find errors like ```$'\r': command not found``` or ```syntax error near unexpected token `$'{\r''```, then the problem is due to Windows-style End of Line (EoL) characters in the provisioning script. The EoL character in Windows is ```\r\n``` whereas it is ```\n``` in Linux/Unix. Make sure the files checked out from the git repo on the Terraform host machine have the proper EoL. 
-- The CAS Manager Deployment Service Account JSON file (specified by the ```cas_mgr_deployment_sa_file``` variable in ```terraform.tfvars```) may be incorrect. There should be errors in /var/log/teradici/provisioning.log when CAC is being installed. Make sure the file specified is correct, or create and update ```terraform.tfvars``` to use a new Deployment Service Account JSON file from CAS Manager.
+- The Anyware Manager Deployment Service Account JSON file (specified by the ```awm_deployment_sa_file``` variable in ```terraform.tfvars```) may be incorrect. There should be errors in /var/log/teradici/provisioning.log when CAC is being installed. Make sure the file specified is correct, or create and update ```terraform.tfvars``` to use a new Deployment Service Account JSON file from Anyware Manager.
 The easiest way to correct these problems is to destroy and recreate the deployment by running ```terraform destroy``` followed by ```terraform apply```.
 
 ## Failed to SSH into VMs
