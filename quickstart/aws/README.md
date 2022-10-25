@@ -58,7 +58,7 @@ Enter your PCoIP Registration code.
 If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
 
 ### api_token
-Enter the CAS Manager API token.
+Enter the Anyware Manager API token.
 
 Log into [https://cas.teradici.com](https://cas.teradici.com) using your Google Workspace or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
@@ -103,14 +103,14 @@ terraform destroy
 
 ### Deleting the AWS IAM Resources
 
-1.  The script created an IAM policy, role, access key, and user to allow Terraform to create and CAS Manager to manage AWS resources. Before removing these IAM resources, you must first make sure to complete **all** previous steps to delete the deployment. 
+1.  The script created an IAM policy, role, access key, and user to allow Terraform to create and Anyware Manager to manage AWS resources. Before removing these IAM resources, you must first make sure to complete **all** previous steps to delete the deployment. 
 2.  Then, run the following commands:
 ```bash
-aws iam detach-role-policy --role-name <prefix>-cas-manager_role --policy-arn arn:aws:iam::<account-id>:policy/<prefix>-cas-manager_role_policy
-aws iam delete-policy --policy-arn arn:aws:iam::<account-id>:policy/<prefix>-cas-manager_role_policy
-aws iam delete-role --role-name <prefix>-cas-manager_role
-aws iam delete-access-key --user-name <prefix>-cas-manager --access-key-id <access-key-id>
-aws iam detach-user-policy --user-name <prefix>-cas-manager --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
-aws iam delete-user --user-name <prefix>-cas-manager
+aws iam detach-role-policy --role-name <prefix>-anyware-manager_role --policy-arn arn:aws:iam::<account-id>:policy/<prefix>-anyware-manager_role_policy
+aws iam delete-policy --policy-arn arn:aws:iam::<account-id>:policy/<prefix>-anyware-manager_role_policy
+aws iam delete-role --role-name <prefix>-anyware-manager_role
+aws iam delete-access-key --user-name <prefix>-anyware-manager --access-key-id <access-key-id>
+aws iam detach-user-policy --user-name <prefix>-anyware-manager --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+aws iam delete-user --user-name <prefix>-anyware-manager
 ```
 

@@ -5,7 +5,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import casmgr
+import awm
 import getpass
 import googleapiclient.discovery
 import json
@@ -52,16 +52,16 @@ def configurations_get(project_id, ws_types, username):
             print("Invalid PCoIP Registration Code format (Ex. ABCDEFGHIJKL@0123-4567-89AB-CDEF). Please try again.")
 
     def api_token_get(order_number):
-        print(f"{order_number}.  Please enter the CAS Manager API token.")
+        print(f"{order_number}.  Please enter the Anyware Manager API token.")
         print("    Log into https://cas.teradici.com, click on your email address on the top right and select \"Get API token\".")
         while True:
             api_token = input("api_token: ").strip()
-            mycasmgr = casmgr.CASManager(api_token)
-            print("Validating API token with CAS Manager... ", end="")
-            if (mycasmgr.auth_token_validate()):
+            my_awm = awm.AnywareManager(api_token)
+            print("Validating API token with Anyware Manager... ", end="")
+            if (my_awm.auth_token_validate()):
                 print("Yes")
                 return api_token
-            print("\nInvalid CAS Manager API token. Please try again.")
+            print("\nInvalid Anyware Manager API token. Please try again.")
 
     def region_resource_list_get(gcp_region):
         # This returns a dictionary object which contains information about the
@@ -251,7 +251,7 @@ def configurations_get(project_id, ws_types, username):
                 print("    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
             
-            vpc_name = f'{prefix}-vpc-cas'
+            vpc_name = f'{prefix}-vpc-anyware'
             if vpc_name in vpc_list:
                 print("vpc_name already exists. Please enter a different prefix.")
                 continue

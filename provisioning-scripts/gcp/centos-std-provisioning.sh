@@ -129,7 +129,7 @@ register_pcoip_agent() {
 
 install_auto_logoff() {
     # Auto logoff tool terminates a user session after the PCoIP session has been terminated. Please see the documentation for more details:
-    # https://www.teradici.com/web-help/cas_manager/current/admin_console/workstation_pools/#auto-log-off-service
+    # https://www.teradici.com/web-help/anyware_manager/22.09/admin_console/workstation_pools/#auto-log-off-service
 
     log "--> Installing PCoIP agent auto-logoff..."
     retry   3 `# 3 retries` \
