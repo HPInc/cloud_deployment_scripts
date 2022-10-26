@@ -9,34 +9,34 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   # Convert bool to iterable collection so it can be used with for_each
   enable_public_ip = var.enable_public_ip ? [true] : []
-  cas_mgr_setup_script = "cas-mgr-setup.py"
-  provisioning_script = "cas-mgr-provisioning.sh"
+  awm_setup_script = "awm-setup.py"
+  provisioning_script = "awm-provisioning.sh"
 }
 
-resource "aws_s3_object" "cas-mgr-setup-script" {
+resource "aws_s3_object" "awm-setup-script" {
   bucket = var.bucket_name
-  key    = local.cas_mgr_setup_script
-  source = "${path.module}/${local.cas_mgr_setup_script}"
+  key    = local.awm_setup_script
+  source = "${path.module}/${local.awm_setup_script}"
 }
 
-resource "aws_s3_object" "cas-mgr-provisioning-script" {
+resource "aws_s3_object" "awm-provisioning-script" {
   bucket  = var.bucket_name
   key     = local.provisioning_script
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      aws_region                   = var.aws_region,
-      aws_ssm_enable               = var.aws_ssm_enable,
-      bucket_name                  = var.bucket_name,
-      cas_mgr_admin_password       = var.cas_mgr_admin_password,
-      cas_mgr_aws_credentials_file = var.cas_mgr_aws_credentials_file,
-      cas_mgr_deployment_sa_file   = var.cas_mgr_deployment_sa_file,
-      cas_mgr_setup_script         = local.cas_mgr_setup_script,
-      cloudwatch_enable            = var.cloudwatch_enable,
-      cloudwatch_setup_script      = var.cloudwatch_setup_script,
-      customer_master_key_id       = var.customer_master_key_id,
-      pcoip_registration_code      = var.pcoip_registration_code,
-      teradici_download_token      = var.teradici_download_token,
+      awm_admin_password       = var.awm_admin_password,
+      awm_aws_credentials_file = var.awm_aws_credentials_file,
+      awm_deployment_sa_file   = var.awm_deployment_sa_file,
+      awm_setup_script         = local.awm_setup_script,
+      aws_region               = var.aws_region,
+      aws_ssm_enable           = var.aws_ssm_enable,
+      bucket_name              = var.bucket_name,
+      cloudwatch_enable        = var.cloudwatch_enable,
+      cloudwatch_setup_script  = var.cloudwatch_setup_script,
+      customer_master_key_id   = var.customer_master_key_id,
+      pcoip_registration_code  = var.pcoip_registration_code,
+      teradici_download_token  = var.teradici_download_token,
     }
   )
 }
@@ -72,8 +72,8 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   }
 }
 
-resource "aws_iam_role" "cas-mgr-role" {
-  name               = "${local.prefix}cas_mgr_role"
+resource "aws_iam_role" "awm-role" {
+  name               = "${local.prefix}awm_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
@@ -83,7 +83,7 @@ data "aws_kms_key" "encryption-key" {
   key_id = var.customer_master_key_id
 }
 
-data "aws_iam_policy_document" "cas-mgr-policy-doc" {
+data "aws_iam_policy_document" "awm-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
     resources = ["*"]
@@ -119,19 +119,19 @@ data "aws_iam_policy_document" "cas-mgr-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.cas_mgr_setup_script}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${local.awm_setup_script}"]
     effect    = "Allow"
   }
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cas_mgr_aws_credentials_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awm_aws_credentials_file}"]
     effect    = "Allow"
   }
 
   statement {
     actions   = ["s3:PutObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.cas_mgr_deployment_sa_file}"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awm_deployment_sa_file}"]
     effect    = "Allow"
   }
 
@@ -160,15 +160,15 @@ data "aws_iam_policy_document" "cas-mgr-policy-doc" {
   }
 }
 
-resource "aws_iam_role_policy" "cas-mgr-role-policy" {
-  name = "${local.prefix}cas_mgr_role_policy"
-  role = aws_iam_role.cas-mgr-role.id
-  policy = data.aws_iam_policy_document.cas-mgr-policy-doc.json
+resource "aws_iam_role_policy" "awm-role-policy" {
+  name = "${local.prefix}awm_role_policy"
+  role = aws_iam_role.awm-role.id
+  policy = data.aws_iam_policy_document.awm-policy-doc.json
 }
 
-resource "aws_iam_instance_profile" "cas-mgr-instance-profile" {
-  name = "${local.prefix}cas_mgr_instance_profile"
-  role = aws_iam_role.cas-mgr-role.name
+resource "aws_iam_instance_profile" "awm-instance-profile" {
+  name = "${local.prefix}awm_instance_profile"
+  role = aws_iam_role.awm-role.name
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
@@ -183,16 +183,16 @@ resource "time_sleep" "delay_destroy_log_group" {
   destroy_duration = "5s"
 }
 
-resource "aws_instance" "cas-mgr" {
+resource "aws_instance" "awm" {
   depends_on = [
-    aws_s3_object.cas-mgr-setup-script,
-    aws_s3_object.cas-mgr-provisioning-script,
+    aws_s3_object.awm-setup-script,
+    aws_s3_object.awm-provisioning-script,
     # wait 5 seconds before deleting the log group to account for delays in 
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group
   ]
 
-  subnet_id         = var.subnet
+  subnet_id     = var.subnet
 
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
@@ -208,7 +208,7 @@ resource "aws_instance" "cas-mgr" {
 
   key_name = var.admin_ssh_key_name
 
-  iam_instance_profile = aws_iam_instance_profile.cas-mgr-instance-profile.name
+  iam_instance_profile = aws_iam_instance_profile.awm-instance-profile.name
 
   user_data = data.template_file.user-data.rendered
 

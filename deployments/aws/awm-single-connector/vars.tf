@@ -51,7 +51,7 @@ variable "allowed_client_cidrs" {
 
 variable "admin_ssh_key_name" {
   description = "Name of Admin SSH Key"
-  default     = "cas_admin"
+  default     = "anyware_admin"
 }
 
 variable "admin_ssh_pub_key_file" {
@@ -65,12 +65,12 @@ variable "admin_ssh_pub_key_file" {
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the Cloud Access Software deployment"
-  default     = "vpc-cas"
+  description = "Name for VPC containing the HP Anyware deployment"
+  default     = "vpc-anyware"
 }
 
 variable "vpc_cidr" {
-  description = "CIDR for the VPC containing the CAS deployment"
+  description = "CIDR for the VPC containing the HP Anyware deployment"
   default     = "10.0.0.0/16" 
 }
 
@@ -142,7 +142,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_ad_admin"
+  default     = "anyware_ad_admin"
 }
 
 variable "ad_service_account_password" {
@@ -162,49 +162,49 @@ variable "domain_users_list" {
   }
 }
 
-variable "cas_mgr_subnet_name" {
-  description = "Name for subnet containing the CAS Manager"
-  default     = "subnet-cas-mgr"
+variable "awm_subnet_name" {
+  description = "Name for subnet containing the Anyware Manager"
+  default     = "subnet-awm"
 }
 
-variable "cas_mgr_subnet_cidr" {
-  description = "CIDR for subnet containing the CAS Manager"
+variable "awm_subnet_cidr" {
+  description = "CIDR for subnet containing the Anyware Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cas_mgr_instance_type" {
-  description = "Instance type for the CAS Manager"
+variable "awm_instance_type" {
+  description = "Instance type for the Anyware Manager"
   default     = "t2.xlarge"
 }
 
-variable "cas_mgr_disk_size_gb" {
-  description = "Disk size (GB) of the CAS Manager"
+variable "awm_disk_size_gb" {
+  description = "Disk size (GB) of the Anyware Manager"
   default     = "60"
 }
 
-variable "cas_mgr_ami_owner" {
-  description = "Owner of AMI for the CAS Manager"
+variable "awm_ami_owner" {
+  description = "Owner of AMI for the Anyware Manager"
   default     = "792107900819"
 }
 
-variable "cas_mgr_ami_name" {
-  description = "Name of the AMI to create CAS Manager from"
+variable "awm_ami_name" {
+  description = "Name of the AMI to create Anyware Manager from"
   default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
 }
 
-variable "cas_mgr_admin_password" {
-  description = "Password for the Administrator of CAS Manager"
+variable "awm_admin_password" {
+  description = "Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }
 
-variable "cas_mgr_aws_credentials_file" {
-    description = "Location of AWS credentials file for CAS Manager"
+variable "awm_aws_credentials_file" {
+    description = "Location of AWS credentials file for Anyware Manager"
     type        = string
 
     validation {
-      condition = fileexists(var.cas_mgr_aws_credentials_file)
-      error_message = "The cas_mgr_aws_credentials_file specified does not exist. Please check the file path."
+      condition = fileexists(var.awm_aws_credentials_file)
+      error_message = "The awm_aws_credentials_file specified does not exist. Please check the file path."
     }
 }
 

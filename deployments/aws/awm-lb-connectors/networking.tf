@@ -42,13 +42,13 @@ resource "aws_subnet" "dc-subnet" {
   }
 }
 
-resource "aws_subnet" "cas-mgr-subnet" {
-  cidr_block        = var.cas_mgr_subnet_cidr
+resource "aws_subnet" "awm-subnet" {
+  cidr_block        = var.awm_subnet_cidr
   vpc_id            = aws_vpc.vpc.id
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}${var.cas_mgr_subnet_name}"
+    Name = "${local.prefix}${var.awm_subnet_name}"
   }
 }
 
@@ -132,8 +132,8 @@ resource "aws_route_table_association" "rt-dc" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "rt-cas-mgr" {
-  subnet_id      = aws_subnet.cas-mgr-subnet.id
+resource "aws_route_table_association" "rt-awm" {
+  subnet_id      = aws_subnet.awm-subnet.id
   route_table_id = aws_route_table.public.id
 }
 
