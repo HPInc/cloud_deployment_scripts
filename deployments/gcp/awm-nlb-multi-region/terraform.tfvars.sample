@@ -12,7 +12,7 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # prefix = ""
 
 # By default, ICMP, SSH, RDP and WinRM to the deployed virtual machines are only
-# allowed from the Terraform host. HTTPS/API access to CAS Manager is also
+# allowed from the Terraform host. HTTPS/API access to Anyware Manager is also
 # limited by this range. Define allowed_admin_cidrs to open the VPC firewall to
 # additional IP addresses or CIDR. e.g. ["a.b.c.d/32", "e.f.g.0/24"]
 # allowed_admin_cidrs = []
@@ -38,13 +38,13 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 # Optional: additional AD users to create
 # domain_users_list = "/path/to/domain_users_list.csv"
 
-###################
-#   CAS Manager   #
-###################
-# cas_mgr_machine_type = "e2-standard-4"
-# cas_mgr_disk_size_gb = 60
+#######################
+#   Anyware Manager   #
+#######################
+# awm_machine_type = "e2-standard-4"
+# awm_disk_size_gb = 60
 
-cas_mgr_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+awm_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 ##############################
 #   Cloud Access Connector   #
@@ -146,9 +146,9 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 # kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
 
 # <-- Start of secrets section, do not edit this line. -->
-dc_admin_password            = "SecuRe_pwd1"
-safe_mode_admin_password     = "SecuRe_pwd2"
-ad_service_account_password  = "SecuRe_pwd3"
-cas_mgr_admin_password       = "SecuRe_pwd4"
-pcoip_registration_code      = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
-cas_mgr_gcp_credentials_file = "/path/to/gcp_cred.json"
+dc_admin_password           = "SecuRe_pwd1"
+safe_mode_admin_password    = "SecuRe_pwd2"
+ad_service_account_password = "SecuRe_pwd3"
+awm_admin_password          = "SecuRe_pwd4"
+pcoip_registration_code     = "ABCDEFGHIJKL@0123-4567-89AB-CDEF"
+awm_gcp_credentials_file    = "/path/to/gcp_cred.json"

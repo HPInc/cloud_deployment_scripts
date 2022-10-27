@@ -15,13 +15,13 @@ variable "prefix" {
   default     = ""
 }
 
-variable "cas_mgr_url" {
-  description = "CAS Manager URL (e.g. https://cas.teradici.com)"
+variable "manager_url" {
+  description = "Anyware Manager URL (e.g. https://cas.teradici.com)"
   type        = string
 }
 
-variable "cas_mgr_insecure" {
-  description = "Allow unverified SSL access to CAS Manager"
+variable "cac_flag_manager_insecure" {
+  description = "CAC install flag that allows unverified SSL access to Anyware Manager"
   type        = bool
   default     = false
 }
@@ -35,11 +35,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -66,8 +66,8 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "cas_mgr_deployment_sa_file" {
-  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
+variable "awm_deployment_sa_file" {
+  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
@@ -131,7 +131,7 @@ variable "cac_admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.cac_admin_ssh_pub_key_file)
+    condition     = fileexists(var.cac_admin_ssh_pub_key_file)
     error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
@@ -156,8 +156,8 @@ variable "kms_cryptokey_id" {
   default     = ""
 }
 
-variable "cas_mgr_script" {
-  description = "Name of script to interact with CAS Manager"
+variable "awm_script" {
+  description = "Name of script to interact with Anyware Manager"
   type        = string
 }
 

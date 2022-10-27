@@ -6,10 +6,10 @@
 #!/bin/bash
 
 ##### Template Variables #####
+AWM_ADMIN_PASSWORD=${awm_admin_password}
+AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_SETUP_SCRIPT=${awm_setup_script}
 BUCKET_NAME=${bucket_name}
-CAS_MGR_ADMIN_PASSWORD=${cas_mgr_admin_password}
-CAS_MGR_DEPLOYMENT_SA_FILE=${cas_mgr_deployment_sa_file}
-CAS_MGR_SETUP_SCRIPT=${cas_mgr_setup_script}
 GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
 GCP_SA_FILE=${gcp_sa_file}
 KMS_CRYPTOKEY_ID=${kms_cryptokey_id}
@@ -20,10 +20,10 @@ TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 INSTALL_DIR="/root"
-CAS_MGR_DEPLOYMENT_KEY_NAME="terraform-key"
-CAS_MGR_DEPLOYMENT_NAME="terraform-deployment"
-CAS_MGR_INSTALL_LOG="/var/log/teradici/cas-mgr-install.log"
-CAS_MGR_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cas-manager/cfg/setup/bash.rpm.sh"
+AWM_DEPLOYMENT_KEY_NAME="terraform-key"
+AWM_DEPLOYMENT_NAME="terraform-deployment"
+AWM_INSTALL_LOG="/var/log/teradici/awm-install.log"
+AWM_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
 
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
@@ -81,14 +81,14 @@ setup_ops() {
             $LOG_FILE \
             "/var/log/cloud-init-output.log" \
             "/var/log/messages" \
-            "/var/log/teradici/cas-mgr-install.log"
+            "/var/log/teradici/awm-install.log"
     fi
 }
 
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
-    yum update -y
-    yum install -y dos2unix python3
+    dnf update -y
+    dnf install -y dos2unix python3
 
     if [ $? -ne 0 ]
     then
@@ -129,8 +129,8 @@ get_credentials() {
         local kms_keyring="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f6)"
         local kms_key="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f8)"
 
-        log "--> Decrypting CAS Manager Administrator password..."
-        CAS_MGR_ADMIN_PASSWORD=$(echo -n $CAS_MGR_ADMIN_PASSWORD | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
+        log "--> Decrypting Anyware Manager Administrator password..."
+        AWM_ADMIN_PASSWORD=$(echo -n $AWM_ADMIN_PASSWORD | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
 
         log "--> Decrypting PCoIP registration code..."
         PCOIP_REGISTRATION_CODE=$(echo -n $PCOIP_REGISTRATION_CODE | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
@@ -153,9 +153,9 @@ check_required_vars() {
         missing_vars="true"
     fi
 
-    if [[ -z "$CAS_MGR_ADMIN_PASSWORD" ]]
+    if [[ -z "$AWM_ADMIN_PASSWORD" ]]
     then
-        log "--> ERROR: Missing CAS Manager Administrator Password."
+        log "--> ERROR: Missing Anyware Manager Administrator Password."
         missing_vars="true"
     fi
     set -x
@@ -177,46 +177,48 @@ configure_firewall(){
     firewall-cmd --reload
 }
 
-add_cas_mgr_repo() {
-    log "--> Adding CAS Manager repo..."
-    curl -1sLf $CAS_MGR_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
-    yum repolist --enabled teradici-cas-manager*
+add_awm_repo() {
+    log "--> Adding Anyware Manager repo..."
+    curl -1sLf $AWM_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
+    dnf repolist --enabled teradici-anyware-manager*
 }
 
 config_selinux() {
     log "--> Configuring SE Linux..."
-    yum install -y selinux-policy-base container-selinux
-    yum install -y https://github.com/k3s-io/k3s-selinux/releases/download/v0.2.stable.1/k3s-selinux-0.2-1.el7_8.noarch.rpm
-    yum install -y cas-manager-selinux
+    dnf install -y selinux-policy-base container-selinux
+    dnf install -y https://github.com/k3s-io/k3s-selinux/releases/download/v1.1.stable.1/k3s-selinux-1.1-1.el8.noarch.rpm
+    dnf install -y anyware-manager-selinux
 }
 
-install_cas_mgr() {
-    log "--> Installing CAS Manager..."
-    # TODO: figure out the /dev/tty error
-    yum install -y cas-manager 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
+install_awm() {
+    # https://www.teradici.com/web-help/anyware_manager/22.09/cam_standalone_installation/default_config/#3-install-anyware-manager
+    log "--> Installing Anyware Manager..."
 
-    # Install manually
-    /usr/local/bin/cas-manager install --accept-policies --self-signed --manifest /tmp/jsonnet-stable.tar.gz --release-notes /tmp/release-notes.xml --debug 2>&1 | tee -a $CAS_MGR_INSTALL_LOG
+    # Run the following command to install Anyware Manager RPM
+    dnf install -y anyware-manager 2>&1 | tee -a $AWM_INSTALL_LOG 
+
+    # Run the following command to install Anyware Manager with the appropriate flags
+    /usr/local/bin/anyware-manager install --accept-policies --self-signed --debug 2>&1 | tee -a $AWM_INSTALL_LOG
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to install CAS Manager..."
+        log "--> ERROR: Failed to install Anyware Manager..."
         exit 1
     fi
 }
 
-cas_mgr_setup() {
+awm_setup() {
     local optional_args=""
 
-    log "--> Running CAS Manager setup script..."
+    log "--> Running Anyware Manager setup script..."
 
     retry 720 `# 720 retries` \
           10  `# 10s interval` \
-          "gsutil cp gs://$BUCKET_NAME/$CAS_MGR_SETUP_SCRIPT $INSTALL_DIR" \
-          "--> ERROR: Failed to download CAS Manager setup script from gs://$BUCKET_NAME/$CAS_MGR_SETUP_SCRIPT."
+          "gsutil cp gs://$BUCKET_NAME/$AWM_SETUP_SCRIPT $INSTALL_DIR" \
+          "--> ERROR: Failed to download Anyware Manager setup script from gs://$BUCKET_NAME/$AWM_SETUP_SCRIPT."
 
-    dos2unix $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT
-    chmod +x $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT
+    dos2unix $INSTALL_DIR/$AWM_SETUP_SCRIPT
+    chmod +x $INSTALL_DIR/$AWM_SETUP_SCRIPT
 
     if [ "$GCP_SA_FILE" ]
     then
@@ -224,34 +226,34 @@ cas_mgr_setup() {
         optional_args=$optional_args"--gcp_key $INSTALL_DIR/$GCP_SA_FILE "
     fi
 
-    log "--> Running CAS Manager setup script with the following options:"
-    log "  --deployment_name $CAS_MGR_DEPLOYMENT_NAME"
-    log "  --key_file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE"
-    log "  --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME"
-    log "  --password <CAS Manager Administrator Password>"
+    log "--> Running Anyware Manager setup script with the following options:"
+    log "  --deployment_name $AWM_DEPLOYMENT_NAME"
+    log "  --key_file $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE"
+    log "  --key_name $AWM_DEPLOYMENT_KEY_NAME"
+    log "  --password <Anyware Manager Administrator Password>"
     log "  --reg_code <PCoIP Registration Code>"
     log "  $optional_args"
 
     set +x
     PYTHONWARNINGS="ignore:Unverified HTTPS request" \
-      $INSTALL_DIR/$CAS_MGR_SETUP_SCRIPT \
-      --deployment_name $CAS_MGR_DEPLOYMENT_NAME \
-      --key_file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE \
-      --key_name $CAS_MGR_DEPLOYMENT_KEY_NAME \
-      --password $CAS_MGR_ADMIN_PASSWORD \
+      $INSTALL_DIR/$AWM_SETUP_SCRIPT \
+      --deployment_name $AWM_DEPLOYMENT_NAME \
+      --key_file $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE \
+      --key_name $AWM_DEPLOYMENT_KEY_NAME \
+      --password $AWM_ADMIN_PASSWORD \
       --reg_code $PCOIP_REGISTRATION_CODE \
       $optional_args
     set -x
 
     if [ $? -ne 0 ]
     then
-        log "--> ERROR: Failed to run CAS Manager setup script. Exiting provisioning script..."
+        log "--> ERROR: Failed to run Anyware Manager setup script. Exiting provisioning script..."
         exit 1
     fi
 
-    if [ ! -f "$INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE" ]
+    if [ ! -f "$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE" ]
     then
-        log "--> ERROR: CAS Manager Deployment service account key not created. Exiting provisioning script..."
+        log "--> ERROR: Anyware Manager Deployment service account key not created. Exiting provisioning script..."
         exit 1
     fi
 }
@@ -265,14 +267,14 @@ upload_dsa_key() {
         local kms_keyring="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f6)"
         local kms_key="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f8)"
 
-        cat $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE | gcloud kms encrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --plaintext-file - --ciphertext-file $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
+        cat $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE | gcloud kms encrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --plaintext-file - --ciphertext-file $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE
     fi
 
     log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
 
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "gsutil cp $INSTALL_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE gs://$BUCKET_NAME/" \
+          "gsutil cp $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE gs://$BUCKET_NAME/" \
           "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
 
     if [ $? -ne 0 ]
@@ -307,10 +309,10 @@ install_prereqs
 get_credentials
 check_required_vars
 configure_firewall
-add_cas_mgr_repo
+add_awm_repo
 config_selinux
-install_cas_mgr
-cas_mgr_setup
+install_awm
+awm_setup
 upload_dsa_key
 
 log "--> Provisioning script completed successfully."

@@ -36,7 +36,7 @@ def create_connector_name():
 
 
 def load_service_account_key(path):
-    print(f"Loading CAS Manager deployment service account key from {path}...")
+    print(f"Loading Anyware Manager deployment service account key from {path}...")
 
     with open(path) as f:
         dsa_key = json.load(f)
@@ -44,15 +44,15 @@ def load_service_account_key(path):
     return dsa_key
 
 
-def cas_mgr_login(key):
-    print(f"Signing in to CAS Manager with key {key['keyName']}...")
+def awm_login(key):
+    print(f"Signing in to Anyware Manager with key {key['keyName']}...")
 
     payload = {
         'username': key['username'], 
         'password': key['apiKey'],
     }
     resp = session.post(
-        f"{cas_mgr_api_url}/auth/signin",
+        f"{awm_api_url}/auth/signin",
         json=payload, 
     )
     resp.raise_for_status()
@@ -69,7 +69,7 @@ def get_cac_token(key, connector_name):
         'connectorName': connector_name,
     }
     resp = session.post(
-        f"{cas_mgr_api_url}/auth/tokens/connector",
+        f"{awm_api_url}/auth/tokens/connector",
         json=payload, 
     )
     resp.raise_for_status()
@@ -84,24 +84,24 @@ def token_write(token, path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="This script uses CAS Manager Deployment Service Account JSON file to create a new CAC token.")
+    parser = argparse.ArgumentParser(description="This script uses Anyware Manager Deployment Service Account JSON file to create a new CAC token.")
 
-    parser.add_argument("cas_mgr", help="specify the path to CAS Manager Deployment Service Account JSON file")
+    parser.add_argument("awm", help="specify the path to Anyware Manager Deployment Service Account JSON file")
     parser.add_argument("--out", required=True, help="File to write the CAC token")
     parser.add_argument("--url", default="https://cas.teradici.com", help="specify the api url")
-    parser.add_argument("--insecure", action="store_true", help="Allow unverified HTTPS connection to CAS Manager")
+    parser.add_argument("--insecure", action="store_true", help="Allow unverified HTTPS connection to Anyware Manager")
 
     args = parser.parse_args()
 
-    cas_mgr_api_url = f"{args.url}/api/v1"
+    awm_api_url = f"{args.url}/api/v1"
 
-    # Set up session to be used for all subsequent calls to CAS Manager
+    # Set up session to be used for all subsequent calls to Anyware Manager
     session = requests.Session()
     if args.insecure:
         session.verify = False
 
-    dsa_key = load_service_account_key(args.cas_mgr)
-    cas_mgr_login(dsa_key)
+    dsa_key = load_service_account_key(args.awm)
+    awm_login(dsa_key)
     connector_name = create_connector_name()
     cac_token = get_cac_token(dsa_key, connector_name)
     token_write(cac_token, args.out)
