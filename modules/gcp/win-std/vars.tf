@@ -77,7 +77,7 @@ variable "enable_public_ip" {
 }
 
 variable "idle_shutdown_enable" {
-  description = "Enable CAS Manager auto idle shutdown for Workstations"
+  description = "Enable Anyware Manager auto idle shutdown for Workstations"
   default     = true
 }
 

@@ -4,22 +4,22 @@
 
 - [Overview](#overview)
 - [single-connector](#single-connector)
-- [cas-mgr-single-connector](#cas-mgr-single-connector)
+- [awm-single-connector](#awm-single-connector)
 - [multi-region](#multi-region)
-- [cas-mgr-multi-region](#cas-mgr-multi-region)
+- [awm-multi-region](#awm-multi-region)
 - [nlb-multi-region](#nlb-multi-region)
-- [cas-mgr-nlb-multi-region](#cas-mgr-nlb-multi-region)
+- [awm-nlb-multi-region](#awm-nlb-multi-region)
 - [dc-only](#dc-only)
 
 ---
 
 ## Overview
 
-This repository contains a number of CAS deployment architectures on GCP. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference between them is how each CAS deployment is managed:
-1. using CAS Manager as a Service, which is a SaaS run by Teradici (first table), or
-2. running the CAS Manager in a virtual machine that a user controls in his or her own CAS deployment (second table)
+This repository contains a number of HP Anyware deployment architectures on GCP. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference between them is how each HP Anyware deployment is managed:
+1. using Anyware Manager as a Service, which is a SaaS run by Teradici (first table), or
+2. running the Anyware Manager in a virtual machine that a user controls in his or her own HP Anyware deployment (second table)
 
-Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of the CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is resonsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
+Using Anyware Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the Anyware Manager without additional costs. Running the Anyware Manager in a virtual machine, on the other hand, gives the user full control of the HP Anyware deployment; the HP Anyware deployment will not have to reach out to the internet for HP Anyware management features, but the user is responsible for costs, security, updates, high availability and maintenance of the virtual machine running Anyware Manager.
 
 | | single-connector | multi-region | nlb-multi-region |
 | --- | --- | --- | --- |
@@ -27,28 +27,28 @@ Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici
 | # of Regions Supported | 1 | 1 or more | 1 or more |
 | # of Connectors | 1 | 1 or more per region | 1 or more per region |
 | # of PCoIP Entry Points | 1 (single Virtual Machine) | 1 (Global Load Balancer) | 1 per region (Regional Network Load Balancer) |
-| CAS Manager | as a Service | as a Service | as a Service |
+| Anyware Manager | as a Service | as a Service | as a Service |
 
-| | cas-mgr-single-connector | cas-mgr-multi-region | cas-mgr-nlb-multi-region |
+| | awm-single-connector | awm-multi-region | awm-nlb-multi-region |
 | --- | --- | --- | --- |
 | Description | Great for quick proof of concept. Only has one Connector in one region, limiting scalability.  | A global deployment supporting multiple Connectors in multiple regions running behind a global load balancer.  Each Connector is on a public subnet with its own public IP. PCoIP clients can access the deployment via a single global entry point. | A global deployment supporting multiple Connectors in multiple regions running behind regional load balancers.  Connectors are in private subnets without direct exposure to the internet. PCoIP clients can access the deployment via regional entry points. |
 | # of Regions Supported | 1 | 1 or more | 1 or more |
 | # of Connectors | 1 | 1 or more per region | 1 or more per region |
 | # of PCoIP Entry Points | 1 (single Virtual Machine) | 1 (Global Load Balancer) | 1 per region (Regional Network Load Balancer) |
-| CAS Manager | Virtual Machine | Virtual Machine | Virtual Machine |
+| Anyware Manager | Virtual Machine | Virtual Machine | Virtual Machine |
 
 ## single-connector
 
-This is the simplest CAS deployment which uses CAS Manager as a Service; it creates a VPC with 3 subnets in the same region. The subnets are
+This is the simplest HP Anyware deployment which uses Anyware Manager as a Service; it creates a VPC with 3 subnets in the same region. The subnets are
 - `subnet-dc`: for the Domain Controller
 - `subnet-cac`: for the Connector
 - `subnet-ws`: for the workstations
 
 Firewall rules are created to allow wide-open access within the VPC, and selected ports are open to the public for operation and for debug purposes.
 
-A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `cas_ad_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP (configurable) and a public IP.
+A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `anyware_ad_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP (configurable) and a public IP.
 
-A Cloud Access Connector is created and registers itself with the CAS Manager with the given CAS Manager Deployment Service Account credentials.
+A Cloud Access Connector is created and registers itself with the Anyware Manager with the given Anyware Manager Deployment Service Account credentials.
 
 Domain-joined workstations are optionally created, specified by the following parameters:
 - `win_gfx_instance_count`:    Windows Graphics workstation
@@ -60,11 +60,11 @@ These workstations are automatically domain-joined and have the PCoIP Agent inst
 
 ![single-connector diagram](single-connector.png)
 
-## cas-mgr-single-connector
+## awm-single-connector
 
-This deployment is essentially the same as [single-connector](#single-connector), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [single-connector](#single-connector), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.
 
-![cas-mgr-single-connector diagram](cas-mgr-single-connector.png)
+![awm-single-connector diagram](awm-single-connector.png)
 
 ## multi-region
 
@@ -84,13 +84,13 @@ The next diagram shows a deployment with Cloud Access Connectors and workstation
 
 ![multi-region diagram](multi-region.png)
 
-## cas-mgr-multi-region
+## awm-multi-region
 
-This deployment is essentially the same as [multi-region](#multi-region), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [multi-region](#multi-region), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.
 
-![cas-mgr-multi-region (single region) diagram](cas-mgr-multi-region-single.png)
+![awm-multi-region (single region) diagram](awm-multi-region-single.png)
 
-![cas-mgr-multi-region (single region) diagram](cas-mgr-multi-region.png)
+![awm-multi-region (single region) diagram](awm-multi-region.png)
 
 ## nlb-multi-region
 
@@ -102,11 +102,11 @@ The user can specify which zones to deploy workstations and which regions to dep
 
 ![nlb-multi-region diagram](nlb-multi-region.png)
 
-## cas-mgr-nlb-multi-region
+## awm-nlb-multi-region
 
-This deployment is essentially the same as [nlb-multi-region](#nlb-multi-region), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [nlb-multi-region](#nlb-multi-region), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.
 
-![cas-mgr-nlb-multi-region diagram](cas-mgr-nlb-multi-region.png)
+![awm-nlb-multi-region diagram](awm-nlb-multi-region.png)
 
 ## dc-only
 
