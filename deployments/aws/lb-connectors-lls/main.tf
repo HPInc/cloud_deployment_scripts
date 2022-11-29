@@ -6,18 +6,18 @@
  */
 
 locals {
-  prefix             = var.prefix != "" ? "${var.prefix}-" : ""
-  bucket_name        = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
-  # Name of CAS Manager deployment service account key file in bucket
-  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
-  admin_ssh_key_name = "${local.prefix}${var.admin_ssh_key_name}"
+  prefix      = var.prefix != "" ? "${var.prefix}-" : ""
+  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  # Name of Anyware Manager deployment service account key file in bucket
+  awm_deployment_sa_file = "awm-deployment-sa-key.json"
+  admin_ssh_key_name     = "${local.prefix}${var.admin_ssh_key_name}"
 
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
   cloudwatch_setup_deb_script = "cloudwatch_setup_deb.sh"
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
 }
 
-resource "aws_key_pair" "cas_admin" {
+resource "aws_key_pair" "anyware_admin" {
   key_name   = local.admin_ssh_key_name
   public_key = file(var.admin_ssh_pub_key_file)
 }
@@ -40,10 +40,10 @@ resource "aws_s3_bucket_acl" "scripts" {
   acl    = "private"
 }
 
-resource "aws_s3_object" "cas-mgr-deployment-sa-file" {
+resource "aws_s3_object" "awm-deployment-sa-file" {
   bucket = aws_s3_bucket.scripts.id
-  key    = local.cas_mgr_deployment_sa_file
-  source = var.cas_mgr_deployment_sa_file
+  key    = local.awm_deployment_sa_file
+  source = var.awm_deployment_sa_file
 }
 
 resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
@@ -74,10 +74,10 @@ module "dc" {
   source = "../../../modules/aws/dc"
 
   prefix = var.prefix
-  
-  pcoip_agent_version         = var.dc_pcoip_agent_version
-  pcoip_registration_code     = ""
-  teradici_download_token     = var.teradici_download_token
+
+  pcoip_agent_version     = var.dc_pcoip_agent_version
+  pcoip_registration_code = ""
+  teradici_download_token = var.teradici_download_token
 
   customer_master_key_id      = var.customer_master_key_id
   domain_name                 = var.domain_name
@@ -87,8 +87,8 @@ module "dc" {
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.dc-subnet.id
+  bucket_name = aws_s3_bucket.scripts.id
+  subnet      = aws_subnet.dc-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-rdp.id,
@@ -101,7 +101,7 @@ module "dc" {
 
   ami_owner = var.dc_ami_owner
   ami_name  = var.dc_ami_name
-  
+
   aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
@@ -122,8 +122,8 @@ module "lls" {
   lls_license_count       = var.lls_license_count
   teradici_download_token = var.teradici_download_token
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.lls-subnet.id
+  bucket_name = aws_s3_bucket.scripts.id
+  subnet      = aws_subnet.lls-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -137,7 +137,7 @@ module "lls" {
   ami_name  = var.lls_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
-  
+
   aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
@@ -150,13 +150,13 @@ resource "aws_lb" "cac-alb" {
   name               = "${local.prefix}cac-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [
+  security_groups = [
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-pcoip.id,
   ]
-  subnets            = aws_subnet.cac-subnets[*].id
+  subnets = aws_subnet.cac-subnets[*].id
 }
 
 resource "aws_lb_target_group" "cac-tg" {
@@ -193,7 +193,7 @@ resource "tls_self_signed_cert" "tls-cert" {
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
 
   subject {
-    common_name  = var.domain_name
+    common_name = var.domain_name
   }
 
   validity_period_hours = 8760
@@ -205,8 +205,8 @@ resource "tls_self_signed_cert" "tls-cert" {
 }
 
 resource "aws_acm_certificate" "ssl-cert" {
-  private_key      = var.ssl_key  == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
-  certificate_body = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem  : file(var.ssl_cert)
+  private_key      = var.ssl_key == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
+  certificate_body = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem : file(var.ssl_cert)
 
   lifecycle {
     create_before_destroy = true
@@ -234,11 +234,11 @@ module "cac" {
 
   prefix = var.prefix
 
-  aws_region                 = var.aws_region
-  customer_master_key_id     = var.customer_master_key_id
-  cas_mgr_url                = var.cas_mgr_url
-  cas_mgr_insecure           = var.cas_mgr_insecure
-  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
+  awm_deployment_sa_file    = local.awm_deployment_sa_file
+  aws_region                = var.aws_region
+  cac_flag_manager_insecure = var.cac_flag_manager_insecure
+  customer_master_key_id    = var.customer_master_key_id
+  manager_url               = var.manager_url
 
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
@@ -258,13 +258,13 @@ module "cac" {
     aws_security_group.allow-pcoip.id,
   ]
 
-  bucket_name    = aws_s3_bucket.scripts.id
-  instance_type  = var.cac_instance_type
-  disk_size_gb   = var.cac_disk_size_gb
+  bucket_name   = aws_s3_bucket.scripts.id
+  instance_type = var.cac_instance_type
+  disk_size_gb  = var.cac_disk_size_gb
 
   ami_owner = var.cac_ami_owner
   ami_name  = var.cac_ami_name
-  
+
   cac_version             = var.cac_version
   teradici_download_token = var.teradici_download_token
 
@@ -278,7 +278,7 @@ module "cac" {
 }
 
 resource "aws_lb_target_group_attachment" "cac-tg-attachment" {
-  count            = length(module.cac.instance-id)
+  count = length(module.cac.instance-id)
 
   target_group_arn = aws_lb_target_group.cac-tg.arn
   target_id        = module.cac.instance-id[count.index]
@@ -302,9 +302,9 @@ module "win-gfx" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = aws_s3_bucket.scripts.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -323,9 +323,9 @@ module "win-gfx" {
 
   ami_owner = var.win_gfx_ami_owner
   ami_name  = var.win_gfx_ami_name
-  
+
   aws_ssm_enable = var.aws_ssm_enable
-  
+
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_win_script
 
@@ -349,9 +349,9 @@ module "win-std" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = aws_s3_bucket.scripts.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -370,7 +370,7 @@ module "win-std" {
 
   ami_owner = var.win_std_ami_owner
   ami_name  = var.win_std_ami_name
-  
+
   aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
@@ -395,9 +395,9 @@ module "centos-gfx" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = aws_s3_bucket.scripts.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -423,7 +423,7 @@ module "centos-gfx" {
   ami_name  = var.centos_gfx_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
-  
+
   aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable
@@ -448,9 +448,9 @@ module "centos-std" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = aws_s3_bucket.scripts.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -476,7 +476,7 @@ module "centos-std" {
   ami_name  = var.centos_std_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
-  
+
   aws_ssm_enable = var.aws_ssm_enable
 
   cloudwatch_enable       = var.cloudwatch_enable

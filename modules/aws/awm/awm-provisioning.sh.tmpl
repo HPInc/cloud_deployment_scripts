@@ -1,0 +1,328 @@
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+#!/bin/bash
+
+##### Template Variables #####
+AWM_ADMIN_PASSWORD=${awm_admin_password}
+AWM_AWS_CREDENTIALS_FILE=${awm_aws_credentials_file}
+AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_SETUP_SCRIPT=${awm_setup_script}
+AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
+BUCKET_NAME=${bucket_name}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
+PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+
+AWM_DEPLOYMENT_KEY_NAME="terraform-key"
+AWM_DEPLOYMENT_NAME="terraform-deployment"
+AWM_INSTALL_LOG="/var/log/teradici/awm-install.log"
+AWM_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager/cfg/setup/bash.rpm.sh"
+
+INSTALL_DIR="/root"
+cd $INSTALL_DIR
+
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
+
+retry() {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
+
+    local retry_num=0
+    until eval $shell_command
+    do
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
+        then
+            log $error_message
+            return $rc
+        fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
+    done
+}
+
+install_prereqs() {
+    log "--> Installing dos2unix, python3, firewalld..."
+    dnf update -y
+    dnf install -y dos2unix python38 firewalld
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install prerequisites. Exiting provisioning script..."
+        exit 1
+    fi
+
+    python3 -m pip install --upgrade requests configparser boto3
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install Python modules. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT."
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
+
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
+            $LOG_FILE                                   "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/cloud-init-output.log"            "at %a, %d %b %Y %H:%M:%S %z." \
+            "/var/log/messages"                         "%b %d %H:%M:%S" \
+            "/var/log/teradici/awm-install.log"         "%b %d %H:%M:%S" \
+            "/var/log/teradici/user-data.log"           "%a %b %d %H:%M:%S %Z %Y"
+    fi
+}
+
+get_credentials() {
+    # Disable logging of secrets by wrapping the region with set +x and set -x
+    set +x
+
+    if [ "$AWM_AWS_CREDENTIALS_FILE" ]
+    then
+        retry 720 `# 720 retries` \
+              10  `# 10s interval` \
+              "aws s3 cp s3://$BUCKET_NAME/$AWM_AWS_CREDENTIALS_FILE $INSTALL_DIR" \
+              "--> ERROR: Failed to download AWS credentials file from bucket $BUCKET_NAME."
+    fi
+
+    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
+    then
+        AWM_GUI_ADMIN_PASSWORD=$AWM_ADMIN_PASSWORD
+        log "--> Script is not using encryption for secrets."
+
+    else
+        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
+
+        log "--> Decrypting Anyware Manager GUI Administrator password..."
+        AWM_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AWM_ADMIN_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        log "--> Decrypting PCoIP registration code..."
+        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$PCOIP_REGISTRATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
+
+        if [ "$AWM_AWS_CREDENTIALS_FILE" ]
+        then
+            log "--> Decrypting AWS Service Account credentials file..."
+            aws kms decrypt --region $AWS_REGION --ciphertext-blob "fileb://$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE.decrypted"
+            mv "$AWM_AWS_CREDENTIALS_FILE.decrypted" "$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE"
+        fi
+    fi
+
+    set -x
+}
+
+check_required_vars() {
+    set +x
+
+    if [[ -z "$PCOIP_REGISTRATION_CODE" ]]
+    then
+        log "--> ERROR: Missing PCoIP Registration Code."
+        missing_vars="true"
+    fi
+
+    if [[ -z "$AWM_GUI_ADMIN_PASSWORD" ]]
+    then
+        log "--> ERROR: Missing Anyware Manager GUI Administrator Password."
+        missing_vars="true"
+    fi
+    set -x
+
+    if [[ "$missing_vars" == "true" ]]
+    then
+        log "--> Exiting..."
+        exit 1
+    fi
+}
+
+configure_firewall(){
+    # Ran into the following dbus error when using firewall-cmd. Using firewall-offline-cmd as a workaround.
+    # ERROR:dbus.proxies:Introspect error on :1.30:/org/fedoraproject/FirewallD1: dbus.exceptions.DBusException: org.freedesktop.DBus.Error.NoReply
+
+    firewall-offline-cmd --set-default-zone trusted
+    firewall-offline-cmd --add-port=6443/tcp # virtual network flannel
+    firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 # This subnet is for the pods
+    firewall-offline-cmd --zone=trusted --add-source=10.43.0.0/16 # This subnet is for the services
+
+    systemctl enable firewalld
+    systemctl start firewalld
+}
+
+add_awm_repo() {
+    log "--> Adding Anyware Manager repo..."
+    curl -1sLf $AWM_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
+    dnf repolist --enabled teradici-anyware-manager*
+}
+
+config_selinux() {
+    log "--> Configuring SE Linux..."
+    dnf install -y selinux-policy-base container-selinux
+    dnf install -y https://github.com/k3s-io/k3s-selinux/releases/download/v1.1.stable.1/k3s-selinux-1.1-1.el8.noarch.rpm
+    dnf install -y anyware-manager-selinux
+}
+
+install_awm() {
+    # https://www.teradici.com/web-help/anyware_manager/22.09/cam_standalone_installation/default_config/#3-install-anyware-manager
+    log "--> Installing Anyware Manager..."
+
+    # Run the following command to install Anyware Manager RPM
+    dnf install -y anyware-manager 2>&1 | tee -a $AWM_INSTALL_LOG 
+
+    # Run the following command to install Anyware Manager with the appropriate flags
+    /usr/local/bin/anyware-manager install --accept-policies --self-signed --debug 2>&1 | tee -a $AWM_INSTALL_LOG
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install Anyware Manager..."
+        exit 1
+    fi
+}
+
+awm_setup() {
+    local optional_args=""
+
+    log "--> Running Anyware Manager setup script..."
+
+    retry 720 `# 720 retries` \
+          10  `# 10s interval` \
+          "aws s3 cp s3://$BUCKET_NAME/$AWM_SETUP_SCRIPT $INSTALL_DIR" \
+          "--> ERROR: Failed to download Anyware Manager setup script from s3://$BUCKET_NAME/$AWM_SETUP_SCRIPT."
+
+    dos2unix $INSTALL_DIR/$AWM_SETUP_SCRIPT
+    chmod +x $INSTALL_DIR/$AWM_SETUP_SCRIPT
+
+    if [ "$AWM_AWS_CREDENTIALS_FILE" ]
+    then
+        dos2unix $INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE
+        chmod 600 $INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE
+        optional_args=$optional_args"--aws_key $INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE"
+    fi
+
+    log "--> Running Anyware Manager setup script with the following options:"
+    log "  --deployment_name $AWM_DEPLOYMENT_NAME"
+    log "  --key_file $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE"
+    log "  --key_name $AWM_DEPLOYMENT_KEY_NAME"
+    log "  --password <Anyware Manager GUI Administrator Password>"
+    log "  --reg_code <PCoIP Registration Code>"
+    log "  $optional_args"
+
+    set +x
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" \
+      $INSTALL_DIR/$AWM_SETUP_SCRIPT \
+      --deployment_name $AWM_DEPLOYMENT_NAME \
+      --key_file $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE \
+      --key_name $AWM_DEPLOYMENT_KEY_NAME \
+      --password $AWM_GUI_ADMIN_PASSWORD \
+      --reg_code $PCOIP_REGISTRATION_CODE \
+      $optional_args
+    set -x
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to run Anyware Manager setup script. Exiting provisioning script..."
+        exit 1
+    fi
+
+    if [ ! -f "$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE" ]
+    then
+        log "--> ERROR: Anyware Manager Deployment service account key not created. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+upload_dsa_key() {
+    if [[ "$CUSTOMER_MASTER_KEY_ID" ]]
+    then
+        log "--> Encrypting Deployment Service Account key with $CUSTOMER_MASTER_KEY_ID"
+
+        mv $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE.orig
+
+        aws kms encrypt \
+            --region $AWS_REGION \
+            --key-id $CUSTOMER_MASTER_KEY_ID \
+            --plaintext fileb://$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE.orig \
+            --output text \
+            --query CiphertextBlob | base64 -d > $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE
+    fi
+
+    log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
+
+    retry 5 `# 5 retries`\
+          5 `# 5s interval` \
+          "aws s3 cp $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE s3://$BUCKET_NAME/" \
+          "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
+
+    if [ $? -ne 0 ]
+    then
+        log "--> Exiting provisioning script due to an error."
+        exit 1
+    fi
+}
+
+setup_ssm() {
+    dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+}
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
+fi
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
+log "$(date) Running $0 as $(whoami)..."
+install_prereqs
+
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
+then
+    setup_cloudwatch
+fi
+
+if [[ "$AWS_SSM_ENABLE" == "true" ]]
+then
+    setup_ssm
+fi
+
+get_credentials
+check_required_vars
+configure_firewall
+add_awm_repo
+config_selinux
+install_awm
+awm_setup
+upload_dsa_key
+
+log "--> Provisioning script completed successfully."

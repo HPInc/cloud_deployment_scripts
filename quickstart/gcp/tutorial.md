@@ -34,7 +34,7 @@ Enter your PCoIP Registration code.
 If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
 
 #### api_token
-Enter the CAS Manager API token.
+Enter the Anyware Manager API token.
 
 Log into [https://cas.teradici.com](https://cas.teradici.com) using your G Suite or Cloud Identity account, click on your email address on the top right, and select **Get API token**.
 
@@ -92,16 +92,16 @@ You can check the availability of the GPU Virtual Workstation for the graphics m
 ```
 Region:                   "<set by you at start of script>"
 Zone:                     "<set by you at start of script>"
-Network:                  "vpc-cas"
+Network:                  "vpc-anyware"
 Subnetwork:               "subnet-ws"
 Domain name:              "example.com"
-Domain service account:   "cas_ad_admin"
+Domain service account:   "anyware_ad_admin"
 Service account password: <set by you at start of script>
 ```
 5. Click **Create**
 
 ### Clean up
-  1. Using GCP console, delete all workstations created by CAS Manager
+  1. Using GCP console, delete all workstations created by Anyware Manager
      web interface and manually created workstations. Resources not created by
      the Terraform scripts must be manually removed before Terraform can
      properly destroy resources it created.
