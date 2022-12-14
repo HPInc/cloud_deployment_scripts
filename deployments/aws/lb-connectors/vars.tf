@@ -86,7 +86,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.09.14"
+  default     = "Windows_Server-2019-English-Full-Base-2022.11.10"
 }
 
 variable "dc_pcoip_agent_version" {
@@ -319,7 +319,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.09.14"
+  default     = "Windows_Server-2019-English-Full-Base-2022.11.10"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -354,7 +354,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2022.09.14"
+  default     = "Windows_Server-2019-English-Full-Base-2022.11.10"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -391,7 +391,7 @@ variable "centos_gfx_ami_owner" {
 
 variable "centos_gfx_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS 7.9.2009 x86_64"
+  default     = "CentOS Linux 7 x86_64 - 2211"
 }
 
 variable "centos_std_instance_count" {
@@ -421,7 +421,7 @@ variable "centos_std_ami_owner" {
 
 variable "centos_std_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS 7.9.2009 x86_64"
+  default     = "CentOS Linux 7 x86_64 - 2211"
 }
 
 variable "customer_master_key_id" {

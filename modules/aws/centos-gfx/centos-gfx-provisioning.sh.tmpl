@@ -210,6 +210,15 @@ install_gpu_driver() {
     fi
 }
 
+disable_nvidia_gsp() {
+    # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-nvidia-driver.html
+    # If you are using NVIDIA driver version 14.x or greater on the G4dn or G5g instances, 
+    # disable GSP with the following commands. For more information, on why this is required visit
+    # https://docs.nvidia.com/grid/latest/grid-vgpu-user-guide/index.html#disabling-gsp 
+    sudo touch /etc/modprobe.d/nvidia.conf
+    echo "options nvidia NVreg_EnableGpuFirmware=0" | sudo tee --append /etc/modprobe.d/nvidia.conf
+}
+
 # Enable persistence mode
 enable_persistence_mode() {
     # the first part to check if the NVIDIA driver is installed
@@ -515,6 +524,8 @@ else
     install_kernel_header
 
     install_gpu_driver
+
+    disable_nvidia_gsp
 
     enable_persistence_mode
 

@@ -43,7 +43,7 @@ AUTO_LOGOFF_CPU_UTILIZATION=20
 AUTO_LOGOFF_ENABLE=true
 AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=20
 AUTO_LOGOFF_POLLING_INTERVAL_MINUTES=5
-NVIDIA_DRIVER_URL="https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-14.0/NVIDIA-Linux-x86_64-510.47.03-grid-aws.run"
+NVIDIA_DRIVER_URL="https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-14.1/NVIDIA-Linux-x86_64-510.73.08-grid-aws.run"
 TERADICI_DOWNLOAD_TOKEN="yj39yHtgj68Uv2Qf"
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
@@ -171,6 +171,15 @@ install_gpu_driver() {
             exit 1
         fi
     fi
+}
+
+disable_nvidia_gsp() {
+    # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-nvidia-driver.html
+    # If you are using NVIDIA driver version 14.x or greater on the G4dn or G5g instances, 
+    # disable GSP with the following commands. For more information, on why this is required visit
+    # https://docs.nvidia.com/grid/latest/grid-vgpu-user-guide/index.html#disabling-gsp 
+    sudo touch /etc/modprobe.d/nvidia.conf
+    echo "options nvidia NVreg_EnableGpuFirmware=0" | sudo tee --append /etc/modprobe.d/nvidia.conf
 }
 
 # Enable persistence mode
@@ -331,6 +340,8 @@ else
     install_kernel_header
 
     install_gpu_driver
+
+    disable_nvidia_gsp
 
     enable_persistence_mode
 
