@@ -7,6 +7,7 @@
 
 import argparse
 import datetime
+import distutils.version
 import json
 import requests
 import subprocess
@@ -120,6 +121,28 @@ if __name__ == '__main__':
     session = requests.Session()
     if args.insecure:
         session.verify = False
+
+    try:
+        retry_strategy = requests.adapters.Retry(
+            total=10,
+            backoff_factor=1,
+            status_forcelist=[500,502,503,504],
+            allowed_methods=["POST", "GET"]
+        )
+    except TypeError as e:
+        # Older versions of urllib3 use method_whitelist instead of allowed_methods
+        installed_version = distutils.version.StrictVersion(requests.urllib3.__version__)
+        changed_version = distutils.version.StrictVersion("1.26.0")
+        if installed_version < changed_version:
+            retry_strategy = requests.adapters.Retry(
+                total=10,
+                backoff_factor=1,
+                status_forcelist=[500,502,503,504],
+                method_whitelist=["POST", "GET"]
+            )
+        else:
+            raise e
+    session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retry_strategy))
 
     dsa_key = load_service_account_key(args.awm)
     awm_login(dsa_key)
