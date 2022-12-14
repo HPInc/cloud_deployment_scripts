@@ -330,6 +330,8 @@ variable "awc_ami_name" {
 # Note the following limits for health check:
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5
+# Further info about healthcheck: 
+# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "awc_health_check" {
   description = "Health check configuration for Anyware Connector"
   default = {

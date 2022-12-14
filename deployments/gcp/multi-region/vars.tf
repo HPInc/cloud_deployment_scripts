@@ -193,6 +193,8 @@ variable "awc_admin_ssh_pub_key_file" {
   }
 }
 
+# Further info about healthcheck: 
+# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "awc_health_check" {
   description = "Health check configuration for Anyware Connector"
   default = {
@@ -427,7 +429,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220822"
+  default     = "projects/centos-cloud/global/images/centos-7-v20221004"
 }
 
 variable "centos_std_instance_count_list" {
@@ -452,7 +454,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20220822"
+  default     = "projects/centos-cloud/global/images/centos-7-v20221004"
 }
 
 variable "centos_admin_user" {

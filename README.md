@@ -38,4 +38,5 @@ Contains Quickstart scripts, which are Python scripts for quick deployment of th
 Various scripts to help with Terraform deployments.  e.g. a Python script to generate random users for an Active Directory in a CSV file.
 
 # Maintainer
-If any security issues or bugs are found, or if there are feature requests, please contact Sherman Yin at syin@teradici.com
+If any security issues or bugs are found, or if there are feature requests, please contact the Teradici Cloud Solutions & Services team at teradici.cloud.deployment.scripts@hp.com
+
