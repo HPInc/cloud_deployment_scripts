@@ -5,7 +5,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import casmgr
+import quickstart.gcp.awm as awm
 import getpass
 import googleapiclient.discovery
 import json
@@ -15,7 +15,7 @@ import sys
 import textwrap
 
 # Name of Compute Engine metrics
-METRICS         = [
+METRICS = [
     "INSTANCES",
     "CPUS",
     "SSD_TOTAL_GB",
@@ -25,14 +25,15 @@ METRICS         = [
 # Machine name and metric specs
 MACHINE_PROPERTIES_JSON = "gcp-machine-properties.json"
 
-DEFAULT_REGION      = "us-west2"
-DEFAULT_ZONE        = "us-west2-b"
+DEFAULT_REGION = "us-west2"
+DEFAULT_ZONE = "us-west2-b"
 DEFAULT_NUMBEROF_WS = "0"
-DEFAULT_PREFIX      = "quick"
+DEFAULT_PREFIX = "quick"
 
 # The number of available IP address in subnet. To see reserved IPs, please
 # see: https://cloud.google.com/vpc/docs/vpc#reserved_ip_addresses_in_every_subnet
 MAX_SUBNET_IPS = 250
+
 
 def configurations_get(project_id, ws_types, username):
     # GCP Compute Engine API
@@ -56,7 +57,7 @@ def configurations_get(project_id, ws_types, username):
         print("    Log into https://cas.teradici.com, click on your email address on the top right and select \"Get API token\".")
         while True:
             api_token = input("api_token: ").strip()
-            mycasmgr = casmgr.CASManager(api_token)
+            mycasmgr = awm.CASManager(api_token)
             print("Validating API token with CAS Manager... ", end="")
             if (mycasmgr.auth_token_validate()):
                 print("Yes")
@@ -65,7 +66,7 @@ def configurations_get(project_id, ws_types, username):
 
     def region_resource_list_get(gcp_region):
         # This returns a dictionary object which contains information about the
-        # compute engine quota and zones for each matching region. Please see: 
+        # compute engine quota and zones for each matching region. Please see:
         # https://cloud.google.com/compute/docs/reference/rest/v1/regions/list
         return cpe_service.regions().list(
             project=project_id,
@@ -74,27 +75,31 @@ def configurations_get(project_id, ws_types, username):
 
     # Gets the available quota for each Compute Engine metric
     def cpe_quota_get(gcp_region):
-        print(f"\nGetting your Compute Engine quota for region {gcp_region}...")
+        print(
+            f"\nGetting your Compute Engine quota for region {gcp_region}...")
         quotas = region_resource_list_get(gcp_region)['items'][0]['quotas']
         # The available quota equals quota limit minus quota usage
-        return { m: q['limit'] - q['usage'] for q in quotas for m in METRICS if q['metric'] == m }
+        return {m: q['limit'] - q['usage'] for q in quotas for m in METRICS if q['metric'] == m}
 
     # Prints the remaining available quota in a table format
     def cpe_quota_print(gcp_region):
-        print(f"\nYour remaining Compute Engine quotas for region {gcp_region}")
+        print(
+            f"\nYour remaining Compute Engine quotas for region {gcp_region}")
         print("{:<20} {:<20}".format('METRIC', 'QUOTA'))
         for m in METRICS:
-            remaining_available_cpe_quota = available_cpe_quota[m] - required_cpe_quota[m]
+            remaining_available_cpe_quota = available_cpe_quota[m] - \
+                required_cpe_quota[m]
             print("{:<20} {:<20}".format(m, remaining_available_cpe_quota))
         print("")
 
     # Updates the required_cpe_quota list to show keep track of how much quota
-    # will be needed to create the CAC, DC, and workstations instances 
+    # will be needed to create the CAC, DC, and workstations instances
     def cpe_quota_reserve(machine, number, gcp_region, gcp_zone):
         if not requirements_are_met(machine, number, gcp_region, gcp_zone, print_cpe_report=False):
             return
         for m in METRICS:
-            required_cpe_quota[m] += number * machine_properties[machine]['spec'][m]
+            required_cpe_quota[m] += number * \
+                machine_properties[machine]['spec'][m]
 
     # Print options 1,2,3... and ask for a number input
     def number_option_get(options, text):
@@ -105,20 +110,20 @@ def configurations_get(project_id, ws_types, username):
             try:
                 selection = int(input(f"       {text}: ").strip())
                 if selection > 0:
-                    return options[selection-1]  
+                    return options[selection-1]
                 raise IndexError
             except (ValueError, IndexError):
                 print(f"       Please enter a valid option (Ex. 1).")
 
     def region_get(order_number):
         region_resource_list = region_resource_list_get("*")['items']
-        gcp_regions_list = [ r['name'] for r in region_resource_list ]
+        gcp_regions_list = [r['name'] for r in region_resource_list]
         print(f"    {order_number}. Please enter the region to deploy in.")
         return number_option_get(gcp_regions_list, "gcp_region")
 
     def region_requirements_met(gcp_region):
         # Check that there's at least enough regional quota to deploy CAC and DC
-        for machine in ["cac","dc"]:
+        for machine in ["cac", "dc"]:
             # Not checking accelerator availability here so gcp_zone can be anything
             if requirements_are_met(machine, 1, gcp_region, gcp_zone=""):
                 cpe_quota_reserve(machine, 1, gcp_region, gcp_zone="")
@@ -131,8 +136,10 @@ def configurations_get(project_id, ws_types, username):
 
     def zone_get(order_number, gcp_region):
         region_resource_list = region_resource_list_get(gcp_region)
-        gcp_zones_list = [ z.split("/")[-1] for z in region_resource_list['items'][0]['zones'] ]
-        print(f"    {order_number}. Please select from one of the following zones:")
+        gcp_zones_list = [z.split("/")[-1]
+                          for z in region_resource_list['items'][0]['zones']]
+        print(
+            f"    {order_number}. Please select from one of the following zones:")
         return number_option_get(gcp_zones_list, "gcp_zone")
 
     # Returns True if there's enough compute engine quota and the GPU accelerator is available.
@@ -142,16 +149,18 @@ def configurations_get(project_id, ws_types, username):
         # Check Compute Engine quota
         def verbose1(text):
             if print_cpe_report:
-                print(text,end="")
+                print(text, end="")
 
-        error_response = "No" # additional information will be appended if any limit is reached
+        error_response = "No"  # additional information will be appended if any limit is reached
         limit_exceeded = False
-        verbose1(f"Checking if Compute Engine quotas are available for {number} {machine_properties[machine]['name']}... ")
+        verbose1(
+            f"Checking if Compute Engine quotas are available for {number} {machine_properties[machine]['name']}... ")
         for m in METRICS:
             if (machine_properties[machine]['spec'][m] == 0):
                 continue
             quota_required = number * machine_properties[machine]['spec'][m]
-            remaining_available_cpe_quota = available_cpe_quota[m] - required_cpe_quota[m]
+            remaining_available_cpe_quota = available_cpe_quota[m] - \
+                required_cpe_quota[m]
             if (remaining_available_cpe_quota >= quota_required):
                 continue
             error_response += f"\nYou have reached the limit for number of resource {m} for this project. "
@@ -160,37 +169,42 @@ def configurations_get(project_id, ws_types, username):
         if limit_exceeded and print_cpe_report:
             verbose1(f"{error_response}\n")
             cpe_quota_print(gcp_region)
-            verbose1("To request to increase the quota, please see: https://console.cloud.google.com/iam-admin/quotas. ")
+            verbose1(
+                "To request to increase the quota, please see: https://console.cloud.google.com/iam-admin/quotas. ")
             return False
         verbose1("Yes\n")
 
         # Check accelerator availability
         def verbose2(text):
             if print_gpu_report:
-                print(text,end="")
+                print(text, end="")
 
         accelerator_name = machine_properties[machine]['accelerator']
         if accelerator_name == "":
             return True
         accelerator_resource = cpe_service.acceleratorTypes().list(
-            project=project_id, 
+            project=project_id,
             zone=gcp_zone,
             filter=f"name={accelerator_name}"
         ).execute()
-        verbose2(f"Checking availaibility of accelerator {accelerator_name} for {machine_properties[machine]['name']} ({machine}) in zone {gcp_zone}... ")
+        verbose2(
+            f"Checking availaibility of accelerator {accelerator_name} for {machine_properties[machine]['name']} ({machine}) in zone {gcp_zone}... ")
         if "items" in accelerator_resource.keys():
             verbose2("Yes\n")
             return True
         verbose2("No")
-        verbose2(f"\n  You will not be able to deploy any {machine_properties[machine]['name']} in this zone.")
-        verbose2("\n  To check the availability, see: https://cloud.google.com/compute/docs/gpus/gpu-regions-zones.\n")
+        verbose2(
+            f"\n  You will not be able to deploy any {machine_properties[machine]['name']} in this zone.")
+        verbose2(
+            "\n  To check the availability, see: https://cloud.google.com/compute/docs/gpus/gpu-regions-zones.\n")
         return False
 
     def numberof_ws_get(index, machine, gcp_region, gcp_zone):
 
         def set_to_zero(reason):
             print(f"    {chr(index)}. {reason}")
-            print(f"       Setting {machine_properties[machine]['name']} ({machine}) to 0...")
+            print(
+                f"       Setting {machine_properties[machine]['name']} ({machine}) to 0...")
 
         # Skip the prompt and set value to 0 if the accelerator is not available
         if not requirements_are_met(machine, 0, gcp_region, gcp_zone, print_cpe_report=False):
@@ -201,33 +215,40 @@ def configurations_get(project_id, ws_types, username):
         max_numberof_ws = MAX_SUBNET_IPS - ws_count
         # Skip the prompt and set value to 0 if no more IP address is available in the subnet
         if max_numberof_ws <= 0:
-            set_to_zero("There are no more available IP address in the 10.0.2.0/24 subnet.")
+            set_to_zero(
+                "There are no more available IP address in the 10.0.2.0/24 subnet.")
             return 0
 
         # Calculate the maximum number of workstations the user can request with the available quota
         for m in METRICS:
             if (machine_properties[machine]['spec'][m] != 0):
-                remaining_available_cpe_quota = available_cpe_quota[m] - required_cpe_quota[m]
-                max_numberof_ws = min(remaining_available_cpe_quota / machine_properties[machine]['spec'][m], max_numberof_ws)
+                remaining_available_cpe_quota = available_cpe_quota[m] - \
+                    required_cpe_quota[m]
+                max_numberof_ws = min(remaining_available_cpe_quota /
+                                      machine_properties[machine]['spec'][m], max_numberof_ws)
         max_numberof_ws = math.floor(max_numberof_ws)
         # Skip the prompt and set value to 0 if there's no more quota left
         if max_numberof_ws <= 0:
-            set_to_zero(f"You don't have enough quota to deploy any {machine_properties[machine]['name']}.")
+            set_to_zero(
+                f"You don't have enough quota to deploy any {machine_properties[machine]['name']}.")
             return 0
 
-        print(f"    {chr(index)}. You can have up to {max_numberof_ws} {machine_properties[machine]['name']} workstations.")            
+        print(
+            f"    {chr(index)}. You can have up to {max_numberof_ws} {machine_properties[machine]['name']} workstations.")
         while True:
             try:
-                number = int(input(f"       Number of {machine_properties[machine]['name']} ({machine}): ").strip() or DEFAULT_NUMBEROF_WS)
+                number = int(input(f"       Number of {machine_properties[machine]['name']} ({machine}): ").strip(
+                ) or DEFAULT_NUMBEROF_WS)
                 if (number < 0):
                     raise ValueError
                 if (number <= max_numberof_ws):
                     cpe_quota_reserve(machine, number, gcp_region, gcp_zone)
                     return number
-                # If there's enough quota but number of workstations requested exceeds the 
+                # If there's enough quota but number of workstations requested exceeds the
                 # max_numberof_ws, then it means there aren't enough IP addresses in the subnet.
                 if (requirements_are_met(machine, number, gcp_region, gcp_zone)):
-                    print(f"There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet. ", end="")
+                    print(
+                        f"There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet. ", end="")
             except ValueError:
                 print("       Invalid number input. ", end="")
             print("Please try again.")
@@ -238,19 +259,21 @@ def configurations_get(project_id, ws_types, username):
             response = request.execute()
             vpc_list = [item['name'] for item in response['items']]
 
-            request = cpe_service.networks().list_next(previous_request=request, previous_response=response)
+            request = cpe_service.networks().list_next(
+                previous_request=request, previous_response=response)
         return vpc_list
 
     def prefix_get(order_number):
         print(f"{order_number}.  Prefix to add to the names of resources to be created (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
-        
+
         vpc_list = vpc_list_get()
         while True:
             prefix = input("prefix: ").strip() or DEFAULT_PREFIX
             if (len(prefix) > 5):
-                print("    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
+                print(
+                    "    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
-            
+
             vpc_name = f'{prefix}-vpc-cas'
             if vpc_name in vpc_list:
                 print("vpc_name already exists. Please enter a different prefix.")
@@ -317,7 +340,7 @@ def configurations_get(project_id, ws_types, username):
             if re.search(regex, password):
                 count += 1
 
-        # check unicode: if the password contains unicode characters, 
+        # check unicode: if the password contains unicode characters,
         # it will change when encoded to utf-8 to one of [\u00d8-\u00f6]
         if f'b\'{password}\'' != f'{password.encode("utf-8")}':
             count += 1
@@ -330,10 +353,11 @@ def configurations_get(project_id, ws_types, username):
     # Get configurations while loop
     while True:
         # Local shared variables
-        cfg_data = {} # Dictionary that will be returned
-        available_cpe_quota = {} # Dictionary to keep track of available Compute engine quota
-        required_cpe_quota = { m: 0 for m in METRICS } # Dictionary to keep track of required Compute engine quota
-        ws_count = 0 # Variable to keep track of workstations count
+        cfg_data = {}  # Dictionary that will be returned
+        available_cpe_quota = {}  # Dictionary to keep track of available Compute engine quota
+        # Dictionary to keep track of required Compute engine quota
+        required_cpe_quota = {m: 0 for m in METRICS}
+        ws_count = 0  # Variable to keep track of workstations count
         cfg_data['prefix'] = prefix_get("1")
         print("\n")
 
@@ -343,26 +367,28 @@ def configurations_get(project_id, ws_types, username):
         cfg_data['api_token'] = api_token_get("3")
         print("\n")
 
-        print(f"4.  The default region is {DEFAULT_REGION} and the default zone is {DEFAULT_ZONE}.")
-        customize = not answer_is_yes("    Would you like to continue with the default selections (y/n)? ")
+        print(
+            f"4.  The default region is {DEFAULT_REGION} and the default zone is {DEFAULT_ZONE}.")
+        customize = not answer_is_yes(
+            "    Would you like to continue with the default selections (y/n)? ")
 
         # GCP Region and Zone while loop
         while True:
             if customize:
                 print("")
                 print("    Getting GCP regions list...")
-                print("") # For formatting purposes
+                print("")  # For formatting purposes
                 cfg_data['gcp_region'] = region_get("a")
             else:
                 cfg_data['gcp_region'] = DEFAULT_REGION
 
-            # Get the regional quota, print them out in a table, and check if there's 
+            # Get the regional quota, print them out in a table, and check if there's
             # enough quota to deploy one CAC and one DC instance
             available_cpe_quota = cpe_quota_get(cfg_data['gcp_region'])
             cpe_quota_print(cfg_data['gcp_region'])
             if not region_requirements_met(cfg_data['gcp_region']):
                 customize = True
-                continue # back to the beginning of the GCP region and zone while loop
+                continue  # back to the beginning of the GCP region and zone while loop
 
             if customize:
                 print("")
@@ -375,19 +401,22 @@ def configurations_get(project_id, ws_types, username):
             # Print accelerator availability report
             print("")
             for machine in ws_types:
-                requirements_are_met(machine, 0, cfg_data['gcp_region'], cfg_data['gcp_zone'], print_cpe_report=False, print_gpu_report=True)
+                requirements_are_met(
+                    machine, 0, cfg_data['gcp_region'], cfg_data['gcp_zone'], print_cpe_report=False, print_gpu_report=True)
 
             if answer_is_yes(f"\nWould you like to continue with region {cfg_data['gcp_region']} and zone {cfg_data['gcp_zone']} (y/n)? "):
-                break # break out of the GCP region and zone while loop
+                break  # break out of the GCP region and zone while loop
             customize = True
 
         print("\n")
-        print(f"5.  Please enter the number of remote workstations to create (Default: {DEFAULT_NUMBEROF_WS}).")
+        print(
+            f"5.  Please enter the number of remote workstations to create (Default: {DEFAULT_NUMBEROF_WS}).")
         print("    Based on your remaining quota and the number of available IP addresses in the subnet...")
         index = ord('a')
         for machine in ws_types:
             print("")
-            cfg_data[machine] = numberof_ws_get(index, machine, cfg_data['gcp_region'], cfg_data['gcp_zone'])
+            cfg_data[machine] = numberof_ws_get(
+                index, machine, cfg_data['gcp_region'], cfg_data['gcp_zone'])
             ws_count += cfg_data[machine]
             index += 1
         print("\n")
@@ -400,9 +429,9 @@ def configurations_get(project_id, ws_types, username):
             print("{:<10} {:<10}".format(variable, value))
 
         if not answer_is_yes("\nWould you like to proceed with your selections (y/n)? "):
-            print("\n") 
-            continue # back to the beginning of the get configurations while loop
+            print("\n")
+            continue  # back to the beginning of the get configurations while loop
 
         print("")
         cfg_data['ad_password'] = ad_password_get(username)
-        return cfg_data # Return to quickstart executable script
+        return cfg_data  # Return to quickstart executable script
