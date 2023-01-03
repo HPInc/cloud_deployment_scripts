@@ -44,8 +44,8 @@ TERRAFORM_VER_PATH = os.path.join(DEPLOYMENT_PATH, 'versions.tf')
 SECRETS_DIR        = os.path.join(DEPLOYMENT_PATH, 'secrets/')
 
 # Setting paths for secrets
-SSH_KEY_PATH                   = os.path.join(SECRETS_DIR, 'cas_mgr_admin_id_rsa')
-CAS_MGR_DEPLOYMENT_SA_KEY_PATH = os.path.join(SECRETS_DIR, 'cas_mgr_deployment_sa_key.json')
+SSH_KEY_PATH                   = os.path.join(SECRETS_DIR, 'awm_admin_id_rsa')
+AWM_DEPLOYMENT_SA_KEY_PATH     = os.path.join(SECRETS_DIR, 'awm_deployment_sa_key.json')
 AWS_SA_KEY_PATH                = os.path.join(SECRETS_DIR, 'aws_service_account_credentials')
 ARN_FILE_PATH                  = os.path.join(SECRETS_DIR, 'arn.txt')
 
@@ -54,7 +54,7 @@ TF_VARS_REF_PATH = os.path.join(DEPLOYMENT_PATH, 'terraform.tfvars.sample')
 TF_VARS_PATH     = os.path.join(DEPLOYMENT_PATH, 'terraform.tfvars')
 
 CFG_FILE_PATH        = os.path.join(QUICKSTART_PATH, 'aws-quickstart.cfg')
-ROLE_POLICY_DOCUMENT = os.path.join(QUICKSTART_PATH, 'cas-mgr-power-manage-role-policy.json')
+ROLE_POLICY_DOCUMENT = os.path.join(QUICKSTART_PATH, 'awm-power-manage-role-policy.json')
 AWS_USER_POLICY_ARN  = "arn:aws:iam::aws:policy/AdministratorAccess"
 
 # Types of workstations
@@ -127,7 +127,7 @@ def import_modules():
 
     # Global calls for import statements are required to avoid module not found error
     import_required_packages = '''\
-        import casmgr
+        import awm
         import aws_iam_wrapper as aws
         import interactive
     '''
@@ -294,33 +294,33 @@ if __name__ == '__main__':
 
     print('Local requirements setup complete.\n')
 
-    print('Setting CAS Manager...')
-    mycasmgr = casmgr.CASManager(cfg_data.get('api_token'))
+    print('Setting Anyware Manager...')
+    my_awm = awm.AnywareManager(cfg_data.get('api_token'))
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
-    deployment = mycasmgr.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
-    role_info = mycasmgr.generate_aws_role_info(deployment)
+    deployment = my_awm.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
+    role_info = my_awm.generate_aws_role_info(deployment)
 
-    print('Creating CAS Manager API key...')
-    cas_mgr_deployment_key = mycasmgr.deployment_key_create(deployment)
-    with open(CAS_MGR_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
-        keyfile.write(json.dumps(cas_mgr_deployment_key))
-    print('  Key written to ' + CAS_MGR_DEPLOYMENT_SA_KEY_PATH)
-    print('CAS Manager setup complete.\n')
+    print('Creating Anyware Manager API key...')
+    awm_deployment_key = my_awm.deployment_key_create(deployment)
+    with open(AWM_DEPLOYMENT_SA_KEY_PATH, 'w+') as keyfile:
+        keyfile.write(json.dumps(awm_deployment_key))
+    print('  Key written to ' + AWM_DEPLOYMENT_SA_KEY_PATH)
+    print('Anyware Manager setup complete.\n')
 
     print('Creating AWS user for Terraform deployment...')
     AWS_REGION = cfg_data.get('aws_region')
     PREFIX = cfg_data.get('prefix', '')
-    AWS_USERNAME = PREFIX + '-cas-manager'
+    AWS_USERNAME = PREFIX + '-anyware-manager'
     AWS_ROLE_NAME = f'{AWS_USERNAME}_role'
     ROLE_POLICY_NAME = f'{AWS_ROLE_NAME}_policy'
 
     aws.create_user(AWS_USERNAME)
     aws.attach_user_policy(AWS_USERNAME, AWS_USER_POLICY_ARN)
     
-    print('Creating AWS role for CAS Manager deployment...')
+    print('Creating AWS role for Anyware Manager deployment...')
     role = aws.create_role(AWS_ROLE_NAME, role_info['camAccountId'], role_info['externalId'])
-    role_policy_description = "Permissions to allow managing instances using CAS Manager"
+    role_policy_description = "Permissions to allow managing instances using Anyware Manager"
     role_policy = aws.create_policy(ROLE_POLICY_NAME, role_policy_description, ROLE_POLICY_DOCUMENT)
     aws.attach_role_policy(AWS_ROLE_NAME, ROLE_POLICY_NAME)
     
@@ -329,8 +329,8 @@ if __name__ == '__main__':
     # so if issues occur when creating other IAM resources, the key won't easily run out
     sa_key_id = aws.service_account_create_key(AWS_USERNAME, AWS_SA_KEY_PATH)
 
-    print('Registering AWS role to CAS Manager deployment...')
-    mycasmgr.deployment_add_aws_account(deployment, role.get('Arn'))
+    print('Registering AWS role to Anyware Manager deployment...')
+    my_awm.deployment_add_aws_account(deployment, role.get('Arn'))
 
     # Newly created IAM access key needs to wait to avoid security token error
     time.sleep(5)
@@ -349,7 +349,7 @@ if __name__ == '__main__':
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cas_mgr_deployment_sa_file':     CAS_MGR_DEPLOYMENT_SA_KEY_PATH,
+        'awm_deployment_sa_file':         AWM_DEPLOYMENT_SA_KEY_PATH,
         'prefix':                         PREFIX,
     }
 
@@ -376,25 +376,25 @@ if __name__ == '__main__':
                                stdout=subprocess.PIPE)
     awc_public_ip = comp_proc.stdout.decode().split('"')[1]
 
-    # Newly created AWS instances might need a few seconds to sync to CAS Manager
+    # Newly created AWS instances might need a few seconds to sync to Anyware Manager
     time.sleep(10)
     print('Terraform deployment complete.\n')
 
     # Add existing workstations
-    mycasmgr.deployment_signin(cas_mgr_deployment_key)
+    my_awm.deployment_signin(awm_deployment_key)
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
             hostname = f'{PREFIX}-{t}-{i}'
-            print(f'Adding "{hostname}" to CAS Manager...')
-            mycasmgr.machine_add_existing(
+            print(f'Adding "{hostname}" to Anyware Manager...')
+            my_awm.machine_add_existing(
                 hostname,
                 deployment,
                 AWS_REGION,
             )
 
-    # Loop until Administrator user is found in CAS Manager
+    # Loop until Administrator user is found in Anyware Manager
     while True:
-        entitle_user = mycasmgr.user_get(ENTITLE_USER, deployment)
+        entitle_user = my_awm.user_get(ENTITLE_USER, deployment)
         if entitle_user:
             break
 
@@ -402,10 +402,10 @@ if __name__ == '__main__':
         time.sleep(10)
 
     # Add entitlements for each workstation
-    machines_list = mycasmgr.machines_get(deployment)
+    machines_list = my_awm.machines_get(deployment)
     for machine in machines_list:
         print(f'Assigning workstation "{machine["machineName"]}" to user "{ENTITLE_USER}"...')
-        mycasmgr.entitlement_add(entitle_user, machine)
+        my_awm.entitlement_add(entitle_user, machine)
 
     print('\nQuickstart deployment finished.\n')
 
@@ -430,7 +430,7 @@ if __name__ == '__main__':
         "{DEPLOYMENT_NAME}"
 
     - Deleting the AWS IAM Resources:
-    1.  The script created an IAM policy, role, access key, and user to allow Terraform to create and CAS Manager to 
+    1.  The script created an IAM policy, role, access key, and user to allow Terraform to create and Anyware Manager to 
         manage AWS resources. Before removing these IAM resources, you must first make sure to complete all previous 
         steps to delete the deployment.
     2.  Then, run the following commands:

@@ -6,13 +6,13 @@
  */
 
 variable "aws_credentials_file" {
-    description = "Location of AWS credentials file"
-    type        = string
+  description = "Location of AWS credentials file"
+  type        = string
 
-    validation {
-      condition = fileexists(var.aws_credentials_file)
-      error_message = "The aws_credentials_file specified does not exist. Please check the file path."
-    }
+  validation {
+    condition     = fileexists(var.aws_credentials_file)
+    error_message = "The aws_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "aws_region" {
@@ -51,27 +51,27 @@ variable "allowed_client_cidrs" {
 
 variable "admin_ssh_key_name" {
   description = "Name of Admin SSH Key"
-  default     = "cas_admin"
+  default     = "anyware_admin"
 }
 
 variable "admin_ssh_pub_key_file" {
   description = "Admin SSH public key file"
   type        = string
-  
+
   validation {
-    condition = fileexists(var.admin_ssh_pub_key_file)
+    condition     = fileexists(var.admin_ssh_pub_key_file)
     error_message = "The admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the Cloud Access Software deployment"
-  default     = "vpc-cas"
+  description = "Name for VPC containing the HP Anyware deployment"
+  default     = "vpc-anyware"
 }
 
 variable "vpc_cidr" {
-  description = "CIDR for the VPC containing the CAS deployment"
-  default     = "10.0.0.0/16" 
+  description = "CIDR for the VPC containing the HP Anyware deployment"
+  default     = "10.0.0.0/16"
 }
 
 variable "dc_subnet_name" {
@@ -118,11 +118,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -142,7 +142,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_ad_admin"
+  default     = "anyware_ad_admin"
 }
 
 variable "ad_service_account_password" {
@@ -157,7 +157,7 @@ variable "domain_users_list" {
   default     = ""
 
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
 }
@@ -241,50 +241,50 @@ variable "lls_license_count" {
   default     = 0
 }
 
-variable "cas_mgr_subnet_name" {
-  description = "Name for subnet containing the CAS Manager"
-  default     = "subnet-cas-mgr"
+variable "awm_subnet_name" {
+  description = "Name for subnet containing the Anyware Manager"
+  default     = "subnet-awm"
 }
 
-variable "cas_mgr_subnet_cidr" {
-  description = "CIDR for subnet containing the CAS Manager"
+variable "awm_subnet_cidr" {
+  description = "CIDR for subnet containing the Anyware Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cas_mgr_instance_type" {
-  description = "Instance type for the CAS Manager"
+variable "awm_instance_type" {
+  description = "Instance type for the Anyware Manager"
   default     = "t2.xlarge"
 }
 
-variable "cas_mgr_disk_size_gb" {
-  description = "Disk size (GB) of the CAS Manager"
+variable "awm_disk_size_gb" {
+  description = "Disk size (GB) of the Anyware Manager"
   default     = "60"
 }
 
-variable "cas_mgr_ami_owner" {
-  description = "Owner of AMI for the CAS Manager"
+variable "awm_ami_owner" {
+  description = "Owner of AMI for the Anyware Manager"
   default     = "792107900819"
 }
 
-variable "cas_mgr_ami_name" {
-  description = "Name of the AMI to create CAS Manager from"
+variable "awm_ami_name" {
+  description = "Name of the AMI to create Anyware Manager from"
   default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
 }
 
-variable "cas_mgr_admin_password" {
-  description = "Password for the Administrator of CAS Manager"
+variable "awm_admin_password" {
+  description = "Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }
 
-variable "cas_mgr_aws_credentials_file" {
-    description = "Location of AWS credentials file for CAS Manager"
-    type        = string
+variable "awm_aws_credentials_file" {
+  description = "Location of AWS credentials file for Anyware Manager"
+  type        = string
 
-    validation {
-      condition = fileexists(var.cas_mgr_aws_credentials_file)
-      error_message = "The cas_mgr_aws_credentials_file specified does not exist. Please check the file path."
-    }
+  validation {
+    condition     = fileexists(var.awm_aws_credentials_file)
+    error_message = "The awm_aws_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "awc_zone_list" {
@@ -331,7 +331,7 @@ variable "awc_ami_name" {
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5
 # Further info about healthcheck: 
-# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
+# https://www.teradici.com/web-help/anyware_manager/22.09/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "awc_health_check" {
   description = "Health check configuration for Anyware Connector"
   default = {
@@ -348,7 +348,7 @@ variable "tls_key" {
   default     = ""
 
   validation {
-    condition = var.tls_key == "" ? true : fileexists(var.tls_key)
+    condition     = var.tls_key == "" ? true : fileexists(var.tls_key)
     error_message = "The tls_key file specified does not exist. Please check the file path."
   }
 }
@@ -358,7 +358,7 @@ variable "tls_cert" {
   default     = ""
 
   validation {
-    condition = var.tls_cert == "" ? true : fileexists(var.tls_cert)
+    condition     = var.tls_cert == "" ? true : fileexists(var.tls_cert)
     error_message = "The tls_cert file specified does not exist. Please check the file path."
   }
 }

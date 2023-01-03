@@ -102,7 +102,7 @@ variable "auto_logoff_cpu_utilization" {
 }
 
 variable "idle_shutdown_enable" {
-  description = "Enable CAS Manager auto idle shutdown for Workstations"
+  description = "Enable Anyware Manager auto idle shutdown for Workstations"
   default     = true
 }
 

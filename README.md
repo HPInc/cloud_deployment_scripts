@@ -5,12 +5,12 @@ Teradici CAS (Cloud Access Software) delivers a highly responsive remote desktop
 Based on our secure PCoIP® (PC-over-IP) protocol that connects over 15 million endpoints around the globe, CAS makes all the magic happen for Windows, Linux and macOS (coming soon) desktops and applications through three core software components:
 
 - **PCoIP Agents** in any standalone or virtualized workstation, on-prem data center, cloud, multicloud or hybrid host environment
-- **CAS Manager** to secure, broker, and provision Teradici CAS connections
+- **Anyware Manager** to secure, broker, and provision Teradici CAS connections
 - **PCoIP Clients** to enable any PCoIP Zero Client, PCoIP-Enabled Thin Client, PC, Mac, laptop, or tablet to access their remote desktops, fixed or mobile workstations from anywhere
 
 For more details, please visit https://teradici.com.
 
-This repository contains a collection of Terraform configurations for demonstrating how to deploy CAS Manager and Anyware Connectors in a user's cloud environment. __Note: These configurations are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
+This repository contains a collection of Terraform configurations for demonstrating how to deploy Anyware Manager and Anyware Connectors in a user's cloud environment. __Note: These configurations are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
 
 # Documentation
 - [Instructions](docs/aws/README.md) for deploying CAS on Amazon Web Services

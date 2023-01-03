@@ -6,14 +6,14 @@
 import requests
 
 
-class CASManager:
+class AnywareManager:
     def __init__(self, auth_token, url='https://cas.teradici.com',
                  verify_certificate=True):
         self.auth_token = auth_token
         self.url = url
         self.session = requests.Session()
         # Option to disable verification to avoid validation errors
-        # from self-signed certificates as may be used by CAS Manager
+        # from self-signed certificates as may be used by Anyware Manager
         self.session.verify = verify_certificate
         self.session.headers['authorization'] = auth_token
 
@@ -103,10 +103,10 @@ class CASManager:
 
         return resp.json()['data']
 
-    def deployment_signin(self, cas_mgr_deployment_key):
+    def deployment_signin(self, awm_deployment_key):
         account_details = {
-            'username': cas_mgr_deployment_key['username'],
-            'apiKey': cas_mgr_deployment_key['apiKey']
+            'username': awm_deployment_key['username'],
+            'apiKey': awm_deployment_key['apiKey']
         }
         resp = self.session.post(
             self.url + '/api/v1/auth/signin',

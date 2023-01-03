@@ -10,7 +10,7 @@ locals {
 
   #Allows ingress traffic from the IP range 35.235.240.0/20. This range contains all IP addresses that IAP uses for TCP forwarding.
   iap_cidr = ["35.235.240.0/20"]
-  myip = chomp(data.http.myip.response_headers.Client-Ip)
+  myip     = chomp(data.http.myip.response_headers.Client-Ip)
 }
 
 data "http" "myip" {
@@ -23,13 +23,13 @@ resource "google_compute_network" "vpc" {
 }
 
 resource "google_dns_managed_zone" "private_zone" {
-  provider    = google-beta
+  provider = google-beta
 
   name        = replace("${local.prefix}${var.domain_name}-zone", ".", "-")
   dns_name    = "${var.domain_name}."
   description = "Private forwarding zone for ${var.domain_name}"
 
-  visibility  = "private"
+  visibility = "private"
 
   private_visibility_config {
     networks {
@@ -62,7 +62,7 @@ resource "google_compute_firewall" "allow-internal" {
 
   source_ranges = [
     var.dc_subnet_cidr,
-    var.cas_mgr_subnet_cidr,
+    var.awm_subnet_cidr,
     var.awc_subnet_cidr,
     var.ws_subnet_cidr,
   ]
@@ -78,7 +78,7 @@ resource "google_compute_firewall" "allow-ssh" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-ssh"]
-  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr : []))
 }
 
 resource "google_compute_firewall" "allow-rdp" {
@@ -95,7 +95,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr: []))
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr : []))
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -182,9 +182,9 @@ resource "google_compute_subnetwork" "dc-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cas-mgr-subnet" {
-  name          = "${local.prefix}${var.cas_mgr_subnet_name}"
-  ip_cidr_range = var.cas_mgr_subnet_cidr
+resource "google_compute_subnetwork" "awm-subnet" {
+  name          = "${local.prefix}${var.awm_subnet_name}"
+  ip_cidr_range = var.awm_subnet_cidr
   network       = google_compute_network.vpc.self_link
 }
 

@@ -6,20 +6,20 @@
  */
 
 locals {
-  prefix = var.prefix != "" ? "${var.prefix}-" : ""
+  prefix      = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
 
   gcp_service_account = jsondecode(file(var.gcp_credentials_file))["client_email"]
-  gcp_project_id = jsondecode(file(var.gcp_credentials_file))["project_id"]
+  gcp_project_id      = jsondecode(file(var.gcp_credentials_file))["project_id"]
 
-  # Name of CAS Manager deployment service account key file in bucket
-  cas_mgr_deployment_sa_file = "cas-mgr-deployment-sa-key.json"
+  # Name of Anyware Manager deployment service account key file in bucket
+  awm_deployment_sa_file = "awm-deployment-sa-key.json"
   # Name of GCP service account key file in bucket
-  gcp_sa_file = "gcp-sa-key.json"
+  gcp_sa_file            = "gcp-sa-key.json"
   ops_linux_setup_script = "ops_setup_linux.sh"
-  ops_win_setup_script = "ops_setup_win.ps1"
-  ldaps_cert_filename = "ldaps_cert.pem"
-  log_bucket_name = "${local.prefix}logging-bucket"
+  ops_win_setup_script   = "ops_setup_win.ps1"
+  ldaps_cert_filename    = "ldaps_cert.pem"
+  log_bucket_name        = "${local.prefix}logging-bucket"
 }
 
 resource "random_id" "bucket-name" {
@@ -36,12 +36,12 @@ resource "google_storage_bucket" "scripts" {
 resource "google_storage_bucket_object" "gcp-sa-file" {
   bucket = google_storage_bucket.scripts.name
   name   = local.gcp_sa_file
-  source = var.cas_mgr_gcp_credentials_file
+  source = var.awm_gcp_credentials_file
 }
 
 resource "google_storage_bucket_object" "ops-setup-linux-script" {
   count = var.gcp_ops_agent_enable ? 1 : 0
-  
+
   bucket = google_storage_bucket.scripts.name
   name   = local.ops_linux_setup_script
   source = "../../../shared/gcp/${local.ops_linux_setup_script}"
@@ -49,21 +49,21 @@ resource "google_storage_bucket_object" "ops-setup-linux-script" {
 
 resource "google_storage_bucket_object" "ops-setup-win-script" {
   count = var.gcp_ops_agent_enable ? 1 : 0
-  
+
   bucket = google_storage_bucket.scripts.name
   name   = local.ops_win_setup_script
   source = "../../../shared/gcp/${local.ops_win_setup_script}"
 }
 
-# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though 
-# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually, 
-# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at: 
+# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though
+# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually,
+# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at:
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_bucket_config
 # _Default log bucket created by Google cannot be deleted and need to be disabled before creating the deployment to avoid saving the same logs
 # in both _Defualt log bucket and the log bucket created by Terraform
 resource "google_logging_project_bucket_config" "main" {
   count = var.gcp_ops_agent_enable ? 1 : 0
-  
+
   bucket_id      = local.log_bucket_name
   project        = local.gcp_project_id
   location       = "global"
@@ -73,7 +73,7 @@ resource "google_logging_project_bucket_config" "main" {
 # Create a sink to route instance logs to desinated log bucket
 resource "google_logging_project_sink" "instance-sink" {
   count = var.gcp_ops_agent_enable ? 1 : 0
-  
+
   name        = "${local.prefix}sink"
   destination = "logging.googleapis.com/${google_logging_project_bucket_config.main[0].id}"
   filter      = "resource.type = gce_instance AND resource.labels.project_id = ${local.gcp_project_id}"
@@ -85,10 +85,10 @@ module "dc" {
   source = "../../../modules/gcp/dc"
 
   prefix = var.prefix
-  
-  pcoip_agent_version         = var.dc_pcoip_agent_version
-  pcoip_registration_code     = var.pcoip_registration_code
-  teradici_download_token     = var.teradici_download_token
+
+  pcoip_agent_version     = var.dc_pcoip_agent_version
+  pcoip_registration_code = var.pcoip_registration_code
+  teradici_download_token = var.teradici_download_token
 
   gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id
@@ -100,10 +100,10 @@ module "dc" {
   domain_users_list           = var.domain_users_list
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name  = google_storage_bucket.scripts.name
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.dc-subnet.self_link
-  private_ip   = var.dc_private_ip
+  bucket_name = google_storage_bucket.scripts.name
+  gcp_zone    = var.gcp_zone
+  subnet      = google_compute_subnetwork.dc-subnet.self_link
+  private_ip  = var.dc_private_ip
   network_tags = [
     google_compute_firewall.allow-google-dns.name,
     google_compute_firewall.allow-rdp.name,
@@ -120,40 +120,40 @@ module "dc" {
   disk_image = var.dc_disk_image
 }
 
-module "cas-mgr" {
-  source = "../../../modules/gcp/cas-mgr"
+module "awm" {
+  source = "../../../modules/gcp/awm"
 
   prefix = var.prefix
 
   gcp_service_account     = local.gcp_service_account
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
-  cas_mgr_admin_password  = var.cas_mgr_admin_password
+  awm_admin_password      = var.awm_admin_password
   teradici_download_token = var.teradici_download_token
-  
-  bucket_name                = google_storage_bucket.scripts.name
-  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
-  gcp_sa_file                = local.gcp_sa_file
 
-  gcp_region   = var.gcp_region
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.cas-mgr-subnet.self_link
+  bucket_name            = google_storage_bucket.scripts.name
+  awm_deployment_sa_file = local.awm_deployment_sa_file
+  gcp_sa_file            = local.gcp_sa_file
+
+  gcp_region = var.gcp_region
+  gcp_zone   = var.gcp_zone
+  subnet     = google_compute_subnetwork.awm-subnet.self_link
   network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-https.name,
   ]
 
-  machine_type   = var.cas_mgr_machine_type
-  disk_size_gb   = var.cas_mgr_disk_size_gb
+  machine_type = var.awm_machine_type
+  disk_size_gb = var.awm_disk_size_gb
 
-  disk_image = var.cas_mgr_disk_image
+  disk_image = var.awm_disk_image
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
 
-  cas_mgr_admin_user             = var.cas_mgr_admin_user
-  cas_mgr_admin_ssh_pub_key_file = var.cas_mgr_admin_ssh_pub_key_file
+  awm_admin_user             = var.awm_admin_user
+  awm_admin_ssh_pub_key_file = var.awm_admin_ssh_pub_key_file
 }
 
 module "awc" {
@@ -161,11 +161,11 @@ module "awc" {
 
   prefix = var.prefix
 
-  gcp_service_account     = local.gcp_service_account
-  kms_cryptokey_id        = var.kms_cryptokey_id
-  cas_mgr_url             = "https://${module.cas-mgr.internal-ip}"
-  cas_mgr_insecure        = true
-  
+  awc_flag_manager_insecure = true
+  gcp_service_account       = local.gcp_service_account
+  kms_cryptokey_id          = var.kms_cryptokey_id
+  manager_url               = "https://${module.awm.internal-ip}"
+
   domain_name                 = var.domain_name
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
@@ -174,12 +174,12 @@ module "awc" {
   computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
   users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
-  bucket_name                = google_storage_bucket.scripts.name
-  cas_mgr_deployment_sa_file = local.cas_mgr_deployment_sa_file
+  bucket_name            = google_storage_bucket.scripts.name
+  awm_deployment_sa_file = local.awm_deployment_sa_file
 
   gcp_region_list = [var.gcp_region]
   subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
-  network_tags    = [
+  network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,
@@ -191,9 +191,9 @@ module "awc" {
 
   disk_image = var.awc_disk_image
 
-  awc_admin_user              = var.awc_admin_user
-  awc_admin_ssh_pub_key_file  = var.awc_admin_ssh_pub_key_file
-  teradici_download_token     = var.teradici_download_token
+  teradici_download_token    = var.teradici_download_token
+  awc_admin_user             = var.awc_admin_user
+  awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file
 
   tls_key  = var.awc_tls_key
   tls_cert = var.awc_tls_cert
@@ -231,7 +231,7 @@ module "win-gfx" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags     = [
+  network_tags = [
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-rdp.name,
   ]
@@ -277,7 +277,7 @@ module "win-std" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags     = [
+  network_tags = [
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-rdp.name,
   ]
@@ -325,7 +325,7 @@ module "centos-gfx" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags     = [
+  network_tags = [
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-ssh.name,
   ]
@@ -338,8 +338,8 @@ module "centos-gfx" {
   disk_size_gb        = var.centos_gfx_disk_size_gb
   disk_image          = var.centos_gfx_disk_image
 
-  ws_admin_user              = var.centos_admin_user
-  ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
+  ws_admin_user             = var.centos_admin_user
+  ws_admin_ssh_pub_key_file = var.centos_admin_ssh_pub_key_file
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
@@ -378,7 +378,7 @@ module "centos-std" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags     = [
+  network_tags = [
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-ssh.name,
   ]
@@ -389,8 +389,8 @@ module "centos-std" {
   disk_size_gb        = var.centos_std_disk_size_gb
   disk_image          = var.centos_std_disk_image
 
-  ws_admin_user              = var.centos_admin_user
-  ws_admin_ssh_pub_key_file  = var.centos_admin_ssh_pub_key_file
+  ws_admin_user             = var.centos_admin_user
+  ws_admin_ssh_pub_key_file = var.centos_admin_ssh_pub_key_file
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script

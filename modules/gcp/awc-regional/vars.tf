@@ -15,19 +15,19 @@ variable "prefix" {
   default     = ""
 }
 
-variable "cas_mgr_url" {
-  description = "CAS Manager URL (e.g. https://cas.teradici.com)"
+variable "manager_url" {
+  description = "Anyware Manager URL (e.g. https://cas.teradici.com)"
   type        = string
 }
 
-variable "cas_mgr_insecure" {
-  description = "Allow unverified TLS access to CAS Manager"
+variable "awc_flag_manager_insecure" {
+  description = "AWC install flag that allows unverified TLS access to Anyware Manager"
   type        = bool
   default     = false
 }
 
-variable "cas_mgr_deployment_sa_file" {
-  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
+variable "awm_deployment_sa_file" {
+  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
@@ -40,11 +40,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -69,7 +69,7 @@ variable "ad_service_account_password" {
 variable "ldaps_cert_filename" {
   description = "Filename of Certificate used in LDAPS."
   type        = string
-} 
+}
 
 variable "computers_dn" {
   description = "Base DN to search for computers within Active Directory."
@@ -146,7 +146,7 @@ variable "awc_admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.awc_admin_ssh_pub_key_file)
+    condition     = fileexists(var.awc_admin_ssh_pub_key_file)
     error_message = "The awc_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
@@ -166,8 +166,8 @@ variable "kms_cryptokey_id" {
   default     = ""
 }
 
-variable "cas_mgr_script" {
-  description = "Name of script to interact with CAS Manager"
+variable "awm_script" {
+  description = "Name of script to interact with Anyware Manager"
   type        = string
 }
 

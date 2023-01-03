@@ -13,8 +13,8 @@ output "domain-controller-public-ip" {
   value = module.dc.public-ip
 }
 
-output "cas-mgr-public-ip" {
-  value = module.cas-mgr.public-ip
+output "awm-public-ip" {
+  value = module.awm.public-ip
 }
 
 output "awc-public-ip" {

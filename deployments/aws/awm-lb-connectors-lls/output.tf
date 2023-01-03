@@ -21,8 +21,8 @@ output "load-balancer-url" {
   value = aws_lb.awc-alb.dns_name
 }
 
-output "cas-mgr-public-ip" {
-  value = module.cas-mgr.public-ip
+output "awm-public-ip" {
+  value = module.awm.public-ip
 }
 
 output "awc-internal-ip" {

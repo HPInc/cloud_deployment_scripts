@@ -7,7 +7,7 @@
 
 import aws_iam_wrapper as aws
 import boto3
-import casmgr
+import awm
 import getpass
 import math
 import re
@@ -62,16 +62,16 @@ def configurations_get(ws_types, username, quickstart_path):
             print("Invalid PCoIP Registration Code format (Ex. ABCDEFGHIJKL@0123-4567-89AB-CDEF). Please try again.")
 
     def api_token_get(order_number):
-        print(f"{order_number}.  Please enter the CAS Manager API token.")
+        print(f"{order_number}.  Please enter the Anyware Manager API token.")
         print("    Log into https://cas.teradici.com, click on your email address on the top right and select \"Get API token\".")
         while True:
             api_token = input("api_token: ").strip()
-            mycasmgr = casmgr.CASManager(api_token)
-            print("Validating API token with CAS Manager...", end="")
-            if (mycasmgr.auth_token_validate()):
+            my_awm = awm.AnywareManager(api_token)
+            print("Validating API token with Anyware Manager...", end="")
+            if (my_awm.auth_token_validate()):
                 print("Yes")
                 return api_token
-            print("\nInvalid CAS Manager API token. Please try again.")
+            print("\nInvalid Anyware Manager API token. Please try again.")
 
     def service_quota_in_use_get(requirement, aws_region):
         """AWS keeps track of the service quota limits, but to get the service quota usage, this function
@@ -315,7 +315,7 @@ def configurations_get(ws_types, username, quickstart_path):
                 print("Maximum 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
             print('Checking that the AWS IAM resources names are unique...')
-            aws_username = prefix + '-cas-manager'
+            aws_username = prefix + '-anyware-manager'
             aws_role_name = f'{aws_username}_role'
             role_policy_name = f'{aws_role_name}_policy'
             if any((aws.find_user(aws_username), aws.find_role(aws_role_name), aws.find_policy(role_policy_name))):

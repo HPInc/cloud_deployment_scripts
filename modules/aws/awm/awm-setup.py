@@ -12,7 +12,9 @@ import configparser
 import boto3
 from botocore.exceptions import ClientError
 
-CAS_MGR_API_URL = "https://localhost/api/v1"
+AWM_API_URL = "https://localhost/api/v1"
+# The current temp path can be found in the Anyware Manager documentation.
+# https://www.teradici.com/web-help/anyware_manager/22.09/cam_standalone_installation/default_config/
 TEMP_CRED_PATH = "/opt/teradici/casm/temp-creds.txt"
 
 
@@ -27,13 +29,13 @@ def get_temp_creds(path=TEMP_CRED_PATH):
     return data['username'], data['password']
 
 
-def cas_mgr_login(username, password):
+def awm_login(username, password):
     payload = {
         'username': username, 
         'password': password,
     }
     resp = session.post(
-        f"{CAS_MGR_API_URL}/auth/ad/login",
+        f"{AWM_API_URL}/auth/ad/login",
         json=payload, 
     )
     resp.raise_for_status()
@@ -45,7 +47,7 @@ def cas_mgr_login(username, password):
 def password_change(new_password):
     payload = {'password': new_password}
     resp = session.post(
-        f"{CAS_MGR_API_URL}/auth/ad/adminPassword",
+        f"{AWM_API_URL}/auth/ad/adminPassword",
         json=payload,
     )
     resp.raise_for_status()
@@ -57,7 +59,7 @@ def deployment_create(name, reg_code):
         'registrationCode': reg_code,
     }
     resp = session.post(
-        f"{CAS_MGR_API_URL}/deployments",
+        f"{AWM_API_URL}/deployments",
         json = payload,
     )
     resp.raise_for_status()
@@ -71,7 +73,7 @@ def deployment_key_create(deployment, name):
         'keyName': name
     }
     resp = session.post(
-        f"{CAS_MGR_API_URL}/auth/keys",
+        f"{AWM_API_URL}/auth/keys",
         json = payload,
     )
     resp.raise_for_status()
@@ -105,7 +107,7 @@ def get_username(key):
 
 
 def validate_aws_sa(username, key):
-    print("Validating AWS credentials with CAS Manager...")
+    print("Validating AWS credentials with Anyware Manager...")
     payload = {
         'provider': 'aws',
         'credential': {
@@ -115,7 +117,7 @@ def validate_aws_sa(username, key):
         },
     }
     resp = session.post(
-        f"{CAS_MGR_API_URL}/auth/users/cloudServiceAccount/validate",
+        f"{AWM_API_URL}/auth/users/cloudServiceAccount/validate",
         json = payload,
     )
     try:
@@ -144,7 +146,7 @@ def deployment_add_aws_account(username, key, deployment):
         'credential': credentials,
     }
     resp = session.post(
-        f"{CAS_MGR_API_URL}/deployments/{deployment['deploymentId']}/cloudServiceAccounts",
+        f"{AWM_API_URL}/deployments/{deployment['deploymentId']}/cloudServiceAccounts",
         json = payload,
     )
 
@@ -158,18 +160,18 @@ def deployment_add_aws_account(username, key, deployment):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="This script updates the password for the CAS Manager Admin user.")
+    parser = argparse.ArgumentParser(description="This script updates the password for the Anyware Manager Admin user.")
 
-    parser.add_argument("--deployment_name", required=True, help="CAS Manager deployment to create")
+    parser.add_argument("--deployment_name", required=True, help="Anyware Manager deployment to create")
     parser.add_argument("--key_file", required=True, help="path to write Deployment Service Account key JSON file")
-    parser.add_argument("--key_name", required=True, help="name of CAS Manager Deployment Service Account key")
-    parser.add_argument("--password", required=True, help="new CAS Manager administrator password")
+    parser.add_argument("--key_name", required=True, help="name of Anyware Manager Deployment Service Account key")
+    parser.add_argument("--password", required=True, help="new Anyware Manager administrator password")
     parser.add_argument("--reg_code", required=True, help="PCoIP registration code")
     parser.add_argument("--aws_key", help="AWS Service Account credentials INI file")
 
     args = parser.parse_args()
 
-    # Set up session to be used for all subsequent calls to CAS Manager
+    # Set up session to be used for all subsequent calls to Anyware Manager
     session = requests.Session()
     session.verify = False
     retry_strategy = requests.adapters.Retry(
@@ -182,22 +184,22 @@ if __name__ == '__main__':
         "https://", requests.adapters.HTTPAdapter(max_retries=retry_strategy)
     )
 
-    print("Setting CAS Manager Administrator password...")
+    print("Setting Anyware Manager Administrator password...")
     user, password = get_temp_creds()
-    cas_mgr_login(user, password)
+    awm_login(user, password)
     password_change(args.password)
 
-    print("Creating CAS Manager deployment...")
-    cas_mgr_login(user, args.password)
+    print("Creating Anyware Manager deployment...")
+    awm_login(user, args.password)
     deployment = deployment_create(args.deployment_name, args.reg_code)
-    cas_mgr_deployment_key = deployment_key_create(deployment, args.key_name)
-    deployment_key_write(cas_mgr_deployment_key, args.key_file)
+    awm_deployment_key = deployment_key_create(deployment, args.key_name)
+    deployment_key_write(awm_deployment_key, args.key_file)
 
     if args.aws_key:
         key = get_aws_sa_key(args.aws_key)
         username = get_username(key)
         if username and validate_aws_sa(username, key):
-            print("Adding AWS credentials to CAS Manager deployment...")
+            print("Adding AWS credentials to Anyware Manager deployment...")
             deployment_add_aws_account(username, key, deployment)
         else:
-            print("Skip adding AWS credentials to CAS Manager deployment.")
+            print("Skip adding AWS credentials to Anyware Manager deployment.")

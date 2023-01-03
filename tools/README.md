@@ -22,10 +22,10 @@ All secrets below the line "# <-- Start of secrets section, do not edit this lin
 
 If the secret is a path to a text file, it will encrypt the file.
 
-AWS: The script is defaulted to use "cas_key" to encrypt your secrets. Ensure that the "customer_master_key_id"
+AWS: The script is defaulted to use "anyware_key" to encrypt your secrets. Ensure that the "customer_master_key_id"
 line in terraform.tfvars is commented out.
 
-GCP: The script is defaulted to use "cas-keyring" and "cas_key" to encrypt your secrets. Ensure that the "kms_cryptokey_id" 
+GCP: The script is defaulted to use "anyware_keyring" and "anyware_key" to encrypt your secrets. Ensure that the "kms_cryptokey_id" 
 line in terraform.tfvars is commented out.
 
 To encrypt:

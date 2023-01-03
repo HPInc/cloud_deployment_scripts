@@ -292,7 +292,7 @@ class Tfvars_Encryptor(ABC):
         try:
             for secret in self.tfvars_parser.tfvars_secrets:
                 # Additional handling needed if the string is a path to a file
-                # e.g. cas_mgr_deployment_sa_file
+                # e.g. awm_deployment_sa_file
                 if os.path.isfile(self.tfvars_parser.tfvars_secrets.get(secret)):
                     self.tfvars_parser.tfvars_secrets[secret] = self.decrypt_file(self.tfvars_parser.tfvars_secrets.get(secret))
                 else:
@@ -357,7 +357,7 @@ class Tfvars_Encryptor(ABC):
         try:
             for secret in self.tfvars_parser.tfvars_secrets:
                 # Additional handling needed if the string is a path to a file
-                # e.g. cas_mgr_deployment_sa_file
+                # e.g. awm_deployment_sa_file
                 if os.path.isfile(self.tfvars_parser.tfvars_secrets.get(secret)):
                     self.tfvars_parser.tfvars_secrets[secret] = self.encrypt_file(self.tfvars_parser.tfvars_secrets.get(secret))
                 else:
@@ -454,9 +454,9 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
     location : str
         Defaulted to use "global" as the location.
     key_ring_id : str
-        Defaulted to use "cas_keyring" as a key ring ID.
+        Defaulted to use "anyware_keyring" as a key ring ID.
     crypto_key_id : str
-        Defaulted to use "cas_key" as the crypto key ID.
+        Defaulted to use "anyware_key" as the crypto key ID.
     crypto_key_path : str
         Full GCP resource path to the crypto key being used to encrypt and decrypt.
 
@@ -502,8 +502,8 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         
         self.project_id      = cred_file_json["project_id"]
         self.location        = "global"
-        self.key_ring_id     = self.initialize_keyring("cas_keyring")
-        self.crypto_key_id   = self.initialize_cryptokey("cas_key")
+        self.key_ring_id     = self.initialize_keyring("anyware_keyring")
+        self.crypto_key_id   = self.initialize_cryptokey("anyware_key")
         self.crypto_key_path = self.kms_client.crypto_key_path(self.project_id, self.location, self.key_ring_id, self.crypto_key_id)
 
 
@@ -625,7 +625,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         response = self.kms_client.list_crypto_keys(request={'parent': parent})
 
         # Access the name property and split string from the right. [2] to get the string after the separator
-        # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring/cryptoKeys/cas_key"
+        # eg. name: "projects/user-terraform/locations/global/keyRings/anyware_keyring/cryptoKeys/anyware_key"
         crypto_keys_list = list(map(lambda key: key.name.rpartition("/")[2], response))
 
         return crypto_keys_list
@@ -647,7 +647,7 @@ class GCP_Tfvars_Encryptor(Tfvars_Encryptor):
         response = self.kms_client.list_key_rings(request={'parent': parent})
 
         # Access the name property and split string from the right. [2] to get the string after the separator
-        # eg. name: "projects/user-terraform/locations/global/keyRings/cas_keyring"
+        # eg. name: "projects/user-terraform/locations/global/keyRings/anyware_keyring"
         key_rings_list = list(map(lambda key_ring: key_ring.name.rpartition("/")[2], response))
 
         return key_rings_list
@@ -737,7 +737,7 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
     aws_credentials : dict
         Dictionary containing two keys: aws_access_key_id and aws_secret_access_key.
     customer_master_key_id : str 
-        Defaulted to use "cas_key" as a crypto key ID.
+        Defaulted to use "anyware_key" as a crypto key ID.
 
     Methods
     -------
@@ -779,7 +779,7 @@ class AWS_Tfvars_Encryptor(Tfvars_Encryptor):
         )
 
         # AWS KMS resource variables
-        self.customer_master_key_id = self.initialize_cryptokey("cas_key")
+        self.customer_master_key_id = self.initialize_cryptokey("anyware_key")
 
 
     def create_crypto_key(self, crypto_key_alias):

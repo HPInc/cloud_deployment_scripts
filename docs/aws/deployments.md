@@ -4,23 +4,23 @@
 
 - [Overview](#overview)
 - [single-connector](#single-connector)
-- [cas-mgr-single-connector](#cas-mgr-single-connector)
+- [awm-single-connector](#awm-single-connector)
 - [lb-connectors](#lb-connectors)
-- [cas-mgr-lb-connectors](#cas-mgr-lb-connectors)
+- [awm-lb-connectors](#awm-lb-connectors)
 - [lb-connectors-lls](#lb-connectors-lls)
-- [cas-mgr-lb-connectors-lls](#cas-mgr-lb-connectors-lls)
+- [awm-lb-connectors-lls](#awm-lb-connectors-lls)
 - [lb-connectors-ha-lls](#lb-connectors-ha-lls)
-- [cas-mgr-lb-connectors-ha-lls](#cas-mgr-lb-connectors-ha-lls)
+- [awm-lb-connectors-ha-lls](#awm-lb-connectors-ha-lls)
 
 ---
 
 ## Overview
 
-This repository contains a number of CAS deployment architectures on AWS. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference between them is how each CAS deployment is managed:
-1. using CAS Manager as a Service, which is a SaaS run by Teradici (first table), or
-2. running the CAS Manager in a virtual machine that a user controls in his or her own CAS deployment (second table)
+This repository contains a number of HP Anyware deployment architectures on AWS. The tables below compare major differences between the deployments. Note that the deployments in the second table are essentially the same as those in the first table; the difference between them is how each HP Anyware deployment is managed:
+1. using Anyware Manager as a Service, which is a SaaS run by Teradici (first table), or
+2. running the Anyware Manager in a virtual machine that a user controls in his or her own HP Anyware deployment (second table)
 
-Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the CAS Manager without additional costs. Running the CAS Manager in a virtual machine, on the other hand, gives the user full control of the CAS deployment; the CAS deployment will not have to reach out to the internet for CAS management features, but the user is responsible for costs, security, updates, high availability and maintenance of the virtual machine running CAS Manager.
+Using Anyware Manager as a Service run by Teradici allows a user to rely on Teradici for running and maintaining the Anyware Manager without additional costs. Running the Anyware Manager in a virtual machine, on the other hand, gives the user full control of the HP Anyware deployment; the HP Anyware deployment will not have to reach out to the internet for HP Anyware management features, but the user is responsible for costs, security, updates, high availability and maintenance of the virtual machine running Anyware Manager.
 
 | | single-connector | lb-connectors | lb-connectors-lls | lb-connectors-ha-lls |
 | --- | --- | --- | --- | --- |
@@ -30,9 +30,9 @@ Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici
 | # of AZ for Workstations | 1 | 1 | 1 | 1 |
 | # of PCoIP Entry Points | 1 (single Virtual Machine) | Multiple (Application Load Balancer and public IP of Connectors) | Multiple (Application Load Balancer and public IP of Connectors) | Multiple (Application Load Balancer and public IP of Connectors) |
 | Licensing | Cloud License Server | Cloud License Server | PCoIP License Server | PCoIP License Server (Highly Available) |
-| CAS Manager | as a Service | as a Service | as a Service | as a Service |
+| Anyware Manager | as a Service | as a Service | as a Service | as a Service |
 
-| | cas-mgr-single-connector | cas-mgr-lb-connectors | cas-mgr-lb-connectors-lls | cas-mgr-lb-connectors-ha-lls |
+| | awm-single-connector | awm-lb-connectors | awm-lb-connectors-lls | awm-lb-connectors-ha-lls |
 | --- | --- | --- | --- | --- |
 | Description | Great for quick proof of concept. Only has one Connector in one region, limiting scalability.  | Supports multiple Connectors in multiple Availability Zones (AZ) within a region, running behind an Application Load Balancer. PCoIP clients can access the deployment via either the load balancer or public IP addresses of the Connectors. | Similar to lb-connectors, but uses PCoIP License Server instead of Cloud License Server | Similar to lb-connectors-lls, except a pair of main and backup PCoIP License Servers are deployed for high availability. |
 | # of Connectors | 1 | 1 or more per AZ | 1 or more per AZ | 1 or more per AZ |
@@ -40,7 +40,7 @@ Using CAS Manager as a Service run by Teradici allows a user to rely on Teradici
 | # of AZ for Workstations | 1 | 1 | 1 | 1 |
 | # of PCoIP Entry Points | 1 (single Virtual Machine) | Multiple (Application Load Balancer and public IP of Connectors) | Multiple (Application Load Balancer and public IP of Connectors) | Multiple (Application Load Balancer and public IP of Connectors) |
 | Licensing | Cloud License Server | Cloud License Server | PCoIP License Server | PCoIP License Server (Highly Available) |
-| CAS Manager | Virtual Machine | Virtual Machine | Virtual Machine | Virtual Machine |
+| Anyware Manager | Virtual Machine | Virtual Machine | Virtual Machine | Virtual Machine |
 
 ## single-connector
 
@@ -53,9 +53,9 @@ This is the simplest deployment; it creates a VPC with 3 subnets in the same reg
 
 Security Group rules are created to allow wide-open access within the VPC, and selected ports are open to the public for operation and for debug purposes.
 
-A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `cas_ad_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP and a public IP.
+A Domain Controller is created with Active Directory, DNS and LDAP-S configured. 2 Domain Admins are set up in the new domain: `Administrator` and `anyware_ad_admin` (default). Domain Users are also created if a `domain_users_list` CSV file is specified. The Domain Controller is given a static IP and a public IP.
 
-A Anyware Connector is created and registers itself with CAS Manager as a Service with the given CAS Manager Deployment Service Account credentials.
+A Anyware Connector is created and registers itself with Anyware Manager as a Service with the given Anyware Manager Deployment Service Account credentials.
 
 Domain-joined workstations are optionally created, specified by the following parameters:
 - `win_gfx_instance_count`:    Windows Graphics workstation
@@ -67,9 +67,9 @@ These workstations are automatically domain-joined and have the PCoIP Agent inst
 
 ![single-connector diagram](./single-connector.png)
 
-## cas-mgr-single-connector
+## awm-single-connector
 
-This deployment is essentially the same as [single-connector](#single-connector), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [single-connector](#single-connector), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.
 
 ## lb-connectors
 
@@ -81,9 +81,9 @@ The following diagram shows what a lb-connectors deployment looks like with 2 AZ
 
 ![lb-connectors diagram](lb-connectors.png)
 
-## cas-mgr-lb-connectors
+## awm-lb-connectors
 
-This deployment is essentially the same as [lb-connectors](#lb-connectors), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [lb-connectors](#lb-connectors), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.
 
 ## lb-connectors-lls
 
@@ -96,9 +96,9 @@ For more information on the LLS, please visit https://www.teradici.com/web-help/
 
 ![lb-connectors-lls diagram](lb-connectors-lls.png)
 
-## cas-mgr-lb-connectors-lls
+## awm-lb-connectors-lls
 
-This deployment is essentially the same as [lb-connectors-lls](#lb-connectors-lls), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [lb-connectors-lls](#lb-connectors-lls), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.
 
 ## lb-connectors-ha-lls
 
@@ -116,6 +116,6 @@ The following diagram shows the LLS subsystem in `subnet-lls` that replaces the 
 
 ![lb-connectors-ha-lls diagram](lb-connectors-ha-lls.png)
 
-## cas-mgr-lb-connectors-ha-lls
+## awm-lb-connectors-ha-lls
 
-This deployment is essentially the same as [lb-connectors-ha-lls](#lb-connectors-ha-lls), except instead of using CAS Manager as a Service provided by Teradici, the CAS deployment is managed by CAS Manager installed in a virtual machine in the `subnet-cas-mgr` subnet.
+This deployment is essentially the same as [lb-connectors-ha-lls](#lb-connectors-ha-lls), except instead of using Anyware Manager as a Service provided by Teradici, the HP Anyware deployment is managed by Anyware Manager installed in a virtual machine in the `subnet-awm` subnet.

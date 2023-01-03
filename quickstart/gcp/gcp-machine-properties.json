@@ -2,17 +2,17 @@
     "dc": {
         "name": "Domain Controller",
         "spec": {
-            "INSTANCES": 1, 
+            "INSTANCES": 1,
             "CPUS": 4,
             "SSD_TOTAL_GB": 50,
             "NVIDIA_P4_VWS_GPUS": 0
         },
         "accelerator": ""
     },
-    "cac": {
+    "awc": {
         "name": "Cloud Access Connector",
         "spec": {
-            "INSTANCES": 1, 
+            "INSTANCES": 1,
             "CPUS": 2,
             "SSD_TOTAL_GB": 50,
             "NVIDIA_P4_VWS_GPUS": 0
@@ -22,7 +22,7 @@
     "scent": {
         "name": "Standard CentOS",
         "spec": {
-            "INSTANCES": 1, 
+            "INSTANCES": 1,
             "CPUS": 2,
             "SSD_TOTAL_GB": 50,
             "NVIDIA_P4_VWS_GPUS": 0
@@ -32,17 +32,17 @@
     "gcent": {
         "name": "Graphics CentOS",
         "spec": {
-            "INSTANCES": 1, 
+            "INSTANCES": 1,
             "CPUS": 2,
             "SSD_TOTAL_GB": 50,
             "NVIDIA_P4_VWS_GPUS": 1
         },
-        "accelerator": "nvidia-tesla-p4-vws" 
+        "accelerator": "nvidia-tesla-p4-vws"
     },
     "swin": {
         "name": "Standard Windows",
         "spec": {
-            "INSTANCES": 1, 
+            "INSTANCES": 1,
             "CPUS": 4,
             "SSD_TOTAL_GB": 50,
             "NVIDIA_P4_VWS_GPUS": 0
@@ -52,7 +52,7 @@
     "gwin": {
         "name": "Graphics Windows",
         "spec": {
-            "INSTANCES": 1, 
+            "INSTANCES": 1,
             "CPUS": 4,
             "SSD_TOTAL_GB": 50,
             "NVIDIA_P4_VWS_GPUS": 1

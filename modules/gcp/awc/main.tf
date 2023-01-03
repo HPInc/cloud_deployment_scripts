@@ -8,25 +8,25 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
-  cas_mgr_script = "get-connector-token.py"
-  
+  awm_script = "get-connector-token.py"
+
   num_regions = length(var.gcp_region_list)
-  num_instances    = length(flatten(
-    [ for i in range(local.num_regions):
+  num_instances = length(flatten(
+    [for i in range(local.num_regions) :
       range(var.instance_count_list[i])
     ]
   ))
 
-  tls_key_filename  = var.tls_key  == "" ? "" : basename(var.tls_key)
+  tls_key_filename  = var.tls_key == "" ? "" : basename(var.tls_key)
   tls_cert_filename = var.tls_cert == "" ? "" : basename(var.tls_cert)
 }
 
 resource "google_storage_bucket_object" "get-connector-token-script" {
   count = local.num_instances == 0 ? 0 : 1
 
-  bucket  = var.bucket_name
-  name   = local.cas_mgr_script
-  source = "${path.module}/${local.cas_mgr_script}"
+  bucket = var.bucket_name
+  name   = local.awm_script
+  source = "${path.module}/${local.awm_script}"
 }
 
 resource "google_storage_bucket_object" "tls-key" {
@@ -55,13 +55,13 @@ module "awc-regional" {
   gcp_region     = var.gcp_region_list[count.index]
   instance_count = var.instance_count_list[count.index]
 
-  bucket_name                = var.bucket_name
-  cas_mgr_deployment_sa_file = var.cas_mgr_deployment_sa_file
+  bucket_name            = var.bucket_name
+  awm_deployment_sa_file = var.awm_deployment_sa_file
 
-  kms_cryptokey_id        = var.kms_cryptokey_id
-  cas_mgr_url             = var.cas_mgr_url
-  cas_mgr_insecure        = var.cas_mgr_insecure
-  cas_mgr_script          = local.cas_mgr_script
+  awm_script                = local.awm_script
+  awc_flag_manager_insecure = var.awc_flag_manager_insecure
+  kms_cryptokey_id          = var.kms_cryptokey_id
+  manager_url               = var.manager_url
 
   domain_controller_ip        = var.domain_controller_ip
   domain_name                 = var.domain_name
@@ -76,14 +76,14 @@ module "awc-regional" {
 
   awc_extra_install_flags = var.awc_extra_install_flags
 
-  network_tags = var.network_tags
-  subnet = var.subnet_list[count.index]
-  external_pcoip_ip = var.external_pcoip_ip_list == [] ? "" : var.external_pcoip_ip_list[count.index]
+  network_tags           = var.network_tags
+  subnet                 = var.subnet_list[count.index]
+  external_pcoip_ip      = var.external_pcoip_ip_list == [] ? "" : var.external_pcoip_ip_list[count.index]
   enable_awc_external_ip = var.enable_awc_external_ip
 
-  awc_admin_user = var.awc_admin_user
+  awc_admin_user             = var.awc_admin_user
   awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file
-  teradici_download_token = var.teradici_download_token
+  teradici_download_token    = var.teradici_download_token
 
   gcp_service_account = var.gcp_service_account
 

@@ -6,13 +6,13 @@
  */
 
 variable "aws_credentials_file" {
-    description = "Location of AWS credentials file"
-    type        = string
+  description = "Location of AWS credentials file"
+  type        = string
 
-    validation {
-      condition = fileexists(var.aws_credentials_file)
-      error_message = "The aws_credentials_file specified does not exist. Please check the file path."
-    }
+  validation {
+    condition     = fileexists(var.aws_credentials_file)
+    error_message = "The aws_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "aws_region" {
@@ -28,7 +28,7 @@ variable "az_id_exclude_list" {
 }
 
 # NetBIOS name is limited to 15 characters. 10 characters are reserved for workstation type
-# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters. 
+# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters.
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 5 characters."
   default     = ""
@@ -50,13 +50,13 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the Cloud Access Software deployment"
-  default     = "vpc-cas"
+  description = "Name for VPC containing the HP Anyware deployment"
+  default     = "vpc-anyware"
 }
 
 variable "vpc_cidr" {
-  description = "CIDR for the VPC containing the CAS deployment"
-  default     = "10.0.0.0/16" 
+  description = "CIDR for the VPC containing the HP Anyware deployment"
+  default     = "10.0.0.0/16"
 }
 
 variable "dc_subnet_name" {
@@ -103,11 +103,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -127,7 +127,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_ad_admin"
+  default     = "anyware_ad_admin"
 }
 
 variable "ad_service_account_password" {
@@ -142,7 +142,7 @@ variable "domain_users_list" {
   default     = ""
 
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
 }
@@ -189,7 +189,7 @@ variable "awc_ami_name" {
 
 variable "admin_ssh_key_name" {
   description = "Name of Admin SSH Key"
-  default     = "cas_admin"
+  default     = "anyware_admin"
 }
 
 variable "admin_ssh_pub_key_file" {
@@ -197,16 +197,16 @@ variable "admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.admin_ssh_pub_key_file)
+    condition     = fileexists(var.admin_ssh_pub_key_file)
     error_message = "The admin_ssh_pub_key_file specified does not exist. Please check the file path."
-  }  
+  }
 }
 
 # Note the following limits for health check:
 # interval_sec: min 5, max 300, default 30
 # timeout_sec:  min 2, max 120, default 5
-# Further info about healthcheck: 
-# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
+# Further info about healthcheck:
+# https://www.teradici.com/web-help/anyware_manager/22.09/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "awc_health_check" {
   description = "Health check configuration for Anyware Connector"
   default = {
@@ -223,7 +223,7 @@ variable "tls_key" {
   default     = ""
 
   validation {
-    condition = var.tls_key == "" ? true : fileexists(var.tls_key)
+    condition     = var.tls_key == "" ? true : fileexists(var.tls_key)
     error_message = "The tls_key file specified does not exist. Please check the file path."
   }
 }
@@ -233,7 +233,7 @@ variable "tls_cert" {
   default     = ""
 
   validation {
-    condition = var.tls_cert == "" ? true : fileexists(var.tls_cert)
+    condition     = var.tls_cert == "" ? true : fileexists(var.tls_cert)
     error_message = "The tls_cert file specified does not exist. Please check the file path."
   }
 }
@@ -243,24 +243,24 @@ variable "awc_extra_install_flags" {
   default     = ""
 }
 
-variable "cas_mgr_url" {
-  description = "CAS Manager as a Service URL"
+variable "manager_url" {
+  description = "Anyware Manager as a Service URL"
   default     = "https://cas.teradici.com"
 }
 
-variable "cas_mgr_insecure" {
-  description = "Allow unverified TLS access to CAS Manager"
+variable "awc_flag_manager_insecure" {
+  description = "AWC install flag that allows unverified TLS access to Anyware Manager"
   type        = bool
   default     = false
 }
 
-variable "cas_mgr_deployment_sa_file" {
-  description = "Location of CAS Manager Deployment Service Account JSON file"
+variable "awm_deployment_sa_file" {
+  description = "Location of Anyware Manager Deployment Service Account JSON file"
   type        = string
 
   validation {
-    condition = fileexists(var.cas_mgr_deployment_sa_file)
-    error_message = "The cas_mgr_deployment_sa_file specified does not exist. Please check the file path."
+    condition     = fileexists(var.awm_deployment_sa_file)
+    error_message = "The awm_deployment_sa_file specified does not exist. Please check the file path."
   }
 }
 

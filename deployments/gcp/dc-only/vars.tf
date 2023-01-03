@@ -45,8 +45,8 @@ variable "allowed_admin_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the Cloud Access Software deployment"
-  default     = "vpc-cas"
+  description = "Name for VPC containing the HP Anyware deployment"
+  default     = "vpc-anyware"
 }
 
 variable "dc_subnet_name" {
@@ -117,7 +117,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_ad_admin"
+  default     = "anyware_ad_admin"
 }
 
 variable "ad_service_account_password" {

@@ -12,10 +12,8 @@ AWS_REGION=${aws_region}
 AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 AWC_EXTRA_INSTALL_FLAGS=${awc_extra_install_flags}
-CAS_MGR_DEPLOYMENT_SA_FILE=${cas_mgr_deployment_sa_file}
-CAS_MGR_INSECURE=${cas_mgr_insecure}
-CAS_MGR_SCRIPT=${cas_mgr_script}
-CAS_MGR_URL=${cas_mgr_url}
+AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_SCRIPT=${awm_script}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
 COMPUTERS_DN=${computers_dn}
@@ -24,6 +22,8 @@ DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 LDAPS_CERT_FILENAME=${ldaps_cert_filename}
 LLS_IP=${lls_ip}
+MANAGER_INSECURE=${awc_flag_manager_insecure}
+MANAGER_URL=${manager_url}
 TLS_CERT=${tls_cert}
 TLS_KEY=${tls_key}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
@@ -32,8 +32,8 @@ USERS_DN=${users_dn}
 LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
 
-AWC_BIN_PATH="/usr/local/bin/cas-connector"
-AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/cas-manager-beta/cfg/setup/bash.rpm.sh"
+AWC_BIN_PATH="/usr/local/bin/anyware-connector"
+AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager-beta/cfg/setup/bash.rpm.sh"
 AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
 CONNECTOR_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 
@@ -125,14 +125,14 @@ setup_cloudwatch(){
 }
 
 get_credentials() {
-    # In some cases, the CAS Manager Deployment Service Account key is generated
-    # by a new CAS Manager VM that is being created in parallel as the CAS
+    # In some cases, the Anyware Manager Deployment Service Account key is generated
+    # by a new Anyware Manager VM that is being created in parallel as the Anyware
     # Connector. Loop until the file is found in the storage bucket.
 
     retry 120 `# 120 retries` \
           60  `# 60s interval` \
-          "aws s3 cp s3://$BUCKET_NAME/$CAS_MGR_DEPLOYMENT_SA_FILE $PROVISIONING_DIR" \
-          "--> ERROR: Failed to download CAS Manager deployment Service Account key from bucket $BUCKET_NAME."
+          "aws s3 cp s3://$BUCKET_NAME/$AWM_DEPLOYMENT_SA_FILE $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download Anyware Manager deployment Service Account key from bucket $BUCKET_NAME."
 
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
@@ -147,9 +147,9 @@ get_credentials() {
         log "--> Decrypting AD service account password..."
         AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AD_SERVICE_ACCOUNT_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
 
-        log "--> Decrypting CAS Manager Deployment Service Account JSON file..."
-        CAS_MGR_CREDENTIALS=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://"$PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE" --output text --query Plaintext | base64 -d)
-        echo $CAS_MGR_CREDENTIALS > $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
+        log "--> Decrypting Anyware Manager Deployment Service Account JSON file..."
+        AWM_CREDENTIALS=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://"$PROVISIONING_DIR/$AWM_DEPLOYMENT_SA_FILE" --output text --query Plaintext | base64 -d)
+        echo $AWM_CREDENTIALS > $PROVISIONING_DIR/$AWM_DEPLOYMENT_SA_FILE
     fi
     set -x
 }
@@ -159,24 +159,24 @@ get_connector_token() {
 
     local args=""
 
-    log "--> Downloading CAS Manager python script from the bucket..."
+    log "--> Downloading Anyware Manager python script from the bucket..."
     retry 3 `# 3 retries` \
           5 `# 5s interval` \
-          "aws s3 cp s3://$BUCKET_NAME/$CAS_MGR_SCRIPT $PROVISIONING_DIR" \
-          "--> ERROR: Failed to download CAS Manager python script from s3://$BUCKET_NAME/$CAS_MGR_SCRIPT"
-    chmod +x $PROVISIONING_DIR/$CAS_MGR_SCRIPT
+          "aws s3 cp s3://$BUCKET_NAME/$AWM_SCRIPT $PROVISIONING_DIR" \
+          "--> ERROR: Failed to download Anyware Manager python script from s3://$BUCKET_NAME/$AWM_SCRIPT"
+    chmod +x $PROVISIONING_DIR/$AWM_SCRIPT
 
     # Ensure line endings are in Unix format
-    dos2unix $PROVISIONING_DIR/$CAS_MGR_SCRIPT
-    dos2unix $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE
+    dos2unix $PROVISIONING_DIR/$AWM_SCRIPT
+    dos2unix $PROVISIONING_DIR/$AWM_DEPLOYMENT_SA_FILE
 
     # Set CONNECTOR_TOKEN variable using the script's output
-    if [ "$CAS_MGR_INSECURE" ]
+    if [ "$MANAGER_INSECURE" ]
     then
         args="--insecure"
     fi
 
-    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/$CAS_MGR_SCRIPT $PROVISIONING_DIR/$CAS_MGR_DEPLOYMENT_SA_FILE --url $CAS_MGR_URL --out $CONNECTOR_TOKEN_FILE $args
+    PYTHONWARNINGS="ignore:Unverified HTTPS request" $PROVISIONING_DIR/$AWM_SCRIPT $PROVISIONING_DIR/$AWM_DEPLOYMENT_SA_FILE --url $MANAGER_URL --out $CONNECTOR_TOKEN_FILE $args
     set +x
     CONNECTOR_TOKEN=`cat $CONNECTOR_TOKEN_FILE`
     set -x
@@ -184,7 +184,7 @@ get_connector_token() {
 
     # Check and exit provisioning script if retrieving connector token failed
     if [ $? -ne 0 ]; then
-        log "--> ERROR: Failed to retrieve connector token using CAS Manager script. Exiting provisioning script..."
+        log "--> ERROR: Failed to retrieve connector token using Anyware Manager script. Exiting provisioning script..."
         exit 1
     fi
 }
@@ -230,22 +230,22 @@ check_connector_installed() {
     fi
 }
 
-add_cas_mgr_repo() {
-    log "--> Adding CAS Manager repo..."
+add_awm_repo() {
+    log "--> Adding Anyware Manager repo..."
     curl -1sLf $AWC_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
-    dnf repolist --enabled teradici-cas-manager*
+    dnf repolist --enabled teradici-anyware-manager*
 }
 
 config_selinux() {
     log "--> Configuring SE Linux..."
     dnf install -y selinux-policy-base container-selinux
     dnf install -y https://github.com/k3s-io/k3s-selinux/releases/download/v1.1.stable.1/k3s-selinux-1.1-1.el8.noarch.rpm
-    dnf install -y cas-manager-selinux
+    dnf install -y anyware-manager-selinux
 }
 
 install_awc() {
     log "--> Installing Anyware Connector..."
-    dnf install -y cas-connector 2>&1 | tee -a $AWC_INSTALL_LOG
+    dnf install -y anyware-connector 2>&1 | tee -a $AWC_INSTALL_LOG
 
     if [ $? -ne 0 ]
     then
@@ -331,7 +331,7 @@ configure_awc() {
     log "  --retrieve-agent-state true"
     log "  --show-agent-state true"
     log "  --sync-interval 5"
-    log "  --casm-url $CAS_MGR_URL"
+    log "  --manager-url $MANAGER_URL"
     log "  $AWC_EXTRA_INSTALL_FLAGS"
 
     # Set pipefail option to return status of the connector install command
@@ -357,10 +357,10 @@ configure_awc() {
         args=$args"--self-signed "
     fi
 
-    if [ "$CAS_MGR_INSECURE" ]
+    if [ "$MANAGER_INSECURE" ]
     then
-        log "  --casm-insecure"
-        args=$args"--casm-insecure "
+        log "  --manager-insecure"
+        args=$args"--manager-insecure "
     fi
 
     if [ "$LLS_IP" ]
@@ -385,7 +385,7 @@ configure_awc() {
         --retrieve-agent-state true \
         --show-agent-state true \
         --sync-interval 5 \
-        --casm-url $CAS_MGR_URL \
+        --manager-url $MANAGER_URL \
         --registry-password $TERADICI_DOWNLOAD_TOKEN \
         $AWC_EXTRA_INSTALL_FLAGS \
         $args \
@@ -447,7 +447,7 @@ configure_firewall
 
 check_connector_installed
 
-add_cas_mgr_repo
+add_awm_repo
 
 config_selinux
 

@@ -10,7 +10,7 @@ variable "gcp_credentials_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.gcp_credentials_file)
+    condition     = fileexists(var.gcp_credentials_file)
     error_message = "The gcp_credentials_file specified does not exist. Please check the file path."
   }
 }
@@ -50,8 +50,8 @@ variable "allowed_client_cidrs" {
 }
 
 variable "vpc_name" {
-  description = "Name for VPC containing the Cloud Access Software deployment"
-  default     = "vpc-cas"
+  description = "Name for VPC containing the HP Anyware deployment"
+  default     = "vpc-anyware"
 }
 
 variable "dc_subnet_name" {
@@ -104,11 +104,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -122,7 +122,7 @@ variable "safe_mode_admin_password" {
 
 variable "ad_service_account_username" {
   description = "Active Directory Service account name to be created"
-  default     = "cas_ad_admin"
+  default     = "anyware_ad_admin"
 }
 
 variable "ad_service_account_password" {
@@ -137,64 +137,64 @@ variable "domain_users_list" {
   default     = ""
 
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
 }
 
-variable "cas_mgr_subnet_name" {
-  description = "Name for subnet containing the CAS Manager"
-  default     = "subnet-cas-mgr"
+variable "awm_subnet_name" {
+  description = "Name for subnet containing the Anyware Manager"
+  default     = "subnet-awm"
 }
 
-variable "cas_mgr_subnet_cidr" {
-  description = "CIDR for subnet containing the CAS Manager"
+variable "awm_subnet_cidr" {
+  description = "CIDR for subnet containing the Anyware Manager"
   default     = "10.0.0.16/28"
 }
 
-variable "cas_mgr_machine_type" {
-  description = "Machine type for CAS Manager"
+variable "awm_machine_type" {
+  description = "Machine type for Anyware Manager"
   default     = "e2-standard-4"
 }
 
-variable "cas_mgr_disk_size_gb" {
-  description = "Disk size (GB) of CAS Manager"
+variable "awm_disk_size_gb" {
+  description = "Disk size (GB) of Anyware Manager"
   default     = 60
 }
 
-variable "cas_mgr_disk_image" {
-  description = "Disk image for the CAS Manager"
+variable "awm_disk_image" {
+  description = "Disk image for the Anyware Manager"
   default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20221102"
 }
 
-variable "cas_mgr_admin_user" {
-  description = "Username of CAS Manager Administrator (SSH)"
-  default     = "cas_admin"
+variable "awm_admin_user" {
+  description = "Username of Anyware Manager Administrator (SSH)"
+  default     = "anyware_admin"
 }
 
-variable "cas_mgr_admin_ssh_pub_key_file" {
-  description = "SSH public key for CAS Manager Administrator"
+variable "awm_admin_ssh_pub_key_file" {
+  description = "SSH public key for Anyware Manager Administrator"
   type        = string
 
   validation {
-    condition = fileexists(var.cas_mgr_admin_ssh_pub_key_file)
-    error_message = "The cas_mgr_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+    condition     = fileexists(var.awm_admin_ssh_pub_key_file)
+    error_message = "The awm_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
-variable "cas_mgr_admin_password" {
-  description = "Password for the Administrator of CAS Manager"
+variable "awm_admin_password" {
+  description = "Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }
 
-variable "cas_mgr_gcp_credentials_file" {
-  description = "Location of GCP Service Account key file to be used by CAS Manager"
+variable "awm_gcp_credentials_file" {
+  description = "Location of GCP Service Account key file to be used by Anyware Manager"
   type        = string
 
   validation {
-    condition = fileexists(var.cas_mgr_gcp_credentials_file)
-    error_message = "The cas_mgr_gcp_credentials_file specified does not exist. Please check the file path."
+    condition     = fileexists(var.awm_gcp_credentials_file)
+    error_message = "The awm_gcp_credentials_file specified does not exist. Please check the file path."
   }
 }
 
@@ -236,7 +236,7 @@ variable "awc_disk_image" {
 # TODO: does this have to match the tag at the end of the SSH pub key?
 variable "awc_admin_user" {
   description = "Username of Anyware Connector Administrator"
-  default     = "cas_admin"
+  default     = "anyware_admin"
 }
 
 variable "awc_admin_ssh_pub_key_file" {
@@ -244,13 +244,13 @@ variable "awc_admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.awc_admin_ssh_pub_key_file)
+    condition     = fileexists(var.awc_admin_ssh_pub_key_file)
     error_message = "The awc_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
 # Further info about healthcheck: 
-# https://www.teradici.com/web-help/cas_manager/current/references/firewall_load_balancing_considerations/#health-check-endpoint
+# https://www.teradici.com/web-help/anyware_manager/22.09/references/firewall_load_balancing_considerations/#health-check-endpoint
 variable "awc_health_check" {
   description = "Health check configuration for Anyware Connector"
   default = {
@@ -276,7 +276,7 @@ variable "glb_tls_key" {
   default     = ""
 
   validation {
-    condition = var.glb_tls_key == "" ? true : fileexists(var.glb_tls_key)
+    condition     = var.glb_tls_key == "" ? true : fileexists(var.glb_tls_key)
     error_message = "The global tls_key file specified does not exist. Please check the file path."
   }
 }
@@ -286,7 +286,7 @@ variable "glb_tls_cert" {
   default     = ""
 
   validation {
-    condition = var.glb_tls_cert == "" ? true : fileexists(var.glb_tls_cert)
+    condition     = var.glb_tls_cert == "" ? true : fileexists(var.glb_tls_cert)
     error_message = "The global tls_cert file specified does not exist. Please check the file path."
   }
 }
@@ -499,7 +499,7 @@ variable "centos_std_disk_image" {
 
 variable "centos_admin_user" {
   description = "Username of CentOS Workstations"
-  default     = "cas_admin"
+  default     = "anyware_admin"
 }
 
 variable "centos_admin_ssh_pub_key_file" {
@@ -507,7 +507,7 @@ variable "centos_admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.centos_admin_ssh_pub_key_file)
+    condition     = fileexists(var.centos_admin_ssh_pub_key_file)
     error_message = "The centos_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }

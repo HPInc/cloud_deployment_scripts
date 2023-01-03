@@ -9,11 +9,11 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
   provisioning_script = "awc-provisioning.sh"
-  cas_mgr_script      = "get-connector-token.py"
+  awm_script          = "get-connector-token.py"
 
   instance_info_list = flatten(
-    [ for i in range(length(var.zone_list)):
-      [ for j in range(var.instance_count_list[i]):
+    [for i in range(length(var.zone_list)) :
+      [for j in range(var.instance_count_list[i]) :
         {
           zone   = var.zone_list[i],
           subnet = var.subnet_list[i],
@@ -21,26 +21,26 @@ locals {
       ]
     ]
   )
-  tls_key_filename  = var.tls_key  == "" ? "" : basename(var.tls_key)
+  tls_key_filename  = var.tls_key == "" ? "" : basename(var.tls_key)
   tls_cert_filename = var.tls_cert == "" ? "" : basename(var.tls_cert)
 
-  awc_log_groups = join("", 
-    [ for i in range(length(local.instance_info_list)): 
+  awc_log_groups = join("",
+    [for i in range(length(local.instance_info_list)) :
       "SOURCE '${aws_cloudwatch_log_group.instance-log-group[i].id}' | "
     ]
   )
 
   workstation_log_groups = join("",
-    [ for i in range(var.centos_gfx_instance_count):
+    [for i in range(var.centos_gfx_instance_count) :
       "SOURCE '${local.prefix}gcent-${i}' | "
     ],
-    [ for i in range(var.centos_std_instance_count):
+    [for i in range(var.centos_std_instance_count) :
       "SOURCE '${local.prefix}scent-${i}' | "
     ],
-    [ for i in range(var.win_gfx_instance_count):
+    [for i in range(var.win_gfx_instance_count) :
       "SOURCE '${local.prefix}gwin-${i}' | "
     ],
-    [ for i in range(var.win_std_instance_count):
+    [for i in range(var.win_std_instance_count) :
       "SOURCE '${local.prefix}swin-${i}' | "
     ]
   )
@@ -50,8 +50,8 @@ resource "aws_s3_object" "get-connector-token-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
   bucket = var.bucket_name
-  key    = local.cas_mgr_script
-  source = "${path.module}/${local.cas_mgr_script}"
+  key    = local.awm_script
+  source = "${path.module}/${local.awm_script}"
 }
 
 resource "aws_s3_object" "tls-key" {
@@ -73,33 +73,33 @@ resource "aws_s3_object" "tls-cert" {
 resource "aws_s3_object" "awc-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  key     = local.provisioning_script
-  bucket  = var.bucket_name
+  key    = local.provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      ad_service_account_password       = var.ad_service_account_password,
-      ad_service_account_username       = var.ad_service_account_username,
-      awc_extra_install_flags           = var.awc_extra_install_flags,
-      aws_region                        = var.aws_region,
-      aws_ssm_enable                    = var.aws_ssm_enable,
-      bucket_name                       = var.bucket_name,
-      cas_mgr_deployment_sa_file        = var.cas_mgr_deployment_sa_file,
-      cas_mgr_insecure                  = var.cas_mgr_insecure ? "true" : "",
-      cas_mgr_script                    = local.cas_mgr_script,
-      cas_mgr_url                       = var.cas_mgr_url,
-      cloudwatch_enable                 = var.cloudwatch_enable,
-      cloudwatch_setup_script           = var.cloudwatch_setup_script,
-      computers_dn                      = var.computers_dn,
-      customer_master_key_id            = var.customer_master_key_id,
-      domain_controller_ip              = var.domain_controller_ip,
-      domain_name                       = var.domain_name,
-      ldaps_cert_filename               = var.ldaps_cert_filename,
-      lls_ip                            = var.lls_ip,
-      tls_cert                          = local.tls_cert_filename,
-      tls_key                           = local.tls_key_filename,
-      teradici_download_token           = var.teradici_download_token,
-      users_dn                          = var.users_dn,
+      ad_service_account_password = var.ad_service_account_password,
+      ad_service_account_username = var.ad_service_account_username,
+      awc_extra_install_flags     = var.awc_extra_install_flags,
+      aws_region                  = var.aws_region,
+      aws_ssm_enable              = var.aws_ssm_enable,
+      bucket_name                 = var.bucket_name,
+      awm_deployment_sa_file      = var.awm_deployment_sa_file,
+      awc_flag_manager_insecure   = var.awc_flag_manager_insecure ? "true" : "",
+      awm_script                  = local.awm_script,
+      manager_url                 = var.manager_url,
+      cloudwatch_enable           = var.cloudwatch_enable,
+      cloudwatch_setup_script     = var.cloudwatch_setup_script,
+      computers_dn                = var.computers_dn,
+      customer_master_key_id      = var.customer_master_key_id,
+      domain_controller_ip        = var.domain_controller_ip,
+      domain_name                 = var.domain_name,
+      ldaps_cert_filename         = var.ldaps_cert_filename,
+      lls_ip                      = var.lls_ip,
+      tls_cert                    = local.tls_cert_filename,
+      tls_key                     = local.tls_key_filename,
+      teradici_download_token     = var.teradici_download_token,
+      users_dn                    = var.users_dn,
     }
   )
 }
@@ -126,7 +126,7 @@ data "aws_ami" "ami" {
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -154,31 +154,31 @@ data "aws_iam_policy_document" "awc-policy-doc" {
     resources = ["*"]
     effect    = "Allow"
   }
-  
+
   statement {
-    actions   = ["s3:GetObject"]
+    actions = ["s3:GetObject"]
     resources = [
       "arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}",
-      "arn:aws:s3:::${var.bucket_name}/${local.cas_mgr_script}",
-      "arn:aws:s3:::${var.bucket_name}/${var.cas_mgr_deployment_sa_file}",
+      "arn:aws:s3:::${var.bucket_name}/${local.awm_script}",
+      "arn:aws:s3:::${var.bucket_name}/${var.awm_deployment_sa_file}",
       "arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}",
       "arn:aws:s3:::${var.bucket_name}/${var.ldaps_cert_filename}",
     ]
-    effect    = "Allow"
+    effect = "Allow"
   }
 
   # add minimal permissions to allow users to connect to instances using Session Manager
   statement {
-    actions   = ["ssm:UpdateInstanceInformation",
-                "ssmmessages:CreateControlChannel",
-                "ssmmessages:CreateDataChannel",
-                "ssmmessages:OpenControlChannel",
-                "ssmmessages:OpenDataChannel"]
+    actions = ["ssm:UpdateInstanceInformation",
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+    "ssmmessages:OpenDataChannel"]
     resources = ["*"]
     effect    = "Allow"
   }
 
-  dynamic statement {
+  dynamic "statement" {
     for_each = aws_s3_object.tls-key
     iterator = i
     content {
@@ -188,7 +188,7 @@ data "aws_iam_policy_document" "awc-policy-doc" {
     }
   }
 
-  dynamic statement {
+  dynamic "statement" {
     for_each = aws_s3_object.tls-cert
     iterator = i
     content {
@@ -199,7 +199,7 @@ data "aws_iam_policy_document" "awc-policy-doc" {
   }
 
   statement {
-    actions   = [
+    actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:DescribeLogStreams",
@@ -210,20 +210,20 @@ data "aws_iam_policy_document" "awc-policy-doc" {
   }
 
   # add minimal permissions to allow users to connect to instances using Session Manager
-  dynamic statement {
+  dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
   }
 
-  dynamic statement {
+  dynamic "statement" {
     for_each = data.aws_kms_key.encryption-key
     iterator = i
     content {
@@ -237,8 +237,8 @@ data "aws_iam_policy_document" "awc-policy-doc" {
 resource "aws_iam_role_policy" "awc-role-policy" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  name = "${local.prefix}awc_role_policy"
-  role = aws_iam_role.awc-role[0].id
+  name   = "${local.prefix}awc_role_policy"
+  role   = aws_iam_role.awc-role[0].id
   policy = data.aws_iam_policy_document.awc-policy-doc.json
 }
 
@@ -269,7 +269,7 @@ resource "aws_instance" "awc" {
     aws_s3_object.tls-cert,
     aws_s3_object.get-connector-token-script,
     aws_s3_object.awc-provisioning-script,
-    # wait 5 seconds before deleting the log group to account for delays in 
+    # wait 5 seconds before deleting the log group to account for delays in
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group
   ]
@@ -304,7 +304,7 @@ resource "aws_cloudwatch_dashboard" "awc" {
   count = var.cloudwatch_enable ? length(local.instance_info_list) : 0
 
   dashboard_name = "${local.prefix}${var.host_name}-${count.index}"
-  
+
   dashboard_body = <<EOF
 {
     "widgets": [
@@ -397,7 +397,7 @@ resource "aws_cloudwatch_dashboard" "overall" {
   count = var.cloudwatch_enable ? 1 : 0
 
   dashboard_name = "${local.prefix}overall"
-  
+
   dashboard_body = <<EOF
 {
     "widgets": [

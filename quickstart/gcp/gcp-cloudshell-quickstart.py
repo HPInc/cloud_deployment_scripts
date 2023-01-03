@@ -29,7 +29,7 @@ REQUIRED_PACKAGES = {
 }
 
 # Service Account ID of the service account to create
-SA_ID = 'cas-manager'
+SA_ID = 'anyware-manager'
 SA_ROLES = [
     'roles/editor',
     'roles/cloudkms.cryptoKeyEncrypterDecrypter',
@@ -52,7 +52,7 @@ REQUIRED_APIS = [
 iso_time = datetime.datetime.utcnow().isoformat(
     timespec='seconds').replace(':', '').replace('-', '') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
-CONNECTOR_NAME = 'quickstart_cac_' + iso_time
+CONNECTOR_NAME = 'quickstart_awc_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
@@ -69,9 +69,9 @@ TF_VARS_REF_PATH = 'terraform.tfvars.sample'
 TF_VARS_PATH = 'terraform.tfvars'
 SECRETS_DIR = 'secrets'
 GCP_SA_KEY_PATH = SECRETS_DIR + '/gcp_service_account_key.json'
-SSH_KEY_PATH = SECRETS_DIR + '/cas_mgr_admin_id_rsa'
-CAS_MGR_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + \
-    '/cas_mgr_deployment_sa_key.json.encrypted'
+SSH_KEY_PATH = SECRETS_DIR + '/awm_admin_id_rsa'
+AWM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + \
+    '/awm_deployment_sa_key.json.encrypted'
 
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
@@ -259,7 +259,7 @@ def service_account_create(project_id, sa_id, prefix):
             'accountId': account_id,
             'serviceAccount': {
                 'displayName': account_id,
-                'description': 'Account used by CAS Manager to manage PCoIP workstations.',
+                'description': 'Account used by Anyware Manager to manage PCoIP workstations.',
             }
         }
     ).execute()
@@ -414,21 +414,21 @@ if __name__ == '__main__':
 
     print('Local requirements setup complete.\n')
 
-    print('Setting CAS Manager...')
-    mycasmgr = awm.CASManager(cfg_data.get('api_token'))
+    print('Setting Anyware Manager...')
+    my_awm = awm.AnywareManager(cfg_data.get('api_token'))
     # TODO: Add a proper clean up of GCP IAM resources so we don't have to move the
     # service account creation to here after the rest of the GCP setup
     sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
-    deployment = mycasmgr.deployment_create(
+    deployment = my_awm.deployment_create(
         DEPLOYMENT_NAME, cfg_data.get('reg_code'))
-    mycasmgr.deployment_add_gcp_account(sa_key, deployment)
+    my_awm.deployment_add_gcp_account(sa_key, deployment)
 
-    print('Creating CAS Manager API key...')
-    cas_mgr_deployment_key = mycasmgr.deployment_key_create(deployment)
+    print('Creating Anyware Manager API key...')
+    awm_deployment_key = my_awm.deployment_key_create(deployment)
 
-    print('CAS Manager setup complete.\n')
+    print('Anyware Manager setup complete.\n')
 
     print('Encrypting secrets...')
     days90 = 7776000
@@ -476,16 +476,16 @@ if __name__ == '__main__':
     cfg_data['ad_password'] = kms_encode(
         key_name, cfg_data.get('ad_password'), True)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
-    cas_mgr_deployment_key_encrypted = kms_encode(
-        key_name, json.dumps(cas_mgr_deployment_key))
+    awm_deployment_key_encrypted = kms_encode(
+        key_name, json.dumps(awm_deployment_key))
 
     print('Done encrypting secrets.')
 
-    print('Creating CAS Manager Deployment Service Account Key...')
-    with open(CAS_MGR_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
-        keyfile.write(cas_mgr_deployment_key_encrypted)
+    print('Creating Anyware Manager Deployment Service Account Key...')
+    with open(AWM_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
+        keyfile.write(awm_deployment_key_encrypted)
 
-    print('  Key written to ' + CAS_MGR_DEPLOYMENT_SA_KEY_PATH)
+    print('  Key written to ' + AWM_DEPLOYMENT_SA_KEY_PATH)
 
     print('Deploying with Terraform...')
 
@@ -498,14 +498,14 @@ if __name__ == '__main__':
         'dc_admin_password':              cfg_data.get('ad_password'),
         'safe_mode_admin_password':       cfg_data.get('ad_password'),
         'ad_service_account_password':    cfg_data.get('ad_password'),
-        'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
+        'awc_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
         'centos_std_instance_count':      cfg_data.get('scent'),
         'centos_admin_ssh_pub_key_file':  cwd + SSH_KEY_PATH + '.pub',
         'pcoip_registration_code':        cfg_data.get('reg_code'),
-        'cas_mgr_deployment_sa_file':     cwd + CAS_MGR_DEPLOYMENT_SA_KEY_PATH,
+        'awm_deployment_sa_file':         cwd + AWM_DEPLOYMENT_SA_KEY_PATH,
         'prefix':                         prefix
     }
 
@@ -518,39 +518,39 @@ if __name__ == '__main__':
     tf_cmd = f'{TERRAFORM_BIN_PATH} apply -auto-approve'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    comp_proc = subprocess.run([TERRAFORM_BIN_PATH, 'output', 'cac-public-ip'],
+    comp_proc = subprocess.run([TERRAFORM_BIN_PATH, 'output', 'awc-public-ip'],
                                check=True,
                                stdout=subprocess.PIPE)
-    cac_public_ip = comp_proc.stdout.decode().split('"')[1]
+    awc_public_ip = comp_proc.stdout.decode().split('"')[1]
 
     print('Terraform deployment complete.\n')
 
     # To update the auth_token used by the session header for the API call
     # with the one from the deployment key in case the API Token expires
-    mycasmgr.deployment_signin(cas_mgr_deployment_key)
+    my_awm.deployment_signin(awm_deployment_key)
     # Add existing workstations
     for t in WS_TYPES:
         for i in range(int(cfg_data.get(t))):
             hostname = f'{prefix}-{t}-{i}'
-            print(f'Adding "{hostname}" to CAS Manager...')
-            mycasmgr.machine_add_existing(
+            print(f'Adding "{hostname}" to Anyware Manager...')
+            my_awm.machine_add_existing(
                 hostname,
                 PROJECT_ID,
                 cfg_data.get('gcp_zone'),
                 deployment
             )
 
-    print(f'Adding DC to CAS Manager...')
-    mycasmgr.machine_add_existing(
+    print(f'Adding DC to Anyware Manager...')
+    my_awm.machine_add_existing(
         f'{prefix}-vm-dc',
         PROJECT_ID,
         cfg_data.get('gcp_zone'),
         deployment
     )
 
-    # Loop until Administrator user is found in CAS Manager
+    # Loop until Administrator user is found in Anyware Manager
     while True:
-        entitle_user = mycasmgr.user_get(ENTITLE_USER, deployment)
+        entitle_user = my_awm.user_get(ENTITLE_USER, deployment)
         if entitle_user:
             break
 
@@ -559,11 +559,11 @@ if __name__ == '__main__':
         time.sleep(10)
 
     # Add entitlements for each workstation
-    machines_list = mycasmgr.machines_get(deployment)
+    machines_list = my_awm.machines_get(deployment)
     for machine in machines_list:
         print(
             f'Assigning workstation "{machine["machineName"]}" to user "{ENTITLE_USER}"...')
-        mycasmgr.entitlement_add(entitle_user, machine)
+        my_awm.entitlement_add(entitle_user, machine)
 
     print('\nQuickstart deployment finished.\n')
 
@@ -572,7 +572,7 @@ if __name__ == '__main__':
     Next steps:
 
     - Connect to a workstation:
-    1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
+    1. from a PCoIP client, connect to the Cloud Access Connector at {awc_public_ip}
     2. sign in with the "{ENTITLE_USER}" user credentials
     3. When connecting to a workstation immediately after this script completes,
         the workstation (especially graphics ones) may still be setting up. You may
@@ -583,20 +583,20 @@ if __name__ == '__main__':
     1. Log in to https://cas.teradici.com
     2. Click on "Workstations" in the left panel, select "Create new remote
         workstation" from the "+" button
-    3. Select connector "quickstart_cac_<timestamp>"
+    3. Select connector "quickstart_awc_<timestamp>"
     4. Fill in the form according to your preferences. Note that the following
         values must be used for their respective fields:
         Region:                   "{cfg_data.get('gcp_region')}"
         Zone:                     "{cfg_data.get('gcp_zone')}"
-        Network:                  "vpc-cas"
+        Network:                  "vpc-anyware"
         Subnetowrk:               "subnet-ws"
         Domain name:              "example.com"
-        Domain service account:   "cas_ad_admin"
+        Domain service account:   "anyware_ad_admin"
         Service account password: <set by you at start of script>
     5. Click **Create**
 
     - Clean up:
-    1. Using GCP console, delete all workstations created by CAS Manager
+    1. Using GCP console, delete all workstations created by Anyware Manager
         web interface and manually created workstations. Resources not created by
         the Terraform scripts must be manually removed before Terraform can
         properly destroy resources it created.

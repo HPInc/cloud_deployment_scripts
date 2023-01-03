@@ -8,7 +8,7 @@ import retry
 from retry import retry
 
 
-class CASManager:
+class AnywareManager:
     def __init__(self, auth_token, url='https://cas.teradici.com'):
         self.auth_token = auth_token
         self.url = url
@@ -59,10 +59,10 @@ class CASManager:
 
         return resp.json()['data']
 
-    def deployment_signin(self, cas_mgr_deployment_key):
+    def deployment_signin(self, awm_deployment_key):
         account_details = {
-            'username': cas_mgr_deployment_key['username'],
-            'apiKey': cas_mgr_deployment_key['apiKey']
+            'username': awm_deployment_key['username'],
+            'apiKey': awm_deployment_key['apiKey']
         }
         resp = requests.post(
             self.url + '/api/v1/auth/signin',

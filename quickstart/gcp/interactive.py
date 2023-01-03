@@ -53,16 +53,16 @@ def configurations_get(project_id, ws_types, username):
             print("Invalid PCoIP Registration Code format (Ex. ABCDEFGHIJKL@0123-4567-89AB-CDEF). Please try again.")
 
     def api_token_get(order_number):
-        print(f"{order_number}.  Please enter the CAS Manager API token.")
+        print(f"{order_number}.  Please enter the Anyware Manager API token.")
         print("    Log into https://cas.teradici.com, click on your email address on the top right and select \"Get API token\".")
         while True:
             api_token = input("api_token: ").strip()
-            mycasmgr = awm.CASManager(api_token)
-            print("Validating API token with CAS Manager... ", end="")
-            if (mycasmgr.auth_token_validate()):
+            my_awm = awm.AnywareManager(api_token)
+            print("Validating API token with Anyware Manager... ", end="")
+            if (my_awm.auth_token_validate()):
                 print("Yes")
                 return api_token
-            print("\nInvalid CAS Manager API token. Please try again.")
+            print("\nInvalid Anyware Manager API token. Please try again.")
 
     def region_resource_list_get(gcp_region):
         # This returns a dictionary object which contains information about the
@@ -93,7 +93,7 @@ def configurations_get(project_id, ws_types, username):
         print("")
 
     # Updates the required_cpe_quota list to show keep track of how much quota
-    # will be needed to create the CAC, DC, and workstations instances
+    # will be needed to create the AWC, DC, and workstations instances
     def cpe_quota_reserve(machine, number, gcp_region, gcp_zone):
         if not requirements_are_met(machine, number, gcp_region, gcp_zone, print_cpe_report=False):
             return
@@ -122,8 +122,8 @@ def configurations_get(project_id, ws_types, username):
         return number_option_get(gcp_regions_list, "gcp_region")
 
     def region_requirements_met(gcp_region):
-        # Check that there's at least enough regional quota to deploy CAC and DC
-        for machine in ["cac", "dc"]:
+        # Check that there's at least enough regional quota to deploy AWC and DC
+        for machine in ["awc", "dc"]:
             # Not checking accelerator availability here so gcp_zone can be anything
             if requirements_are_met(machine, 1, gcp_region, gcp_zone=""):
                 cpe_quota_reserve(machine, 1, gcp_region, gcp_zone="")
@@ -274,7 +274,7 @@ def configurations_get(project_id, ws_types, username):
                     "    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
 
-            vpc_name = f'{prefix}-vpc-cas'
+            vpc_name = f'{prefix}-vpc-anyware'
             if vpc_name in vpc_list:
                 print("vpc_name already exists. Please enter a different prefix.")
                 continue
@@ -383,7 +383,7 @@ def configurations_get(project_id, ws_types, username):
                 cfg_data['gcp_region'] = DEFAULT_REGION
 
             # Get the regional quota, print them out in a table, and check if there's
-            # enough quota to deploy one CAC and one DC instance
+            # enough quota to deploy one AWC and one DC instance
             available_cpe_quota = cpe_quota_get(cfg_data['gcp_region'])
             cpe_quota_print(cfg_data['gcp_region'])
             if not region_requirements_met(cfg_data['gcp_region']):

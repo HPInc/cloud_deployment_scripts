@@ -26,8 +26,8 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "cas_mgr_deployment_sa_file" {
-  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
+variable "awm_deployment_sa_file" {
+  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
@@ -37,63 +37,63 @@ variable "gcp_sa_file" {
 }
 
 variable "gcp_region" {
-  description = "GCP Region to deploy the CAS Managers"
+  description = "GCP Region to deploy the Anyware Managers"
   type        = string
 }
 
 variable "gcp_zone" {
-  description = "GCP Zone to deploy the CAS Managers"
+  description = "GCP Zone to deploy the Anyware Managers"
   type        = string
 }
 
 variable "subnet" {
-  description = "Subnet to deploy the CAS Managers"
+  description = "Subnet to deploy the Anyware Managers"
   type        = string
 }
 
 variable "enable_public_ip" {
-  description = "Assign a public IP to CAS Manager"
+  description = "Assign a public IP to Anyware Manager"
   type        = bool
   default     = true
 }
 
 variable "network_tags" {
-  description = "Tags to be applied to the CAS Manager"
+  description = "Tags to be applied to the Anyware Manager"
   type        = list(string)
 }
 
 variable "host_name" {
   description = "Name to give the host"
-  default     = "vm-cas-mgr"
+  default     = "vm-awm"
 }
 
 variable "machine_type" {
-  description = "Machine type for the CAS Manager (min 8 GB RAM, 4 CPUs)"
+  description = "Machine type for the Anyware Manager (min 8 GB RAM, 4 CPUs)"
   default     = "e2-custom-4-8192"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the CAS Manager (min 60 GB)"
+  description = "Disk size (GB) of the Anyware Manager (min 60 GB)"
   default     = "60"
 }
 
 variable "disk_image" {
-  description = "Disk image for the CAS Manager"
+  description = "Disk image for the Anyware Manager"
   default     = "projects/rocky-linux-cloud/global/images/family/rocky-linux-8"
 }
 
-variable "cas_mgr_admin_user" {
-  description = "Username of the CAS Manager Administrator"
+variable "awm_admin_user" {
+  description = "Username of the Anyware Manager Administrator"
   type        = string
 }
 
-variable "cas_mgr_admin_ssh_pub_key_file" {
-  description = "SSH public key for the CAS Manager Administrator"
+variable "awm_admin_ssh_pub_key_file" {
+  description = "SSH public key for the Anyware Manager Administrator"
   type        = string
 }
 
-variable "cas_mgr_admin_password" {
-  description = "Password for the Administrator of CAS Manager"
+variable "awm_admin_password" {
+  description = "Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }

@@ -26,34 +26,34 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "cas_mgr_deployment_sa_file" {
-  description = "Filename of CAS Manager Deployment Service Account JSON key in bucket"
+variable "awm_deployment_sa_file" {
+  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
 variable "subnet" {
-  description = "Subnet to deploy the CAS Manager"
+  description = "Subnet to deploy the Anyware Manager"
   type        = string
 }
 
 variable "enable_public_ip" {
-  description = "Assign a public IP to CAS Manager"
+  description = "Assign a public IP to Anyware Manager"
   type        = bool
   default     = true
 }
 
 variable "security_group_ids" {
-  description = "Security Groups to be applied to the CAS Manager"
+  description = "Security Groups to be applied to the Anyware Manager"
   type        = list(string)
 }
 
 variable "instance_type" {
-  description = "Instance type for the CAS Manager (min 4 GB RAM, 8 vCPUs)"
+  description = "Instance type for the Anyware Manager (min 4 GB RAM, 8 vCPUs)"
   default     = "t2.xlarge"
 }
 
 variable "disk_size_gb" {
-  description = "Disk size (GB) of the CAS Manager (min 60 GB)"
+  description = "Disk size (GB) of the Anyware Manager (min 60 GB)"
   default     = "60"
 }
 
@@ -69,7 +69,7 @@ variable "ami_name" {
 
 variable "host_name" {
   description = "Name to give the host"
-  default     = "vm-cas-mgr"
+  default     = "vm-awm"
 }
 
 variable "admin_ssh_key_name" {
@@ -77,13 +77,13 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "cas_mgr_aws_credentials_file" {
-    description = "Name of AWS credentials file for CAS Manager in bucket"
+variable "awm_aws_credentials_file" {
+    description = "Name of AWS credentials file for Anyware Manager in bucket"
     type        = string
 }
 
-variable "cas_mgr_admin_password" {
-  description = "Password for the Administrator of CAS Manager"
+variable "awm_admin_password" {
+  description = "Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }
