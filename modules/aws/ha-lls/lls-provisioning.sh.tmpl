@@ -125,6 +125,11 @@ install_pcoip_license_server() {
     # PCoIP License Server takes approximately 30-60s to start. Need to wait for PCoIP License Server to
     # start before running any LLS commands. 
     retry 10 `# 10 retries` \
+        10 `# 10s interval` \
+        "systemctl is-active flexnetls-TERADICI.service" \
+        "--> ERROR: Flexnetls service is not active."
+
+    retry 10 `# 10 retries` \
           10 `# 10s interval` \
           "pcoip-set-password -p 1P@ssw0rd! -n $LLS_ADMIN_PASSWORD" \
           "--> ERROR: Failed to set new password."
@@ -178,9 +183,16 @@ setup_main_lls() {
 
     # Step 3
     time systemctl restart flexnetls-TERADICI
+    retry 10 `# 10 retries` \
+        10 `# 10s interval` \
+        "systemctl is-active flexnetls-TERADICI.service" \
+        "--> ERROR: Flexnetls service is not active."
 
     set +x
-    pcoip-list-licenses -p $LLS_ADMIN_PASSWORD
+    retry 10 `# 10 retries` \
+        10 `#10s interval` \
+        "pcoip-list-licenses -p $LLS_ADMIN_PASSWORD" \
+        "--> ERROR: Failed to list license status"
     set -x
 
     # Not needed as the backup LLS will be restarted later
@@ -266,6 +278,11 @@ setup_backup_lls() {
     fi
 
     time systemctl restart flexnetls-TERADICI
+    retry 10 `# 10 retries` \
+        10 `# 10s interval` \
+        "systemctl is-active flexnetls-TERADICI.service" \
+        "--> ERROR: Flexnetls service is not active."
+
 }
 
 setup_ssm() {
