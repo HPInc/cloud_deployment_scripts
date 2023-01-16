@@ -80,8 +80,8 @@ module "dc" {
   domain_users_list           = var.domain_users_list
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name = aws_s3_bucket.scripts.id
-  subnet      = aws_subnet.dc-subnet.id
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.dc-subnet.id
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-rdp.id,
@@ -105,7 +105,7 @@ resource "aws_lb" "awc-alb" {
   name               = "${local.prefix}awc-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups = [
+  security_groups    = [
     data.aws_security_group.default.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
@@ -262,9 +262,9 @@ module "win-gfx" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name      = aws_s3_bucket.scripts.id
-  subnet           = aws_subnet.ws-subnet.id
-  enable_public_ip = var.enable_workstation_public_ip
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.ws-subnet.id
+  enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -309,9 +309,9 @@ module "win-std" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name      = aws_s3_bucket.scripts.id
-  subnet           = aws_subnet.ws-subnet.id
-  enable_public_ip = var.enable_workstation_public_ip
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.ws-subnet.id
+  enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -355,9 +355,9 @@ module "centos-gfx" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name      = aws_s3_bucket.scripts.id
-  subnet           = aws_subnet.ws-subnet.id
-  enable_public_ip = var.enable_workstation_public_ip
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.ws-subnet.id
+  enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,
@@ -408,9 +408,9 @@ module "centos-std" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name      = aws_s3_bucket.scripts.id
-  subnet           = aws_subnet.ws-subnet.id
-  enable_public_ip = var.enable_workstation_public_ip
+  bucket_name        = aws_s3_bucket.scripts.id
+  subnet             = aws_subnet.ws-subnet.id
+  enable_public_ip   = var.enable_workstation_public_ip
   security_group_ids = [
     data.aws_security_group.default.id,
     aws_security_group.allow-icmp.id,

@@ -19,7 +19,7 @@ import sys
 import textwrap
 import time
 
-import quickstart.gcp.awm as awm
+import awm
 import interactive
 
 REQUIRED_PACKAGES = {
@@ -29,14 +29,14 @@ REQUIRED_PACKAGES = {
 }
 
 # Service Account ID of the service account to create
-SA_ID = 'anyware-manager'
+SA_ID    = 'anyware-manager'
 SA_ROLES = [
     'roles/editor',
     'roles/cloudkms.cryptoKeyEncrypterDecrypter',
     'roles/logging.configWriter'
 ]
 
-PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
+PROJECT_ID    = os.environ['GOOGLE_CLOUD_PROJECT']
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
@@ -49,39 +49,35 @@ REQUIRED_APIS = [
     'monitoring.googleapis.com',
 ]
 
-iso_time = datetime.datetime.utcnow().isoformat(
-    timespec='seconds').replace(':', '').replace('-', '') + 'Z'
+iso_time        = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
-CONNECTOR_NAME = 'quickstart_awc_' + iso_time
+CONNECTOR_NAME  = 'quickstart_awc_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
 
-HOME = os.path.expanduser('~')
-TERRAFORM_BIN_DIR = f'{HOME}/bin'
+HOME               = os.path.expanduser('~')
+TERRAFORM_BIN_DIR  = f'{HOME}/bin'
 TERRAFORM_BIN_PATH = TERRAFORM_BIN_DIR + '/terraform'
 TERRAFORM_VER_PATH = 'deployments/gcp/single-connector/versions.tf'
-CFG_FILE_PATH = 'gcp-cloudshell-quickstart.cfg'
-DEPLOYMENT_PATH = 'deployments/gcp/single-connector'
+CFG_FILE_PATH      = 'gcp-cloudshell-quickstart.cfg'
+DEPLOYMENT_PATH    = 'deployments/gcp/single-connector'
 
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
-TF_VARS_REF_PATH = 'terraform.tfvars.sample'
-TF_VARS_PATH = 'terraform.tfvars'
-SECRETS_DIR = 'secrets'
-GCP_SA_KEY_PATH = SECRETS_DIR + '/gcp_service_account_key.json'
-SSH_KEY_PATH = SECRETS_DIR + '/awm_admin_id_rsa'
-AWM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + \
-    '/awm_deployment_sa_key.json.encrypted'
+TF_VARS_REF_PATH           = 'terraform.tfvars.sample'
+TF_VARS_PATH               = 'terraform.tfvars'
+SECRETS_DIR                = 'secrets'
+GCP_SA_KEY_PATH            = SECRETS_DIR + '/gcp_service_account_key.json'
+SSH_KEY_PATH               = SECRETS_DIR + '/awm_admin_id_rsa'
+AWM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/awm_deployment_sa_key.json.encrypted'
 
 # Types of workstations
 WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
 
-
 def ensure_requirements():
     if not PROJECT_ID:
         print('The PROJECT property has not been set.')
-        print(
-            'Please run "gcloud config set project [PROJECT_ID]" to set the project.')
+        print('Please run "gcloud config set project [PROJECT_ID]" to set the project.')
         print('See: https://cloud.google.com/sdk/gcloud/reference/config/set')
         print('')
         sys.exit(1)
@@ -103,8 +99,7 @@ def ensure_required_packages():
 
     for package, required_version in REQUIRED_PACKAGES.items():
         check_cmd = f'{sys.executable} -m pip show {package}'
-        output = subprocess.run(check_cmd.split(
-            ' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
+        output = subprocess.run(check_cmd.split(' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
 
         # If a package is not found, skip version checking and simply install the latest package
         if not output:
@@ -115,9 +110,8 @@ def ensure_required_packages():
             current_version = output.splitlines()[1].split(' ')[-1]
 
             # Convert the string into a tuple of numbers for comparison
-            current_version_tuple = tuple(map(int, current_version.split('.')))
-            required_version_tuple = tuple(
-                map(int, required_version.split('.')))
+            current_version_tuple  = tuple( map(int, current_version.split('.')) )
+            required_version_tuple = tuple( map(int, required_version.split('.')) )
 
             if current_version_tuple < required_version_tuple:
                 packages_to_install_list.append(package)
@@ -130,7 +124,7 @@ def ensure_required_packages():
         install_permission = input(
             'One or more of the following Python packages are outdated or missing:\n'
             f'  {packages_to_install}\n\n'
-            'The script can install these packages in the user\'s home directory using the following command:\n'
+            'The script can install these packages in the user\'s home directory using the following command:\n' 
             f'  {install_cmd}\n'
             'Proceed? (y/n)? ').strip().lower()
 
@@ -175,7 +169,7 @@ def ensure_terraform():
     path = shutil.which('terraform')
 
     # Reference versions.tf file for the required version
-    with open(f"../../{TERRAFORM_VER_PATH}", "r") as f:
+    with open(f"../../{TERRAFORM_VER_PATH}","r") as f:
         data = f.read()
 
     required_version = re.search(r'\">=\s([\d.]+)\"', data).group(1)
@@ -183,17 +177,15 @@ def ensure_terraform():
     if path:
         cmd = 'terraform -v'
         # Run the command 'terraform -v' and use the first line as the Terraform version
-        terraform_version = subprocess.run(
-            cmd.split(' '),  stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()[0]
+        terraform_version = subprocess.run(cmd.split(' '),  stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()[0]
         print(f'Found {terraform_version} in {path}.')
 
         # Use regex to parse the version number from string (i.e. 0.12.18)
-        current_version = re.search(
-            r'Terraform\s*v([\d.]+)', terraform_version).group(1)
+        current_version = re.search(r'Terraform\s*v([\d.]+)', terraform_version).group(1)
 
         # Convert the string into a tuple of numbers for comparison
-        current_version_tuple = tuple(map(int, current_version.split('.')))
-        required_version_tuple = tuple(map(int, required_version.split('.')))
+        current_version_tuple  = tuple( map(int, current_version.split('.')) )
+        required_version_tuple = tuple( map(int, required_version.split('.')) )
 
         if current_version_tuple >= required_version_tuple:
             TERRAFORM_BIN_PATH = path
@@ -227,7 +219,7 @@ def quickstart_config_read(cfg_file):
 
 def service_account_find(email):
     service_accounts = iam_service.projects().serviceAccounts().list(
-        name=f'projects/{PROJECT_ID}',
+        name = f'projects/{PROJECT_ID}',
     ).execute()
 
     if not service_accounts:
@@ -254,8 +246,8 @@ def service_account_create(project_id, sa_id, prefix):
         return service_account
 
     service_account = iam_service.projects().serviceAccounts().create(
-        name='projects/' + project_id,
-        body={
+        name = 'projects/' + project_id,
+        body = {
             'accountId': account_id,
             'serviceAccount': {
                 'displayName': account_id,
@@ -272,8 +264,8 @@ def service_account_create(project_id, sa_id, prefix):
 def service_account_create_key(service_account, filepath):
     print(f'Created key for {service_account["email"]}...')
     key = iam_service.projects().serviceAccounts().keys().create(
-        name='projects/-/serviceAccounts/' + service_account['email'],
-        body={},
+        name = 'projects/-/serviceAccounts/' + service_account['email'],
+        body = {},
     ).execute()
 
     key_data = base64.b64decode(key['privateKeyData'])
@@ -286,26 +278,24 @@ def service_account_create_key(service_account, filepath):
 
 
 def service_account_create_key_limit_check(service_account):
-    print(
-        f'  Checking number of keys owned by {service_account["email"]}... ', end='')
+    print(f'  Checking number of keys owned by {service_account["email"]}... ', end='')
     keys = iam_service.projects().serviceAccounts().keys().list(
         name='projects/-/serviceAccounts/' + service_account['email']
     ).execute()['keys']
-    user_managed_keys = list(
-        filter(lambda k: (k['keyType'] == 'USER_MANAGED'), keys))
+    user_managed_keys = list(filter(lambda k: (k['keyType'] == 'USER_MANAGED'), keys)) 
     print(f'{len(user_managed_keys)}/10')
     if len(user_managed_keys) >= 10:
         print(f'    ERROR: The service account has reached the limit of the number of keys it can create.',
-              '    Please see: https://cloud.google.com/iam/docs/creating-managing-service-account-keys',
-              'Exiting script...', sep='\n')
+        '    Please see: https://cloud.google.com/iam/docs/creating-managing-service-account-keys',
+        'Exiting script...', sep='\n')
         sys.exit(1)
 
 
 def iam_policy_update(service_account, roles):
 
     policy = crm_service.projects().getIamPolicy(
-        resource=PROJECT_ID,
-        body={},
+        resource = PROJECT_ID,
+        body = {},
     ).execute()
 
     print('Adding roles:')
@@ -318,8 +308,8 @@ def iam_policy_update(service_account, roles):
         policy['bindings'].append(binding)
 
     policy = crm_service.projects().setIamPolicy(
-        resource=PROJECT_ID,
-        body={
+        resource = PROJECT_ID,
+        body = {
             'policy': policy
         }
     ).execute()
@@ -335,11 +325,8 @@ def apis_enable(apis):
         print(f'  {api}...')
         subprocess.run(['gcloud', 'services', 'enable', api], check=True)
 
-
 def disable_default_sink():
-    subprocess.run(['gcloud', 'logging', 'sinks', 'update',
-                   '_Default', '--disabled'], check=True)
-
+    subprocess.run(['gcloud', 'logging', 'sinks', 'update', '_Default', '--disabled'], check=True)
 
 def ssh_key_create(path):
     print('Creating SSH key...')
@@ -353,8 +340,7 @@ def ssh_key_create(path):
 def tf_vars_create(ref_file_path, tfvar_file_path, settings):
 
     if os.path.exists(tfvar_file_path):
-        overwrite = input(
-            "Found an existing .tfvar file, overwrite (y/n)? ").strip().lower()
+        overwrite = input("Found an existing .tfvar file, overwrite (y/n)? ").strip().lower()
         if overwrite not in ('y', 'yes'):
             print(f'{tfvar_file_path} already exists. Exiting...')
             sys.exit(1)
@@ -385,8 +371,7 @@ if __name__ == '__main__':
     # bucket created by Terraform and _Default log bucket.
     disable_default_sink()
 
-    cfg_data = interactive.configurations_get(
-        PROJECT_ID, WS_TYPES, ENTITLE_USER)
+    cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
 
     print('Setting GCP project...')
     iam_service = googleapiclient.discovery.build('iam', 'v1')
@@ -421,8 +406,7 @@ if __name__ == '__main__':
     sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
-    deployment = my_awm.deployment_create(
-        DEPLOYMENT_NAME, cfg_data.get('reg_code'))
+    deployment = my_awm.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
     my_awm.deployment_add_gcp_account(sa_key, deployment)
 
     print('Creating Anyware Manager API key...')
@@ -440,14 +424,12 @@ if __name__ == '__main__':
     key_ring_init = {}
 
     try:
-        key_ring = kms_client.create_key_ring(
-            request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring_init})
+        key_ring = kms_client.create_key_ring(request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring_init})
         print(f'Created Key Ring {key_ring.name}')
     except google_exc.AlreadyExists:
         print(f'Key Ring {key_ring_id} already exists. Using it...')
 
-    parent = kms_client.key_ring_path(
-        PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id)
+    parent = kms_client.key_ring_path(PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id)
     crypto_key_id = 'quickstart_key'
     crypto_key_init = {
         'purpose': kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
@@ -456,28 +438,23 @@ if __name__ == '__main__':
     }
 
     try:
-        crypto_key = kms_client.create_crypto_key(
-            request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key_init})
+        crypto_key = kms_client.create_crypto_key(request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key_init})
         print(f'Created Crypto Key {crypto_key.name}')
     except google_exc.AlreadyExists:
         print(f'Crypto Key {crypto_key_id} already exists. Using it...')
 
-    key_name = kms_client.crypto_key_path(
-        PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id, crypto_key_id)
+    key_name = kms_client.crypto_key_path(PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id, crypto_key_id)
 
     def kms_encode(key, text, base64_encoded=False):
-        encrypted = kms_client.encrypt(
-            request={'name': key, 'plaintext': text.encode('utf-8')})
+        encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
 
         if base64_encoded:
             return base64.b64encode(encrypted.ciphertext).decode('utf-8')
         return encrypted.ciphertext
 
-    cfg_data['ad_password'] = kms_encode(
-        key_name, cfg_data.get('ad_password'), True)
+    cfg_data['ad_password'] = kms_encode(key_name, cfg_data.get('ad_password'), True)
     cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
-    awm_deployment_key_encrypted = kms_encode(
-        key_name, json.dumps(awm_deployment_key))
+    awm_deployment_key_encrypted = kms_encode(key_name, json.dumps(awm_deployment_key))
 
     print('Done encrypting secrets.')
 
@@ -489,7 +466,7 @@ if __name__ == '__main__':
 
     print('Deploying with Terraform...')
 
-    # TODO: refactor this to work with more types of deployments
+    #TODO: refactor this to work with more types of deployments
     settings = {
         'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
         'gcp_region':                     cfg_data.get('gcp_region'),
@@ -518,7 +495,7 @@ if __name__ == '__main__':
     tf_cmd = f'{TERRAFORM_BIN_PATH} apply -auto-approve'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    comp_proc = subprocess.run([TERRAFORM_BIN_PATH, 'output', 'awc-public-ip'],
+    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','awc-public-ip'],
                                check=True,
                                stdout=subprocess.PIPE)
     awc_public_ip = comp_proc.stdout.decode().split('"')[1]
@@ -554,15 +531,13 @@ if __name__ == '__main__':
         if entitle_user:
             break
 
-        print(
-            f'Waiting for user "{ENTITLE_USER}" to be synced. Retrying in 10 seconds...')
+        print(f'Waiting for user "{ENTITLE_USER}" to be synced. Retrying in 10 seconds...')
         time.sleep(10)
 
     # Add entitlements for each workstation
     machines_list = my_awm.machines_get(deployment)
     for machine in machines_list:
-        print(
-            f'Assigning workstation "{machine["machineName"]}" to user "{ENTITLE_USER}"...')
+        print(f'Assigning workstation "{machine["machineName"]}" to user "{ENTITLE_USER}"...')
         my_awm.entitlement_add(entitle_user, machine)
 
     print('\nQuickstart deployment finished.\n')

@@ -106,6 +106,5 @@ module "dc" {
 
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
-
-  disk_image = var.dc_disk_image
+  disk_image   = var.dc_disk_image
 }

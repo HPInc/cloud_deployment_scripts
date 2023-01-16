@@ -44,10 +44,10 @@ TERRAFORM_VER_PATH = os.path.join(DEPLOYMENT_PATH, 'versions.tf')
 SECRETS_DIR        = os.path.join(DEPLOYMENT_PATH, 'secrets/')
 
 # Setting paths for secrets
-SSH_KEY_PATH                   = os.path.join(SECRETS_DIR, 'awm_admin_id_rsa')
-AWM_DEPLOYMENT_SA_KEY_PATH     = os.path.join(SECRETS_DIR, 'awm_deployment_sa_key.json')
-AWS_SA_KEY_PATH                = os.path.join(SECRETS_DIR, 'aws_service_account_credentials')
-ARN_FILE_PATH                  = os.path.join(SECRETS_DIR, 'arn.txt')
+SSH_KEY_PATH               = os.path.join(SECRETS_DIR, 'awm_admin_id_rsa')
+AWM_DEPLOYMENT_SA_KEY_PATH = os.path.join(SECRETS_DIR, 'awm_deployment_sa_key.json')
+AWS_SA_KEY_PATH            = os.path.join(SECRETS_DIR, 'aws_service_account_credentials')
+ARN_FILE_PATH              = os.path.join(SECRETS_DIR, 'arn.txt')
 
 # Setting paths for terraform.tfvars
 TF_VARS_REF_PATH = os.path.join(DEPLOYMENT_PATH, 'terraform.tfvars.sample')
@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
     print(f'Creating deployment {DEPLOYMENT_NAME}...')
     deployment = my_awm.deployment_create(DEPLOYMENT_NAME, cfg_data.get('reg_code'))
-    role_info = my_awm.generate_aws_role_info(deployment)
+    role_info  = my_awm.generate_aws_role_info(deployment)
 
     print('Creating Anyware Manager API key...')
     awm_deployment_key = my_awm.deployment_key_create(deployment)
@@ -309,19 +309,19 @@ if __name__ == '__main__':
     print('Anyware Manager setup complete.\n')
 
     print('Creating AWS user for Terraform deployment...')
-    AWS_REGION = cfg_data.get('aws_region')
-    PREFIX = cfg_data.get('prefix', '')
-    AWS_USERNAME = PREFIX + '-anyware-manager'
-    AWS_ROLE_NAME = f'{AWS_USERNAME}_role'
+    AWS_REGION       = cfg_data.get('aws_region')
+    PREFIX           = cfg_data.get('prefix', '')
+    AWS_USERNAME     = PREFIX + '-anyware-manager'
+    AWS_ROLE_NAME    = f'{AWS_USERNAME}_role'
     ROLE_POLICY_NAME = f'{AWS_ROLE_NAME}_policy'
 
     aws.create_user(AWS_USERNAME)
     aws.attach_user_policy(AWS_USERNAME, AWS_USER_POLICY_ARN)
     
     print('Creating AWS role for Anyware Manager deployment...')
-    role = aws.create_role(AWS_ROLE_NAME, role_info['camAccountId'], role_info['externalId'])
+    role                    = aws.create_role(AWS_ROLE_NAME, role_info['camAccountId'], role_info['externalId'])
     role_policy_description = "Permissions to allow managing instances using Anyware Manager"
-    role_policy = aws.create_policy(ROLE_POLICY_NAME, role_policy_description, ROLE_POLICY_DOCUMENT)
+    role_policy             = aws.create_policy(ROLE_POLICY_NAME, role_policy_description, ROLE_POLICY_DOCUMENT)
     aws.attach_role_policy(AWS_ROLE_NAME, ROLE_POLICY_NAME)
     
     print('Creating AWS service account key for Terraform deployment...')

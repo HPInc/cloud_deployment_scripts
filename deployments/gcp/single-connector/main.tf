@@ -97,10 +97,10 @@ module "dc" {
   domain_users_list           = var.domain_users_list
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name = google_storage_bucket.scripts.name
-  gcp_zone    = var.gcp_zone
-  subnet      = google_compute_subnetwork.dc-subnet.self_link
-  private_ip  = var.dc_private_ip
+  bucket_name  = google_storage_bucket.scripts.name
+  gcp_zone     = var.gcp_zone
+  subnet       = google_compute_subnetwork.dc-subnet.self_link
+  private_ip   = var.dc_private_ip
   network_tags = [
     google_compute_firewall.allow-google-dns.name,
     google_compute_firewall.allow-rdp.name,
@@ -113,8 +113,7 @@ module "dc" {
 
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
-
-  disk_image = var.dc_disk_image
+  disk_image   = var.dc_disk_image
 }
 
 module "awc" {
@@ -140,7 +139,7 @@ module "awc" {
 
   gcp_region_list = [var.gcp_region]
   subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
-  network_tags = [
+  network_tags    = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,
@@ -149,8 +148,7 @@ module "awc" {
   instance_count_list = [var.awc_instance_count]
   machine_type        = var.awc_machine_type
   disk_size_gb        = var.awc_disk_size_gb
-
-  disk_image = var.awc_disk_image
+  disk_image          = var.awc_disk_image
 
   awc_admin_user             = var.awc_admin_user
   awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file

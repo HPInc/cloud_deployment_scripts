@@ -74,7 +74,7 @@ resource "google_compute_instance" "win-std" {
   network_interface {
     subnetwork = local.instance_info_list[count.index].subnet
 
-    dynamic access_config {
+    dynamic "access_config" {
       for_each = local.enable_public_ip
       content {}
     }

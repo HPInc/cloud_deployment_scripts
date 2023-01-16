@@ -59,6 +59,7 @@ resource "google_storage_bucket_object" "awc-provisioning-script" {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
       awc_extra_install_flags     = var.awc_extra_install_flags,
+      awc_flag_manager_insecure   = var.awc_flag_manager_insecure,
       awm_deployment_sa_file      = var.awm_deployment_sa_file,
       awm_script                  = local.awm_script,
       bucket_name                 = var.bucket_name,

@@ -120,7 +120,7 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
   }
 
   # add minimal permissions to allow users to connect to instances using Session Manager
-  dynamic statement {
+  dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
       actions   = ["ssm:UpdateInstanceInformation",
@@ -133,7 +133,7 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
     }
   }
 
-  dynamic statement {
+  dynamic "statement" {
     for_each = data.aws_kms_key.encryption-key
     iterator = i
     content {

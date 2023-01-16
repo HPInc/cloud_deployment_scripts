@@ -61,7 +61,7 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-|                  |               | /var/log/anyware-connector/configure.log        | (duplicate log from awc-install.log)                        |
+|                  |               | /var/log/anyware-connector/configure.log    | (duplicate log from awc-install.log)                        |
 | awm              | rocky         | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/awm-install.log           | Detailed log for Anyware Manager installation               |
@@ -105,7 +105,7 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for provisioning script                        |
 |                  |               | /var/log/teradici/awc-install.log           | Detailed log for AWC installation                           |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-|                  |               | /var/log/anyware-connector/configure.log        | (duplicate log from awc-install.log)                        |
+|                  |               | /var/log/anyware-connector/configure.log    | (duplicate log from awc-install.log)                        |
 | awm              | anyware_admin | /var/log/messages                           | Detailed system log for startup and provisioning            |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/awm-install.log           | Detailed log for Anyware Manager installation               |
