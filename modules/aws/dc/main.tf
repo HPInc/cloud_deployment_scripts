@@ -60,6 +60,7 @@ data "template_file" "dc-provisioning-script" {
     cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
+    pcoip_agent_install      = var.pcoip_agent_install
     pcoip_agent_version      = var.pcoip_agent_version
     pcoip_registration_code  = var.pcoip_registration_code
     safe_mode_admin_password = var.safe_mode_admin_password

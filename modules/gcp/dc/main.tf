@@ -40,6 +40,7 @@ data "template_file" "dc-provisioning-script" {
     bucket_name              = var.bucket_name
     gcp_ops_agent_enable     = var.gcp_ops_agent_enable
     ops_setup_script         = var.ops_setup_script
+    pcoip_agent_install      = var.pcoip_agent_install
     pcoip_agent_version      = var.pcoip_agent_version
     pcoip_registration_code  = var.pcoip_registration_code
     safe_mode_admin_password = var.safe_mode_admin_password

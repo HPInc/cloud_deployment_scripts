@@ -98,6 +98,11 @@ variable "teradici_download_token" {
   default     = "yj39yHtgj68Uv2Qf"
 }
 
+variable "pcoip_agent_install" {
+  description = "Install PCoIP agent"
+  default     = false
+}
+
 variable "pcoip_agent_version" {
   description = "PCoIP Agent version to install"
   default     = "latest"

@@ -11,6 +11,7 @@ $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
 $KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
+$PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
@@ -241,13 +242,15 @@ Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thu
 "================================================================"
 sc.exe config ADWS start= delayed-auto 
 
-if (PCoIP-Agent-is-Installed) {
-    "--> PCoIP standard agent is already installed. Skipping..."
-} else {
-    PCoIP-Agent-Install
-}
+if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
+    if (PCoIP-Agent-is-Installed) {
+        "--> PCoIP standard agent is already installed. Skipping..."
+    } else {
+        PCoIP-Agent-Install
+    }
 
-PCoIP-Agent-Register
+    PCoIP-Agent-Register
+}
 
 "================================================================"
 "Restarting computer..."
