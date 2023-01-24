@@ -134,9 +134,41 @@ resource "aws_route_table_association" "rt-ws" {
   route_table_id = aws_route_table.private.id
 }
 
-data "aws_security_group" "default" {
-  name   = "default"
+# [EC2.2] The VPC default security group should not allow inbound and outbound traffic
+resource "aws_default_security_group" "default" {
   vpc_id = aws_vpc.vpc.id
+
+  # ingress {
+  #   # removing all ingress rules to satisfy [EC2.2]
+  # }
+
+  # egress {
+  #   # removing all egress rules to satisfy [EC2.2]
+  # }
+}
+
+# Create security groups to allow all inbound and outbound traffic for communication between instances
+resource "aws_security_group" "allow-internal" {
+  name   = "allow-internal"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    protocol  = -1
+    from_port = 0
+    to_port   = 0
+    self      = true
+  }
+
+  egress {
+    protocol    = -1
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${local.prefix}secgrp-allow-internal"
+  }
 }
 
 resource "aws_security_group" "allow-ssh" {
@@ -250,7 +282,7 @@ resource "aws_route53_resolver_endpoint" "outbound" {
   direction = "OUTBOUND"
 
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
   ]
 
   ip_address {

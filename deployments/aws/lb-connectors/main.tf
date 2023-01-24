@@ -91,7 +91,7 @@ module "dc" {
   bucket_name = aws_s3_bucket.scripts.id
   subnet      = aws_subnet.dc-subnet.id
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-rdp.id,
     aws_security_group.allow-winrm.id,
     aws_security_group.allow-icmp.id,
@@ -114,7 +114,7 @@ resource "aws_lb" "cac-alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-pcoip.id,
@@ -213,7 +213,7 @@ module "cac" {
   instance_count_list = var.cac_instance_count_list
 
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-pcoip.id,
@@ -267,7 +267,7 @@ module "win-gfx" {
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-rdp.id,
   ]
@@ -314,7 +314,7 @@ module "win-std" {
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-rdp.id,
   ]
@@ -360,7 +360,7 @@ module "centos-gfx" {
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
@@ -413,7 +413,7 @@ module "centos-std" {
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
