@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2021; © Copyright 2021-2023 HP Development Company, L.P
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -73,7 +73,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_eip" "nat-ip" {
-  vpc      = true
+  vpc = true
 
   tags = {
     Name = "${local.prefix}nat-ip"
@@ -149,7 +149,7 @@ resource "aws_default_security_group" "default" {
 
 # Create security groups to allow all inbound and outbound traffic for communication between instances
 resource "aws_security_group" "allow-internal" {
-  name   = "allow-internal"
+  name   = "${local.prefix}allow-internal"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -172,7 +172,7 @@ resource "aws_security_group" "allow-internal" {
 }
 
 resource "aws_security_group" "allow-ssh" {
-  name   = "allow-ssh"
+  name   = "${local.prefix}allow-ssh"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -188,7 +188,7 @@ resource "aws_security_group" "allow-ssh" {
 }
 
 resource "aws_security_group" "allow-rdp" {
-  name   = "allow-rdp"
+  name   = "${local.prefix}allow-rdp"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -211,7 +211,7 @@ resource "aws_security_group" "allow-rdp" {
 }
 
 resource "aws_security_group" "allow-winrm" {
-  name   = "allow-winrm"
+  name   = "${local.prefix}allow-winrm"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -232,7 +232,7 @@ resource "aws_security_group" "allow-winrm" {
 # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml
 
 resource "aws_security_group" "allow-icmp" {
-  name   = "allow-icmp"
+  name   = "${local.prefix}allow-icmp"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -248,7 +248,7 @@ resource "aws_security_group" "allow-icmp" {
 }
 
 resource "aws_security_group" "allow-pcoip" {
-  name   = "allow-pcoip"
+  name   = "${local.prefix}allow-pcoip"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
