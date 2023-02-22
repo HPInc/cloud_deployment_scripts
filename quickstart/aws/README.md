@@ -23,13 +23,13 @@
 ## Getting Started
 The Quickstart deployment allows the user to deploy a [single-connector](https://github.com/teradici/cloud_deployment_scripts/blob/master/docs/aws/README.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts. The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the AWS infrastructure such as Networking and Compute resources.
 
-You can run the deployment from your local machine or from AWS CloudShell. This link wll take you to the **us-west-2** cloudshell, but you can choose any other available region: https://us-west-2.console.aws.amazon.com/cloudshell/home?region=us-west-2. If you are running from AWS CloudShell, you don't need to install the AWS CLI.
+The quickest way to create a reference deployment on AWS is to run the Quickstart Python script in the AWS CloudShell. This link will take you to the **us-west-2** cloudshell, but you can choose any other available region: https://us-west-2.console.aws.amazon.com/cloudshell/home?region=us-west-2. If your environment has the [Requirements](#requirements), you can run the script in your local CLI too. 
 
 ### Requirements
 - the user must have Administrator permissions in an AWS account
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - the user must have Git installed. Please see: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
-- if the user is running from their local machine, they must have AWS CLI Version 2 installed. Please see: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
+- if the user is running from their local machine, they must have AWS CLI Version 2 installed (Please see: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and also the Python 3 installed (Please see: https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
 
 ### Accessing the AWS Quickstart Script
 Run the following commands to clone the Cloud Deployment Scripts repository.
