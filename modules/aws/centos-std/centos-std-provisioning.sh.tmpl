@@ -216,7 +216,7 @@ install_idle_shutdown() {
 
     retry 3 `# 3 retries` \
           5 `# 5s interval` \
-          "curl https://raw.githubusercontent.com/teradici/deploy/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
+          "curl https://raw.githubusercontent.com/HPInc/Anyware-Idle-Shutdown/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
           "--> ERROR: Failed to download Install-Idle-Shutdown.sh."
 
     awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
