@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -28,6 +28,7 @@ resource "aws_s3_object" "awm-provisioning-script" {
       awm_admin_password       = var.awm_admin_password,
       awm_aws_credentials_file = var.awm_aws_credentials_file,
       awm_deployment_sa_file   = var.awm_deployment_sa_file,
+      awm_repo_channel         = var.awm_repo_channel,
       awm_setup_script         = local.awm_setup_script,
       aws_region               = var.aws_region,
       aws_ssm_enable           = var.aws_ssm_enable,
@@ -187,7 +188,7 @@ resource "aws_instance" "awm" {
   depends_on = [
     aws_s3_object.awm-setup-script,
     aws_s3_object.awm-provisioning-script,
-    # wait 5 seconds before deleting the log group to account for delays in 
+    # wait 5 seconds before deleting the log group to account for delays in
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group
   ]

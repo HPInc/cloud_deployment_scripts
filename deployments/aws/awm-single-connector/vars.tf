@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -28,7 +28,7 @@ variable "az_id_exclude_list" {
 }
 
 # NetBIOS name is limited to 15 characters. 10 characters are reserved for workstation type
-# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters. 
+# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters.
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 5 characters."
   default     = ""
@@ -287,6 +287,11 @@ variable "pcoip_registration_code" {
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
+}
+
+variable "awm_repo_channel" {
+  description = "Anyware Manager images in Anyware Manager repository channel"
+  default     = "anyware-manager"
 }
 
 variable "ws_subnet_name" {

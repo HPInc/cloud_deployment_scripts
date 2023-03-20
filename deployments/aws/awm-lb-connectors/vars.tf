@@ -310,6 +310,11 @@ variable "teradici_download_token" {
   default     = "yj39yHtgj68Uv2Qf"
 }
 
+variable "awm_repo_channel" {
+  description = "Anyware Manager images in Anyware Manager repository channel"
+  default     = "anyware-manager"
+}
+
 variable "ws_subnet_name" {
   description = "Name for subnet containing Remote Workstations"
   default     = "subnet-ws"
