@@ -78,8 +78,8 @@ variable "admin_ssh_key_name" {
 }
 
 variable "awm_aws_credentials_file" {
-    description = "Name of AWS credentials file for Anyware Manager in bucket"
-    type        = string
+  description = "Name of AWS credentials file for Anyware Manager in bucket"
+  type        = string
 }
 
 variable "awm_admin_password" {

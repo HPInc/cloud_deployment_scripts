@@ -6,12 +6,12 @@
  */
 
 locals {
-  prefix              = var.prefix != "" ? "${var.prefix}-" : ""
+  prefix = var.prefix != "" ? "${var.prefix}-" : ""
 }
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"

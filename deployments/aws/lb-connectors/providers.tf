@@ -7,5 +7,5 @@
 
 provider "aws" {
   shared_credentials_files = [var.aws_credentials_file]
-  region                  = var.aws_region
+  region                   = var.aws_region
 }

@@ -14,12 +14,12 @@ locals {
 resource "aws_s3_object" "lls-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  key     = local.provisioning_script
-  bucket  = var.bucket_name
+  key    = local.provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      aws_region              = var.aws_region, 
+      aws_region              = var.aws_region,
       aws_ssm_enable          = var.aws_ssm_enable,
       bucket_name             = var.bucket_name,
       cloudwatch_enable       = var.cloudwatch_enable,
@@ -55,7 +55,7 @@ data "aws_ami" "ami" {
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -83,7 +83,7 @@ data "aws_iam_policy_document" "lls-policy-doc" {
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
   }
-  
+
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
@@ -97,29 +97,29 @@ data "aws_iam_policy_document" "lls-policy-doc" {
   }
 
   statement {
-    actions   = ["logs:CreateLogGroup",
-                 "logs:CreateLogStream",
-                 "logs:DescribeLogStreams",
-                 "logs:PutLogEvents"]
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+    "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
   # add minimal permissions to allow users to connect to instances using Session Manager
-  dynamic statement {
+  dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
   }
 
-  dynamic statement {
+  dynamic "statement" {
     for_each = data.aws_kms_key.encryption-key
     iterator = i
     content {
@@ -133,8 +133,8 @@ data "aws_iam_policy_document" "lls-policy-doc" {
 resource "aws_iam_role_policy" "lls-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "${local.prefix}lls_role_policy"
-  role = aws_iam_role.lls-role[0].id
+  name   = "${local.prefix}lls_role_policy"
+  role   = aws_iam_role.lls-role[0].id
   policy = data.aws_iam_policy_document.lls-policy-doc.json
 }
 
@@ -147,7 +147,7 @@ resource "aws_iam_instance_profile" "lls-instance-profile" {
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
   count = var.cloudwatch_enable ? var.instance_count : 0
-  
+
   name = "${local.prefix}${var.host_name}-${count.index}"
 }
 
