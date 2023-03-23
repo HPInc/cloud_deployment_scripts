@@ -12,8 +12,8 @@ locals {
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
   instance_info_list = flatten(
-    [ for i in range(length(var.zone_list)):
-      [ for j in range(var.instance_count_list[i]):
+    [for i in range(length(var.zone_list)) :
+      [for j in range(var.instance_count_list[i]) :
         {
           zone   = var.zone_list[i],
           subnet = var.subnet_list[i],
@@ -21,21 +21,21 @@ locals {
       ]
     ]
   )
-  enable_public_ip = var.enable_public_ip ? [true] : []
+  enable_public_ip    = var.enable_public_ip ? [true] : []
   provisioning_script = "centos-gfx-provisioning.sh"
 }
 
 resource "google_storage_bucket_object" "centos-gfx-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  name    = local.provisioning_script
-  bucket  = var.bucket_name
+  name   = local.provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
-      bucket_name                 = var.bucket_name, 
+      bucket_name                 = var.bucket_name,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
@@ -86,7 +86,7 @@ resource "google_compute_instance" "centos-gfx" {
   network_interface {
     subnetwork = local.instance_info_list[count.index].subnet
 
-    dynamic access_config {
+    dynamic "access_config" {
       for_each = local.enable_public_ip
       content {}
     }
@@ -95,12 +95,12 @@ resource "google_compute_instance" "centos-gfx" {
   tags = var.network_tags
 
   metadata = {
-    ssh-keys = "${var.ws_admin_user}:${file(var.ws_admin_ssh_pub_key_file)}"
+    ssh-keys           = "${var.ws_admin_user}:${file(var.ws_admin_ssh_pub_key_file)}"
     startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.centos-gfx-provisioning-script[0].output_name}"
   }
 
   service_account {
-    email = var.gcp_service_account == "" ? null : var.gcp_service_account
+    email  = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

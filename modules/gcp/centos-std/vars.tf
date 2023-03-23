@@ -35,11 +35,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -156,7 +156,7 @@ variable "ws_admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.ws_admin_ssh_pub_key_file)
+    condition     = fileexists(var.ws_admin_ssh_pub_key_file)
     error_message = "The ws_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }

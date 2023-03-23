@@ -10,5 +10,5 @@ output "internal-ip" {
 }
 
 output "public-ip" {
-  value = var.enable_public_ip ? google_compute_instance.awm.network_interface[0].access_config[0].nat_ip : null 
+  value = var.enable_public_ip ? google_compute_instance.awm.network_interface[0].access_config[0].nat_ip : null
 }
