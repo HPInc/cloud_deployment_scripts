@@ -147,7 +147,7 @@ module "lls" {
   lls_license_count       = var.lls_license_count
   teradici_download_token = var.teradici_download_token
 
-  bucket_name = local.bucket.id
+  bucket_name = module.shared-bucket.bucket.id
   subnet      = aws_subnet.lls-subnet.id
   security_group_ids = [
     aws_security_group.allow-internal.id,
