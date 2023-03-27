@@ -12,8 +12,8 @@ locals {
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
   instance_info_list = flatten(
-    [ for i in range(length(var.zone_list)):
-      [ for j in range(var.instance_count_list[i]):
+    [for i in range(length(var.zone_list)) :
+      [for j in range(var.instance_count_list[i]) :
         {
           zone   = var.zone_list[i],
           subnet = var.subnet_list[i],
@@ -21,22 +21,22 @@ locals {
       ]
     ]
   )
-  enable_public_ip = var.enable_public_ip ? [true] : []
+  enable_public_ip    = var.enable_public_ip ? [true] : []
   provisioning_script = "win-std-provisioning.ps1"
 }
 
 resource "google_storage_bucket_object" "win-std-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
-  name    = local.provisioning_script
-  bucket  = var.bucket_name
+  name   = local.provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       admin_password              = var.admin_password,
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
-      bucket_name                 = var.bucket_name, 
+      bucket_name                 = var.bucket_name,
       domain_name                 = var.domain_name,
       gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
       kms_cryptokey_id            = var.kms_cryptokey_id,
@@ -74,7 +74,7 @@ resource "google_compute_instance" "win-std" {
   network_interface {
     subnetwork = local.instance_info_list[count.index].subnet
 
-    dynamic access_config {
+    dynamic "access_config" {
       for_each = local.enable_public_ip
       content {}
     }
@@ -87,7 +87,7 @@ resource "google_compute_instance" "win-std" {
   }
 
   service_account {
-    email = var.gcp_service_account == "" ? null : var.gcp_service_account
+    email  = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

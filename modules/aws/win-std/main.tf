@@ -12,15 +12,15 @@ locals {
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
 
-  enable_public_ip = var.enable_public_ip ? [true] : []
+  enable_public_ip    = var.enable_public_ip ? [true] : []
   provisioning_script = "win-std-provisioning.ps1"
 }
 
 resource "aws_s3_object" "win-std-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  key     = local.provisioning_script
-  bucket  = var.bucket_name
+  key    = local.provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
@@ -67,7 +67,7 @@ data "aws_ami" "ami" {
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -109,29 +109,29 @@ data "aws_iam_policy_document" "win-std-policy-doc" {
   }
 
   statement {
-    actions   = ["logs:CreateLogGroup",
-                 "logs:CreateLogStream",
-                 "logs:DescribeLogStreams",
-                 "logs:PutLogEvents"]
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+    "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
 
   # add minimal permissions to allow users to connect to instances using Session Manager
-  dynamic statement {
+  dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
   }
 
-  dynamic statement {
+  dynamic "statement" {
     for_each = data.aws_kms_key.encryption-key
     iterator = i
     content {
@@ -145,8 +145,8 @@ data "aws_iam_policy_document" "win-std-policy-doc" {
 resource "aws_iam_role_policy" "win-std-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "${local.prefix}win_std_role_policy"
-  role = aws_iam_role.win-std-role[0].id
+  name   = "${local.prefix}win_std_role_policy"
+  role   = aws_iam_role.win-std-role[0].id
   policy = data.aws_iam_policy_document.win-std-policy-doc.json
 }
 
@@ -159,7 +159,7 @@ resource "aws_iam_instance_profile" "win-std-instance-profile" {
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
   count = var.cloudwatch_enable ? var.instance_count : 0
-  
+
   name = "${local.host_name}-${count.index}"
 }
 
@@ -202,7 +202,7 @@ resource "aws_cloudwatch_dashboard" "main" {
   count = var.cloudwatch_enable ? var.instance_count : 0
 
   dashboard_name = "${local.host_name}-${count.index}"
-  
+
   dashboard_body = <<EOF
 {
     "widgets": [

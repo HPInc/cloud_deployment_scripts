@@ -20,8 +20,8 @@ resource "google_storage_bucket_object" "awm-post-install-script" {
 }
 
 resource "google_storage_bucket_object" "awm-provisioning-script" {
-  bucket  = var.bucket_name
-  name    = local.provisioning_script
+  bucket = var.bucket_name
+  name   = local.provisioning_script
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
@@ -57,7 +57,7 @@ resource "google_compute_instance" "awm" {
   network_interface {
     subnetwork = var.subnet
 
-    dynamic access_config {
+    dynamic "access_config" {
       for_each = local.enable_public_ip
       content {}
     }
@@ -66,12 +66,12 @@ resource "google_compute_instance" "awm" {
   tags = var.network_tags
 
   metadata = {
-    ssh-keys = "${var.awm_admin_user}:${file(var.awm_admin_ssh_pub_key_file)}"
+    ssh-keys           = "${var.awm_admin_user}:${file(var.awm_admin_ssh_pub_key_file)}"
     startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.awm-provisioning-script.output_name}"
   }
 
   service_account {
-    email = var.gcp_service_account == "" ? null : var.gcp_service_account
+    email  = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }

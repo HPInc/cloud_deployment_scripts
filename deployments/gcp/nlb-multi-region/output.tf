@@ -16,15 +16,15 @@ output "domain-controller-public-ip" {
 
 output "cac-load-balancer-ip" {
   value = {
-    for i in range(length(var.cac_region_list)):
-      var.cac_region_list[i] =>  google_compute_address.nlb-ip[i].address
+    for i in range(length(var.cac_region_list)) :
+    var.cac_region_list[i] => google_compute_address.nlb-ip[i].address
   }
 }
 
 output "cac-public-ip" {
   value = {
-    for i in range(length(var.cac_region_list)):
-      var.cac_region_list[i] => module.cac.public-ip[i]
+    for i in range(length(var.cac_region_list)) :
+    var.cac_region_list[i] => module.cac.public-ip[i]
   }
 }
 
