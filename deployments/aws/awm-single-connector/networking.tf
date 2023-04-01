@@ -19,7 +19,9 @@ data "aws_availability_zones" "available_az" {
 }
 
 locals {
-  myip = "${chomp(data.http.myip.response_headers.Client-Ip)}/32"
+  myip                = "${chomp(data.http.myip.response_headers.Client-Ip)}/32"
+  vpc_uid             = "${local.prefix}${var.vpc_name}"
+  allowed_admin_cidrs = distinct(concat([local.myip], var.allowed_admin_cidrs))
 }
 
 resource "aws_vpc" "vpc" {
@@ -28,7 +30,7 @@ resource "aws_vpc" "vpc" {
   enable_dns_hostnames = false
 
   tags = {
-    Name = "${local.prefix}${var.vpc_name}"
+    Name = local.vpc_uid
   }
 }
 
@@ -190,14 +192,14 @@ resource "aws_security_group" "allow-http" {
     protocol    = "tcp"
     from_port   = 80
     to_port     = 80
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   ingress {
     protocol    = "tcp"
     from_port   = 443
     to_port     = 443
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   tags = {
@@ -213,7 +215,7 @@ resource "aws_security_group" "allow-ssh" {
     protocol    = "tcp"
     from_port   = 22
     to_port     = 22
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   tags = {
@@ -229,14 +231,14 @@ resource "aws_security_group" "allow-rdp" {
     protocol    = "tcp"
     from_port   = 3389
     to_port     = 3389
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   ingress {
     protocol    = "udp"
     from_port   = 3389
     to_port     = 3389
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   tags = {
@@ -252,7 +254,7 @@ resource "aws_security_group" "allow-winrm" {
     protocol    = "tcp"
     from_port   = 5986
     to_port     = 5986
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   tags = {
@@ -273,7 +275,7 @@ resource "aws_security_group" "allow-icmp" {
     protocol    = "icmp"
     from_port   = 8
     to_port     = 0
-    cidr_blocks = concat([local.myip], var.allowed_admin_cidrs)
+    cidr_blocks = local.allowed_admin_cidrs
   }
 
   tags = {
@@ -354,4 +356,436 @@ resource "aws_route53_resolver_rule" "rule" {
 resource "aws_route53_resolver_rule_association" "association" {
   resolver_rule_id = aws_route53_resolver_rule.rule.id
   vpc_id           = aws_vpc.vpc.id
+}
+
+# [EC2.21] Network ACLs should not allow ingress from 0.0.0.0/0 to port 22 or port 3389
+# Severity: Medium
+resource "aws_default_network_acl" "default" {
+  default_network_acl_id = aws_vpc.vpc.default_network_acl_id
+
+  # no rules defined, deny all traffic in this default ACL
+  # use custome nacl instead
+}
+
+resource "aws_network_acl" "nacls-cac" {
+  vpc_id     = aws_vpc.vpc.id
+  subnet_ids = [aws_subnet.cac-subnet.id]
+
+  // allow-ssh
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 100 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 22
+      to_port    = 22
+    }
+  }
+
+  // allow-icmp
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 200 + ingress.key
+      protocol   = "icmp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 8
+      to_port    = 0
+    }
+  }
+
+  // allow-pcoip
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 300 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 443
+      to_port    = 443
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 400 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 4172
+      to_port    = 4172
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 500 + ingress.key
+      protocol   = "udp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 4172
+      to_port    = 4172
+    }
+  }
+
+  // allow-internal
+  ingress {
+    protocol   = -1
+    rule_no    = 1000
+    action     = "allow"
+    cidr_block = var.vpc_cidr
+    from_port  = 0
+    to_port    = 0
+  }
+
+  # [EC2.21] Network ACLs should not allow ingress from 0.0.0.0/0 to
+  # port 22 or port 3389
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 2000
+    action     = "deny"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 3389
+    to_port    = 3389
+  }
+
+
+  // Ephemeral ports for clients to initiate traffic
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  egress {
+    protocol   = -1
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  tags = {
+    Name = "${local.prefix}nacls-cac"
+  }
+}
+
+
+resource "aws_network_acl" "nacls-awm" {
+  vpc_id     = aws_vpc.vpc.id
+  subnet_ids = [aws_subnet.awm-subnet.id]
+
+  // allow-http
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 10 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 80
+      to_port    = 80
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 20 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 443
+      to_port    = 443
+    }
+  }
+
+  // allow-ssh
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 100 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 22
+      to_port    = 22
+    }
+  }
+
+  // allow-icmp
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 200 + ingress.key
+      protocol   = "icmp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 8
+      to_port    = 0
+    }
+  }
+
+  // allow-internal
+  ingress {
+    protocol   = -1
+    rule_no    = 1000
+    action     = "allow"
+    cidr_block = var.vpc_cidr
+    from_port  = 0
+    to_port    = 0
+  }
+
+  # [EC2.21] Network ACLs should not allow ingress from 0.0.0.0/0 to
+  # port 22 or port 3389
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 2000
+    action     = "deny"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 3389
+    to_port    = 3389
+  }
+
+  // Ephemeral ports for clients to initiate traffic
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  egress {
+    protocol   = -1
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  tags = {
+    Name = "${local.prefix}nacls-awm"
+  }
+}
+
+resource "aws_network_acl" "nacls-dc" {
+  vpc_id     = aws_vpc.vpc.id
+  subnet_ids = [aws_subnet.dc-subnet.id]
+
+  // allow-rdp
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 100 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 3389
+      to_port    = 3389
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 200 + ingress.key
+      protocol   = "udp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 3389
+      to_port    = 3389
+    }
+  }
+
+  // allow-winrm (upload-scripts)
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 300 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 5986
+      to_port    = 5986
+    }
+  }
+
+  // allow-icmp
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 400 + ingress.key
+      protocol   = "icmp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 8
+      to_port    = 0
+    }
+  }
+
+  // allow-internal
+  ingress {
+    protocol   = -1
+    rule_no    = 1000
+    action     = "allow"
+    cidr_block = var.vpc_cidr
+    from_port  = 0
+    to_port    = 0
+  }
+
+  # [EC2.21] Network ACLs should not allow ingress from 0.0.0.0/0 to
+  # port 22 or port 3389
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 2000
+    action     = "deny"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 3389
+    to_port    = 3389
+  }
+
+  // Ephemeral ports for clients to initiate traffic
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  egress {
+    protocol   = -1
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  tags = {
+    Name = "${local.prefix}nacls-dc"
+  }
+}
+
+resource "aws_network_acl" "nacls-ws" {
+  vpc_id     = aws_vpc.vpc.id
+  subnet_ids = [aws_subnet.ws-subnet.id]
+
+  // allow-ssh for centos 
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+
+    content {
+      rule_no    = 90 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 22
+      to_port    = 22
+    }
+  }
+
+  // allow-rdp for windows
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 100 + ingress.key
+      protocol   = "tcp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 3389
+      to_port    = 3389
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 200 + ingress.key
+      protocol   = "udp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 3389
+      to_port    = 3389
+    }
+  }
+
+  // allow-icmp
+  dynamic "ingress" {
+    for_each = local.allowed_admin_cidrs
+    content {
+      rule_no    = 300 + ingress.key
+      protocol   = "icmp"
+      action     = "allow"
+      cidr_block = ingress.value
+      from_port  = 8
+      to_port    = 0
+    }
+  }
+
+  // allow-internal
+  ingress {
+    protocol   = -1
+    rule_no    = 1000
+    action     = "allow"
+    cidr_block = var.vpc_cidr
+    from_port  = 0
+    to_port    = 0
+  }
+
+  # [EC2.21] Network ACLs should not allow ingress from 0.0.0.0/0 to
+  # port 22 or port 3389
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 2000
+    action     = "deny"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 3389
+    to_port    = 3389
+  }
+
+  // Ephemeral ports for clients to initiate traffic
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+
+  egress {
+    protocol   = -1
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+  tags = {
+    Name = "${local.prefix}nacls-ws"
+  }
 }
