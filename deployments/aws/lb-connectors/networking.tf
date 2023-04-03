@@ -324,6 +324,69 @@ resource "aws_route53_resolver_rule_association" "association" {
   vpc_id           = aws_vpc.vpc.id
 }
 
+# [EC2.6] VPC flow logging should be enabled in all VPCs
+# Severity: Medium -> Capture all rejected traffic and store the data in cloudwatch logs
+resource "aws_flow_log" "vpc" {
+  count = var.cloudwatch_enable ? 1 : 0
+  # iam_role_arn    = time_sleep.iam_assume_role.triggers["iam_role_arn"]
+  iam_role_arn    = aws_iam_role.vpc[count.index].arn
+  log_destination = aws_cloudwatch_log_group.vpc[count.index].arn
+  traffic_type    = "REJECT"
+  vpc_id          = aws_vpc.vpc.id
+}
+
+# Cloudwatch logs for vpc flow log
+# Each network interface has a unique log stream in the log group.
+resource "aws_cloudwatch_log_group" "vpc" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  name = "${local.prefix}${aws_vpc.vpc.id}"
+  # retention_in_days = 14
+}
+
+data "aws_iam_policy_document" "flow_log_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["vpc-flow-logs.amazonaws.com"]
+    }
+
+    effect = "Allow"
+  }
+}
+
+resource "aws_iam_role" "vpc" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  name               = local.vpc_uid
+  assume_role_policy = data.aws_iam_policy_document.flow_log_assume_role.json
+}
+
+data "aws_iam_policy_document" "flow_log_policy" {
+  statement {
+    sid = "AWSVPCFlowLogsPushToCloudWatch"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+    ]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_role_policy" "vpc" {
+  count = var.cloudwatch_enable ? 1 : 0
+
+  name   = local.vpc_uid
+  role   = aws_iam_role.vpc[count.index].id
+  policy = data.aws_iam_policy_document.flow_log_policy.json
+}
+
 # [EC2.21] Network ACLs should not allow ingress from 0.0.0.0/0 to port 22 or port 3389
 # Severity: Medium
 resource "aws_default_network_acl" "default" {
