@@ -27,7 +27,9 @@ data "aws_availability_zones" "available_az" {
 resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
-  enable_dns_hostnames = false
+  # Required to set dns hostname enabled 
+  # https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint
+  enable_dns_hostnames = true
 
   tags = {
     Name = local.vpc_uid
@@ -279,6 +281,29 @@ resource "aws_security_group" "allow-pcoip" {
   }
 }
 
+resource "aws_security_group" "allow-http" {
+  name   = "${local.prefix}allow-http"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_blocks = local.allowed_admin_cidrs
+  }
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_blocks = local.allowed_admin_cidrs
+  }
+
+  tags = {
+    Name = "${local.prefix}secgrp-allow-http"
+  }
+}
+
 resource "aws_route53_resolver_endpoint" "outbound" {
   name      = replace("${local.prefix}${var.domain_name}-endpoint", ".", "-")
   direction = "OUTBOUND"
@@ -322,6 +347,26 @@ resource "aws_route53_resolver_rule" "rule" {
 resource "aws_route53_resolver_rule_association" "association" {
   resolver_rule_id = aws_route53_resolver_rule.rule.id
   vpc_id           = aws_vpc.vpc.id
+}
+
+# [EC2.10] Amazon EC2 should be configured to use VPC endpoints that are created for the Amazon EC2 service
+# Severity: Medium
+resource "aws_vpc_endpoint" "ec2" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ec2"
+  vpc_endpoint_type = "Interface"
+
+  # Select one subnet per Availability Zone from which you'll access the AWS service
+  # https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint
+  subnet_ids = aws_subnet.cac-subnets[*].id
+  security_group_ids = [
+    aws_security_group.allow-internal.id,
+    aws_security_group.allow-http.id # allow inbound HTTPs traffic
+  ]
+
+  tags = {
+    Name = "${local.prefix}ec2-interface-endpoint"
+  }
 }
 
 # [EC2.6] VPC flow logging should be enabled in all VPCs
