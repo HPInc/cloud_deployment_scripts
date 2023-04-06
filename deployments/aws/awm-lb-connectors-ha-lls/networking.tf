@@ -455,7 +455,7 @@ resource "aws_network_acl" "nacls-cac" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.cac-subnets[count.index].id]
 
-  // allow-ssh
+  # allow-ssh
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -469,7 +469,7 @@ resource "aws_network_acl" "nacls-cac" {
     }
   }
 
-  // allow-icmp
+  # allow-icmp
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -483,7 +483,7 @@ resource "aws_network_acl" "nacls-cac" {
     }
   }
 
-  // allow-pcoip
+  # allow-pcoip
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -523,7 +523,7 @@ resource "aws_network_acl" "nacls-cac" {
     }
   }
 
-  // allow-internal
+  # allow-internal
   ingress {
     protocol   = -1
     rule_no    = 1000
@@ -544,7 +544,7 @@ resource "aws_network_acl" "nacls-cac" {
     to_port    = 3389
   }
 
-  // Ephemeral ports for clients to initiate traffic
+  # Ephemeral ports for clients to initiate traffic
   ingress {
     protocol   = "tcp"
     rule_no    = 3000
@@ -554,7 +554,7 @@ resource "aws_network_acl" "nacls-cac" {
     to_port    = 65535
   }
 
-  // allow all outbound traffic
+  # allow all outbound traffic
   egress {
     protocol   = -1
     rule_no    = 100
@@ -573,7 +573,7 @@ resource "aws_network_acl" "nacls-awm" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.awm-subnet.id]
 
-  // allow-http
+  # allow-http
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
     content {
@@ -598,7 +598,7 @@ resource "aws_network_acl" "nacls-awm" {
     }
   }
 
-  // allow-ssh
+  # allow-ssh
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -612,7 +612,7 @@ resource "aws_network_acl" "nacls-awm" {
     }
   }
 
-  // allow-icmp
+  # allow-icmp
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -626,7 +626,7 @@ resource "aws_network_acl" "nacls-awm" {
     }
   }
 
-  // allow-internal
+  # allow-internal
   ingress {
     protocol   = -1
     rule_no    = 1000
@@ -647,7 +647,7 @@ resource "aws_network_acl" "nacls-awm" {
     to_port    = 3389
   }
 
-  // Ephemeral ports for clients to initiate traffic
+  # Ephemeral ports for clients to initiate traffic
   ingress {
     protocol   = "tcp"
     rule_no    = 3000
@@ -675,7 +675,7 @@ resource "aws_network_acl" "nacls-dc" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.dc-subnet.id]
 
-  // allow-rdp
+  # allow-rdp
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
     content {
@@ -700,7 +700,7 @@ resource "aws_network_acl" "nacls-dc" {
     }
   }
 
-  // allow-winrm (upload-scripts)
+  # allow-winrm (upload-scripts)
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -714,7 +714,7 @@ resource "aws_network_acl" "nacls-dc" {
     }
   }
 
-  // allow-icmp
+  # allow-icmp
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -728,7 +728,7 @@ resource "aws_network_acl" "nacls-dc" {
     }
   }
 
-  // allow-internal
+  # allow-internal
   ingress {
     protocol   = -1
     rule_no    = 1000
@@ -749,7 +749,7 @@ resource "aws_network_acl" "nacls-dc" {
     to_port    = 3389
   }
 
-  // Ephemeral ports for clients to initiate traffic
+  # Ephemeral ports for clients to initiate traffic
   ingress {
     protocol   = "tcp"
     rule_no    = 3000
@@ -759,7 +759,7 @@ resource "aws_network_acl" "nacls-dc" {
     to_port    = 65535
   }
 
-  // allow all outbound traffic
+  # allow all outbound traffic
   egress {
     protocol   = -1
     rule_no    = 100
@@ -778,7 +778,7 @@ resource "aws_network_acl" "nacls-lls" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.lls-subnet.id]
 
-  // allow-ssh
+  # allow-ssh
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -792,7 +792,7 @@ resource "aws_network_acl" "nacls-lls" {
     }
   }
 
-  // allow-icmp
+  # allow-icmp
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -806,7 +806,7 @@ resource "aws_network_acl" "nacls-lls" {
     }
   }
 
-  // allow-internal
+  # allow-internal
   ingress {
     protocol   = -1
     rule_no    = 1000
@@ -827,7 +827,7 @@ resource "aws_network_acl" "nacls-lls" {
     to_port    = 3389
   }
 
-  // Ephemeral ports for clients to initiate traffic
+  # Ephemeral ports for clients to initiate traffic
   ingress {
     protocol   = "tcp"
     rule_no    = 3000
@@ -837,7 +837,7 @@ resource "aws_network_acl" "nacls-lls" {
     to_port    = 65535
   }
 
-  // allow all outbound traffic
+  # allow all outbound traffic
   egress {
     protocol   = -1
     rule_no    = 100
@@ -856,7 +856,7 @@ resource "aws_network_acl" "nacls-ws" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.ws-subnet.id]
 
-  // allow-ssh for centos 
+  # allow-ssh for centos 
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
@@ -870,7 +870,7 @@ resource "aws_network_acl" "nacls-ws" {
     }
   }
 
-  // allow-rdp for windows
+  # allow-rdp for windows
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
     content {
@@ -895,7 +895,7 @@ resource "aws_network_acl" "nacls-ws" {
     }
   }
 
-  // allow-icmp
+  # allow-icmp
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
     content {
@@ -908,7 +908,7 @@ resource "aws_network_acl" "nacls-ws" {
     }
   }
 
-  // allow-internal
+  # allow-internal
   ingress {
     protocol   = -1
     rule_no    = 1000
@@ -929,7 +929,7 @@ resource "aws_network_acl" "nacls-ws" {
     to_port    = 3389
   }
 
-  // Ephemeral ports for clients to initiate traffic
+  # Ephemeral ports for clients to initiate traffic
   ingress {
     protocol   = "tcp"
     rule_no    = 3000
@@ -939,7 +939,7 @@ resource "aws_network_acl" "nacls-ws" {
     to_port    = 65535
   }
 
-  // allow all outbound traffic
+  # allow all outbound traffic
   egress {
     protocol   = -1
     rule_no    = 100
