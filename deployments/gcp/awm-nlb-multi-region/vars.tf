@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -528,4 +528,9 @@ variable "gcp_iap_enable" {
 variable "gcp_logging_retention_days" {
   description = "Retention period for created logging storage bucket"
   default     = 30
+}
+
+variable "awm_repo_channel" {
+  description = "Repository Channel for installing the Anyware Manager"
+  default     = "anyware-manager"
 }

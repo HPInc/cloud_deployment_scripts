@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2021;  © Copyright 2021-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -128,6 +128,7 @@ module "awm" {
   kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
   awm_admin_password      = var.awm_admin_password
+  awm_repo_channel        = var.awm_repo_channel
   teradici_download_token = var.teradici_download_token
 
   bucket_name            = google_storage_bucket.scripts.name
