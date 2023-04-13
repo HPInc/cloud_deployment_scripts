@@ -463,8 +463,12 @@ resource "aws_network_acl" "nacls-cac" {
       protocol   = "icmp"
       action     = "allow"
       cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 
@@ -606,8 +610,12 @@ resource "aws_network_acl" "nacls-awm" {
       protocol   = "icmp"
       action     = "allow"
       cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 
@@ -707,9 +715,12 @@ resource "aws_network_acl" "nacls-dc" {
       rule_no    = 400 + ingress.key
       protocol   = "icmp"
       action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 
@@ -810,8 +821,12 @@ resource "aws_network_acl" "nacls-ws" {
       protocol   = "icmp"
       action     = "allow"
       cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 

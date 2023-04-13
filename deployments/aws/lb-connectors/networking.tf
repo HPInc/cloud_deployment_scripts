@@ -425,8 +425,12 @@ resource "aws_network_acl" "nacls-cac" {
       protocol   = "icmp"
       action     = "allow"
       cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 
@@ -492,17 +496,13 @@ resource "aws_network_acl" "nacls-cac" {
   }
 
   # Ephemeral ports for clients to initiate traffic
-  dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
-
-    content {
-      rule_no    = 3000 + ingress.key
-      protocol   = "tcp"
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 1024
-      to_port    = 65535
-    }
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
   }
 
   # allow all outbound traffic
@@ -572,8 +572,12 @@ resource "aws_network_acl" "nacls-dc" {
       protocol   = "icmp"
       action     = "allow"
       cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 
@@ -599,17 +603,13 @@ resource "aws_network_acl" "nacls-dc" {
   }
 
   # Ephemeral ports for clients to initiate traffic
-  dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
-
-    content {
-      rule_no    = 3000 + ingress.key
-      protocol   = "tcp"
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 1024
-      to_port    = 65535
-    }
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
   }
 
   # allow all outbound traffic
@@ -657,6 +657,7 @@ resource "aws_network_acl" "nacls-ws" {
   }
 
   # allow-icmp
+  # 
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
     content {
@@ -664,8 +665,12 @@ resource "aws_network_acl" "nacls-ws" {
       protocol   = "icmp"
       action     = "allow"
       cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
+      from_port  = 0 # not applicable for ICMP but required by Terraform
+      to_port    = 0 # not applicable for ICMP but required by Terraform
+      # In the case of ICMP, Type 8, code 0 is for Echo Request
+      # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-codes-8
+      icmp_type = 8
+      icmp_code = 0
     }
   }
 
@@ -691,17 +696,13 @@ resource "aws_network_acl" "nacls-ws" {
   }
 
   # Ephemeral ports for clients to initiate traffic
-  dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
-
-    content {
-      rule_no    = 3000 + ingress.key
-      protocol   = "tcp"
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 1024
-      to_port    = 65535
-    }
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 3000
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
   }
 
   # allow all outbound traffic
