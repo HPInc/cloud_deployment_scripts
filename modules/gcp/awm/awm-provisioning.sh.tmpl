@@ -192,14 +192,14 @@ config_selinux() {
 }
 
 install_awm() {
-    # https://www.teradici.com/web-help/anyware_manager/22.09/cam_standalone_installation/default_config/#3-install-anyware-manager
+    # https://www.teradici.com/web-help/anyware_manager/23.04/cam_standalone_installation/default_config/#3-install-anyware-manager
     log "--> Installing Anyware Manager..."
 
     # Run the following command to install Anyware Manager RPM
-    dnf install -y anyware-manager 2>&1 | tee -a $AWM_INSTALL_LOG 
+    dnf install -y anyware-manager 2>&1 | tee -a $AWM_INSTALL_LOG
 
     # Run the following command to install Anyware Manager with the appropriate flags
-    /usr/local/bin/anyware-manager install --accept-policies --self-signed --debug 2>&1 | tee -a $AWM_INSTALL_LOG
+    /usr/local/bin/anyware-manager install --manager-admin-password $AWM_ADMIN_PASSWORD --accept-policies --self-signed --debug 2>&1 | tee -a $AWM_INSTALL_LOG
 
     if [ $? -ne 0 ]
     then
