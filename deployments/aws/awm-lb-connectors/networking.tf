@@ -715,6 +715,7 @@ resource "aws_network_acl" "nacls-dc" {
       rule_no    = 400 + ingress.key
       protocol   = "icmp"
       action     = "allow"
+      cidr_block = ingress.value
       from_port  = 0 # not applicable for ICMP but required by Terraform
       to_port    = 0 # not applicable for ICMP but required by Terraform
       # In the case of ICMP, Type 8, code 0 is for Echo Request

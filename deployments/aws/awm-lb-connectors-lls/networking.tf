@@ -771,19 +771,6 @@ resource "aws_network_acl" "nacls-dc" {
     to_port    = 65535
   }
 
-  dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
-
-    content {
-      rule_no    = 400 + ingress.key
-      protocol   = "icmp"
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
-    }
-  }
-
   # allow all outbound traffic
   egress {
     protocol   = -1

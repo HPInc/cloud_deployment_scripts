@@ -12,7 +12,7 @@ data "http" "myip" {
 locals {
   myip                = "${chomp(data.http.myip.response_headers.Client-Ip)}/32"
   vpc_uid             = "${local.prefix}${var.vpc_name}"
-  allowed_admin_cidrs = toset(concat([local.myip], var.allowed_admin_cidrs))
+  allowed_admin_cidrs = distinct(concat([local.myip], var.allowed_admin_cidrs))
 }
 
 data "aws_availability_zones" "available_az" {
@@ -618,7 +618,6 @@ resource "aws_network_acl" "nacls-dc" {
     to_port    = 3389
   }
 
-
   # Ephemeral ports for clients to initiate traffic
   ingress {
     protocol   = "tcp"
@@ -627,19 +626,6 @@ resource "aws_network_acl" "nacls-dc" {
     cidr_block = "0.0.0.0/0"
     from_port  = 1024
     to_port    = 65535
-  }
-
-  dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
-
-    content {
-      rule_no    = 400 + ingress.key
-      protocol   = "icmp"
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 8
-      to_port    = 0
-    }
   }
 
   # allow all outbound traffic
