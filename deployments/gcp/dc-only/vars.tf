@@ -76,13 +76,18 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20221014"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230315"
 }
 
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
   sensitive   = true
+}
+
+variable "dc_pcoip_agent_install" {
+  description = "Install PCoIP agent on Domain Controller"
+  default     = false
 }
 
 variable "dc_pcoip_agent_version" {

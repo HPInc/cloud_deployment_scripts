@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021; © Copyright 2021-2023 HP Development Company, L.P
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -73,7 +73,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_eip" "nat-ip" {
-  vpc      = true
+  vpc = true
 
   tags = {
     Name = "${local.prefix}nat-ip"
@@ -134,13 +134,45 @@ resource "aws_route_table_association" "rt-ws" {
   route_table_id = aws_route_table.private.id
 }
 
-data "aws_security_group" "default" {
-  name   = "default"
+# [EC2.2] The VPC default security group should not allow inbound and outbound traffic
+resource "aws_default_security_group" "default" {
   vpc_id = aws_vpc.vpc.id
+
+  # ingress {
+  #   # removing all ingress rules to satisfy [EC2.2]
+  # }
+
+  # egress {
+  #   # removing all egress rules to satisfy [EC2.2]
+  # }
+}
+
+# Create security groups to allow all inbound and outbound traffic for communication between instances
+resource "aws_security_group" "allow-internal" {
+  name   = "${local.prefix}allow-internal"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    protocol  = -1
+    from_port = 0
+    to_port   = 0
+    self      = true
+  }
+
+  egress {
+    protocol    = -1
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${local.prefix}secgrp-allow-internal"
+  }
 }
 
 resource "aws_security_group" "allow-ssh" {
-  name   = "allow-ssh"
+  name   = "${local.prefix}allow-ssh"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -156,7 +188,7 @@ resource "aws_security_group" "allow-ssh" {
 }
 
 resource "aws_security_group" "allow-rdp" {
-  name   = "allow-rdp"
+  name   = "${local.prefix}allow-rdp"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -179,7 +211,7 @@ resource "aws_security_group" "allow-rdp" {
 }
 
 resource "aws_security_group" "allow-winrm" {
-  name   = "allow-winrm"
+  name   = "${local.prefix}allow-winrm"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -200,7 +232,7 @@ resource "aws_security_group" "allow-winrm" {
 # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml
 
 resource "aws_security_group" "allow-icmp" {
-  name   = "allow-icmp"
+  name   = "${local.prefix}allow-icmp"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -216,7 +248,7 @@ resource "aws_security_group" "allow-icmp" {
 }
 
 resource "aws_security_group" "allow-pcoip" {
-  name   = "allow-pcoip"
+  name   = "${local.prefix}allow-pcoip"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -250,7 +282,7 @@ resource "aws_route53_resolver_endpoint" "outbound" {
   direction = "OUTBOUND"
 
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
   ]
 
   ip_address {

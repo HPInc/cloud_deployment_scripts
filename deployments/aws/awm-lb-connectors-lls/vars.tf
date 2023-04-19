@@ -104,6 +104,11 @@ variable "dc_ami_name" {
   default     = "Windows_Server-2019-English-Full-Base-2023.02.15"
 }
 
+variable "dc_pcoip_agent_install" {
+  description = "Install PCoIP agent on Domain Controller"
+  default     = false
+}
+
 variable "dc_pcoip_agent_version" {
   description = "Version of PCoIP Agent to install for Domain Controller"
   default     = "latest"

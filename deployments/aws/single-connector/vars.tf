@@ -95,6 +95,11 @@ variable "dc_admin_password" {
   sensitive   = true
 }
 
+variable "dc_pcoip_agent_install" {
+  description = "Install PCoIP agent on Domain Controller"
+  default     = false
+}
+
 variable "dc_pcoip_agent_version" {
   description = "Version of PCoIP Agent to install for Domain Controller"
   default     = "latest"

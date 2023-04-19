@@ -41,6 +41,7 @@ data "template_file" "dc-provisioning-script" {
     kms_cryptokey_id         = var.kms_cryptokey_id
     ldaps_cert_filename      = var.ldaps_cert_filename
     ops_setup_script         = var.ops_setup_script
+    pcoip_agent_install      = var.pcoip_agent_install
     pcoip_agent_version      = var.pcoip_agent_version
     pcoip_registration_code  = var.pcoip_registration_code
     safe_mode_admin_password = var.safe_mode_admin_password
