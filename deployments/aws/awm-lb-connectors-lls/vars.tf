@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -101,7 +101,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.03.15"
+  default     = "Windows_Server-2019-English-Full-Base-2023.04.12"
 }
 
 variable "dc_pcoip_agent_install" {
@@ -302,7 +302,7 @@ variable "cac_ami_owner" {
 
 variable "cac_ami_name" {
   description = "Name of the AMI to create Cloud Access Connector from"
-  default     = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20230323"
+  default     = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20230329"
 }
 
 variable "cac_version" {
@@ -362,6 +362,11 @@ variable "teradici_download_token" {
   default     = "yj39yHtgj68Uv2Qf"
 }
 
+variable "awm_repo_channel" {
+  description = "Anyware Manager images in Anyware Manager repository channel"
+  default     = "anyware-manager"
+}
+
 variable "ws_subnet_name" {
   description = "Name for subnet containing Remote Workstations"
   default     = "subnet-ws"
@@ -406,7 +411,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.03.15"
+  default     = "Windows_Server-2019-English-Full-Base-2023.04.12"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -441,7 +446,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.03.15"
+  default     = "Windows_Server-2019-English-Full-Base-2023.04.12"
 }
 
 variable "win_std_pcoip_agent_version" {
