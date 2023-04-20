@@ -16,12 +16,12 @@ locals {
   new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
-  admin_password = var.kms_cryptokey_id == "" ? var.admin_password : data.google_kms_secret.decrypted_admin_password[0].plaintext
+  admin_password             = var.kms_cryptokey_id == "" ? var.admin_password : data.google_kms_secret.decrypted_admin_password[0].plaintext
 }
 
 resource "google_storage_bucket_object" "dc-sysprep-script" {
-  bucket  = var.bucket_name
-  name    = local.sysprep_filename
+  bucket = var.bucket_name
+  name   = local.sysprep_filename
   content = templatefile(
     "${path.module}/${local.sysprep_filename}.tmpl",
     {
@@ -107,7 +107,7 @@ resource "google_compute_instance" "dc" {
   }
 
   service_account {
-    email = var.gcp_service_account == "" ? null : var.gcp_service_account
+    email  = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }
@@ -118,7 +118,7 @@ resource "null_resource" "upload-scripts" {
     instance_id = google_compute_instance.dc.instance_id
   }
 
-/* Occasionally application of this resource may fail with an error along the
+  /* Occasionally application of this resource may fail with an error along the
    lines of "dial tcp <DC public IP>:5986: i/o timeout". A potential cause of
    this is when the sysprep script has not quite finished running to set up
    WinRM on the DC host in time for this step to connect. Increasing the timeout

@@ -99,10 +99,10 @@ module "dc" {
   domain_users_list           = var.domain_users_list
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name  = google_storage_bucket.scripts.name
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.dc-subnet.self_link
-  private_ip   = var.dc_private_ip
+  bucket_name = google_storage_bucket.scripts.name
+  gcp_zone    = var.gcp_zone
+  subnet      = google_compute_subnetwork.dc-subnet.self_link
+  private_ip  = var.dc_private_ip
   network_tags = [
     google_compute_firewall.allow-google-dns.name,
     google_compute_firewall.allow-rdp.name,
@@ -143,7 +143,7 @@ module "awc" {
   subnet_list            = google_compute_subnetwork.awc-subnets[*].self_link
   external_pcoip_ip_list = google_compute_address.nlb-ip[*].address
   enable_awc_external_ip = var.awc_enable_external_ip
-  network_tags           = [
+  network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,

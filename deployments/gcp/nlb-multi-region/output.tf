@@ -16,15 +16,15 @@ output "domain-controller-public-ip" {
 
 output "awc-load-balancer-ip" {
   value = {
-    for i in range(length(var.awc_region_list)):
-      var.awc_region_list[i] =>  google_compute_address.nlb-ip[i].address
+    for i in range(length(var.awc_region_list)) :
+    var.awc_region_list[i] => google_compute_address.nlb-ip[i].address
   }
 }
 
 output "awc-public-ip" {
   value = {
-    for i in range(length(var.awc_region_list)):
-      var.awc_region_list[i] => module.awc.public-ip[i]
+    for i in range(length(var.awc_region_list)) :
+    var.awc_region_list[i] => module.awc.public-ip[i]
   }
 }
 

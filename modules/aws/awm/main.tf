@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,8 +8,8 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   # Convert bool to iterable collection so it can be used with for_each
-  enable_public_ip = var.enable_public_ip ? [true] : []
-  awm_setup_script = "awm-setup.py"
+  enable_public_ip    = var.enable_public_ip ? [true] : []
+  awm_setup_script    = "awm-setup.py"
   provisioning_script = "awm-provisioning.sh"
 }
 
@@ -20,14 +20,15 @@ resource "aws_s3_object" "awm-setup-script" {
 }
 
 resource "aws_s3_object" "awm-provisioning-script" {
-  bucket  = var.bucket_name
-  key     = local.provisioning_script
+  bucket = var.bucket_name
+  key    = local.provisioning_script
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       awm_admin_password       = var.awm_admin_password,
       awm_aws_credentials_file = var.awm_aws_credentials_file,
       awm_deployment_sa_file   = var.awm_deployment_sa_file,
+      awm_repo_channel         = var.awm_repo_channel,
       awm_setup_script         = local.awm_setup_script,
       aws_region               = var.aws_region,
       aws_ssm_enable           = var.aws_ssm_enable,
@@ -63,7 +64,7 @@ data "aws_ami" "ami" {
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -97,10 +98,10 @@ data "aws_iam_policy_document" "awm-policy-doc" {
   }
 
   statement {
-    actions   = ["logs:CreateLogGroup",
-                 "logs:CreateLogStream",
-                 "logs:DescribeLogStreams",
-                 "logs:PutLogEvents"]
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+    "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
@@ -139,11 +140,11 @@ data "aws_iam_policy_document" "awm-policy-doc" {
   dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
@@ -161,8 +162,8 @@ data "aws_iam_policy_document" "awm-policy-doc" {
 }
 
 resource "aws_iam_role_policy" "awm-role-policy" {
-  name = "${local.prefix}awm_role_policy"
-  role = aws_iam_role.awm-role.id
+  name   = "${local.prefix}awm_role_policy"
+  role   = aws_iam_role.awm-role.id
   policy = data.aws_iam_policy_document.awm-policy-doc.json
 }
 
@@ -173,7 +174,7 @@ resource "aws_iam_instance_profile" "awm-instance-profile" {
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
   count = var.cloudwatch_enable ? 1 : 0
-  
+
   name = "${local.prefix}${var.host_name}"
 }
 
@@ -187,12 +188,12 @@ resource "aws_instance" "awm" {
   depends_on = [
     aws_s3_object.awm-setup-script,
     aws_s3_object.awm-provisioning-script,
-    # wait 5 seconds before deleting the log group to account for delays in 
+    # wait 5 seconds before deleting the log group to account for delays in
     # Cloudwatch receiving the last messages before an EC2 instance is shut down
     time_sleep.delay_destroy_log_group
   ]
 
-  subnet_id     = var.subnet
+  subnet_id = var.subnet
 
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type

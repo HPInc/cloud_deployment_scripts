@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -98,13 +98,14 @@ module "awm" {
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
   awm_admin_password      = var.awm_admin_password
+  awm_repo_channel        = var.awm_repo_channel
   teradici_download_token = var.teradici_download_token
 
   bucket_name              = module.shared-bucket.bucket.id
   awm_aws_credentials_file = local.awm_aws_credentials_file
   awm_deployment_sa_file   = local.awm_deployment_sa_file
 
-  subnet             = aws_subnet.awm-subnet.id
+  subnet = aws_subnet.awm-subnet.id
   security_group_ids = [
     aws_security_group.allow-internal.id,
     aws_security_group.allow-http.id,

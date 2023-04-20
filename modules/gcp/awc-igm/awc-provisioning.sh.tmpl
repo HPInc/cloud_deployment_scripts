@@ -279,8 +279,8 @@ wait_for_dc() {
           "host $DOMAIN_NAME" \
           "--> ERROR: Failed to resolve $DOMAIN_NAME."
 
-    log "--> Ensure domain $DOMAIN_NAME port 636 is reacheable..."
-    retry 120 `# 120 retries` \
+    log "--> Ensure domain $DOMAIN_NAME port 636 is reachable..."
+    retry 240 `# 240 retries` \
           10  `# 10s interval` \
           "nc -vz $DOMAIN_NAME 636" \
           "--> ERROR: Failed to contact $DOMAIN_NAME:636."

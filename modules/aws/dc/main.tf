@@ -16,7 +16,7 @@ locals {
   domain_users_list_file     = "C:/Temp/domain_users_list.csv"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
   sysprep_script             = "dc-sysprep.ps1"
-  admin_password = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
+  admin_password             = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
 }
 
 data "aws_kms_secrets" "decrypted_secrets" {
@@ -29,8 +29,8 @@ data "aws_kms_secrets" "decrypted_secrets" {
 }
 
 resource "aws_s3_object" "dc-sysprep-script" {
-  key     = local.sysprep_script
-  bucket  = var.bucket_name
+  key    = local.sysprep_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.sysprep_script}.tmpl",
     {
@@ -103,7 +103,7 @@ data "aws_ami" "ami" {
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -149,10 +149,10 @@ data "aws_iam_policy_document" "dc-policy-doc" {
   }
 
   statement {
-    actions   = ["logs:CreateLogGroup",
-                 "logs:CreateLogStream",
-                 "logs:DescribeLogStreams",
-                 "logs:PutLogEvents"]
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+    "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
@@ -161,11 +161,11 @@ data "aws_iam_policy_document" "dc-policy-doc" {
   dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
@@ -183,8 +183,8 @@ data "aws_iam_policy_document" "dc-policy-doc" {
 }
 
 resource "aws_iam_role_policy" "dc-role-policy" {
-  name = "${local.prefix}dc_role_policy"
-  role = aws_iam_role.dc-role.id
+  name   = "${local.prefix}dc_role_policy"
+  role   = aws_iam_role.dc-role.id
   policy = data.aws_iam_policy_document.dc-policy-doc.json
 }
 
@@ -195,7 +195,7 @@ resource "aws_iam_instance_profile" "dc-instance-profile" {
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
   count = var.cloudwatch_enable ? 1 : 0
-  
+
   name = local.host_name
 }
 
@@ -209,7 +209,7 @@ resource "aws_instance" "dc" {
   # wait 5 seconds before deleting the log group to account for delays in 
   # Cloudwatch receiving the last messages before an EC2 instance is shut down
   depends_on = [time_sleep.delay_destroy_log_group]
-  
+
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
 
@@ -239,7 +239,7 @@ resource "null_resource" "upload-scripts" {
     id = aws_instance.dc.id
   }
 
-/* Occasionally application of this resource may fail with an error along the
+  /* Occasionally application of this resource may fail with an error along the
    lines of "dial tcp <DC public IP>:5986: i/o timeout". A potential cause of
    this is when the sysprep script has not quite finished running to set up
    WinRM on the DC host in time for this step to connect. Increasing the timeout

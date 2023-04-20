@@ -100,10 +100,10 @@ module "dc" {
   safe_mode_admin_password    = var.safe_mode_admin_password
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name  = google_storage_bucket.scripts.name
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.dc-subnet.self_link
-  private_ip   = var.dc_private_ip
+  bucket_name = google_storage_bucket.scripts.name
+  gcp_zone    = var.gcp_zone
+  subnet      = google_compute_subnetwork.dc-subnet.self_link
+  private_ip  = var.dc_private_ip
   network_tags = [
     google_compute_firewall.allow-google-dns.name,
     google_compute_firewall.allow-rdp.name,
@@ -135,9 +135,9 @@ module "awm" {
   awm_deployment_sa_file = local.awm_deployment_sa_file
   gcp_sa_file            = local.gcp_sa_file
 
-  gcp_region   = var.gcp_region
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.awm-subnet.self_link
+  gcp_region = var.gcp_region
+  gcp_zone   = var.gcp_zone
+  subnet     = google_compute_subnetwork.awm-subnet.self_link
   network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
@@ -178,7 +178,7 @@ module "awc-igm" {
 
   gcp_region_list = var.awc_region_list
   subnet_list     = google_compute_subnetwork.awc-subnets[*].self_link
-  network_tags    = [
+  network_tags = [
     google_compute_firewall.allow-google-health-check.name,
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,

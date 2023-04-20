@@ -1,18 +1,18 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 variable "aws_credentials_file" {
-    description = "Location of AWS credentials file"
-    type        = string
+  description = "Location of AWS credentials file"
+  type        = string
 
-    validation {
-      condition = fileexists(var.aws_credentials_file)
-      error_message = "The aws_credentials_file specified does not exist. Please check the file path."
-    }
+  validation {
+    condition     = fileexists(var.aws_credentials_file)
+    error_message = "The aws_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "aws_region" {
@@ -28,7 +28,7 @@ variable "az_id_exclude_list" {
 }
 
 # NetBIOS name is limited to 15 characters. 10 characters are reserved for workstation type
-# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters. 
+# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters.
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 5 characters."
   default     = ""
@@ -59,7 +59,7 @@ variable "admin_ssh_pub_key_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.admin_ssh_pub_key_file)
+    condition     = fileexists(var.admin_ssh_pub_key_file)
     error_message = "The admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
@@ -71,7 +71,7 @@ variable "vpc_name" {
 
 variable "vpc_cidr" {
   description = "CIDR for the VPC containing the HP Anyware deployment"
-  default     = "10.0.0.0/16" 
+  default     = "10.0.0.0/16"
 }
 
 variable "dc_subnet_name" {
@@ -101,7 +101,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.02.15"
+  default     = "Windows_Server-2019-English-Full-Base-2023.04.12"
 }
 
 variable "dc_pcoip_agent_install" {
@@ -123,11 +123,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -162,7 +162,7 @@ variable "domain_users_list" {
   default     = ""
 
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
 }
@@ -204,13 +204,13 @@ variable "awm_admin_password" {
 }
 
 variable "awm_aws_credentials_file" {
-    description = "Location of AWS credentials file for Anyware Manager"
-    type        = string
+  description = "Location of AWS credentials file for Anyware Manager"
+  type        = string
 
-    validation {
-      condition = fileexists(var.awm_aws_credentials_file)
-      error_message = "The awm_aws_credentials_file specified does not exist. Please check the file path."
-    }
+  validation {
+    condition     = fileexists(var.awm_aws_credentials_file)
+    error_message = "The awm_aws_credentials_file specified does not exist. Please check the file path."
+  }
 }
 
 variable "awc_subnet_name" {
@@ -253,7 +253,7 @@ variable "tls_key" {
   default     = ""
 
   validation {
-    condition = var.tls_key == "" ? true : fileexists(var.tls_key)
+    condition     = var.tls_key == "" ? true : fileexists(var.tls_key)
     error_message = "The tls_key file specified does not exist. Please check the file path."
   }
 }
@@ -263,7 +263,7 @@ variable "tls_cert" {
   default     = ""
 
   validation {
-    condition = var.tls_cert == "" ? true : fileexists(var.tls_cert)
+    condition     = var.tls_cert == "" ? true : fileexists(var.tls_cert)
     error_message = "The tls_cert file specified does not exist. Please check the file path."
   }
 }
@@ -282,6 +282,11 @@ variable "pcoip_registration_code" {
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
+}
+
+variable "awm_repo_channel" {
+  description = "Anyware Manager images in Anyware Manager repository channel"
+  default     = "anyware-manager"
 }
 
 variable "ws_subnet_name" {
@@ -328,7 +333,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.02.15"
+  default     = "Windows_Server-2019-English-Full-Base-2023.04.12"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -363,7 +368,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.02.15"
+  default     = "Windows_Server-2019-English-Full-Base-2023.04.12"
 }
 
 variable "win_std_pcoip_agent_version" {
