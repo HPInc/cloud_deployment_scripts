@@ -142,8 +142,18 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   }
 }
 
-# resolve error "AccessControlListNotSupported: The bucket does not allow ACLs"
-# resource "aws_s3_bucket_acl" "scripts" {
-#   bucket = aws_s3_bucket.scripts.id
-#   acl    = "private"
-# }
+# Since April 2023, AWS S3 bucket ACL default is set to BucketOwnerEnforced and ACL disabled
+# Setting object_ownership to "BucketOwnerPreferred" to allow all uploads
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html
+resource "aws_s3_bucket_ownership_controls" "scripts" {
+  bucket = aws_s3_bucket.scripts.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "scripts" {
+  depends_on = [aws_s3_bucket_ownership_controls.scripts]
+  bucket = aws_s3_bucket.scripts.id
+  acl    = "private"
+}

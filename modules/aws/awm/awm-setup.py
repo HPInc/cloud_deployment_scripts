@@ -1,56 +1,33 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 Teradici Corporation
+# Copyright (c) 2020 Teradici Corporation;  © Copyright 2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import json 
+import json
 import requests
 import configparser
 import boto3
 from botocore.exceptions import ClientError
 
 AWM_API_URL = "https://localhost/api/v1"
-# The current temp path can be found in the Anyware Manager documentation.
-# https://www.teradici.com/web-help/anyware_manager/22.09/cam_standalone_installation/default_config/
-TEMP_CRED_PATH = "/opt/teradici/casm/temp-creds.txt"
-
-
-def get_temp_creds(path=TEMP_CRED_PATH):
-    data = {}
-
-    with open(path, 'r') as f:
-        for line in f:
-            key, value = map(str.strip, line.split(":"))
-            data[key] = value
-
-    return data['username'], data['password']
-
+ADMIN_USER = "adminUser"
 
 def awm_login(username, password):
     payload = {
-        'username': username, 
+        'username': username,
         'password': password,
     }
     resp = session.post(
         f"{AWM_API_URL}/auth/ad/login",
-        json=payload, 
+        json=payload,
     )
     resp.raise_for_status()
 
     token = resp.json()['data']['token']
     session.headers.update({"Authorization": token})
-
-
-def password_change(new_password):
-    payload = {'password': new_password}
-    resp = session.post(
-        f"{AWM_API_URL}/auth/ad/adminPassword",
-        json=payload,
-    )
-    resp.raise_for_status()
 
 
 def deployment_create(name, reg_code):
@@ -89,7 +66,7 @@ def deployment_key_write(deployment_key, path):
 def get_aws_sa_key(path):
     config = configparser.ConfigParser()
     config.read(path)
-    
+
     return config['default']
 
 
@@ -178,19 +155,16 @@ if __name__ == '__main__':
         total=10,
         backoff_factor=1,
         status_forcelist=[500,502,503,504],
-        method_whitelist=["POST"]
+        allowed_methods=["POST"] # "method_whitelist" deprecated
     )
     session.mount(
         "https://", requests.adapters.HTTPAdapter(max_retries=retry_strategy)
     )
 
-    print("Setting Anyware Manager Administrator password...")
-    user, password = get_temp_creds()
-    awm_login(user, password)
-    password_change(args.password)
-
+    # The credential for Anyware Manager login are stated in default configuration
+    # https://www.teradici.com/web-help/anyware_manager/23.04/cam_standalone_installation/default_config/#5-access-the-admin-console
     print("Creating Anyware Manager deployment...")
-    awm_login(user, args.password)
+    awm_login(ADMIN_USER, args.password)
     deployment = deployment_create(args.deployment_name, args.reg_code)
     awm_deployment_key = deployment_key_create(deployment, args.key_name)
     deployment_key_write(awm_deployment_key, args.key_file)

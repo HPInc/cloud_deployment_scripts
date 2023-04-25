@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -81,7 +81,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230315"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230414"
 }
 
 variable "dc_admin_password" {
@@ -397,7 +397,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230315"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230414"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -427,7 +427,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230315"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230414"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -528,4 +528,9 @@ variable "gcp_iap_enable" {
 variable "gcp_logging_retention_days" {
   description = "Retention period for created logging storage bucket"
   default     = 30
+}
+
+variable "awm_repo_channel" {
+  description = "Repository Channel for installing the Anyware Manager"
+  default     = "anyware-manager"
 }
