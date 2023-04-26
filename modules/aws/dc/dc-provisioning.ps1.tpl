@@ -274,6 +274,10 @@ if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
 }
 
 "================================================================"
-"Restarting computer..."
+"Restarting computer after 60 sec..."
 "================================================================"
+# This sleep is to fix the the remote-exec provisioner error "read: connection reset by peer"
+# To avoid this error, we are adding a delay before restarting the computer to 
+# allow enough time for the remote-exec provisioner to complete its execution.
+Start-Sleep -Seconds 60 # Add a delay of 60 seconds
 Restart-Computer -Force
