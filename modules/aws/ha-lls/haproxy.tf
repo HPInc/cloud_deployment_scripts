@@ -14,12 +14,12 @@ locals {
 }
 
 resource "aws_s3_object" "haproxy-provisioning-script" {
-  key     = local.haproxy_provisioning_script
-  bucket  = var.bucket_name
+  key    = local.haproxy_provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.haproxy_provisioning_script}.tmpl",
     {
-      aws_region              = var.aws_region, 
+      aws_region              = var.aws_region,
       aws_ssm_enable          = var.aws_ssm_enable,
       bucket_name             = var.bucket_name,
       cloudwatch_enable       = var.cloudwatch_enable,
@@ -82,18 +82,18 @@ resource "aws_iam_role" "haproxy-role" {
 
 data "aws_iam_policy_document" "haproxy-policy-doc" {
   statement {
-    actions   = ["s3:GetObject"]
+    actions = ["s3:GetObject"]
     resources = [
       "arn:aws:s3:::${var.bucket_name}/${local.haproxy_provisioning_script}",
       "arn:aws:s3:::${var.bucket_name}/${local.haproxy_config}",
       "arn:aws:s3:::${var.bucket_name}/${local.keepalived_config}",
       "arn:aws:s3:::${var.bucket_name}/${local.keepalived_notify_master_script}",
     ]
-    effect    = "Allow"
+    effect = "Allow"
   }
 
   statement {
-    actions   = ["ec2:AssignPrivateIpAddresses"]      
+    actions   = ["ec2:AssignPrivateIpAddresses"]
     resources = ["*"]
     effect    = "Allow"
   }
@@ -111,10 +111,10 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
   }
 
   statement {
-    actions   = ["logs:CreateLogGroup",
-                 "logs:CreateLogStream",
-                 "logs:DescribeLogStreams",
-                 "logs:PutLogEvents"]
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+    "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
@@ -123,11 +123,11 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
   dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
@@ -145,8 +145,8 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
 }
 
 resource "aws_iam_role_policy" "haproxy-role-policy" {
-  name = "${local.prefix}haproxy_role_policy"
-  role = aws_iam_role.haproxy-role.id
+  name   = "${local.prefix}haproxy_role_policy"
+  role   = aws_iam_role.haproxy-role.id
   policy = data.aws_iam_policy_document.haproxy-policy-doc.json
 }
 
@@ -198,7 +198,7 @@ resource "aws_instance" "haproxy_master" {
 
 resource "aws_cloudwatch_log_group" "instance-log-group-ha-backup" {
   count = var.cloudwatch_enable ? 1 : 0
-  
+
   name = "${local.haproxy_host_name}-backup"
 }
 

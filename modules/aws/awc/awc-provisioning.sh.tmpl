@@ -33,7 +33,7 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
 
 AWC_BIN_PATH="/usr/local/bin/anyware-connector"
-AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager-beta/cfg/setup/bash.rpm.sh"
+AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager/cfg/setup/bash.rpm.sh"
 AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
 CONNECTOR_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 
@@ -268,7 +268,7 @@ wait_for_dc() {
 
     set +x
     log "--> Ensure AD account is available..."
-    retry 120 `# 120 retries` \
+    retry 240 `# 240 retries` \
           10  `# 10s interval` \
           "ldapwhoami \
             -H ldap://$DOMAIN_CONTROLLER_IP \

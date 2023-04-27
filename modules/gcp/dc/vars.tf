@@ -51,9 +51,9 @@ variable "ldaps_cert_filename" {
 variable "domain_users_list" {
   description = "Active Directory users to create, in CSV format"
   default     = ""
-  
+
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
 }
@@ -106,6 +106,11 @@ variable "kms_cryptokey_id" {
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
+}
+
+variable "pcoip_agent_install" {
+  description = "Install PCoIP agent"
+  default     = false
 }
 
 variable "pcoip_agent_version" {

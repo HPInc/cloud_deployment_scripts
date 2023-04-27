@@ -167,6 +167,11 @@ set +x
 # start before running any LLS commands. 
 retry 10 `# 10 retries` \
       10 `# 10s interval` \
+      "systemctl is-active flexnetls-TERADICI.service" \
+      "--> ERROR: Flexnetls service is not active."
+
+retry 10 `# 10 retries` \
+      10 `# 10s interval` \
       "pcoip-set-password -p 1P@ssw0rd! -n $LLS_ADMIN_PASSWORD" \
       "--> ERROR: Failed to set new password."
 

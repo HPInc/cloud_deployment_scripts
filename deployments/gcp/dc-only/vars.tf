@@ -10,7 +10,7 @@ variable "gcp_credentials_file" {
   type        = string
 
   validation {
-    condition = fileexists(var.gcp_credentials_file)
+    condition     = fileexists(var.gcp_credentials_file)
     error_message = "The gcp_credentials_file specified does not exist. Please check the file path."
   }
 }
@@ -76,13 +76,18 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20221014"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230414"
 }
 
 variable "dc_admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
   sensitive   = true
+}
+
+variable "dc_pcoip_agent_install" {
+  description = "Install PCoIP agent on Domain Controller"
+  default     = false
 }
 
 variable "dc_pcoip_agent_version" {
@@ -99,11 +104,11 @@ variable "domain_name" {
   */
   validation {
     condition = (
-      length(regexall("([.]local$)",var.domain_name)) == 0 &&
+      length(regexall("([.]local$)", var.domain_name)) == 0 &&
       length(var.domain_name) < 256 &&
       can(regex(
-        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)", 
-        var.domain_name))
+        "(^[A-Za-z0-9][A-Za-z0-9-]{0,13}[A-Za-z0-9][.])([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9][.]){0,1}([A-Za-z]{2,}$)",
+      var.domain_name))
     )
     error_message = "Domain name is invalid. Please try again."
   }
@@ -132,7 +137,7 @@ variable "domain_users_list" {
   default     = ""
 
   validation {
-    condition = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
+    condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
 }

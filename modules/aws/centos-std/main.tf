@@ -18,14 +18,14 @@ locals {
 resource "aws_s3_object" "centos-std-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  key     = local.provisioning_script
-  bucket  = var.bucket_name
+  key    = local.provisioning_script
+  bucket = var.bucket_name
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       ad_service_account_password = var.ad_service_account_password,
       ad_service_account_username = var.ad_service_account_username,
-      aws_region                  = var.aws_region, 
+      aws_region                  = var.aws_region,
       aws_ssm_enable              = var.aws_ssm_enable,
       bucket_name                 = var.bucket_name,
       cloudwatch_enable           = var.cloudwatch_enable,
@@ -70,7 +70,7 @@ data "aws_ami" "ami" {
 
 data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -112,10 +112,10 @@ data "aws_iam_policy_document" "centos-std-policy-doc" {
   }
 
   statement {
-    actions   = ["logs:CreateLogGroup",
-                 "logs:CreateLogStream",
-                 "logs:DescribeLogStreams",
-                 "logs:PutLogEvents"]
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+    "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
     effect    = "Allow"
   }
@@ -124,11 +124,11 @@ data "aws_iam_policy_document" "centos-std-policy-doc" {
   dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
     content {
-      actions   = ["ssm:UpdateInstanceInformation",
-                  "ssmmessages:CreateControlChannel",
-                  "ssmmessages:CreateDataChannel",
-                  "ssmmessages:OpenControlChannel",
-                  "ssmmessages:OpenDataChannel"]
+      actions = ["ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
@@ -148,8 +148,8 @@ data "aws_iam_policy_document" "centos-std-policy-doc" {
 resource "aws_iam_role_policy" "centos-std-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "${local.prefix}centos_std_role_policy"
-  role = aws_iam_role.centos-std-role[0].id
+  name   = "${local.prefix}centos_std_role_policy"
+  role   = aws_iam_role.centos-std-role[0].id
   policy = data.aws_iam_policy_document.centos-std-policy-doc.json
 }
 
@@ -162,7 +162,7 @@ resource "aws_iam_instance_profile" "centos-std-instance-profile" {
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
   count = var.cloudwatch_enable ? var.instance_count : 0
-  
+
   name = "${local.host_name}-${count.index}"
 }
 
@@ -207,7 +207,7 @@ resource "aws_cloudwatch_dashboard" "main" {
   count = var.cloudwatch_enable ? var.instance_count : 0
 
   dashboard_name = "${local.host_name}-${count.index}"
-  
+
   dashboard_body = <<EOF
 {
     "widgets": [

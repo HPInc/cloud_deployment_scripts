@@ -1,17 +1,17 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 locals {
-  prefix      = var.prefix != "" ? "${var.prefix}-" : ""
-  bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
+  prefix = var.prefix != "" ? "${var.prefix}-" : ""
   # Name of Anyware Manager deployment service account key file in bucket
-  awm_deployment_sa_file      = "awm-deployment-sa-key.json"
-  admin_ssh_key_name          = "${local.prefix}${var.admin_ssh_key_name}"
-  awm_aws_credentials_file    = "awm-aws-credentials.ini"
+  awm_deployment_sa_file   = "awm-deployment-sa-key.json"
+  admin_ssh_key_name       = "${local.prefix}${var.admin_ssh_key_name}"
+  awm_aws_credentials_file = "awm-aws-credentials.ini"
+
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
   ldaps_cert_filename         = "ldaps_cert.pem"
@@ -22,26 +22,13 @@ resource "aws_key_pair" "anyware_admin" {
   public_key = file(var.admin_ssh_pub_key_file)
 }
 
-resource "random_id" "bucket-name" {
-  byte_length = 3
-}
-
-resource "aws_s3_bucket" "scripts" {
-  bucket        = local.bucket_name
-  force_destroy = true
-
-  tags = {
-    Name = local.bucket_name
-  }
-}
-
-resource "aws_s3_bucket_acl" "scripts" {
-  bucket = aws_s3_bucket.scripts.id
-  acl    = "private"
+module "shared-bucket" {
+  source = "../../../modules/aws/shared-bucket"
+  prefix = var.prefix
 }
 
 resource "aws_s3_object" "awm_aws_credentials_file" {
-  bucket = aws_s3_bucket.scripts.bucket
+  bucket = module.shared-bucket.bucket.id
   key    = local.awm_aws_credentials_file
   source = var.awm_aws_credentials_file
 }
@@ -49,7 +36,7 @@ resource "aws_s3_object" "awm_aws_credentials_file" {
 resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
-  bucket = aws_s3_bucket.scripts.id
+  bucket = module.shared-bucket.bucket.id
   key    = local.cloudwatch_setup_rpm_script
   source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
 }
@@ -57,7 +44,7 @@ resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
 resource "aws_s3_object" "cloudwatch-setup-win-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
-  bucket = aws_s3_bucket.scripts.id
+  bucket = module.shared-bucket.bucket.id
   key    = local.cloudwatch_setup_win_script
   source = "../../../shared/aws/${local.cloudwatch_setup_win_script}"
 }
@@ -67,6 +54,7 @@ module "dc" {
 
   prefix = var.prefix
 
+  pcoip_agent_install     = var.dc_pcoip_agent_install
   pcoip_agent_version     = var.dc_pcoip_agent_version
   pcoip_registration_code = ""
   teradici_download_token = var.teradici_download_token
@@ -80,10 +68,10 @@ module "dc" {
   domain_users_list           = var.domain_users_list
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.dc-subnet.id
+  bucket_name = module.shared-bucket.bucket.id
+  subnet      = aws_subnet.dc-subnet.id
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-rdp.id,
     aws_security_group.allow-winrm.id,
     aws_security_group.allow-icmp.id,
@@ -110,15 +98,16 @@ module "awm" {
   customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
   awm_admin_password      = var.awm_admin_password
+  awm_repo_channel        = var.awm_repo_channel
   teradici_download_token = var.teradici_download_token
 
-  bucket_name              = aws_s3_bucket.scripts.id
+  bucket_name              = module.shared-bucket.bucket.id
   awm_aws_credentials_file = local.awm_aws_credentials_file
   awm_deployment_sa_file   = local.awm_deployment_sa_file
 
-  subnet             = aws_subnet.awm-subnet.id
+  subnet = aws_subnet.awm-subnet.id
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-http.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
@@ -152,10 +141,10 @@ module "lls" {
   lls_license_count       = var.lls_license_count
   teradici_download_token = var.teradici_download_token
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.lls-subnet.id
+  bucket_name = module.shared-bucket.bucket.id
+  subnet      = aws_subnet.lls-subnet.id
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
@@ -180,8 +169,8 @@ resource "aws_lb" "awc-alb" {
   name               = "${local.prefix}awc-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [
-    data.aws_security_group.default.id,
+  security_groups = [
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-pcoip.id,
@@ -285,13 +274,13 @@ module "awc" {
   instance_count_list = var.awc_instance_count_list
 
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-pcoip.id,
   ]
 
-  bucket_name   = aws_s3_bucket.scripts.id
+  bucket_name   = module.shared-bucket.bucket.id
   instance_type = var.awc_instance_type
   disk_size_gb  = var.awc_disk_size_gb
 
@@ -339,11 +328,11 @@ module "win-gfx" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = module.shared-bucket.bucket.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-rdp.id,
   ]
@@ -386,11 +375,11 @@ module "win-std" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = module.shared-bucket.bucket.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-rdp.id,
   ]
@@ -432,11 +421,11 @@ module "centos-gfx" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = module.shared-bucket.bucket.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]
@@ -485,11 +474,11 @@ module "centos-std" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
 
-  bucket_name        = aws_s3_bucket.scripts.id
-  subnet             = aws_subnet.ws-subnet.id
-  enable_public_ip   = var.enable_workstation_public_ip
+  bucket_name      = module.shared-bucket.bucket.id
+  subnet           = aws_subnet.ws-subnet.id
+  enable_public_ip = var.enable_workstation_public_ip
   security_group_ids = [
-    data.aws_security_group.default.id,
+    aws_security_group.allow-internal.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-ssh.id,
   ]

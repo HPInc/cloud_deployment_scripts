@@ -28,7 +28,7 @@ TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 USERS_DN=${users_dn}
 
 AWC_BIN_PATH="/usr/local/bin/anyware-connector"
-AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager-beta/cfg/setup/bash.rpm.sh"
+AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager/cfg/setup/bash.rpm.sh"
 AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
 AWC_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 LOG_FILE="/var/log/teradici/provisioning.log"
@@ -298,8 +298,8 @@ wait_for_dc() {
           "host $DOMAIN_NAME" \
           "--> ERROR: Failed to resolve $DOMAIN_NAME."
 
-    log "--> Ensure domain $DOMAIN_NAME port 636 is reacheable..."
-    retry 120 `# 120 retries` \
+    log "--> Ensure domain $DOMAIN_NAME port 636 is reachable..."
+    retry 240 `# 240 retries` \
           10  `# 10s interval` \
           "nc -vz $DOMAIN_NAME 636" \
           "--> ERROR: Failed to contact $DOMAIN_NAME:636."

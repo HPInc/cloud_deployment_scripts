@@ -83,6 +83,7 @@ module "dc" {
 
   prefix = var.prefix
 
+  pcoip_agent_install     = var.dc_pcoip_agent_install
   pcoip_agent_version     = var.dc_pcoip_agent_version
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -97,10 +98,10 @@ module "dc" {
   domain_users_list           = var.domain_users_list
   ldaps_cert_filename         = local.ldaps_cert_filename
 
-  bucket_name  = google_storage_bucket.scripts.name
-  gcp_zone     = var.gcp_zone
-  subnet       = google_compute_subnetwork.dc-subnet.self_link
-  private_ip   = var.dc_private_ip
+  bucket_name = google_storage_bucket.scripts.name
+  gcp_zone    = var.gcp_zone
+  subnet      = google_compute_subnetwork.dc-subnet.self_link
+  private_ip  = var.dc_private_ip
   network_tags = [
     google_compute_firewall.allow-google-dns.name,
     google_compute_firewall.allow-rdp.name,
@@ -139,7 +140,7 @@ module "awc" {
 
   gcp_region_list = [var.gcp_region]
   subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
-  network_tags    = [
+  network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,

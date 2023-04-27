@@ -13,6 +13,7 @@ $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
+$PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
@@ -260,14 +261,16 @@ Remove-Item -Path $pemCert
 "================================================================"
 sc.exe config ADWS start= delayed-auto 
 
-if (PCoIP-Agent-is-Installed) {
-    "--> PCoIP standard agent is already installed. Skipping..."
-} else {
-    PCoIP-Agent-Install
-}
+if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
+    if (PCoIP-Agent-is-Installed) {
+        "--> PCoIP standard agent is already installed. Skipping..."
+    } else {
+        PCoIP-Agent-Install
+    }
 
-if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
-    PCoIP-Agent-Register
+    if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
+        PCoIP-Agent-Register
+    }
 }
 
 "================================================================"

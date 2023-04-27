@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright (c) 2020 Teradici Corporation; © Copyright 2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,13 +20,14 @@ resource "google_storage_bucket_object" "awm-post-install-script" {
 }
 
 resource "google_storage_bucket_object" "awm-provisioning-script" {
-  bucket  = var.bucket_name
-  name    = local.provisioning_script
+  bucket = var.bucket_name
+  name   = local.provisioning_script
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       awm_deployment_sa_file  = var.awm_deployment_sa_file,
       awm_admin_password      = var.awm_admin_password,
+      awm_repo_channel        = var.awm_repo_channel,
       awm_setup_script        = local.awm_setup_script,
       bucket_name             = var.bucket_name,
       gcp_ops_agent_enable    = var.gcp_ops_agent_enable,
@@ -66,12 +67,12 @@ resource "google_compute_instance" "awm" {
   tags = var.network_tags
 
   metadata = {
-    ssh-keys = "${var.awm_admin_user}:${file(var.awm_admin_ssh_pub_key_file)}"
+    ssh-keys           = "${var.awm_admin_user}:${file(var.awm_admin_ssh_pub_key_file)}"
     startup-script-url = "gs://${var.bucket_name}/${google_storage_bucket_object.awm-provisioning-script.output_name}"
   }
 
   service_account {
-    email = var.gcp_service_account == "" ? null : var.gcp_service_account
+    email  = var.gcp_service_account == "" ? null : var.gcp_service_account
     scopes = ["cloud-platform"]
   }
 }
