@@ -279,11 +279,6 @@ variable "awc_extra_install_flags" {
   default     = ""
 }
 
-variable "awc_version" {
-  description = "Version of the Anyware Connector to install"
-  default     = "latest"
-}
-
 variable "awc_enable_external_ip" {
   description = "Enable external IP address assignments for each Connector. For testing/debugging purposes only"
   default     = false

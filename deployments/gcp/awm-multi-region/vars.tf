@@ -271,11 +271,6 @@ variable "awc_extra_install_flags" {
   default     = ""
 }
 
-variable "awc_version" {
-  description = "Version of the Anyware Connector to install"
-  default     = "latest"
-}
-
 variable "glb_tls_key" {
   description = "TLS private key for the Global Load Balancer in PEM format"
   default     = ""
