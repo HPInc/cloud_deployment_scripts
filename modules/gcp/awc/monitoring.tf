@@ -8,7 +8,7 @@
 resource "google_logging_metric" "overall-connection-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "overall-connections"
+  name            = "${local.prefix}overall-connections"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"UDP connections currently working\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"get_statistics returning ([0-9]*) UDP connections currently working\")"
 
@@ -38,7 +38,7 @@ resource "google_logging_metric" "overall-connection-metric" {
 resource "google_logging_metric" "users-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "user_num"
+  name            = "${local.prefix}user_num"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"Users in active directory\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"Found ([0-9]*) users\")"
 
@@ -67,7 +67,7 @@ resource "google_logging_metric" "users-metric" {
 resource "google_logging_metric" "machines-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "machine_num"
+  name            = "${local.prefix}machine_num"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"Machines in active directory\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"Found ([0-9]*) machines\")"
 
@@ -96,7 +96,7 @@ resource "google_logging_metric" "machines-metric" {
 resource "google_logging_metric" "latency-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "top5-latency"
+  name            = "${local.prefix}top5-latency"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"Tx thread info: round trip time\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"= (.*), variance\")"
 
@@ -125,7 +125,7 @@ resource "google_logging_metric" "latency-metric" {
 resource "google_logging_metric" "rxloss-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "top10-rxloss"
+  name            = "${local.prefix}top10-rxloss"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"(A/I/O) Loss=\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"\\\\(A/I/O\\\\) Loss=(.*)%/\")"
 
@@ -154,7 +154,7 @@ resource "google_logging_metric" "rxloss-metric" {
 resource "google_logging_metric" "txloss-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
   
-  name            = "top10-txloss"
+  name            = "${local.prefix}top10-txloss"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"(A/I/O) Loss=\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"%/(.*)% \\\\(R/T\\\\)\")"
 
@@ -183,7 +183,7 @@ resource "google_logging_metric" "txloss-metric" {
 resource "google_logging_metric" "txdata-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "top5-txdata"
+  name            = "${local.prefix}top5-txdata"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"MGMT_PCOIP_DATA :Tx thread info: bw limit\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"avg tx = (.*),\")"
 
@@ -212,7 +212,7 @@ resource "google_logging_metric" "txdata-metric" {
 resource "google_logging_metric" "rxdata-metric" {
   count           = var.gcp_ops_agent_enable ? 1 : 0
 
-  name            = "top5-rxdata"
+  name            = "${local.prefix}top5-rxdata"
   filter          = "resource.type=\"gce_instance\" AND jsonPayload.message:\"MGMT_PCOIP_DATA :Tx thread info: bw limit\""
   value_extractor = "REGEXP_EXTRACT(jsonPayload.message, \"avg rx = (.*) \\\\(kbit\")"
 
