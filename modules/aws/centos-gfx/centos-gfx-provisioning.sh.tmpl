@@ -78,13 +78,13 @@ setup_cloudwatch(){
         dos2unix $CLOUDWATCH_SETUP_SCRIPT
 
         . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
-            $LOG_FILE                                   "[%a %b %d %H:%M:%S %Z %Y]" \
+            $LOG_FILE                                   "%b %d %H:%M:%S" \
             "/var/log/messages"                         "%b %d %H:%M:%S" \
-            "/var/log/nvidia-installer.log"             "%a %b %d %H:%M:%S %Y" \
-            "/var/log/pcoip-agent/agent.log"            "%Y-%m-%dT%H:%M:%S.%fZ" \
-            "/var/log/pcoip-agent/server*.log"          "%Y-%m-%dT%H:%M:%S.%fZ" \
-            "/var/log/pcoip-agent/session-launcher.log" "%Y-%m-%dT%H:%M:%S.%fZ" \
-            "/var/log/teradici/user-data.log"           "[%a %b %d %H:%M:%S %Z %Y]" \
+            "/var/log/nvidia-installer.log"             "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/agent.log"            "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/server*.log"          "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/session-launcher.log" "%b %d %H:%M:%S" \
+            "/var/log/teradici/user-data.log"           "%b %d %H:%M:%S" \
             "/var/log/yum.log"                          "%b %d %H:%M:%S"
     fi
 }
@@ -295,7 +295,7 @@ register_pcoip_agent() {
 
 install_auto_logoff() {
     # Auto logoff tool terminates a user session after the PCoIP session has been terminated. Please see the documentation for more details:
-    # https://www.teradici.com/web-help/cas_manager/current/admin_console/workstation_pools/#auto-log-off-service
+    # https://www.teradici.com/web-help/anyware_manager/22.09/admin_console/workstation_pools/#auto-log-off-service
 
     log "--> Installing PCoIP agent auto-logoff..."
     retry   3 `# 3 retries` \

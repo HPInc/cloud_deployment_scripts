@@ -13,8 +13,8 @@ locals {
   awm_aws_credentials_file = "awm-aws-credentials.ini"
 
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
-  cloudwatch_setup_deb_script = "cloudwatch_setup_deb.sh"
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
+  ldaps_cert_filename         = "ldaps_cert.pem"
 }
 
 resource "aws_key_pair" "anyware_admin" {
@@ -39,14 +39,6 @@ resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   bucket = module.shared-bucket.bucket.id
   key    = local.cloudwatch_setup_rpm_script
   source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
-}
-
-resource "aws_s3_object" "cloudwatch-setup-deb-script" {
-  count = var.cloudwatch_enable ? 1 : 0
-
-  bucket = module.shared-bucket.bucket.id
-  key    = local.cloudwatch_setup_deb_script
-  source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
 }
 
 resource "aws_s3_object" "cloudwatch-setup-win-script" {
@@ -74,6 +66,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name = module.shared-bucket.bucket.id
   subnet      = aws_subnet.dc-subnet.id
@@ -134,14 +127,14 @@ module "awm" {
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
-module "cac" {
-  source = "../../../modules/aws/cac"
+module "awc" {
+  source = "../../../modules/aws/awc"
 
   prefix = var.prefix
 
   awm_deployment_sa_file    = local.awm_deployment_sa_file
   aws_region                = var.aws_region
-  cac_flag_manager_insecure = true
+  awc_flag_manager_insecure = true
   customer_master_key_id    = var.customer_master_key_id
   manager_url               = "https://${module.awm.internal-ip}"
 
@@ -149,10 +142,13 @@ module "cac" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
-  zone_list           = [aws_subnet.cac-subnet.availability_zone]
-  subnet_list         = [aws_subnet.cac-subnet.id]
-  instance_count_list = [var.cac_instance_count]
+  zone_list           = [aws_subnet.awc-subnet.availability_zone]
+  subnet_list         = [aws_subnet.awc-subnet.id]
+  instance_count_list = [var.awc_instance_count]
 
   security_group_ids = [
     aws_security_group.allow-internal.id,
@@ -162,25 +158,29 @@ module "cac" {
   ]
 
   bucket_name   = module.shared-bucket.bucket.id
-  instance_type = var.cac_instance_type
-  disk_size_gb  = var.cac_disk_size_gb
+  instance_type = var.awc_instance_type
+  disk_size_gb  = var.awc_disk_size_gb
 
-  ami_owner = var.cac_ami_owner
-  ami_name  = var.cac_ami_name
+  ami_owner = var.awc_ami_owner
+  ami_name  = var.awc_ami_name
 
-  cac_version             = var.cac_version
   teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  ssl_key  = var.ssl_key
-  ssl_cert = var.ssl_cert
+  tls_key  = var.tls_key
+  tls_cert = var.tls_cert
 
-  cac_extra_install_flags = var.cac_extra_install_flags
+  awc_extra_install_flags = var.awc_extra_install_flags
 
   aws_ssm_enable          = var.aws_ssm_enable
   cloudwatch_enable       = var.cloudwatch_enable
-  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
+
+  centos_gfx_instance_count = var.centos_gfx_instance_count
+  centos_std_instance_count = var.centos_std_instance_count
+  win_gfx_instance_count    = var.win_gfx_instance_count
+  win_std_instance_count    = var.win_std_instance_count
 }
 
 module "win-gfx" {

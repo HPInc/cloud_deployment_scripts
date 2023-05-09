@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2019-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -62,7 +62,7 @@ resource "google_compute_firewall" "allow-internal" {
 
   source_ranges = concat(
     [var.dc_subnet_cidr],
-    var.cac_subnet_cidr_list,
+    var.awc_subnet_cidr_list,
     var.ws_subnet_cidr_list
   )
 }
@@ -183,12 +183,12 @@ resource "google_compute_subnetwork" "dc-subnet" {
   network       = google_compute_network.vpc.self_link
 }
 
-resource "google_compute_subnetwork" "cac-subnets" {
-  count = length(var.cac_region_list)
+resource "google_compute_subnetwork" "awc-subnets" {
+  count = length(var.awc_region_list)
 
-  name          = "${local.prefix}${var.cac_subnet_name}-${var.cac_region_list[count.index]}"
-  region        = var.cac_region_list[count.index]
-  ip_cidr_range = var.cac_subnet_cidr_list[count.index]
+  name          = "${local.prefix}${var.awc_subnet_name}-${var.awc_region_list[count.index]}"
+  region        = var.awc_region_list[count.index]
+  ip_cidr_range = var.awc_subnet_cidr_list[count.index]
   network       = google_compute_network.vpc.self_link
 }
 

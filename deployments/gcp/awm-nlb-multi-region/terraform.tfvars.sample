@@ -47,26 +47,26 @@ gcp_credentials_file = "/path/to/gcp_cred.json"
 awm_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
 ##############################
-#   Cloud Access Connector   #
+#      Anyware Connector     #
 ##############################
 # Specify the regions, subnet CIDRs and number of connectors to create per
 # region. For example:
-#   cac_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
-#   cac_subnet_cidr_list    = ["10.0.1.0/24", "10.1.1.0/24",    "10.2.1.0/24"]
-#   cac_instance_count_list = [2,             3,                4]
+#   awc_region_list         = ["us-west2",    "europe-west4",   "asia-southeast1"]
+#   awc_subnet_cidr_list    = ["10.0.1.0/24", "10.1.1.0/24",    "10.2.1.0/24"]
+#   awc_instance_count_list = [2,             3,                4]
 
-cac_region_list         = []
-cac_subnet_cidr_list    = []
-cac_instance_count_list = []
+awc_region_list         = []
+awc_subnet_cidr_list    = []
+awc_instance_count_list = []
 
-cac_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
+awc_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
-# cac_machine_type = "n1-standard-2"
-# cac_disk_size_gb = 50
+# awc_machine_type = "e2-custom-4-8192"
+# awc_disk_size_gb = 60
 
-# Optional: SSL Private Key & Certificate for the Connectors
-# cac_ssl_key  = "/path/to/privkey.pem"
-# cac_ssl_cert = "/path/to/fullchain.pem"
+# Optional: TLS Private Key & Certificate for the Connectors
+# awc_tls_key  = "/path/to/privkey.pem"
+# awc_tls_cert = "/path/to/fullchain.pem"
 
 ####################
 #   Workstations   #

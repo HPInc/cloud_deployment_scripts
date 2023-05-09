@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,9 +17,9 @@ output "awm-public-ip" {
   value = module.awm.public-ip
 }
 
-output "cac-load-balancer-ip" {
-  #value = data.google_compute_forwarding_rule.cac-fwdrule.ip_address
-  value = google_compute_global_forwarding_rule.cac-fwdrule.ip_address
+output "awc-load-balancer-ip" {
+  #value = data.google_compute_forwarding_rule.awc-fwdrule.ip_address
+  value = google_compute_global_forwarding_rule.awc-fwdrule.ip_address
 }
 
 output "win-gfx-internal-ip" {

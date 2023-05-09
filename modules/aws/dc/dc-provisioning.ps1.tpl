@@ -12,6 +12,7 @@ $CLOUDWATCH_ENABLE           = "${cloudwatch_enable}"
 $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
+$LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
@@ -239,6 +240,23 @@ if (!(Test-Path $certStoreLoc)) {
 Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thumbprint -Destination $certStoreLoc;
 
 "================================================================"
+"Uploading LDAPS Cert to Bucket..."
+"================================================================"
+# Save LDAPS Cert as a Base64 encoded DER certificate
+$derCert = "C:\Teradici\LdapsCert.der"
+$pemCert = "C:\Teradici\LdapsCert.pem"
+$myCertLoc = 'cert:\LocalMachine\My\' + $thumbprint
+Export-Certificate -Cert $myCertLoc -FilePath $derCert -Type CERT
+certutil -encode $derCert $pemCert
+
+# Upload to S3 Bucket
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /quiet /passive
+Write-S3Object -BucketName $BUCKET_NAME -File $pemCert -Key $LDAPS_CERT_FILENAME
+
+Remove-Item -Path $derCert
+Remove-Item -Path $pemCert
+
+"================================================================"
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."
 "================================================================"
 sc.exe config ADWS start= delayed-auto 
@@ -256,6 +274,10 @@ if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
 }
 
 "================================================================"
-"Restarting computer..."
+"Restarting computer after 60 sec..."
 "================================================================"
+# This sleep is to fix the the remote-exec provisioner error "read: connection reset by peer"
+# To avoid this error, we are adding a delay before restarting the computer to 
+# allow enough time for the remote-exec provisioner to complete its execution.
+Start-Sleep -Seconds 60 # Add a delay of 60 seconds
 Restart-Computer -Force

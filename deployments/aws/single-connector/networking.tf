@@ -25,8 +25,8 @@ locals {
 }
 
 resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_support   = true
+  cidr_block         = var.vpc_cidr
+  enable_dns_support = true
   # Required to set dns hostname enabled 
   # https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint
   enable_dns_hostnames = true
@@ -46,13 +46,13 @@ resource "aws_subnet" "dc-subnet" {
   }
 }
 
-resource "aws_subnet" "cac-subnet" {
-  cidr_block        = var.cac_subnet_cidr
+resource "aws_subnet" "awc-subnet" {
+  cidr_block        = var.awc_subnet_cidr
   vpc_id            = aws_vpc.vpc.id
   availability_zone = data.aws_availability_zones.available_az.names[0]
 
   tags = {
-    Name = "${local.prefix}${var.cac_subnet_name}"
+    Name = "${local.prefix}${var.awc_subnet_name}"
   }
 }
 
@@ -84,7 +84,7 @@ resource "aws_eip" "nat-ip" {
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat-ip.id
-  subnet_id     = aws_subnet.cac-subnet.id
+  subnet_id     = aws_subnet.awc-subnet.id
 
   tags = {
     Name = "${local.prefix}nat"
@@ -124,8 +124,8 @@ resource "aws_route_table_association" "rt-dc" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "rt-cac" {
-  subnet_id      = aws_subnet.cac-subnet.id
+resource "aws_route_table_association" "rt-awc" {
+  subnet_id      = aws_subnet.awc-subnet.id
   route_table_id = aws_route_table.public.id
 }
 
@@ -316,7 +316,7 @@ resource "aws_route53_resolver_endpoint" "outbound" {
   # minimum, config has 1 declared" without the second ip_address block with a
   # different subnet.
   ip_address {
-    subnet_id = aws_subnet.cac-subnet.id
+    subnet_id = aws_subnet.awc-subnet.id
   }
 
   tags = {
@@ -355,7 +355,7 @@ resource "aws_vpc_endpoint" "ec2" {
   # Select one subnet per Availability Zone from which you'll access the AWS service
   # https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint
   subnet_ids = [
-    aws_subnet.cac-subnet.id,
+    aws_subnet.awc-subnet.id,
   ]
   security_group_ids = [
     aws_security_group.allow-internal.id,
@@ -439,9 +439,9 @@ resource "aws_default_network_acl" "default" {
   # use custome nacl instead
 }
 
-resource "aws_network_acl" "nacls-cac" {
+resource "aws_network_acl" "nacls-awc" {
   vpc_id     = aws_vpc.vpc.id
-  subnet_ids = [aws_subnet.cac-subnet.id]
+  subnet_ids = [aws_subnet.awc-subnet.id]
 
   # allow-ssh
   dynamic "ingress" {
@@ -557,7 +557,7 @@ resource "aws_network_acl" "nacls-cac" {
   }
 
   tags = {
-    Name = "${local.prefix}nacls-cac"
+    Name = "${local.prefix}nacls-awc"
   }
 }
 

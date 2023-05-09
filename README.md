@@ -10,7 +10,7 @@ Based on our secure PCoIP® (PC-over-IP) protocol that connects over 15 million 
 
 For more details, please visit https://teradici.com.
 
-This repository contains a collection of Terraform configurations for demonstrating how to deploy Anyware Manager and Cloud Access Connectors in a user's cloud environment. __Note: These configurations are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
+This repository contains a collection of Terraform configurations for demonstrating how to deploy Anyware Manager and Anyware Connectors in a user's cloud environment. __Note: These configurations are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
 
 # Documentation
 - [Instructions](docs/aws/README.md) for deploying CAS on Amazon Web Services
@@ -26,7 +26,7 @@ The top level Terraform configuration that creates entire deployments.
 Description and instructions for deployments on different clouds.
 
 ## modules/
-The building blocks of deployments, e.g. a Domain Controller, a Cloud Access Connector, a Workstation, etc.
+The building blocks of deployments, e.g. a Domain Controller, a Anyware Connector, a Workstation, etc.
 
 ## provisioning-scripts/
 Contains provisioning scripts to run when creating an individual virtual machine to configure the instance for PCoIP access. These scripts are similar to the scripts used to set up remote workstations under the modules/ directory, except certain features are removed, such as KMS decryption and domain joining. These scripts are meant to be used as the "User data" script in AWS or "Startup script" in GCP when creating a new instance.

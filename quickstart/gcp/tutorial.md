@@ -57,14 +57,14 @@ swin | Windows Server 2019 Workstation
 gwin | Windows Server 2019 with NVIDIA Tesla P4 Virtual Workstation GPU
 
 #### Check your Quota
-Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Cloud Access Connector (CAC) which will also be created.
+Please ensure there is sufficient CPU, SSD, GPU, etc. quota in your project for the chosen number of workstations, on top of the Domain Controller (DC) and Anyware Connector (AWC) which will also be created.
 
 The deployment will have the following specs:
 
 VM | vCPUs | Memory (GB) | SSD (GB) | GPU 
 ---|---|---|---|--- 
 DC | 4 | 15 | 50 | 0
-CAC | 2 | 7.5 | 50 | 0 
+AWC | 2 | 7.5 | 50 | 0
 scent | 2 | 7.5 | 50 | 0 
 gcent | 2 | 7.5 | 50 | 1
 swin | 4 | 15 | 50 | 0

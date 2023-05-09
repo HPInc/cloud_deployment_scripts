@@ -23,20 +23,20 @@ import awm
 import interactive
 
 REQUIRED_PACKAGES = {
-    'google-api-python-client': None, 
-    'grpc-google-iam-v1': None, 
+    'google-api-python-client': None,
+    'grpc-google-iam-v1': None,
     'google-cloud-kms': "2.0.0"
 }
 
 # Service Account ID of the service account to create
-SA_ID       = 'anyware-manager'
-SA_ROLES    = [
+SA_ID    = 'anyware-manager'
+SA_ROLES = [
     'roles/editor',
     'roles/cloudkms.cryptoKeyEncrypterDecrypter',
     'roles/logging.configWriter'
 ]
 
-PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
+PROJECT_ID    = os.environ['GOOGLE_CLOUD_PROJECT']
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
     'cloudkms.googleapis.com',
@@ -49,9 +49,9 @@ REQUIRED_APIS = [
     'monitoring.googleapis.com',
 ]
 
-iso_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
+iso_time        = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
 DEPLOYMENT_NAME = 'quickstart_deployment_' + iso_time
-CONNECTOR_NAME  = 'quickstart_cac_' + iso_time
+CONNECTOR_NAME  = 'quickstart_awc_' + iso_time
 
 # User entitled to workstations
 ENTITLE_USER = 'Administrator'
@@ -64,11 +64,11 @@ CFG_FILE_PATH      = 'gcp-cloudshell-quickstart.cfg'
 DEPLOYMENT_PATH    = 'deployments/gcp/single-connector'
 
 # All of the following paths are relative to the deployment directory, DEPLOYMENT_PATH
-TF_VARS_REF_PATH = 'terraform.tfvars.sample'
-TF_VARS_PATH     = 'terraform.tfvars'
-SECRETS_DIR      = 'secrets'
-GCP_SA_KEY_PATH  = SECRETS_DIR + '/gcp_service_account_key.json'
-SSH_KEY_PATH     = SECRETS_DIR + '/awm_admin_id_rsa'
+TF_VARS_REF_PATH           = 'terraform.tfvars.sample'
+TF_VARS_PATH               = 'terraform.tfvars'
+SECRETS_DIR                = 'secrets'
+GCP_SA_KEY_PATH            = SECRETS_DIR + '/gcp_service_account_key.json'
+SSH_KEY_PATH               = SECRETS_DIR + '/awm_admin_id_rsa'
 AWM_DEPLOYMENT_SA_KEY_PATH = SECRETS_DIR + '/awm_deployment_sa_key.json.encrypted'
 
 # Types of workstations
@@ -238,9 +238,9 @@ def service_account_create(project_id, sa_id, prefix):
     service_account = service_account_find(sa_email)
     if service_account:
         print(f'  Service account {sa_email} already exists.')
-        # The service account limit check is placed here so that the script doesn't 
-        # unfortunately exit after the user enters their configurations if error, but 
-        # the key will be created later to avoid reaching the limit, in case 
+        # The service account limit check is placed here so that the script doesn't
+        # unfortunately exit after the user enters their configurations if error, but
+        # the key will be created later to avoid reaching the limit, in case
         # something goes wrong and the script exits before the key is used.
         service_account_create_key_limit_check(service_account)
         return service_account
@@ -367,16 +367,16 @@ if __name__ == '__main__':
     apis_enable(REQUIRED_APIS)
 
     # The _Default sink save VM instance logs to _Default log bucket. We disable
-    # the _Default sink to avoid having duplicated VM instance logs in the log 
-    # bucket created by Terraform and _Default log bucket. 
+    # the _Default sink to avoid having duplicated VM instance logs in the log
+    # bucket created by Terraform and _Default log bucket.
     disable_default_sink()
-    
+
     cfg_data = interactive.configurations_get(PROJECT_ID, WS_TYPES, ENTITLE_USER)
 
     print('Setting GCP project...')
     iam_service = googleapiclient.discovery.build('iam', 'v1')
     crm_service = googleapiclient.discovery.build('cloudresourcemanager', 'v1')
-    
+
     prefix = cfg_data.get('prefix')
 
     sa = service_account_create(PROJECT_ID, SA_ID, prefix)
@@ -401,7 +401,7 @@ if __name__ == '__main__':
 
     print('Setting Anyware Manager...')
     my_awm = awm.AnywareManager(cfg_data.get('api_token'))
-    # TODO: Add a proper clean up of GCP IAM resources so we don't have to move the 
+    # TODO: Add a proper clean up of GCP IAM resources so we don't have to move the
     # service account creation to here after the rest of the GCP setup
     sa_key = service_account_create_key(sa, GCP_SA_KEY_PATH)
 
@@ -475,7 +475,7 @@ if __name__ == '__main__':
         'dc_admin_password':              cfg_data.get('ad_password'),
         'safe_mode_admin_password':       cfg_data.get('ad_password'),
         'ad_service_account_password':    cfg_data.get('ad_password'),
-        'cac_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
+        'awc_admin_ssh_pub_key_file':     cwd + SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
         'centos_gfx_instance_count':      cfg_data.get('gcent'),
@@ -495,14 +495,14 @@ if __name__ == '__main__':
     tf_cmd = f'{TERRAFORM_BIN_PATH} apply -auto-approve'
     subprocess.run(tf_cmd.split(' '), check=True)
 
-    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','cac-public-ip'],
+    comp_proc = subprocess.run([TERRAFORM_BIN_PATH,'output','awc-public-ip'],
                                check=True,
                                stdout=subprocess.PIPE)
-    cac_public_ip = comp_proc.stdout.decode().split('"')[1]
+    awc_public_ip = comp_proc.stdout.decode().split('"')[1]
 
     print('Terraform deployment complete.\n')
 
-    # To update the auth_token used by the session header for the API call 
+    # To update the auth_token used by the session header for the API call
     # with the one from the deployment key in case the API Token expires
     my_awm.deployment_signin(awm_deployment_key)
     # Add existing workstations
@@ -547,7 +547,7 @@ if __name__ == '__main__':
     Next steps:
 
     - Connect to a workstation:
-    1. from a PCoIP client, connect to the Cloud Access Connector at {cac_public_ip}
+    1. from a PCoIP client, connect to the Cloud Access Connector at {awc_public_ip}
     2. sign in with the "{ENTITLE_USER}" user credentials
     3. When connecting to a workstation immediately after this script completes,
         the workstation (especially graphics ones) may still be setting up. You may
@@ -558,7 +558,7 @@ if __name__ == '__main__':
     1. Log in to https://cas.teradici.com
     2. Click on "Workstations" in the left panel, select "Create new remote
         workstation" from the "+" button
-    3. Select connector "quickstart_cac_<timestamp>"
+    3. Select connector "quickstart_awc_<timestamp>"
     4. Fill in the form according to your preferences. Note that the following
         values must be used for their respective fields:
         Region:                   "{cfg_data.get('gcp_region')}"

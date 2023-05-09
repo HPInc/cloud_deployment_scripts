@@ -231,49 +231,44 @@ variable "lls_license_count" {
   default     = 0
 }
 
-variable "cac_zone_list" {
+variable "awc_zone_list" {
   description = "Zones in which to deploy Connectors"
   type        = list(string)
 }
 
-variable "cac_subnet_name" {
-  description = "Name for subnets containing the Cloud Access Connector"
-  default     = "subnet-cac"
+variable "awc_subnet_name" {
+  description = "Name for subnets containing the Anyware Connector"
+  default     = "subnet-awc"
 }
 
-variable "cac_subnet_cidr_list" {
-  description = "CIDRs for subnets containing the Cloud Access Connector"
+variable "awc_subnet_cidr_list" {
+  description = "CIDRs for subnets containing the Anyware Connector"
   type        = list(string)
 }
 
-variable "cac_instance_count_list" {
-  description = "Number of Cloud Access Connector instances to deploy in each region"
+variable "awc_instance_count_list" {
+  description = "Number of Anyware Connector instances to deploy in each region"
   type        = list(number)
 }
 
-variable "cac_instance_type" {
-  description = "Instance type for the Cloud Access Connector"
+variable "awc_instance_type" {
+  description = "Instance type for the Anyware Connector"
   default     = "t2.xlarge"
 }
 
-variable "cac_disk_size_gb" {
-  description = "Disk size (GB) of the Cloud Access Connector"
-  default     = "50"
+variable "awc_disk_size_gb" {
+  description = "Disk size (GB) of the Anyware Connector"
+  default     = "60"
 }
 
-variable "cac_ami_owner" {
-  description = "Owner of AMI for the Cloud Access Connector"
-  default     = "099720109477"
+variable "awc_ami_owner" {
+  description = "Owner of AMI for the Anyware Connector"
+  default     = "792107900819"
 }
 
-variable "cac_ami_name" {
-  description = "Name of the AMI to create Cloud Access Connector from"
-  default     = "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20230329"
-}
-
-variable "cac_version" {
-  description = "Version of the Cloud Access Connector to install"
-  default     = "latest"
+variable "awc_ami_name" {
+  description = "Name of the AMI to create Anyware Connector from"
+  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
 }
 
 variable "admin_ssh_key_name" {
@@ -296,8 +291,8 @@ variable "admin_ssh_pub_key_file" {
 # timeout_sec:  min 2, max 120, default 5
 # Further info about healthcheck:
 # https://www.teradici.com/web-help/anyware_manager/22.09/references/firewall_load_balancing_considerations/#health-check-endpoint
-variable "cac_health_check" {
-  description = "Health check configuration for Cloud Access Connector"
+variable "awc_health_check" {
+  description = "Health check configuration for Anyware Connector"
   default = {
     path         = "/health"
     protocol     = "HTTPS"
@@ -307,28 +302,28 @@ variable "cac_health_check" {
   }
 }
 
-variable "ssl_key" {
-  description = "SSL private key for the Connector in PEM format"
+variable "tls_key" {
+  description = "TLS private key for the Connector in PEM format"
   default     = ""
 
   validation {
-    condition     = var.ssl_key == "" ? true : fileexists(var.ssl_key)
-    error_message = "The ssl_key file specified does not exist. Please check the file path."
+    condition     = var.tls_key == "" ? true : fileexists(var.tls_key)
+    error_message = "The tls_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "ssl_cert" {
-  description = "SSL certificate for the Connector in PEM format"
+variable "tls_cert" {
+  description = "TLS certificate for the Connector in PEM format"
   default     = ""
 
   validation {
-    condition     = var.ssl_cert == "" ? true : fileexists(var.ssl_cert)
-    error_message = "The ssl_cert file specified does not exist. Please check the file path."
+    condition     = var.tls_cert == "" ? true : fileexists(var.tls_cert)
+    error_message = "The tls_cert file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+variable "awc_extra_install_flags" {
+  description = "Additional flags for installing AWC"
   default     = ""
 }
 
@@ -337,8 +332,8 @@ variable "manager_url" {
   default     = "https://cas.teradici.com"
 }
 
-variable "cac_flag_manager_insecure" {
-  description = "CAC install flag that allows unverified SSL access to Anyware Manager"
+variable "awc_flag_manager_insecure" {
+  description = "AWC install flag that allows unverified TLS access to Anyware Manager"
   type        = bool
   default     = false
 }

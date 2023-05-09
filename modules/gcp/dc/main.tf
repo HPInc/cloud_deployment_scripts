@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -35,10 +35,11 @@ data "template_file" "dc-provisioning-script" {
   template = file("${path.module}/dc-provisioning.ps1.tpl")
 
   vars = {
-    domain_name              = var.domain_name
-    kms_cryptokey_id         = var.kms_cryptokey_id
     bucket_name              = var.bucket_name
+    domain_name              = var.domain_name
     gcp_ops_agent_enable     = var.gcp_ops_agent_enable
+    kms_cryptokey_id         = var.kms_cryptokey_id
+    ldaps_cert_filename      = var.ldaps_cert_filename
     ops_setup_script         = var.ops_setup_script
     pcoip_agent_install      = var.pcoip_agent_install
     pcoip_agent_version      = var.pcoip_agent_version

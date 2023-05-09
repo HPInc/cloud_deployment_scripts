@@ -8,13 +8,12 @@
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
   # Name of Anyware Manager deployment service account key file in bucket
-  awm_deployment_sa_file   = "awm-deployment-sa-key.json"
-  admin_ssh_key_name       = "${local.prefix}${var.admin_ssh_key_name}"
-  awm_aws_credentials_file = "awm-aws-credentials.ini"
-
+  admin_ssh_key_name          = "${local.prefix}${var.admin_ssh_key_name}"
+  awm_deployment_sa_file      = "awm-deployment-sa-key.json"
+  awm_aws_credentials_file    = "awm-aws-credentials.ini"
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
-  cloudwatch_setup_deb_script = "cloudwatch_setup_deb.sh"
   cloudwatch_setup_win_script = "cloudwatch_setup_win.ps1"
+  ldaps_cert_filename         = "ldaps_cert.pem"
 }
 
 resource "aws_key_pair" "anyware_admin" {
@@ -39,14 +38,6 @@ resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   bucket = module.shared-bucket.bucket.id
   key    = local.cloudwatch_setup_rpm_script
   source = "../../../shared/aws/${local.cloudwatch_setup_rpm_script}"
-}
-
-resource "aws_s3_object" "cloudwatch-setup-deb-script" {
-  count = var.cloudwatch_enable ? 1 : 0
-
-  bucket = module.shared-bucket.bucket.id
-  key    = local.cloudwatch_setup_deb_script
-  source = "../../../shared/aws/${local.cloudwatch_setup_deb_script}"
 }
 
 resource "aws_s3_object" "cloudwatch-setup-win-script" {
@@ -74,6 +65,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name = module.shared-bucket.bucket.id
   subnet      = aws_subnet.dc-subnet.id
@@ -134,21 +126,21 @@ module "awm" {
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 }
 
-resource "aws_lb" "cac-alb" {
-  name               = "${local.prefix}cac-alb"
+resource "aws_lb" "awc-alb" {
+  name               = "${local.prefix}awc-alb"
   internal           = false
   load_balancer_type = "application"
+  subnets            = aws_subnet.awc-subnets[*].id
   security_groups = [
     aws_security_group.allow-internal.id,
     aws_security_group.allow-ssh.id,
     aws_security_group.allow-icmp.id,
     aws_security_group.allow-pcoip.id,
   ]
-  subnets = aws_subnet.cac-subnets[*].id
 }
 
-resource "aws_lb_target_group" "cac-tg" {
-  name        = "${local.prefix}cac-tg"
+resource "aws_lb_target_group" "awc-tg" {
+  name        = "${local.prefix}awc-tg"
   port        = 443
   protocol    = "HTTPS"
   target_type = "instance"
@@ -159,24 +151,24 @@ resource "aws_lb_target_group" "cac-tg" {
   }
 
   health_check {
-    path     = var.cac_health_check["path"]
-    protocol = var.cac_health_check["protocol"]
-    port     = var.cac_health_check["port"]
-    interval = var.cac_health_check["interval_sec"]
-    timeout  = var.cac_health_check["timeout_sec"]
+    path     = var.awc_health_check["path"]
+    protocol = var.awc_health_check["protocol"]
+    port     = var.awc_health_check["port"]
+    interval = var.awc_health_check["interval_sec"]
+    timeout  = var.awc_health_check["timeout_sec"]
     matcher  = "200"
   }
 }
 
 resource "tls_private_key" "tls-key" {
-  count = var.ssl_key == "" ? 1 : 0
+  count = var.tls_key == "" ? 1 : 0
 
   algorithm = "RSA"
   rsa_bits  = "2048"
 }
 
 resource "tls_self_signed_cert" "tls-cert" {
-  count = var.ssl_cert == "" ? 1 : 0
+  count = var.tls_cert == "" ? 1 : 0
 
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
 
@@ -192,39 +184,39 @@ resource "tls_self_signed_cert" "tls-cert" {
   ]
 }
 
-resource "aws_acm_certificate" "ssl-cert" {
-  private_key      = var.ssl_key == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.ssl_key)
-  certificate_body = var.ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem : file(var.ssl_cert)
+resource "aws_acm_certificate" "tls-cert" {
+  private_key      = var.tls_key == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.tls_key)
+  certificate_body = var.tls_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem : file(var.tls_cert)
 
   lifecycle {
     create_before_destroy = true
   }
 
   tags = {
-    Name = "${local.prefix}ssl-cert"
+    Name = "${local.prefix}tls-cert"
   }
 }
 
 resource "aws_lb_listener" "alb-listener" {
-  load_balancer_arn = aws_lb.cac-alb.arn
+  load_balancer_arn = aws_lb.awc-alb.arn
   port              = 443
   protocol          = "HTTPS"
-  certificate_arn   = aws_acm_certificate.ssl-cert.arn
+  certificate_arn   = aws_acm_certificate.tls-cert.arn
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.cac-tg.arn
+    target_group_arn = aws_lb_target_group.awc-tg.arn
   }
 }
 
-module "cac" {
-  source = "../../../modules/aws/cac"
+module "awc" {
+  source = "../../../modules/aws/awc"
 
   prefix = var.prefix
 
   awm_deployment_sa_file    = local.awm_deployment_sa_file
   aws_region                = var.aws_region
-  cac_flag_manager_insecure = true
+  awc_flag_manager_insecure = true
   customer_master_key_id    = var.customer_master_key_id
   manager_url               = "https://${module.awm.internal-ip}"
 
@@ -232,10 +224,13 @@ module "cac" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
-  zone_list           = aws_subnet.cac-subnets[*].availability_zone
-  subnet_list         = aws_subnet.cac-subnets[*].id
-  instance_count_list = var.cac_instance_count_list
+  zone_list           = aws_subnet.awc-subnets[*].availability_zone
+  subnet_list         = aws_subnet.awc-subnets[*].id
+  instance_count_list = var.awc_instance_count_list
 
   security_group_ids = [
     aws_security_group.allow-internal.id,
@@ -245,29 +240,33 @@ module "cac" {
   ]
 
   bucket_name   = module.shared-bucket.bucket.id
-  instance_type = var.cac_instance_type
-  disk_size_gb  = var.cac_disk_size_gb
+  instance_type = var.awc_instance_type
+  disk_size_gb  = var.awc_disk_size_gb
 
-  ami_owner = var.cac_ami_owner
-  ami_name  = var.cac_ami_name
+  ami_owner = var.awc_ami_owner
+  ami_name  = var.awc_ami_name
 
-  cac_version             = var.cac_version
   teradici_download_token = var.teradici_download_token
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
-  cac_extra_install_flags = var.cac_extra_install_flags
+  awc_extra_install_flags = var.awc_extra_install_flags
 
   aws_ssm_enable          = var.aws_ssm_enable
   cloudwatch_enable       = var.cloudwatch_enable
-  cloudwatch_setup_script = local.cloudwatch_setup_deb_script
+  cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
+
+  centos_gfx_instance_count = var.centos_gfx_instance_count
+  centos_std_instance_count = var.centos_std_instance_count
+  win_gfx_instance_count    = var.win_gfx_instance_count
+  win_std_instance_count    = var.win_std_instance_count
 }
 
-resource "aws_lb_target_group_attachment" "cac-tg-attachment" {
-  count = length(module.cac.instance-id)
+resource "aws_lb_target_group_attachment" "awc-tg-attachment" {
+  count = length(module.awc.instance-id)
 
-  target_group_arn = aws_lb_target_group.cac-tg.arn
-  target_id        = module.cac.instance-id[count.index]
+  target_group_arn = aws_lb_target_group.awc-tg.arn
+  target_id        = module.awc.instance-id[count.index]
   port             = 443
 }
 

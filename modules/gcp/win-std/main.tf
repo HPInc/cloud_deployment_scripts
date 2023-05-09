@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Teradici Corporation
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -91,3 +91,4 @@ resource "google_compute_instance" "win-std" {
     scopes = ["cloud-platform"]
   }
 }
+

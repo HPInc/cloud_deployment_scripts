@@ -17,6 +17,7 @@ locals {
   gcp_project_id         = jsondecode(file(var.gcp_credentials_file))["project_id"]
   ops_linux_setup_script = "ops_setup_linux.sh"
   ops_win_setup_script   = "ops_setup_win.ps1"
+  ldaps_cert_filename    = "ldaps_cert.pem"
   log_bucket_name        = "${local.prefix}logging-bucket"
 }
 
@@ -53,9 +54,9 @@ resource "google_storage_bucket_object" "ops-setup-win-script" {
   source = "../../../shared/gcp/${local.ops_win_setup_script}"
 }
 
-# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though 
-# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually, 
-# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at: 
+# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though
+# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually,
+# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at:
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_bucket_config
 # _Default log bucket created by Google cannot be deleted and need to be disabled before creating the deployment to avoid saving the same logs
 # in both _Defualt log bucket and the log bucket created by Terraform
@@ -97,6 +98,7 @@ module "dc" {
   gcp_service_account         = local.gcp_service_account
   kms_cryptokey_id            = var.kms_cryptokey_id
   safe_mode_admin_password    = var.safe_mode_admin_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name = google_storage_bucket.scripts.name
   gcp_zone    = var.gcp_zone
@@ -145,8 +147,7 @@ module "awm" {
 
   machine_type = var.awm_machine_type
   disk_size_gb = var.awm_disk_size_gb
-
-  disk_image = var.awm_disk_image
+  disk_image   = var.awm_disk_image
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
@@ -155,12 +156,12 @@ module "awm" {
   awm_admin_ssh_pub_key_file = var.awm_admin_ssh_pub_key_file
 }
 
-module "cac-igm" {
-  source = "../../../modules/gcp/cac-igm"
+module "awc-igm" {
+  source = "../../../modules/gcp/awc-igm"
 
   prefix = var.prefix
 
-  cac_flag_manager_insecure = true
+  awc_flag_manager_insecure = true
   gcp_service_account       = local.gcp_service_account
   kms_cryptokey_id          = var.kms_cryptokey_id
   manager_url               = "https://${module.awm.internal-ip}"
@@ -169,12 +170,15 @@ module "cac-igm" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
   bucket_name            = google_storage_bucket.scripts.name
   awm_deployment_sa_file = local.awm_deployment_sa_file
 
-  gcp_region_list = var.cac_region_list
-  subnet_list     = google_compute_subnetwork.cac-subnets[*].self_link
+  gcp_region_list = var.awc_region_list
+  subnet_list     = google_compute_subnetwork.awc-subnets[*].self_link
   network_tags = [
     google_compute_firewall.allow-google-health-check.name,
     google_compute_firewall.allow-ssh.name,
@@ -182,39 +186,37 @@ module "cac-igm" {
     google_compute_firewall.allow-pcoip.name,
   ]
 
-  instance_count_list = var.cac_instance_count_list
-  machine_type        = var.cac_machine_type
-  disk_size_gb        = var.cac_disk_size_gb
-
-  disk_image = var.cac_disk_image
+  instance_count_list = var.awc_instance_count_list
+  machine_type        = var.awc_machine_type
+  disk_size_gb        = var.awc_disk_size_gb
+  disk_image          = var.awc_disk_image
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
 
-  cac_admin_user             = var.cac_admin_user
-  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
-  cac_extra_install_flags    = var.cac_extra_install_flags
-  cac_version                = var.cac_version
+  awc_admin_user             = var.awc_admin_user
+  awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file
+  awc_extra_install_flags    = var.awc_extra_install_flags
   teradici_download_token    = var.teradici_download_token
 }
 
-resource "google_compute_https_health_check" "cac-hchk" {
-  name               = "${local.prefix}hchk-cac"
-  request_path       = var.cac_health_check["path"]
-  port               = var.cac_health_check["port"]
-  check_interval_sec = var.cac_health_check["interval_sec"]
-  timeout_sec        = var.cac_health_check["timeout_sec"]
+resource "google_compute_https_health_check" "awc-hchk" {
+  name               = "${local.prefix}hchk-awc"
+  request_path       = var.awc_health_check["path"]
+  port               = var.awc_health_check["port"]
+  check_interval_sec = var.awc_health_check["interval_sec"]
+  timeout_sec        = var.awc_health_check["timeout_sec"]
 }
 
-resource "google_compute_backend_service" "cac-bkend-service" {
-  name                    = "${local.prefix}bkend-service-cac"
+resource "google_compute_backend_service" "awc-bkend-service" {
+  name                    = "${local.prefix}bkend-service-awc"
   port_name               = "https"
   protocol                = "HTTPS"
   session_affinity        = "GENERATED_COOKIE"
   affinity_cookie_ttl_sec = 3600
 
   dynamic "backend" {
-    for_each = module.cac-igm.cac-igm
+    for_each = module.awc-igm.awc-igm
     iterator = i
 
     content {
@@ -225,23 +227,23 @@ resource "google_compute_backend_service" "cac-bkend-service" {
     }
   }
 
-  health_checks = [google_compute_https_health_check.cac-hchk.self_link]
+  health_checks = [google_compute_https_health_check.awc-hchk.self_link]
 }
 
-resource "google_compute_url_map" "cac-urlmap" {
-  name            = "${local.prefix}urlmap-cac"
-  default_service = google_compute_backend_service.cac-bkend-service.self_link
+resource "google_compute_url_map" "awc-urlmap" {
+  name            = "${local.prefix}urlmap-awc"
+  default_service = google_compute_backend_service.awc-bkend-service.self_link
 }
 
 resource "tls_private_key" "tls-key" {
-  count = var.glb_ssl_key == "" ? 1 : 0
+  count = var.glb_tls_key == "" ? 1 : 0
 
   algorithm = "RSA"
   rsa_bits  = "2048"
 }
 
 resource "tls_self_signed_cert" "tls-cert" {
-  count = var.glb_ssl_cert == "" ? 1 : 0
+  count = var.glb_tls_cert == "" ? 1 : 0
 
   private_key_pem = tls_private_key.tls-key[0].private_key_pem
 
@@ -258,24 +260,24 @@ resource "tls_self_signed_cert" "tls-cert" {
   ]
 }
 
-resource "google_compute_ssl_certificate" "ssl-cert" {
-  name        = "${local.prefix}ssl-cert"
-  private_key = var.glb_ssl_key == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_ssl_key)
-  certificate = var.glb_ssl_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem : file(var.glb_ssl_cert)
+resource "google_compute_ssl_certificate" "tls-cert" {
+  name        = "${local.prefix}tls-cert"
+  private_key = var.glb_tls_key == "" ? tls_private_key.tls-key[0].private_key_pem : file(var.glb_tls_key)
+  certificate = var.glb_tls_cert == "" ? tls_self_signed_cert.tls-cert[0].cert_pem : file(var.glb_tls_cert)
 }
 
-resource "google_compute_target_https_proxy" "cac-proxy" {
-  name             = "${local.prefix}proxy-cac"
-  url_map          = google_compute_url_map.cac-urlmap.self_link
-  ssl_certificates = [google_compute_ssl_certificate.ssl-cert.self_link]
+resource "google_compute_target_https_proxy" "awc-proxy" {
+  name             = "${local.prefix}proxy-awc"
+  url_map          = google_compute_url_map.awc-urlmap.self_link
+  ssl_certificates = [google_compute_ssl_certificate.tls-cert.self_link]
 }
 
-resource "google_compute_global_forwarding_rule" "cac-fwdrule" {
-  name = "${local.prefix}fwdrule-cac"
+resource "google_compute_global_forwarding_rule" "awc-fwdrule" {
+  name = "${local.prefix}fwdrule-awc"
 
   #ip_protocol = "TCP"
   port_range = "443"
-  target     = google_compute_target_https_proxy.cac-proxy.self_link
+  target     = google_compute_target_https_proxy.awc-proxy.self_link
 }
 
 module "win-gfx" {

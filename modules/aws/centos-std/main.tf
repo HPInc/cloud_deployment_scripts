@@ -212,6 +212,24 @@ resource "aws_cloudwatch_dashboard" "main" {
 {
     "widgets": [
         {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "region": "${var.aws_region}",
+                "title": "CPU Utilization (%)",
+                "metrics": [
+                    [ "AWS/EC2", "CPUUtilization", "InstanceId", "${aws_instance.centos-std[count.index].id}"]
+                ],
+                "view": "timeSeries",
+                "stat": "Average",
+                "period": 300,
+                "stacked": false
+            }
+        },
+        {
             "type": "log",
             "x": 12,
             "y": 0,
@@ -226,8 +244,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         }, 
         {
             "type": "log",
-            "x": 12,
-            "y": 24,
+            "x": 0,
+            "y": 6,
             "width": 12,
             "height": 6,
             "properties": {
@@ -240,7 +258,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         {
             "type": "log",
             "x": 12,
-            "y": 24,
+            "y": 6,
             "width": 12,
             "height": 6,
             "properties": {
@@ -252,8 +270,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         },
         {
             "type": "log",
-            "x": 12,
-            "y": 24,
+            "x": 0,
+            "y": 12,
             "width": 12,
             "height": 6,
             "properties": {
@@ -266,7 +284,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         {
             "type": "log",
             "x": 12,
-            "y": 24,
+            "y": 12,
             "width": 12,
             "height": 6,
             "properties": {

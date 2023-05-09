@@ -15,7 +15,7 @@ import sys
 import textwrap
 
 # Name of Compute Engine metrics
-METRICS         = [
+METRICS = [
     "INSTANCES",
     "CPUS",
     "SSD_TOTAL_GB",
@@ -65,7 +65,7 @@ def configurations_get(project_id, ws_types, username):
 
     def region_resource_list_get(gcp_region):
         # This returns a dictionary object which contains information about the
-        # compute engine quota and zones for each matching region. Please see: 
+        # compute engine quota and zones for each matching region. Please see:
         # https://cloud.google.com/compute/docs/reference/rest/v1/regions/list
         return cpe_service.regions().list(
             project=project_id,
@@ -89,7 +89,7 @@ def configurations_get(project_id, ws_types, username):
         print("")
 
     # Updates the required_cpe_quota list to show keep track of how much quota
-    # will be needed to create the CAC, DC, and workstations instances 
+    # will be needed to create the AWC, DC, and workstations instances
     def cpe_quota_reserve(machine, number, gcp_region, gcp_zone):
         if not requirements_are_met(machine, number, gcp_region, gcp_zone, print_cpe_report=False):
             return
@@ -105,7 +105,7 @@ def configurations_get(project_id, ws_types, username):
             try:
                 selection = int(input(f"       {text}: ").strip())
                 if selection > 0:
-                    return options[selection-1]  
+                    return options[selection-1]
                 raise IndexError
             except (ValueError, IndexError):
                 print(f"       Please enter a valid option (Ex. 1).")
@@ -117,8 +117,8 @@ def configurations_get(project_id, ws_types, username):
         return number_option_get(gcp_regions_list, "gcp_region")
 
     def region_requirements_met(gcp_region):
-        # Check that there's at least enough regional quota to deploy CAC and DC
-        for machine in ["cac","dc"]:
+        # Check that there's at least enough regional quota to deploy AWC and DC
+        for machine in ["awc","dc"]:
             # Not checking accelerator availability here so gcp_zone can be anything
             if requirements_are_met(machine, 1, gcp_region, gcp_zone=""):
                 cpe_quota_reserve(machine, 1, gcp_region, gcp_zone="")
@@ -173,7 +173,7 @@ def configurations_get(project_id, ws_types, username):
         if accelerator_name == "":
             return True
         accelerator_resource = cpe_service.acceleratorTypes().list(
-            project=project_id, 
+            project=project_id,
             zone=gcp_zone,
             filter=f"name={accelerator_name}"
         ).execute()
@@ -224,7 +224,7 @@ def configurations_get(project_id, ws_types, username):
                 if (number <= max_numberof_ws):
                     cpe_quota_reserve(machine, number, gcp_region, gcp_zone)
                     return number
-                # If there's enough quota but number of workstations requested exceeds the 
+                # If there's enough quota but number of workstations requested exceeds the
                 # max_numberof_ws, then it means there aren't enough IP addresses in the subnet.
                 if (requirements_are_met(machine, number, gcp_region, gcp_zone)):
                     print(f"There are only {max_numberof_ws} available IP addresses in the 10.0.2.0/24 subnet. ", end="")
@@ -243,14 +243,14 @@ def configurations_get(project_id, ws_types, username):
 
     def prefix_get(order_number):
         print(f"{order_number}.  Prefix to add to the names of resources to be created (Maximum 5 characters. Default: {DEFAULT_PREFIX}).")
-        
+
         vpc_list = vpc_list_get()
         while True:
             prefix = input("prefix: ").strip() or DEFAULT_PREFIX
             if (len(prefix) > 5):
                 print("    Prefix should have a maximum of 5 characters to avoid cropping of workstation hostnames. Please try again.")
                 continue
-            
+
             vpc_name = f'{prefix}-vpc-anyware'
             if vpc_name in vpc_list:
                 print("vpc_name already exists. Please enter a different prefix.")
@@ -317,7 +317,7 @@ def configurations_get(project_id, ws_types, username):
             if re.search(regex, password):
                 count += 1
 
-        # check unicode: if the password contains unicode characters, 
+        # check unicode: if the password contains unicode characters,
         # it will change when encoded to utf-8 to one of [\u00d8-\u00f6]
         if f'b\'{password}\'' != f'{password.encode("utf-8")}':
             count += 1
@@ -356,8 +356,8 @@ def configurations_get(project_id, ws_types, username):
             else:
                 cfg_data['gcp_region'] = DEFAULT_REGION
 
-            # Get the regional quota, print them out in a table, and check if there's 
-            # enough quota to deploy one CAC and one DC instance
+            # Get the regional quota, print them out in a table, and check if there's
+            # enough quota to deploy one AWC and one DC instance
             available_cpe_quota = cpe_quota_get(cfg_data['gcp_region'])
             cpe_quota_print(cfg_data['gcp_region'])
             if not region_requirements_met(cfg_data['gcp_region']):
@@ -400,7 +400,7 @@ def configurations_get(project_id, ws_types, username):
             print("{:<10} {:<10}".format(variable, value))
 
         if not answer_is_yes("\nWould you like to proceed with your selections (y/n)? "):
-            print("\n") 
+            print("\n")
             continue # back to the beginning of the get configurations while loop
 
         print("")

@@ -22,6 +22,7 @@
     - [Deleting the deployment](#deleting-the-deployment)
   - [Optional AWS Service Integrations](#optional-aws-service-integrations)
     - [AWS Cloudwatch](#aws-cloudwatch)
+      - [AWS CloudWatch Dashboard](#aws-cloudwatch-dashboard)
     - [AWS Session Manager](#aws-session-manager)
   - [Troubleshooting](#troubleshooting)
 
@@ -55,7 +56,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - for HP Anyware deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
 - for deployments using Anyware Manager as a Service, a Anyware Manager Deployment Service Account is needed. Please see the [Anyware Manager as a Service Setup])#awm-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
-- if custom SSL key and certificates are required, the SSL key and certificate files are needed in PEM format.
+- if custom TLS key and certificates are required, the TLS key and certificate files are needed in PEM format.
 - Terraform v1.0 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
 
 ### Selecting a Deployment
@@ -166,7 +167,7 @@ With `terraform.tfvars` customized
 2. run `terraform apply` to display the resources that will be created by Terraform
 3. answer `yes` to start creating the deployment
 
-A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Cloud Access Connectors (CACs) should register themselves with Anyware Manager and show up in the Admin Console in Anyware Manager.
+A typical deployment should take 15 to 30 minutes. When finished, Terraform will display a number of values of interest, such as the load balancer IP address. At the end of the deployment, the resources may still take a few minutes to start up completely. Anyware Connectors (AWCs) should register themselves with Anyware Manager and show up in the Admin Console in Anyware Manager.
 
 **Security Note**: The Domain Controller has been assigned a public IP address by default, so that Terraform can show the progress of setting up the Domain Controller. Access to this public IP address is limited by AWS security groups to the IP address of the Terraform host and any IP addresses specified in the `allowed_admin_cidrs` variable in `terraform.tfvars`. It is recommended that access to the Domain Controller is reviewed and modified to align with the security policies of the user.     
 
@@ -176,7 +177,7 @@ A typical deployment should take 15 to 30 minutes. When finished, Terraform will
 Go to the Anyware Manager Admin Console and add the newly created workstations using "Add existing remote workstation" in the "Remote Workstations" tab.  Note that it may take a few minutes for the workstation to show up in the "Select workstation from directory" drop-down box.
 
 ### Start PCoIP Session
-Once the workstations have been added to be managed by Anyware Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the Cloud Access Connector or Load Balancer, if one is configured, to start a PCoIP session.
+Once the workstations have been added to be managed by Anyware Manager and assigned to Active Directory users, a PCoIP user can connect the PCoIP client to the public IP of the Anyware Connector or Load Balancer, if one is configured, to start a PCoIP session.
 
 ### Changing the deployment
 Terraform is a declarative language to describe the desired state of resources. A user can modify `terraform.tfvars` and run `terraform apply` again, and Terraform will try to only apply the changes needed to acheive the new state.
@@ -185,7 +186,7 @@ Terraform is a declarative language to describe the desired state of resources. 
 Run `terraform destroy` to remove all resources created by Terraform.
 
 **Note for deployments using the PCoIP License Server (all deployments with names ending in "lls")**
-Be sure to SSH into the PCoIP License Server (LLS), possibly using a Cloud Access Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the activated PCoIP licenses will be lost.
+Be sure to SSH into the PCoIP License Server (LLS), possibly using a Anyware Connector as a jumphost, and run `pcoip-return-online-license -a <activation-code>` before destroying the deployment. Otherwise, the activated PCoIP licenses will be lost.
 
 For more information on the LLS, please visit https://www.teradici.com/web-help/pcoip_license_server/current/online/
 
@@ -194,9 +195,45 @@ For more information on the LLS, please visit https://www.teradici.com/web-help/
 ### AWS CloudWatch
 CloudWatch is a monitoring and management service that provides data and actionable insights for AWS, hybrid, and on-premises applications and infrastructure resources. For more information, please visit https://aws.amazon.com/cloudwatch/
 
-When CloudWatch is enabled, CloudWatch agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to CloudWatch. The selected logs can be found at `Log groups` in the CloudWatch navigation pane. 
+When CloudWatch is enabled, CloudWatch agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to CloudWatch. The selected logs can be found in `Log groups` in the CloudWatch navigation pane. 
 
 CloudWatch is enabled by default to provide better experience of accessing the logs. It can be disabled by adding `cloudwatch_enable = false` to `terraform.tfvars` before running `terraform apply`. 
+
+#### AWS CloudWatch Dashboard
+Amazon CloudWatch dashboards are customizable home pages in the CloudWatch console that can be used to monitor the resources in a single view. For more information, please visit https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Dashboards.html 
+
+When CloudWatch is enabled, Terraform will create one overall dashboard for the deployment, one dashboard for each Anyware Connector, and one dashboard for each workstation. Each dashboard contains queries that fetch the logs and data from the corresponding `Log groups`. The dashboards can be found in `Dashboard` in the CloudWatch navigation pane. 
+
+The overall dashboard provides high level graphs including:
+- `Number of users in AD`: Reports number of users in AD. Users in AD cannot be removed by Terraform. Users have to connect to DC to remove the users. 
+- `Number of machines in AD`: Repots number of machines in AD. Machines in AD cannot be removed by Terraform. Users have to connect to DC to remove the machines. 
+- `Active Connections`: Reports number of active connections in each Anyware Connector. 
+- `Top 5 PCoIP Agent Latency`: Reports the Workstation sessions with the 5 longest average Round Trip Times calculated over the measurement period. 
+- `Top 5 PCoIP Agent Data Transmitted`: Reports the top 5 Workstations volume of transmit data transfered (Host Workstation to Client MebiByte) during the measurement period. 
+- `Top 5 PCoIP Agent Data Received`: Reports the top 5 Workstations volume of receive data transfered (Client to Host Workstation MebiByte) during the measurement period.
+- `Top 10 PCoIP Agent Packet Loss (Transmitted)`: Reports the Workstations experiencing the 10 worst transmit (Host Workstation to Client) packet loss intervals during the measurement period. 
+- `Top 10 PCoIP Agent Packet Loss (Received)`: Reports the Workstations experiencing the 10 worst receive (Client to Host Workstation) packet loss intervals during the measurement period. 
+
+![Overall Dashboard](./overall_dashboard.png)
+
+The Anyware Connector dashboard includes 2 graphs:
+- `Active Connections`: Reports number of active connections over the measurement period. 
+- `User Login History`: Reports time, workstation, and username of connections over the measurement period. 
+- `CPU Utilization`: Reports the percentage of allocated EC2 compute units that are currently in use on the instance.
+- `Network In`: Reports the number of bytes received by the instance on all network interfaces.
+- `Network Out`: Reports the number of bytes sent out by the instance on all network interfaces.
+
+![Anyware Connector Dashbaord](./awc_dashboard.png)
+
+The workstation dashboard shows workstation relevant data such as:
+- `CPU Utilization`: Reports the percentage of allocated EC2 compute units that are currently in use on the instance.
+- `Latency (ms)`: Reports 50th, 80th and 90th percentile Round Trip Times across all logged PCoIP sessions over the measurement period. 
+- `TxLoss (%)`: Reports 90th and 95th percentile of transmit (Host Workstation to Client) packet loss of the workstation.
+- `RxLoss (%)`: Reports 90th and 95th percentile of receive (Client to Host Workstation) packet loss of the workstation.
+- `Data Transmitted (MiB)`: Reports volume of transmit data transfered (Host Workstation to Client MebiByte) during the measurement period. 
+- `Data Reveived (MiB)`: Reports volume of receive data transfered (Client to Host Workstation MebiByte) during the measurement period. 
+
+![Workstation Dashboard](./workstation_dashboard.png)
 
 ### AWS Session Manager
 Session Manager is an AWS Systems Manager capability that can be used to connect to instances using either an interactive one-click browser-based shell or AWS Command Line Interface. For more information, please visit https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html

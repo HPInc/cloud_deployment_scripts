@@ -60,6 +60,7 @@ data "template_file" "dc-provisioning-script" {
     cloudwatch_setup_script  = var.cloudwatch_setup_script
     customer_master_key_id   = var.customer_master_key_id
     domain_name              = var.domain_name
+    ldaps_cert_filename      = var.ldaps_cert_filename
     pcoip_agent_install      = var.pcoip_agent_install
     pcoip_agent_version      = var.pcoip_agent_version
     pcoip_registration_code  = var.pcoip_registration_code
@@ -138,6 +139,12 @@ data "aws_iam_policy_document" "dc-policy-doc" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["s3:PutObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/${var.ldaps_cert_filename}"]
     effect    = "Allow"
   }
 

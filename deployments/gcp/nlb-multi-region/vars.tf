@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2019-2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2021-2022 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -147,88 +147,83 @@ variable "domain_users_list" {
   }
 }
 
-variable "cac_region_list" {
+variable "awc_region_list" {
   description = "Regions in which to deploy Connectors"
   type        = list(string)
 }
 
-variable "cac_subnet_name" {
-  description = "Name for subnets containing the Cloud Access Connector"
-  default     = "subnet-cac"
+variable "awc_subnet_name" {
+  description = "Name for subnets containing the Anyware Connector"
+  default     = "subnet-awc"
 }
 
-variable "cac_subnet_cidr_list" {
-  description = "CIDRs for subnets containing the Cloud Access Connector"
+variable "awc_subnet_cidr_list" {
+  description = "CIDRs for subnets containing the Anyware Connector"
   type        = list(string)
 }
 
-variable "cac_instance_count_list" {
-  description = "Number of Cloud Access Connector instances to deploy in each region"
+variable "awc_instance_count_list" {
+  description = "Number of Anyware Connector instances to deploy in each region"
   type        = list(number)
 }
 
-variable "cac_machine_type" {
-  description = "Machine type for Cloud Access Connector"
-  default     = "n1-standard-2"
+variable "awc_machine_type" {
+  description = "Machine type for Anyware Connector (min 4 CPUs, 8 GB RAM)"
+  default     = "e2-custom-4-8192"
 }
 
-variable "cac_disk_size_gb" {
-  description = "Disk size (GB) of Cloud Access Connector"
-  default     = 50
+variable "awc_disk_size_gb" {
+  description = "Disk size (GB) of Anyware Connector (min 60 GB)"
+  default     = 60
 }
 
-variable "cac_disk_image" {
-  description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20230405"
+variable "awc_disk_image" {
+  description = "Disk image for the Anyware Connector"
+  default     = "projects/rocky-linux-cloud/global/images/family/rocky-linux-8"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
-variable "cac_admin_user" {
-  description = "Username of Cloud Access Connector Administrator"
+variable "awc_admin_user" {
+  description = "Username of Anyware Connector Administrator"
   default     = "anyware_admin"
 }
 
-variable "cac_admin_ssh_pub_key_file" {
-  description = "SSH public key for Cloud Access Connector Administrator"
+variable "awc_admin_ssh_pub_key_file" {
+  description = "SSH public key for Anyware Connector Administrator"
   type        = string
 
   validation {
-    condition     = fileexists(var.cac_admin_ssh_pub_key_file)
-    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+    condition     = fileexists(var.awc_admin_ssh_pub_key_file)
+    error_message = "The awc_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_ssl_key" {
-  description = "SSL private key for the Connector in PEM format"
+variable "awc_tls_key" {
+  description = "TLS private key for the Connector in PEM format"
   default     = ""
 
   validation {
-    condition     = var.cac_ssl_key == "" ? true : fileexists(var.cac_ssl_key)
-    error_message = "The cac_ssl_key file specified does not exist. Please check the file path."
+    condition     = var.awc_tls_key == "" ? true : fileexists(var.awc_tls_key)
+    error_message = "The awc_tls_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_ssl_cert" {
-  description = "SSL certificate for the Connector in PEM format"
+variable "awc_tls_cert" {
+  description = "TLS certificate for the Connector in PEM format"
   default     = ""
 
   validation {
-    condition     = var.cac_ssl_cert == "" ? true : fileexists(var.cac_ssl_cert)
-    error_message = "The cac_ssl_cert file specified does not exist. Please check the file path."
+    condition     = var.awc_tls_cert == "" ? true : fileexists(var.awc_tls_cert)
+    error_message = "The awc_tls_cert file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+variable "awc_extra_install_flags" {
+  description = "Additional flags for installing AWC"
   default     = ""
 }
 
-variable "cac_version" {
-  description = "Version of the Cloud Access Connector to install"
-  default     = "latest"
-}
-
-variable "cac_enable_external_ip" {
+variable "awc_enable_external_ip" {
   description = "Enable external IP address assignments for each Connector. For testing/debugging purposes only"
   default     = false
 }
@@ -258,8 +253,8 @@ variable "manager_url" {
   default     = "https://cas.teradici.com"
 }
 
-variable "cac_flag_manager_insecure" {
-  description = "CAC install flag that allows unverified SSL access to Anyware Manager"
+variable "awc_flag_manager_insecure" {
+  description = "AWC install flag that allows unverified TLS access to Anyware Manager"
   type        = bool
   default     = false
 }

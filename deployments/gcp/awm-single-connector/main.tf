@@ -18,6 +18,7 @@ locals {
   gcp_sa_file            = "gcp-sa-key.json"
   ops_linux_setup_script = "ops_setup_linux.sh"
   ops_win_setup_script   = "ops_setup_win.ps1"
+  ldaps_cert_filename    = "ldaps_cert.pem"
   log_bucket_name        = "${local.prefix}logging-bucket"
 }
 
@@ -54,9 +55,9 @@ resource "google_storage_bucket_object" "ops-setup-win-script" {
   source = "../../../shared/gcp/${local.ops_win_setup_script}"
 }
 
-# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though 
-# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually, 
-# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at: 
+# Create a log bucket to store selected logs for easier log management, Terraform won't delete the log bucket it created even though
+# the log bucket will be removed from .tfstate after destroyed the deployment, so the log bucket deletion has to be done manually,
+# the log bucket will be in pending deletion status and will be deleted after 7 days. More info at:
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_bucket_config
 # _Default log bucket created by Google cannot be deleted and need to be disabled before creating the deployment to avoid saving the same logs
 # in both _Defualt log bucket and the log bucket created by Terraform
@@ -98,6 +99,7 @@ module "dc" {
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
   domain_users_list           = var.domain_users_list
+  ldaps_cert_filename         = local.ldaps_cert_filename
 
   bucket_name = google_storage_bucket.scripts.name
   gcp_zone    = var.gcp_zone
@@ -156,12 +158,12 @@ module "awm" {
   awm_admin_ssh_pub_key_file = var.awm_admin_ssh_pub_key_file
 }
 
-module "cac" {
-  source = "../../../modules/gcp/cac"
+module "awc" {
+  source = "../../../modules/gcp/awc"
 
   prefix = var.prefix
 
-  cac_flag_manager_insecure = true
+  awc_flag_manager_insecure = true
   gcp_service_account       = local.gcp_service_account
   kms_cryptokey_id          = var.kms_cryptokey_id
   manager_url               = "https://${module.awm.internal-ip}"
@@ -170,36 +172,38 @@ module "cac" {
   domain_controller_ip        = module.dc.internal-ip
   ad_service_account_username = var.ad_service_account_username
   ad_service_account_password = var.ad_service_account_password
+  ldaps_cert_filename         = local.ldaps_cert_filename
+  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
   bucket_name            = google_storage_bucket.scripts.name
   awm_deployment_sa_file = local.awm_deployment_sa_file
 
   gcp_region_list = [var.gcp_region]
-  subnet_list     = [google_compute_subnetwork.cac-subnet.self_link]
+  subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
   network_tags = [
     google_compute_firewall.allow-ssh.name,
     google_compute_firewall.allow-icmp.name,
     google_compute_firewall.allow-pcoip.name,
   ]
 
-  instance_count_list = [var.cac_instance_count]
-  machine_type        = var.cac_machine_type
-  disk_size_gb        = var.cac_disk_size_gb
+  instance_count_list = [var.awc_instance_count]
+  machine_type        = var.awc_machine_type
+  disk_size_gb        = var.awc_disk_size_gb
 
-  disk_image = var.cac_disk_image
+  disk_image = var.awc_disk_image
 
-  cac_admin_user             = var.cac_admin_user
-  cac_admin_ssh_pub_key_file = var.cac_admin_ssh_pub_key_file
-  cac_version                = var.cac_version
   teradici_download_token    = var.teradici_download_token
+  awc_admin_user             = var.awc_admin_user
+  awc_admin_ssh_pub_key_file = var.awc_admin_ssh_pub_key_file
 
-  ssl_key  = var.cac_ssl_key
-  ssl_cert = var.cac_ssl_cert
+  tls_key  = var.awc_tls_key
+  tls_cert = var.awc_tls_cert
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_linux_setup_script
 
-  cac_extra_install_flags = var.cac_extra_install_flags
+  awc_extra_install_flags = var.awc_extra_install_flags
 }
 
 module "win-gfx" {

@@ -156,80 +156,75 @@ variable "awm_gcp_credentials_file" {
   }
 }
 
-variable "cac_subnet_name" {
-  description = "Name for subnet containing the Cloud Access Connector"
-  default     = "subnet-cac"
+variable "awc_subnet_name" {
+  description = "Name for subnet containing the Anyware Connector"
+  default     = "subnet-awc"
 }
 
-variable "cac_subnet_cidr" {
-  description = "CIDR for subnet containing the Cloud Access Connector"
+variable "awc_subnet_cidr" {
+  description = "CIDR for subnet containing the Anyware Connector"
   default     = "10.0.1.0/24"
 }
 
-variable "cac_instance_count" {
-  description = "Number of Cloud Access Connector instances"
+variable "awc_instance_count" {
+  description = "Number of Anyware Connector instances"
   default     = 1
 }
 
-variable "cac_machine_type" {
-  description = "Machine type for Cloud Access Connector"
-  default     = "n1-standard-2"
+variable "awc_machine_type" {
+  description = "Machine type for Anyware Connector (min 4 CPUs, 8 GB RAM)"
+  default     = "e2-custom-4-8192"
 }
 
-variable "cac_disk_size_gb" {
-  description = "Disk size (GB) of Cloud Access Connector"
-  default     = 50
+variable "awc_disk_size_gb" {
+  description = "Disk size (GB) of Anyware Connector (min 60 GB)"
+  default     = 60
 }
 
-variable "cac_disk_image" {
-  description = "Disk image for the Cloud Access Connector"
-  default     = "projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20230405"
+variable "awc_disk_image" {
+  description = "Disk image for the Anyware Connector"
+  default     = "projects/rocky-linux-cloud/global/images/family/rocky-linux-8"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
-variable "cac_admin_user" {
-  description = "Username of Cloud Access Connector Administrator"
+variable "awc_admin_user" {
+  description = "Username of Anyware Connector Administrator"
   default     = "anyware_admin"
 }
 
-variable "cac_admin_ssh_pub_key_file" {
-  description = "SSH public key for Cloud Access Connector Administrator"
+variable "awc_admin_ssh_pub_key_file" {
+  description = "SSH public key for Anyware Connector Administrator"
   type        = string
 
   validation {
-    condition     = fileexists(var.cac_admin_ssh_pub_key_file)
-    error_message = "The cac_admin_ssh_pub_key_file specified does not exist. Please check the file path."
+    condition     = fileexists(var.awc_admin_ssh_pub_key_file)
+    error_message = "The awc_admin_ssh_pub_key_file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_ssl_key" {
-  description = "SSL private key for the Connector"
+variable "awc_tls_key" {
+  description = "TLS private key for the Connector"
   default     = ""
 
   validation {
-    condition     = var.cac_ssl_key == "" ? true : fileexists(var.cac_ssl_key)
-    error_message = "The cac_ssl_key file specified does not exist. Please check the file path."
+    condition     = var.awc_tls_key == "" ? true : fileexists(var.awc_tls_key)
+    error_message = "The awc_tls_key file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_ssl_cert" {
-  description = "SSL certificate for the Connector"
+variable "awc_tls_cert" {
+  description = "TLS certificate for the Connector"
   default     = ""
 
   validation {
-    condition     = var.cac_ssl_cert == "" ? true : fileexists(var.cac_ssl_cert)
-    error_message = "The cac_ssl_cert file specified does not exist. Please check the file path."
+    condition     = var.awc_tls_cert == "" ? true : fileexists(var.awc_tls_cert)
+    error_message = "The awc_tls_cert file specified does not exist. Please check the file path."
   }
 }
 
-variable "cac_extra_install_flags" {
-  description = "Additional flags for installing CAC"
+variable "awc_extra_install_flags" {
+  description = "Additional flags for installing AWC"
   default     = ""
-}
-
-variable "cac_version" {
-  description = "Version of the Cloud Access Connector to install"
-  default     = "latest"
 }
 
 variable "domain_name" {
