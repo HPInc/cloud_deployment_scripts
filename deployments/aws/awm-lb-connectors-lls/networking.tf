@@ -511,7 +511,7 @@ resource "aws_network_acl" "nacls-awc" {
 
   # allow-pcoip
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.allowed_client_cidrs
 
     content {
       rule_no    = 300 + ingress.key
@@ -524,7 +524,7 @@ resource "aws_network_acl" "nacls-awc" {
   }
 
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.allowed_client_cidrs
 
     content {
       rule_no    = 400 + ingress.key
@@ -537,7 +537,7 @@ resource "aws_network_acl" "nacls-awc" {
   }
 
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.allowed_client_cidrs
 
     content {
       rule_no    = 500 + ingress.key
