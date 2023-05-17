@@ -50,7 +50,7 @@ To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
 Before starting, consider watching [this video](https://www.youtube.com/watch?v=hwEOoG4pmMQ) on how to use this repo to deploy a single-connector deployment on AWS from a Windows environment. The video guides the viewer through the entire deployment process from set up to tear down. It also shows how the deployment can be managed through CAS Manager as a Service (CAS-MS) and how end-users can connect to their machines using a PCoIP client. While the video shows the single-connector deployment, the process of creating other deployments is very similar. For deployment from a Linux environment, please see the relevant portions of our [GCP video](https://www.youtube.com/watch?v=ESzon04cW4Y). Note that since this repository is constantly being updated, there might be minor differences between what is shown in the video compared to the latest version on GitHub.
 
 ### Requirements
-- the user must have Administrator permissions in an AWS account
+- the user must have full permissions to services(Ec2,s3,ELB,SNS,IAM,Route53resolver,KMS,Cloudwatch,Cloudwatch Logs,Certificate Manager) in an AWS account or you can use custom policy https://github.com/HPInc/cloud_deployment_scripts/blob/master/docs/aws/CustomPolicy.md for attaching to Entity.
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - for CAS deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
 - for deployments using CAS Manager as a Service, a CAS Manager Deployment Service Account is needed. Please see the [CAS Manager as a Service Setup])#cas-manager-as-a-service-setup) section below.
