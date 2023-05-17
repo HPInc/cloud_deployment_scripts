@@ -40,7 +40,7 @@ The quickest way to create a reference deployment on AWS is to run the Quickstar
 To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
 
 ### Requirements
-- the user must have Administrator permissions in an AWS account
+- the user must have full permissions to services(Ec2,s3,ELB,SNS,IAM,Route53resolver,KMS,Cloudwatch,Cloudwatch Logs,Certificate Manager) in an AWS account or you can use custom policy https://github.com/HPInc/cloud_deployment_scripts/blob/master/docs/aws/CustomPolicy.md for attaching to Entity.
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - the user must have Python installed. Please see [Download Python](https://www.python.org/downloads/) for instructions. 
 - the user must have AWS CLI installed and configured if running Quickstart script in local CLI. Please visit [AWS CLI Installation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [AWS CLI Configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for instructions.
