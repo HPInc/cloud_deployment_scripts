@@ -53,6 +53,10 @@ function Decrypt-Credentials {
 
 Start-Transcript -path $LOG_FILE -append
 
+# Enforce TLS 1.2 as a precaution for deprecation of TLS prior versions
+# Adding TLS 1.2 for Invoke-RestMethod
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
     "--> Script is not using encryption for secrets."
 } else {
