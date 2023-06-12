@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-data "http" "myip" {
-  url = "https://cas.teradici.com/api/v1/health"
+module "myip" {
+  source = "../../../modules/shared/myip"
 }
 
 data "aws_availability_zones" "available_az" {
@@ -19,7 +19,7 @@ data "aws_availability_zones" "available_az" {
 }
 
 locals {
-  myip                = "${chomp(data.http.myip.response_headers.Client-Ip)}/32"
+  myip                = module.myip.cidr
   vpc_uid             = "${local.prefix}${var.vpc_name}"
   allowed_admin_cidrs = distinct(concat([local.myip], var.allowed_admin_cidrs))
 }
@@ -27,7 +27,7 @@ locals {
 resource "aws_vpc" "vpc" {
   cidr_block         = var.vpc_cidr
   enable_dns_support = true
-  # Required to set dns hostname enabled 
+  # Required to set dns hostname enabled
   # https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint
   enable_dns_hostnames = true
 
@@ -794,7 +794,7 @@ resource "aws_network_acl" "nacls-ws" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.ws-subnet.id]
 
-  # allow-ssh for centos 
+  # allow-ssh for centos
   dynamic "ingress" {
     for_each = local.allowed_admin_cidrs
 
