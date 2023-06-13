@@ -194,7 +194,7 @@ variable "awm_ami_owner" {
 
 variable "awm_ami_name" {
   description = "Name of the AMI to create Anyware Manager from"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "awm_admin_password" {
@@ -245,7 +245,7 @@ variable "awc_ami_owner" {
 
 variable "awc_ami_name" {
   description = "Name of the AMI to create Anyware Connector from"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "tls_key" {

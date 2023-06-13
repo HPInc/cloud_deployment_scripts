@@ -184,7 +184,7 @@ variable "lls_ami_owner" {
 
 variable "lls_ami_name" {
   description = "Name of the Rocky Linux AMI to run PCoIP License Server on"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "lls_admin_password" {
@@ -241,7 +241,7 @@ variable "awc_ami_owner" {
 
 variable "awc_ami_name" {
   description = "Name of the AMI to create Anyware Connector from"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "admin_ssh_key_name" {
