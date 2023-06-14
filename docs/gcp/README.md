@@ -69,8 +69,28 @@ This repository contains Terraform configurations for a number of different HP A
 ### GCP Setup
 Although it is possible to create deployments in existing and currently in-use GCP projects, it is recommended to create them in new projects to reduce chances of name collisions and interfering with operations of existing resources.
 
-With a new GCP project:
-- create a new service account with __Editor__, __Cloud KMS CryptoKey Encrypter/Decrypter__, and __Logs Configuration Writer__  permissions. Create and download the credentials in JSON format. These credentials are needed by Anyware Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
+#### Required permissions for the new service account used in Terraform deployment with a new GCP project:
+To initiate a Terraform deployment, users are required to create a new service account or attach the existing service account with the necessary permissions, as outlined in any of the following options.
+
+- Option 1: Create a new service account with __Editor__, __Cloud KMS CryptoKey Encrypter/Decrypter__, and __Logs Configuration Writer__  permissions.
+  This option provides the least secure approach as it grants broad permissions.
+  
+- Option 2: Associate Service Account with Restricted Permissions using Predefined GCP Managed Roles
+    - Cloud KMS CryptoKey Encrypter/Decrypter
+    - Compute Admin
+    - Deployment Manager Editor
+    - DNS Administrator
+    - Logs Configuration Writer
+    - Monitoring Editor
+    - Service Account User
+    - Storage Admin
+
+ - Option 3: Custom Role
+      - Users can associate a custom role to the service account using the provided [Custom Role](/docs/gcp/CustomRole.json) here.
+ 
+Option 2 and Option 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the Predefined GCP-managed roles, ensuring limited access.
+
+Once the service account is created ,generate and download the credentials in JSON format. These credentials are needed by Anyware Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
 - enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com logging.googleapis.com monitoring.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
     - Cloud Deployment Manager V2
     - Cloud Key Management Service (KMS)
