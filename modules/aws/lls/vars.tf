@@ -37,7 +37,7 @@ variable "instance_count" {
 
 variable "instance_type" {
   description = "Instance type for the PCoIP License Server"
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 
 variable "disk_size_gb" {

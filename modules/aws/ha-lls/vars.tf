@@ -32,7 +32,7 @@ variable "security_group_ids" {
 
 variable "haproxy_instance_type" {
   description = "Instance type for the HAProxy"
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 
 variable "haproxy_disk_size_gb" {
@@ -42,7 +42,7 @@ variable "haproxy_disk_size_gb" {
 
 variable "lls_instance_type" {
   description = "Instance type for the PCoIP License Server"
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 
 variable "lls_disk_size_gb" {

@@ -86,7 +86,7 @@ variable "dc_subnet_cidr" {
 
 variable "dc_instance_type" {
   description = "Instance type for the Domain Controller"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "dc_disk_size_gb" {
@@ -184,7 +184,7 @@ variable "lls_instance_count" {
 
 variable "lls_instance_type" {
   description = "Instance type for the PCoIP License Server"
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 
 variable "lls_disk_size_gb" {
@@ -231,7 +231,7 @@ variable "awm_subnet_cidr" {
 
 variable "awm_instance_type" {
   description = "Instance type for the Anyware Manager"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "awm_disk_size_gb" {
@@ -287,7 +287,7 @@ variable "awc_instance_count_list" {
 
 variable "awc_instance_type" {
   description = "Instance type for the Anyware Connector"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "awc_disk_size_gb" {
@@ -426,7 +426,7 @@ variable "win_std_instance_name" {
 
 variable "win_std_instance_type" {
   description = "Instance type for the Windows Standard Workstations"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "win_std_disk_size_gb" {
@@ -493,7 +493,7 @@ variable "centos_std_instance_name" {
 
 variable "centos_std_instance_type" {
   description = "Instance type for the CentOS Standard Workstations"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "centos_std_disk_size_gb" {
