@@ -10,11 +10,10 @@ locals {
 
   #Allows ingress traffic from the IP range 35.235.240.0/20. This range contains all IP addresses that IAP uses for TCP forwarding.
   iap_cidr = ["35.235.240.0/20"]
-  myip     = chomp(data.http.myip.response_headers.Client-Ip)
+  myip     = module.myip.cidr
 }
-
-data "http" "myip" {
-  url = "https://cas.teradici.com/api/v1/health"
+module "myip" {
+  source = "../../../modules/shared/myip"
 }
 
 resource "google_compute_network" "vpc" {

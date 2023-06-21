@@ -86,7 +86,7 @@ variable "dc_subnet_cidr" {
 
 variable "dc_instance_type" {
   description = "Instance type for the Domain Controller"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "dc_disk_size_gb" {
@@ -101,7 +101,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.05.10"
+  default     = "Windows_Server-2019-English-Full-Base-2023.06.14"
 }
 
 variable "dc_pcoip_agent_install" {
@@ -191,7 +191,7 @@ variable "lls_subnet_ips" {
 
 variable "haproxy_instance_type" {
   description = "Instance type for the HAProxy"
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 
 variable "haproxy_disk_size_gb" {
@@ -206,12 +206,12 @@ variable "haproxy_ami_owner" {
 
 variable "haproxy_ami_name" {
   description = "Name of the Rocky Linux AMI to run HAProxy on"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "lls_instance_type" {
   description = "Instance type for the PCoIP License Server"
-  default     = "t2.medium"
+  default     = "t3.medium"
 }
 
 variable "lls_disk_size_gb" {
@@ -226,7 +226,7 @@ variable "lls_ami_owner" {
 
 variable "lls_ami_name" {
   description = "Name of the Rocky Linux AMI to run PCoIP License Server on"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "lls_admin_password" {
@@ -258,7 +258,7 @@ variable "awm_subnet_cidr" {
 
 variable "awm_instance_type" {
   description = "Instance type for the Anyware Manager"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "awm_disk_size_gb" {
@@ -273,7 +273,7 @@ variable "awm_ami_owner" {
 
 variable "awm_ami_name" {
   description = "Name of the AMI to create Anyware Manager from"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 variable "awm_admin_password" {
@@ -314,7 +314,7 @@ variable "awc_instance_count_list" {
 
 variable "awc_instance_type" {
   description = "Instance type for the Anyware Connector"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "awc_disk_size_gb" {
@@ -329,7 +329,7 @@ variable "awc_ami_owner" {
 
 variable "awc_ami_name" {
   description = "Name of the AMI to create Anyware Connector from"
-  default     = "Rocky-8-ec2-8.6-20220515.0.x86_64"
+  default     = "Rocky-8-EC2-8.7-20221112.0.x86_64"
 }
 
 # Note the following limits for health check:
@@ -433,7 +433,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.05.10"
+  default     = "Windows_Server-2019-English-Full-Base-2023.06.14"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -453,7 +453,7 @@ variable "win_std_instance_name" {
 
 variable "win_std_instance_type" {
   description = "Instance type for the Windows Standard Workstations"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "win_std_disk_size_gb" {
@@ -468,7 +468,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.05.10"
+  default     = "Windows_Server-2019-English-Full-Base-2023.06.14"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -520,7 +520,7 @@ variable "centos_std_instance_name" {
 
 variable "centos_std_instance_type" {
   description = "Instance type for the CentOS Standard Workstations"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "centos_std_disk_size_gb" {

@@ -41,7 +41,27 @@ The quickest way to create a reference deployment on AWS is to run the Quickstar
 To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
 
 ### Requirements
-- the user must have Administrator permissions in an AWS account
+#### Required permissions for the AWS account used in Terraform deployment
+- Option 1: Administrator Permissions
+     - The user needs to have Administrator permissions in the AWS account.
+     - This allows full access to all AWS services and resources within the account.
+  
+- Option 2: Specific Permissions using AWS Managed Roles  
+      To execute Terraform deployment, the AWS account used should have the following roles attached:
+    - AmazonEC2FullAccess
+    - AmazonRoute53ResolverFullAccess
+    - AmazonS3FullAccess
+    - AmazonSNSFullAccess
+    - AWSCertificateManagerFullAccess
+    - AWSKeyManagementServicePowerUser
+    - CloudWatchLogsFullAccess
+    - IAMFullAccess
+
+ - Option 3: Custom Policy
+      - Users can associate a custom policy to the AWS account using the provided [Sample Policy](/docs/aws/SamplePolicy.json) here.
+      
+Options 2 and 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the group of AWS-managed roles, ensuring limited access.
+ 
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - the user must have Python installed. Please see [Download Python](https://www.python.org/downloads/) for instructions. 
 - the user must have AWS CLI installed and configured if running Quickstart script in local CLI. Please visit [AWS CLI Installation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [AWS CLI Configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for instructions.
@@ -51,7 +71,27 @@ To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
 Before starting, consider watching [this video](https://www.youtube.com/watch?v=hwEOoG4pmMQ) on how to use this repo to deploy a single-connector deployment on AWS from a Windows environment. The video guides the viewer through the entire deployment process from set up to tear down. It also shows how the deployment can be managed through Anyware Manager as a Service (AWM-S) and how end-users can connect to their machines using a PCoIP client. While the video shows the single-connector deployment, the process of creating other deployments is very similar. For deployment from a Linux environment, please see the relevant portions of our [GCP video](https://www.youtube.com/watch?v=ESzon04cW4Y). Note that since this repository is constantly being updated, there might be minor differences between what is shown in the video compared to the latest version on GitHub.
 
 ### Requirements
-- the user must have Administrator permissions in an AWS account
+#### Required permissions for the AWS account used in Terraform deployment
+- Option 1: Administrator Permissions
+     - The user needs to have Administrator permissions in the AWS account.
+     - This allows full access to all AWS services and resources within the account.
+  
+- Option 2: Specific Permissions using AWS Managed Roles  
+      To execute Terraform deployment, the AWS account used should have the following roles attached:
+    - AmazonEC2FullAccess
+    - AmazonRoute53ResolverFullAccess
+    - AmazonS3FullAccess
+    - AmazonSNSFullAccess
+    - AWSCertificateManagerFullAccess
+    - AWSKeyManagementServicePowerUser
+    - CloudWatchLogsFullAccess
+    - IAMFullAccess
+
+ - Option 3: Custom Policy
+     - Users can associate a custom policy to the AWS account using the provided [Sample Policy](/docs/aws/SamplePolicy.json) here.
+      
+Options 2 and 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the group of AWS-managed roles, ensuring limited access.
+
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - for HP Anyware deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
 - for deployments using Anyware Manager as a Service, a Anyware Manager Deployment Service Account is needed. Please see the [Anyware Manager as a Service Setup])#awm-as-a-service-setup) section below.

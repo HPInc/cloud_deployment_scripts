@@ -49,7 +49,7 @@ variable "security_group_ids" {
 
 variable "instance_type" {
   description = "Instance type for the Anyware Manager (min 4 GB RAM, 8 vCPUs)"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "disk_size_gb" {

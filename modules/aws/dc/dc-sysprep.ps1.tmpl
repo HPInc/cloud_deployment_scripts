@@ -24,6 +24,10 @@ function Decrypt-Credentials {
 }
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+# Enforce TLS 1.2 for AWS deprecation of TLS prior versions from June,2023
+# https://aws.amazon.com/blogs/security/tls-1-2-required-for-aws-endpoints/
+# Adding TLS 1.2 for System.Net.WebClient class
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
     "--> Script is not using encryption for secrets."

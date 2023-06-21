@@ -10,11 +10,10 @@ locals {
 
   #Allows ingress traffic from the IP range 35.235.240.0/20. This range contains all IP addresses that IAP uses for TCP forwarding.
   iap_cidr = ["35.235.240.0/20"]
-  myip     = chomp(data.http.myip.response_headers.Client-Ip)
+  myip     = module.myip.cidr
 }
-
-data "http" "myip" {
-  url = "https://cas.teradici.com/api/v1/health"
+module "myip" {
+  source = "../../../modules/shared/myip"
 }
 
 resource "google_compute_network" "vpc" {
@@ -209,8 +208,8 @@ resource "google_compute_address" "dc-internal-ip" {
 }
 
 resource "google_compute_router" "router" {
-  # don't use count with a list of regions here, as adding new regions 
-  # might cause unnecessary delete/recreate of resources, depending on 
+  # don't use count with a list of regions here, as adding new regions
+  # might cause unnecessary delete/recreate of resources, depending on
   # order of regions.
   for_each = local.all_region_set
 
@@ -224,8 +223,8 @@ resource "google_compute_router" "router" {
 }
 
 resource "google_compute_router_nat" "nat" {
-  # don't use count with a list of regions here, as adding new regions 
-  # might cause unnecessary delete/recreate of resources, depending on 
+  # don't use count with a list of regions here, as adding new regions
+  # might cause unnecessary delete/recreate of resources, depending on
   # order of regions.
   for_each = local.all_region_set
 

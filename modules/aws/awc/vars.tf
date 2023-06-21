@@ -113,7 +113,7 @@ variable "security_group_ids" {
 
 variable "instance_type" {
   description = "Instance type for the Anyware Connector (min 8 GB RAM, 4 vCPUs)"
-  default     = "t2.xlarge"
+  default     = "t3.xlarge"
 }
 
 variable "disk_size_gb" {
