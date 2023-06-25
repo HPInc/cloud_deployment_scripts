@@ -15,6 +15,24 @@ variable "aws_credentials_file" {
   }
 }
 
+variable "enable_ssh" {
+  description = "Flag to enable or disable the NACL and SecurityGroup on TCP 22 port on all Linux-based machines"
+  type        = bool
+  default     = false
+}
+
+variable "enable_icmp" {
+  description = "Flag to enable or disable the NACL and SecurityGroup for ICMP protocol on all workstations"
+  type        = bool
+  default     = false
+}
+
+variable "enable_rdp" {
+  description = "Flag to enable or disable the NACL and SecurityGroup on TCP/UDP 3389 Port on all Windows-based machines"
+  type        = bool
+  default     = false
+}
+
 variable "aws_region" {
   description = "AWS region"
   default     = "us-west-1"
@@ -40,7 +58,7 @@ variable "prefix" {
 }
 
 variable "allowed_admin_cidrs" {
-  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+  description = "Open VPC firewall to allow WinRM and (ICMP, SSH, RDP - if variables enable_ssh/rdp/icmp is true) from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
   default     = []
 }
 

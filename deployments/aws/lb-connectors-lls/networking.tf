@@ -191,6 +191,7 @@ resource "aws_security_group" "allow-internal" {
 }
 
 resource "aws_security_group" "allow-ssh" {
+  count  = var.enable_ssh ? 1 : 0
   name   = "${local.prefix}allow-ssh"
   vpc_id = aws_vpc.vpc.id
 
@@ -207,6 +208,7 @@ resource "aws_security_group" "allow-ssh" {
 }
 
 resource "aws_security_group" "allow-rdp" {
+  count  = var.enable_rdp ? 1 : 0
   name   = "${local.prefix}allow-rdp"
   vpc_id = aws_vpc.vpc.id
 
@@ -251,6 +253,7 @@ resource "aws_security_group" "allow-winrm" {
 # https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml
 
 resource "aws_security_group" "allow-icmp" {
+  count  = var.enable_icmp ? 1 : 0
   name   = "${local.prefix}allow-icmp"
   vpc_id = aws_vpc.vpc.id
 
@@ -457,6 +460,7 @@ resource "aws_default_network_acl" "default" {
   # use custome nacl instead
 }
 
+
 resource "aws_network_acl" "nacls-awc" {
   count = length(aws_subnet.awc-subnets)
 
@@ -465,7 +469,7 @@ resource "aws_network_acl" "nacls-awc" {
 
   # allow-ssh
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_ssh ? local.allowed_admin_cidrs : []
 
     content {
       rule_no    = 100 + ingress.key
@@ -479,7 +483,7 @@ resource "aws_network_acl" "nacls-awc" {
 
   # allow-icmp
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_icmp ? local.allowed_admin_cidrs : []
 
     content {
       rule_no    = 200 + ingress.key
@@ -588,7 +592,7 @@ resource "aws_network_acl" "nacls-dc" {
 
   # allow-rdp
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_rdp ? local.allowed_admin_cidrs : []
     content {
       rule_no    = 100 + ingress.key
       protocol   = "tcp"
@@ -600,7 +604,7 @@ resource "aws_network_acl" "nacls-dc" {
   }
 
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_rdp ? local.allowed_admin_cidrs : []
     content {
       rule_no    = 200 + ingress.key
       protocol   = "udp"
@@ -627,7 +631,7 @@ resource "aws_network_acl" "nacls-dc" {
 
   # allow-icmp
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_icmp ? local.allowed_admin_cidrs : []
 
     content {
       rule_no    = 400 + ingress.key
@@ -696,7 +700,7 @@ resource "aws_network_acl" "nacls-lls" {
 
   # allow-ssh
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_ssh ? local.allowed_admin_cidrs : []
 
     content {
       rule_no    = 100 + ingress.key
@@ -710,7 +714,7 @@ resource "aws_network_acl" "nacls-lls" {
 
   # allow-icmp
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_icmp ? local.allowed_admin_cidrs : []
 
     content {
       rule_no    = 200 + ingress.key
@@ -779,7 +783,7 @@ resource "aws_network_acl" "nacls-ws" {
 
   # allow-ssh for centos
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_ssh ? local.allowed_admin_cidrs : []
 
     content {
       rule_no    = 90 + ingress.key
@@ -793,7 +797,7 @@ resource "aws_network_acl" "nacls-ws" {
 
   # allow-rdp for windows
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_rdp ? local.allowed_admin_cidrs : []
     content {
       rule_no    = 100 + ingress.key
       protocol   = "tcp"
@@ -805,7 +809,7 @@ resource "aws_network_acl" "nacls-ws" {
   }
 
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_rdp ? local.allowed_admin_cidrs : []
     content {
       rule_no    = 200 + ingress.key
       protocol   = "udp"
@@ -818,7 +822,7 @@ resource "aws_network_acl" "nacls-ws" {
 
   # allow-icmp
   dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
+    for_each = var.enable_icmp ? local.allowed_admin_cidrs : []
     content {
       rule_no    = 300 + ingress.key
       protocol   = "icmp"
