@@ -77,7 +77,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_eip" "nat-ip" {
-  vpc = true
+  domain   = "vpc"
 
   tags = {
     Name = "${local.prefix}nat-ip"
