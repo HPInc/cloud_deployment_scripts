@@ -15,6 +15,24 @@ variable "gcp_credentials_file" {
   }
 }
 
+variable "enable_ssh" {
+  description = "Flag to enable or disable the compute firewall on TCP 22 port on all Linux-based machines from allowed_admin_cidrs"
+  type        = bool
+  default     = false
+}
+
+variable "enable_icmp" {
+  description = "Flag to enable or disable the compute firewall for ICMP protocol on all workstations from allowed_admin_cidrs"
+  type        = bool
+  default     = false
+}
+
+variable "enable_rdp" {
+  description = "Flag to enable or disable the compute firewall on TCP/UDP 3389 Port on all Windows-based machines from allowed_admin_cidrs"
+  type        = bool
+  default     = false
+}
+
 variable "gcp_region" {
   description = "GCP region"
   default     = "us-west2"
@@ -461,7 +479,8 @@ variable "gcp_ops_agent_enable" {
 }
 
 variable "gcp_iap_enable" {
-  description = "Enable GCP IAP for connecting instances via IAP"
+  description = "Enables or Disables Access via GCP's IAP: If set to 'true', this option opens TCP ports 22 (SSH) and 3389 (RDP) in the compute firewall, specifically for traffic originating from GCP's IAP CIDR range. This allows administrators to access VMs using SSH or RDP through GCP's IAP TCP forwarding feature"
+  type        = bool
   default     = true
 }
 

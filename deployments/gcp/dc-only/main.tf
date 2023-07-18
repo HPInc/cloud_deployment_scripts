@@ -94,13 +94,14 @@ module "dc" {
   gcp_zone    = var.gcp_zone
   subnet      = google_compute_subnetwork.dc-subnet.self_link
   private_ip  = var.dc_private_ip
-  network_tags = [
-    google_compute_firewall.allow-dns.name,
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-pcoip.name,
-    google_compute_firewall.allow-rdp.name,
-    google_compute_firewall.allow-winrm.name,
-  ]
+  network_tags = concat(
+    [google_compute_firewall.allow-dns.name],
+    [google_compute_firewall.allow-winrm.name],
+    [google_compute_firewall.allow-pcoip.name],
+    var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   gcp_ops_agent_enable = var.gcp_ops_agent_enable
   ops_setup_script     = local.ops_win_setup_script
