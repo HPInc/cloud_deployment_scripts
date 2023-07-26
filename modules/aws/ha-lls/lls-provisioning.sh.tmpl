@@ -119,11 +119,11 @@ install_pcoip_license_server() {
     curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
     retry 5 `# 10 retries` \
           10 `# 10s interval` \
-          "dnf install -y java-11-openjdk pcoip-license-server" \
+          "dnf install -y java-11-openjdk tzdata-java pcoip-license-server" \
           "--> ERROR: Failed to install pcoip-license-server."
     set +x
     # PCoIP License Server takes approximately 30-60s to start. Need to wait for PCoIP License Server to
-    # start before running any LLS commands. 
+    # start before running any LLS commands.
     retry 10 `# 10 retries` \
         10 `# 10s interval` \
         "systemctl is-active flexnetls-TERADICI.service" \
@@ -218,7 +218,7 @@ setup_main_lls() {
     set +x
     pcoip-activate-online-license -a "$LLS_ACTIVATION_CODE" -c $LLS_LICENSE_COUNT -p "$LLS_ADMIN_PASSWORD"
     set -x
-    
+
     # Signal Backup to restart to sync the new licenses
     send_msg_to $LLS_BACKUP_IP RESTART_LLS
 
@@ -257,7 +257,7 @@ setup_backup_lls() {
     #fi
 
     #time systemctl restart flexnetls-TERADICI
-    
+
     # Step 4
     set +x
     $FLEXNETLSADMIN -server http://localhost:7070 -authorize admin $LLS_ADMIN_PASSWORD -config -set fne.syncTo.mainUri=http://$LLS_MAIN_IP:7070/fne/bin/capability
