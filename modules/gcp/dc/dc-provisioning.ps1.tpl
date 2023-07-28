@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -6,6 +6,7 @@
 # Make sure this file has Windows line endings
 
 ##### Template Variables #####
+$BASE_DIR                    = "C:\Teradici"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
@@ -17,8 +18,9 @@ $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
+$DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
 
-$LOG_FILE = "C:\Teradici\provisioning.log"
+$LOG_FILE = "$BASE_DIR\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
@@ -61,10 +63,10 @@ function Setup-Ops {
     if (Test-Path "C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml") {
         "--> Ops Agent configuration file already exists, skipping custom Ops Agent configuration to avoid overwriting existing settings"
     } else {
-        Retry -Action {gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "C:\Teradici\"}
+        Retry -Action {gsutil cp gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "$BASE_DIR"}
         
-        powershell "C:\Teradici\$OPS_SETUP_SCRIPT" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
-                                                     "C:\Teradici\provisioning.log"
+        powershell "$BASE_DIR\$OPS_SETUP_SCRIPT" "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt" `
+                                                     "$BASE_DIR\provisioning.log"
                                                     
     }
 }
@@ -121,7 +123,7 @@ function PCoIP-Agent-Install {
     "Installing PCoIP standard agent..."
     "################################################################"
 
-    $agentInstallerDLDirectory = "C:\Teradici"
+    $agentInstallerDLDirectory = "$BASE_DIR"
     $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
     $destFile = $agentInstallerDLDirectory + '\' + $PCOIP_AGENT_FILENAME
     $wc = New-Object System.Net.WebClient
@@ -179,6 +181,47 @@ function PCoIP-Agent-Register {
     } while ($Retry)
 
     "--> PCoIP agent registered successfully."
+}
+
+function Update-Instance-Metadata {
+    "################################################################"
+    "Updating Instance Metadata..."
+    "################################################################"
+
+    $token = Get-AuthToken
+    $headers = @{"Authorization" = "Bearer $($token)"; "Content-Type" = "application/json"}
+    $zone_id = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
+    $instance_id = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/id
+
+    # Retrieve information about the virtual machine instance using the API request.
+    $compute_base_uri = "https://compute.googleapis.com/compute/v1/$zone_id/instances/$instance_id"
+    $instance = Invoke-RestMethod -Method "Get" -Headers $headers -Uri $compute_base_uri
+
+    # Remove the provisioning script from "windows-startup-script-url" key in the instance's metadata.
+    $new_items = @(@{"key" = "windows-startup-script-url"; "value" = ""})
+    $new_metadata = $instance."metadata".PsObject.Copy()
+
+    # update the "items" property in the copied metadata with the new_items array.
+    $new_metadata | Add-Member -NotePropertyName "items" -NotePropertyValue $new_items -Force
+    $body = $new_metadata | ConvertTo-Json
+
+    # Send an HTTP POST request to update the instance metadata using the constructed URI.
+    Invoke-RestMethod -Method "Post" -Headers $headers -Uri $compute_base_uri/setMetadata -Body $body
+}
+
+function Schedule-AD-User-Creation {
+    "################################################################"
+    "Downloading AD accounts set-up script..."
+    "################################################################"
+    
+    Set-Location -Path $BASE_DIR
+    "--> Downloading $BUCKET_NAME\$DC_NEW_AD_ACCOUNTS_SCRIPT"
+    gsutil cp gs://$BUCKET_NAME/$DC_NEW_AD_ACCOUNTS_SCRIPT "$BASE_DIR"
+
+    $ScriptPath = "$BASE_DIR\$DC_NEW_AD_ACCOUNTS_SCRIPT"
+   
+    # Random delay to avoid conflicts at startup with other system startup scripts, ensure a greater chance of success.
+    schtasks /create /tn NewADProvision /sc onstart /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -File '$ScriptPath'" /NP /DELAY 0002:00 /RU SYSTEM
 }
 
 Start-Transcript -path $LOG_FILE -append
@@ -242,8 +285,8 @@ Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thu
 "Uploading LDAPS Cert to Bucket..."
 "================================================================"
 # Save LDAPS Cert as a Base64 encoded DER certificate
-$derCert = "C:\Teradici\LdapsCert.der"
-$pemCert = "C:\Teradici\LdapsCert.pem"
+$derCert = "$BASE_DIR\LdapsCert.der"
+$pemCert = "$BASE_DIR\LdapsCert.pem"
 $myCertLoc = 'cert:\LocalMachine\My\' + $thumbprint
 Export-Certificate -Cert $myCertLoc -FilePath $derCert -Type CERT
 certutil -encode $derCert $pemCert
@@ -270,6 +313,19 @@ if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
 }
 
 "================================================================"
-"Restarting computer..."
+"Removing provisioning script from metadata..."
 "================================================================"
+# Modify the windows-startup-script-url in metadata to null value
+# to prevent provisiong script from executing during subsequent 
+# startup events.
+Update-Instance-Metadata
+
+"================================================================"
+"Provisioning AD accounts script upon restart..."
+"================================================================"
+# Adds a task trigger to execute the ad_accounts setup script 
+# post-restart which provisions admin users and domain users.
+Schedule-AD-User-Creation
+
+"--> Restart PC for Install-ADDSForest"
 Restart-Computer -Force
