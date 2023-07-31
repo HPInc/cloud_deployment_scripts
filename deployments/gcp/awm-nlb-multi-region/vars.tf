@@ -81,7 +81,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230615"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230712"
 }
 
 variable "dc_admin_password" {
@@ -169,7 +169,7 @@ variable "awm_disk_size_gb" {
 
 variable "awm_disk_image" {
   description = "Disk image for the Anyware Manager"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230615"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230711"
 }
 
 variable "awm_admin_user" {
@@ -235,7 +235,7 @@ variable "awc_disk_size_gb" {
 
 variable "awc_disk_image" {
   description = "Disk image for the Anyware Connector"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230615"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230711"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -392,7 +392,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230615"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230712"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -422,7 +422,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230615"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230712"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -462,7 +462,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20230615"
+  default     = "projects/centos-cloud/global/images/centos-7-v20230711"
 }
 
 variable "centos_std_instance_count_list" {
@@ -487,7 +487,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20230615"
+  default     = "projects/centos-cloud/global/images/centos-7-v20230711"
 }
 
 variable "centos_admin_user" {

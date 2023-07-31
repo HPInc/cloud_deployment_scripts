@@ -69,12 +69,12 @@ module "dc" {
 
   bucket_name = module.shared-bucket.bucket.id
   subnet      = aws_subnet.dc-subnet.id
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-rdp.id,
-    aws_security_group.allow-winrm.id,
-    aws_security_group.allow-icmp.id,
-  ]
+  security_group_ids =concat(
+    [aws_security_group.allow-internal.id],
+    [aws_security_group.allow-winrm.id],
+    var.enable_rdp  ? [aws_security_group.allow-rdp[0].id]  : [],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+  )
 
   instance_type = var.dc_instance_type
   disk_size_gb  = var.dc_disk_size_gb
@@ -103,11 +103,11 @@ module "ha-lls" {
   bucket_name  = module.shared-bucket.bucket.id
   subnet       = aws_subnet.lls-subnet.id
   assigned_ips = var.lls_subnet_ips
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-ssh.id,
-  ]
+  security_group_ids = concat(
+    [aws_security_group.allow-internal.id],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+    var.enable_ssh  ? [aws_security_group.allow-ssh[0].id]  : [],
+  )
 
   haproxy_instance_type = var.haproxy_instance_type
   haproxy_disk_size_gb  = var.haproxy_disk_size_gb
@@ -135,12 +135,12 @@ resource "aws_lb" "awc-alb" {
   name               = "${local.prefix}awc-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-ssh.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-pcoip.id,
-  ]
+  security_groups = concat(
+    [aws_security_group.allow-internal.id],
+    [aws_security_group.allow-pcoip.id],
+    var.enable_ssh  ? [aws_security_group.allow-ssh[0].id]  : [],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+  )
   subnets = aws_subnet.awc-subnets[*].id
 }
 
@@ -240,12 +240,12 @@ module "awc" {
   subnet_list         = aws_subnet.awc-subnets[*].id
   instance_count_list = var.awc_instance_count_list
 
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-ssh.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-pcoip.id,
-  ]
+  security_group_ids = concat(
+    [aws_security_group.allow-internal.id],
+    [aws_security_group.allow-pcoip.id],
+    var.enable_ssh  ? [aws_security_group.allow-ssh[0].id]  : [],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+  )
 
   bucket_name   = module.shared-bucket.bucket.id
   instance_type = var.awc_instance_type
@@ -298,11 +298,11 @@ module "win-gfx" {
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-rdp.id,
-  ]
+  security_group_ids = concat(
+    [aws_security_group.allow-internal.id],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+    var.enable_rdp  ? [aws_security_group.allow-rdp[0].id]  : [],
+  )
 
   idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization
   idle_shutdown_enable                       = var.idle_shutdown_enable
@@ -345,11 +345,11 @@ module "win-std" {
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-rdp.id,
-  ]
+  security_group_ids = concat(
+    [aws_security_group.allow-internal.id],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+    var.enable_rdp  ? [aws_security_group.allow-rdp[0].id]  : [],
+  )
 
   idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization
   idle_shutdown_enable                       = var.idle_shutdown_enable
@@ -391,11 +391,11 @@ module "centos-gfx" {
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-ssh.id,
-  ]
+  security_group_ids = concat(
+    [aws_security_group.allow-internal.id],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+    var.enable_ssh  ? [aws_security_group.allow-ssh[0].id]  : [],
+  )
 
   auto_logoff_cpu_utilization            = var.auto_logoff_cpu_utilization
   auto_logoff_enable                     = var.auto_logoff_enable
@@ -444,11 +444,11 @@ module "centos-std" {
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
   enable_public_ip = var.enable_workstation_public_ip
-  security_group_ids = [
-    aws_security_group.allow-internal.id,
-    aws_security_group.allow-icmp.id,
-    aws_security_group.allow-ssh.id,
-  ]
+  security_group_ids = concat(
+    [aws_security_group.allow-internal.id],
+    var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
+    var.enable_ssh  ? [aws_security_group.allow-ssh[0].id]  : [],
+  )
 
   auto_logoff_cpu_utilization            = var.auto_logoff_cpu_utilization
   auto_logoff_enable                     = var.auto_logoff_enable

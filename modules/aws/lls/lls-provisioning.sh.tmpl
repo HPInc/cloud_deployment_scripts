@@ -159,12 +159,12 @@ curl -1sLf $LLS_REPO_SETUP_SCRIPT_URL | distro=el codename=8 bash
 
 retry 5 `# 10 retries` \
       10 `# 10s interval` \
-      "dnf install -y java-11-openjdk pcoip-license-server" \
+      "dnf install -y java-11-openjdk tzdata-java pcoip-license-server" \
       "--> ERROR: Failed to install pcoip-license-server."
 
 set +x
 # PCoIP License Server takes approximately 30-60s to start. Need to wait for PCoIP License Server to
-# start before running any LLS commands. 
+# start before running any LLS commands.
 retry 10 `# 10 retries` \
       10 `# 10s interval` \
       "systemctl is-active flexnetls-TERADICI.service" \

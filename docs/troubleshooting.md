@@ -14,10 +14,15 @@
 
 ---
 
-## Connecting to VMs Using SSH/RDP
+### Connecting to VMs Using SSH/RDP
+- Access to AWS instances through SSH/RDP is only possible if the variables enable_ssh/enable_rdp in the terraform.tfvars file are set to True.
 - To debug Linux VMs, SSH can be used to login to the machines for troubleshooting and viewing log files.
 - To debug Windows VMs, a RDP client such as Windows Remote Desktop on Windows or xfreerdp on Linux can be used to login to the machines for troubleshooting and viewing log files.
 - Workstation VMs are not exposed to the internet and do not have public IPs, a bastion host such as the DC or Connector can be used to access the Workstation VMs on the private network.
+
+### Connecting to AWS Instances Using Session Manager
+- Session Manager is enabled by default on all AWS instances, allowing access to all virtual machines (VMs) via Session Manager, unless enable_ssm is set to false in terraform.tfvars
+- To access VM's through SSM, Please refer this link - https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html
 
 ### Connecting to CentOS Workstations
 - One way to access CentOS Workstations is to use the Connector as a bastion host. Please refer to the log tables below for the corresponding <login-user> for each VM.

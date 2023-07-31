@@ -15,6 +15,24 @@ variable "aws_credentials_file" {
   }
 }
 
+variable "enable_ssh" {
+  description = "Flag to enable or disable the NACL and SecurityGroup on TCP 22 port on all Linux-based machines"
+  type        = bool
+  default     = false
+}
+
+variable "enable_icmp" {
+  description = "Flag to enable or disable the NACL and SecurityGroup for ICMP protocol on all workstations"
+  type        = bool
+  default     = false
+}
+
+variable "enable_rdp" {
+  description = "Flag to enable or disable the NACL and SecurityGroup on TCP/UDP 3389 Port on all Windows-based machines"
+  type        = bool
+  default     = false
+}
+
 variable "aws_region" {
   description = "AWS region"
   default     = "us-west-1"
@@ -40,7 +58,7 @@ variable "prefix" {
 }
 
 variable "allowed_admin_cidrs" {
-  description = "Open VPC firewall to allow ICMP, SSH, WinRM and RDP from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
+  description = "Open VPC firewall to allow WinRM and (ICMP, SSH, RDP - if variables enable_ssh/rdp/icmp is true) from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
   default     = []
 }
 
@@ -101,7 +119,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.06.14"
+  default     = "Windows_Server-2019-English-Full-Base-2023.07.12"
 }
 
 variable "dc_pcoip_agent_install" {
@@ -406,7 +424,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.06.14"
+  default     = "Windows_Server-2019-English-Full-Base-2023.07.12"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -441,7 +459,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.06.14"
+  default     = "Windows_Server-2019-English-Full-Base-2023.07.12"
 }
 
 variable "win_std_pcoip_agent_version" {
