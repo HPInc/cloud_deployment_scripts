@@ -66,7 +66,13 @@ variable "allowed_admin_cidrs" {
 variable "allowed_client_cidrs" {
   description = "Open VPC firewall to allow PCoIP connections from these IP Addresses or CIDR ranges. e.g. ['a.b.c.d/32', 'e.f.g.0/24']"
   default     = ["0.0.0.0/0"]
-}
+
+  # This limitation is in accordance with the constraints of AWS NACLs (Network Access Control Lists), where up to 20 rules are allowed per NACL.
+  validation {
+    condition     = length(var.allowed_client_cidrs) <= 5
+    error_message = "allowed_client_cidrs should have a maximum of 5 entries."
+  }
+} 
 
 variable "admin_ssh_key_name" {
   description = "Name of Admin SSH Key"
