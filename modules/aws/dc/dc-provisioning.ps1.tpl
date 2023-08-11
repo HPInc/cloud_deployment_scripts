@@ -6,7 +6,7 @@
 # Make sure this file has Windows line endings
 
 ##### Template Variables #####
-$ADMIN_PASSWORD              = "${admin_password}"
+$ADMIN_PASSWORD_ID           = "${admin_password_id}"
 $AWS_SSM_ENABLE              = "${aws_ssm_enable}"
 $BASE_DIR                    = "C:\Teradici"
 $BUCKET_NAME                 = "${bucket_name}"
@@ -18,8 +18,8 @@ $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $TAG_NAME                    = "${tag_name}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
-$SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
+$PCOIP_REGISTRATION_CODE_ID  = "${pcoip_registration_code_id}"
+$SAFE_MODE_ADMIN_PASSWORD_ID = "${safe_mode_admin_password_id}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "$BASE_DIR\provisioning.log"
@@ -32,10 +32,14 @@ $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
 $INSTANCEID=(Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id' -UseBasicParsing).Content
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("admin_password", "$ADMIN_PASSWORD")
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
+$secret_adminpassword= Get-SECSecretValue -SecretId "$ADMIN_PASSWORD_ID"
+$admin_password = $secret_adminpassword.SecretString
+
+$secret_safemode_adminpassword = Get-SECSecretValue -SecretId "$SAFE_MODE_ADMIN_PASSWORD_ID"
+$safe_mode_admin_password = $secret_safemode_adminpassword.SecretString
+
+$secret_pcoip = Get-SECSecretValue -SecretId "$PCOIP_REGISTRATION_CODE_ID"
+$PCOIP_REGISTRATION_CODE = $secret_pcoip.SecretString
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -120,7 +124,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $pcoip_registration_code
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -177,15 +181,8 @@ Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 # Adding TLS 1.2 for System.Net.WebClient class
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
-    Decrypt-Credentials
-}
-
 "--> Setting Administrator password..."
-net user Administrator $DATA."admin_password" /active:yes
+net user Administrator $admin_password /active:yes
 
 # SSM agent creates ssm-user account on the managed node when SSM agent starts,
 # but this account isn't created automatically on Windows Server domain controller.
@@ -233,7 +230,7 @@ New-EC2Tag -Resource $INSTANCEID -Tag @{Key="$TAG_NAME"; Value="Step 2/4 - Insta
 "Installing a new forest..."
 "================================================================"
 Install-ADDSForest -CreateDnsDelegation:$false `
-    -SafeModeAdministratorPassword (ConvertTo-SecureString $DATA."safe_mode_admin_password" -AsPlainText -Force) `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString $safe_mode_admin_password -AsPlainText -Force) `
     -DatabasePath $DatabasePath `
     -SysvolPath $SysvolPath `
     -DomainName $DomainName `
@@ -284,7 +281,7 @@ if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
     } else {
         PCoIP-Agent-Install
     }
-
+    
     if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
         PCoIP-Agent-Register
     }

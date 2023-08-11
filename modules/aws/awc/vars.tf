@@ -26,8 +26,8 @@ variable "awc_flag_manager_insecure" {
   default     = false
 }
 
-variable "awm_deployment_sa_file" {
-  description = "Location of Anyware Manager Deployment Service Account JSON file"
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON file"
   type        = string
 }
 
@@ -60,8 +60,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }

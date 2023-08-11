@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 ##### Template Variables #####
-$ADMIN_PASSWORD              = "${admin_password}"
-$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
-$AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$ADMIN_PASSWORD_ID              = "${admin_password_id}"
+$AD_SERVICE_ACCOUNT_USERNAME    = "${ad_service_account_username}"
+$AD_SERVICE_ACCOUNT_PASSWORD_ID = "${ad_service_account_password_id}"
 $AWS_SSM_ENABLE              = "${aws_ssm_enable}"
 $BUCKET_NAME                 = "${bucket_name}"
 $CLOUDWATCH_ENABLE           = [System.Convert]::ToBoolean("${cloudwatch_enable}")
@@ -19,7 +19,7 @@ $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_
 $NVIDIA_DRIVER_FILENAME      = "${nvidia_driver_filename}"
 $NVIDIA_DRIVER_URL           = "${nvidia_driver_url}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$PCOIP_REGISTRATION_CODE_ID  = "${pcoip_registration_code_id}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
@@ -31,10 +31,14 @@ $AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-graphics-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-graphics_$PCOIP_AGENT_VERSION.exe"
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("admin_password", "$ADMIN_PASSWORD")
-$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
+$secret= Get-SECSecretValue -SecretId "$ADMIN_PASSWORD_ID"
+$admin_password = $secret.SecretString
+    
+$secret_accountpassword= Get-SECSecretValue -SecretId "$AD_SERVICE_ACCOUNT_PASSWORD_ID"
+$ad_service_account_password = $secret_accountpassword.SecretString
+
+$secret_pcoip = Get-SECSecretValue -SecretId "$PCOIP_REGISTRATION_CODE_ID"
+$PCOIP_REGISTRATION_CODE = $secret_pcoip.SecretString
 
 $global:restart = $false
 
@@ -166,7 +170,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $pcoip_registration_code
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -261,7 +265,7 @@ function Join-Domain {
     "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
 
     $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
-    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
+    $password = ConvertTo-SecureString $ad_service_account_password -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
     # Read "Name" tag for hostname
@@ -382,7 +386,7 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-net user Administrator $DATA."admin_password" /active:yes
+net user Administrator $admin_password /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 

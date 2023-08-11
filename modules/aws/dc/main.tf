@@ -36,20 +36,20 @@ resource "aws_s3_object" "dc_provisioning_script" {
   content = templatefile(
     "${path.module}/${local.dc_provisioning_script}.tpl",
     {
-      admin_password             = var.admin_password
-      aws_ssm_enable             = var.aws_ssm_enable
-      bucket_name                = var.bucket_name
-      cloudwatch_enable          = var.cloudwatch_enable
-      cloudwatch_setup_script    = var.cloudwatch_setup_script
-      domain_name                = var.domain_name
-      dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script
-      tag_name                   = local.tag_name
-      ldaps_cert_filename        = var.ldaps_cert_filename
-      pcoip_agent_install        = var.pcoip_agent_install
-      pcoip_agent_version        = var.pcoip_agent_version
-      pcoip_registration_code    = var.pcoip_registration_code
-      safe_mode_admin_password   = var.safe_mode_admin_password
-      teradici_download_token    = var.teradici_download_token
+      admin_password_id           = var.admin_password_id
+      aws_ssm_enable              = var.aws_ssm_enable
+      bucket_name                 = var.bucket_name
+      cloudwatch_enable           = var.cloudwatch_enable
+      cloudwatch_setup_script     = var.cloudwatch_setup_script
+      domain_name                 = var.domain_name
+      dc_new_ad_accounts_script   = local.dc_new_ad_accounts_script
+      tag_name                    = local.tag_name
+      ldaps_cert_filename         = var.ldaps_cert_filename
+      pcoip_agent_install         = var.pcoip_agent_install
+      pcoip_agent_version         = var.pcoip_agent_version
+      pcoip_registration_code_id  = var.pcoip_registration_code_id
+      safe_mode_admin_password_id = var.safe_mode_admin_password_id
+      teradici_download_token     = var.teradici_download_token
     }
   )
 }
@@ -71,10 +71,10 @@ resource "aws_s3_object" "dc_new_ad_accounts_script" {
     {
       domain_name = var.domain_name
       # admin users
-      ad_service_account_username  = var.ad_service_account_username
-      ad_service_account_password  = var.ad_service_account_password
-      tag_name                     = local.tag_name
-      final_status                 = local.final_status
+      ad_service_account_username     = var.ad_service_account_username
+      ad_service_account_password_id  = var.ad_service_account_password_id
+      tag_name                        = local.tag_name
+      final_status                    = local.final_status
 
       # domain users
       csv_file = local.new_domain_users == 1 ? local.domain_users_list : ""
@@ -128,6 +128,17 @@ data "aws_iam_policy_document" "dc-policy-doc" {
     "arn:aws:s3:::${var.bucket_name}/${local.dc_provisioning_script}", 
     "arn:aws:s3:::${var.bucket_name}/${local.dc_new_ad_accounts_script}",
     "arn:aws:s3:::${var.bucket_name}/${local.domain_users_list}",
+    ]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "${var.pcoip_registration_code_id}",
+      "${var.ad_service_account_password_id}",
+      "${var.safe_mode_admin_password_id}",
+      "${var.admin_password_id}"
     ]
     effect    = "Allow"
   }

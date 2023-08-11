@@ -80,9 +80,9 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
     - AmazonS3FullAccess
     - AmazonSNSFullAccess
     - AWSCertificateManagerFullAccess
-    - AWSKeyManagementServicePowerUser
     - CloudWatchLogsFullAccess
     - IAMFullAccess
+    - SecretsManagerReadWrite
 
  - Option 3: Custom Policy
      - Users can associate a custom policy to the AWS account using the provided [Sample Policy](/docs/aws/SamplePolicy.json) here.

@@ -6,8 +6,8 @@
 # LICENSE file in the root directory of this source tree.
 
 ##### Template Variables #####
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AD_SERVICE_ACCOUNT_PASSWORD_ID=${ad_service_account_password_id}
 AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
 AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
 AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=${auto_logoff_minutes_idle_before_logoff}
@@ -24,7 +24,7 @@ IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
 IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
 NVIDIA_DRIVER_URL=${nvidia_driver_url}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
@@ -33,6 +33,8 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_IP="http://169.254.169.254"
 TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
+AD_SERVICE_ACCOUNT_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$AD_SERVICE_ACCOUNT_PASSWORD_ID" --query SecretString --output text)
+PCOIP_REGISTRATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$PCOIP_REGISTRATION_CODE_ID" --query SecretString --output text)
 log() {
     local message="$1"
     echo "[$(date)] $message"

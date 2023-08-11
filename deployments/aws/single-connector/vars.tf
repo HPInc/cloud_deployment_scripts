@@ -432,6 +432,13 @@ variable "centos_std_ami_name" {
   default     = "CentOS Linux 7 x86_64 - 2211"
 }
 
+
+variable "recovery_window_in_days" {
+  description = "Number of days that AWS Secrets Manager waits before it can delete the secret"
+  # This value can be 0 to force deletion without recovery (recommended for development) or range from 7 to 30 days.
+  default     = 0
+}
+
 variable "auto_logoff_enable" {
   description = "Enable auto log-off for Workstations"
   default     = true

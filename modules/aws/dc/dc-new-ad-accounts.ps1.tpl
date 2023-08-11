@@ -11,24 +11,9 @@ $BASE_DIR = "C:\Teradici"
 # Setup-CloudWatch will track this log file.
 $LOG_FILE = "$BASE_DIR\dc_new_ad_accounts.log"
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("ad_service_account_password", "${ad_service_account_password}")
+$secret_accountpassword= Get-SECSecretValue -SecretId "${ad_service_account_password_id}"
+$ad_service_account_password = $secret_accountpassword.SecretString
 $INSTANCEID=(Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id' -UseBasicParsing).Content
-
-function Decrypt-Credentials {
-    try {
-        "--> Decrypting ad_service_account_password..."
-        $ByteAry = [System.Convert]::FromBase64String("${ad_service_account_password}")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."ad_service_account_password" = $StreamRead.ReadToEnd()
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
-}
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
@@ -45,7 +30,7 @@ do {
             -UserPrincipalName "${ad_service_account_username}@${domain_name}" `
             -Enabled $True `
             -PasswordNeverExpires $True `
-            -AccountPassword (ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force)
+            -AccountPassword (ConvertTo-SecureString $ad_service_account_password -AsPlainText -Force)
         "--> Added AD Domain Admin User $ad_service_account_username"
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
