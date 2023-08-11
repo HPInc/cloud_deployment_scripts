@@ -79,6 +79,66 @@ install_prereqs() {
     fi
 }
 
+install_socat() {
+    log "--> Installing socat..."
+    dnf update -y
+    dnf install -y socat
+
+    if [ $? -ne 0 ]
+    then
+        log "--> ERROR: Failed to install socat. Exiting provisioning script..."
+        exit 1
+    fi
+}
+
+install_socat_systemd_service() {
+    log "--> Installing socat systemd service for connectivity to DC"
+    SOCAT_DC_FILE="/etc/systemd/system/socat-dc.service"
+
+    cat >$SOCAT_DC_FILE <<EOL
+[Unit]
+Description=socat service for DC RDP Connectivity through CAS Connector
+
+[Service]
+Type=simple
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=socat-dc-connection
+
+ExecStart=socat -d -d tcp-listen:3389,fork,reuseaddr tcp:${domain_controller_ip}:3389
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+    log "Service file created"
+    log "Reloading systemd daemon"
+    systemctl daemon-reload
+    if [ $? -ne 0 ]
+    then
+        log "--> Exiting provisioning script due to an error."
+        exit 1
+    fi
+
+    log "Starting socat->DC connectivity service"
+    systemctl start socat-dc
+    if [ $? -ne 0 ]
+    then
+        log "--> Exiting provisioning script due to an error."
+        exit 1
+    fi
+
+    log "Enabling socat->dc connectivity so restarts if rebooted"
+    systemctl enable socat-dc
+    if [ $? -ne 0 ]
+    then
+        log "--> Exiting provisioning script due to an error."
+        exit 1
+    fi
+
+}
+
 setup_cloudwatch(){
     if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
     then
@@ -430,6 +490,10 @@ log "$(date) Running $0 as $(whoami)..."
 cd $PROVISIONING_DIR
 
 install_prereqs
+
+install_socat
+
+install_socat_systemd_service
 
 if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
