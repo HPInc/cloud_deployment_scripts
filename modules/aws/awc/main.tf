@@ -283,6 +283,12 @@ resource "aws_instance" "awc" {
   root_block_device {
     volume_type = "gp2"
     volume_size = var.disk_size_gb
+    tags = merge(
+      { 
+        Name = "vol-${var.prefix}-sda1-connector"
+      },
+      {Environment = "${var.prefix}"} # var.common_tags
+    )
   }
 
   associate_public_ip_address = true
@@ -294,6 +300,23 @@ resource "aws_instance" "awc" {
   iam_instance_profile = aws_iam_instance_profile.awc-instance-profile[0].name
 
   user_data = data.template_file.user-data.rendered
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to user_data, since we only use it when
+      # the node initializes and we do not want subsequent
+      # enhancements to user_data to cause the node to be replaced
+      user_data,
+      # Since the DC runs on a standard AWS Windows Server, it's possible that
+      # AWS will eventually age out the AMI used to initially deploy the DC,
+      # so we ignore AMI changes here
+      ami,
+      # if the ec2 instance_type is changed from the AWS Console, it will
+      # cause terraform to think the ebs_optimized field has changed and
+      # the instance will be replaced, so we ignore that field here
+      ebs_optimized,
+    ]
+  }
 
   tags = {
     Name = "${local.prefix}${var.host_name}-${count.index}"
