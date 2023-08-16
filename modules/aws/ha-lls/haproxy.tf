@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -129,16 +129,6 @@ data "aws_iam_policy_document" "haproxy-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

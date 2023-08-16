@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,7 +21,6 @@ resource "aws_s3_object" "lls-provisioning-script" {
       bucket_name             = var.bucket_name,
       cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,
-      customer_master_key_id  = var.customer_master_key_id,
       haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
       haproxy_master_ip       = var.assigned_ips["haproxy_master"],
       lls_activation_code     = var.lls_activation_code,
@@ -96,16 +95,6 @@ data "aws_iam_policy_document" "lls-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

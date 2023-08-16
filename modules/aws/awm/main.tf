@@ -35,7 +35,6 @@ resource "aws_s3_object" "awm-provisioning-script" {
       bucket_name              = var.bucket_name,
       cloudwatch_enable        = var.cloudwatch_enable,
       cloudwatch_setup_script  = var.cloudwatch_setup_script,
-      customer_master_key_id   = var.customer_master_key_id,
       pcoip_registration_code  = var.pcoip_registration_code,
       teradici_download_token  = var.teradici_download_token,
     }
@@ -76,12 +75,6 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 resource "aws_iam_role" "awm-role" {
   name               = "${local.prefix}awm_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
-}
-
-data "aws_kms_key" "encryption-key" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  key_id = var.customer_master_key_id
 }
 
 data "aws_iam_policy_document" "awm-policy-doc" {
@@ -146,16 +139,6 @@ data "aws_iam_policy_document" "awm-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Encrypt", "kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

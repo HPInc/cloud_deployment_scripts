@@ -32,13 +32,6 @@ function Decrypt-Credentials {
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
 
-if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key ${customer_master_key_id} for secrets."
-    Decrypt-Credentials
-}
-
 New-EC2Tag -Resource $INSTANCEID -Tag @{Key="${tag_name}"; Value="Step 4/4 - Creating new AD Domain Admin accounts..."}
 
 "================================================================"

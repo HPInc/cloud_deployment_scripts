@@ -16,7 +16,6 @@ AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
-CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
@@ -112,29 +111,7 @@ get_credentials() {
               "aws s3 cp s3://$BUCKET_NAME/$AWM_AWS_CREDENTIALS_FILE $INSTALL_DIR" \
               "--> ERROR: Failed to download AWS credentials file from bucket $BUCKET_NAME."
     fi
-
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
-    then
-        AWM_GUI_ADMIN_PASSWORD=$AWM_ADMIN_PASSWORD
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
-
-        log "--> Decrypting Anyware Manager GUI Administrator password..."
-        AWM_GUI_ADMIN_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AWM_ADMIN_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
-
-        log "--> Decrypting PCoIP registration code..."
-        PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$PCOIP_REGISTRATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
-
-        if [ "$AWM_AWS_CREDENTIALS_FILE" ]
-        then
-            log "--> Decrypting AWS Service Account credentials file..."
-            aws kms decrypt --region $AWS_REGION --ciphertext-blob "fileb://$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE" --output text --query Plaintext | base64 -d > "$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE.decrypted"
-            mv "$AWM_AWS_CREDENTIALS_FILE.decrypted" "$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE"
-        fi
-    fi
-
+    AWM_GUI_ADMIN_PASSWORD=$AWM_ADMIN_PASSWORD
     set -x
 }
 
@@ -257,20 +234,6 @@ awm_setup() {
 }
 
 upload_dsa_key() {
-    if [[ "$CUSTOMER_MASTER_KEY_ID" ]]
-    then
-        log "--> Encrypting Deployment Service Account key with $CUSTOMER_MASTER_KEY_ID"
-
-        mv $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE.orig
-
-        aws kms encrypt \
-            --region $AWS_REGION \
-            --key-id $CUSTOMER_MASTER_KEY_ID \
-            --plaintext fileb://$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE.orig \
-            --output text \
-            --query CiphertextBlob | base64 -d > $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE
-    fi
-
     log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
 
     retry 5 `# 5 retries`\

@@ -11,7 +11,6 @@ $AWS_SSM_ENABLE              = "${aws_ssm_enable}"
 $BUCKET_NAME                 = "${bucket_name}"
 $CLOUDWATCH_ENABLE           = [System.Convert]::ToBoolean("${cloudwatch_enable}")
 $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
-$CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
 $IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
@@ -66,40 +65,6 @@ function Setup-CloudWatch {
                                         C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_kmdod*.txt "%Y%m%d%H%M%S" `
                                         C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_server*.txt "%Y%m%d%H%M%S" `
                                         C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
-}
-
-function Decrypt-Credentials {
-    "################################################################"
-    "Decrypting credentials..."
-    "################################################################"
-    try {
-        if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
-            "--> Decrypting pcoip_registration_code..."
-            $ByteAry = [System.Convert]::FromBase64String("$PCOIP_REGISTRATION_CODE")
-            $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-            $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-            $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-            $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
-        }
-
-        "--> Decrypting admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$ADMIN_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."admin_password" = $StreamRead.ReadToEnd()
-
-        "--> Decrypting ad_service_account_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$AD_SERVICE_ACCOUNT_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."ad_service_account_password" = $StreamRead.ReadToEnd()
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
 }
 
 function PCoIP-Agent-is-Installed {
@@ -366,13 +331,6 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Running as Administrator..."
 } else {
     "--> Not running as Administrator..."
-}
-
-if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
-    Decrypt-Credentials
 }
 
 net user Administrator $DATA."admin_password" /active:yes

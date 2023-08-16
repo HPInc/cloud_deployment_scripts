@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2021 Teradici Corporation
+# Copyright Teradici Corporation 2021;  © Copyright 2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -38,7 +38,6 @@ os.chdir('../../')
 REPOSITORY_PATH    = os.getcwd()
 DEPLOYMENT_PATH    = os.path.join(REPOSITORY_PATH, 'deployments/aws/single-connector/')
 QUICKSTART_PATH    = os.path.join(REPOSITORY_PATH, 'quickstart/aws/')
-KMS_ENCRYPTOR_PATH = os.path.join(REPOSITORY_PATH, 'tools/')
 INSTALL_TERRAFORM  = os.path.join(REPOSITORY_PATH, 'tools/install-terraform.py')
 TERRAFORM_VER_PATH = os.path.join(DEPLOYMENT_PATH, 'versions.tf')
 SECRETS_DIR        = os.path.join(DEPLOYMENT_PATH, 'secrets/')
@@ -357,12 +356,6 @@ if __name__ == '__main__':
     tf_vars_create(TF_VARS_REF_PATH, TF_VARS_PATH, settings)
     # Newly created tfvars files might need a few seconds to write
     time.sleep(5)
-
-    print('Encrypting secrets...')
-    os.chdir(KMS_ENCRYPTOR_PATH)
-    command = f'{sys.executable} kms_secrets_encryption.py {TF_VARS_PATH}'
-    subprocess.run(command.split(' '), check=True)
-    print('Done encrypting secets...')
 
     os.chdir(DEPLOYMENT_PATH)
     tf_cmd = f'{TERRAFORM_BIN_PATH} init'
