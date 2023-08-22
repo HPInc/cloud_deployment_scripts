@@ -15,8 +15,8 @@ variable "prefix" {
   default     = ""
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code"
   type        = string
   sensitive   = true
 }
@@ -33,6 +33,11 @@ variable "awm_deployment_sa_file" {
 
 variable "gcp_sa_file" {
   description = "Filename of GCP Service Account JSON key in bucket (Optional)"
+  default     = ""
+}
+
+variable "gcp_sa_file_id" {
+  description = "Secrets Manager ARN for GCP Service Account JSON key in bucket (Optional)"
   default     = ""
 }
 
@@ -94,6 +99,12 @@ variable "awm_admin_ssh_pub_key_file" {
 
 variable "awm_admin_password" {
   description = "Password for the Administrator of Anyware Manager"
+  type        = string
+  sensitive   = true
+}
+
+variable "awm_admin_password_id" {
+  description = "Secrets Manager ARN of Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }

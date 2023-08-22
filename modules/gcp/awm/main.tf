@@ -25,16 +25,17 @@ resource "google_storage_bucket_object" "awm-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      awm_deployment_sa_file  = var.awm_deployment_sa_file,
-      awm_admin_password      = var.awm_admin_password,
-      awm_repo_channel        = var.awm_repo_channel,
-      awm_setup_script        = local.awm_setup_script,
-      bucket_name             = var.bucket_name,
-      gcp_ops_agent_enable    = var.gcp_ops_agent_enable,
-      gcp_sa_file             = var.gcp_sa_file,
-      ops_setup_script        = var.ops_setup_script,
-      pcoip_registration_code = var.pcoip_registration_code,
-      teradici_download_token = var.teradici_download_token,
+      awm_deployment_sa_file     = var.awm_deployment_sa_file,
+      awm_admin_password_id      = var.awm_admin_password_id,
+      awm_repo_channel           = var.awm_repo_channel,
+      awm_setup_script           = local.awm_setup_script,
+      bucket_name                = var.bucket_name,
+      gcp_ops_agent_enable       = var.gcp_ops_agent_enable,
+      gcp_sa_file                = var.gcp_sa_file,
+      gcp_sa_file_id             = var.gcp_sa_file_id,
+      ops_setup_script           = var.ops_setup_script,
+      pcoip_registration_code_id = var.pcoip_registration_code_id,
+      teradici_download_token    = var.teradici_download_token,
     }
   )
 }

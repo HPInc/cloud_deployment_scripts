@@ -6,7 +6,6 @@
 #!/bin/bash
 
 ##### Template Variables #####
-AWM_ADMIN_PASSWORD=${awm_admin_password}
 AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
 AWM_REPO_CHANNEL=${awm_repo_channel}
 AWM_SETUP_SCRIPT=${awm_setup_script}
@@ -14,7 +13,6 @@ BUCKET_NAME=${bucket_name}
 GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
 GCP_SA_FILE=${gcp_sa_file}
 OPS_SETUP_SCRIPT=${ops_setup_script}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 LOG_FILE="/var/log/teradici/provisioning.log"
@@ -25,6 +23,12 @@ AWM_DEPLOYMENT_NAME="terraform-deployment"
 AWM_INSTALL_LOG="/var/log/teradici/awm-install.log"
 AWM_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/$AWM_REPO_CHANNEL/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
+
+PCOIP_REGISTRATION_CODE=$(gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | base64 -d)
+AWM_ADMIN_PASSWORD=$(gcloud secrets versions access latest --secret=${awm_admin_password_id} --format="get(payload.data)" | base64 -d)
+encodedValue=$(gcloud secrets versions access latest --secret=${gcp_sa_file_id} --format="get(payload.data)" | base64 -d)
+decodedValue=$(echo "$encodedValue" | base64 -d)
+echo "$decodedValue" > "$GCP_SA_FILE"
 
 log() {
     local message="$1"

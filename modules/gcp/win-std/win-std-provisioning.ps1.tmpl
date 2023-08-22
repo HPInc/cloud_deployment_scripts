@@ -4,8 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 ##### Template Variables #####
-$ADMIN_PASSWORD              = "${admin_password}"
-$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
@@ -16,7 +14,6 @@ $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_befo
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 
@@ -24,10 +21,14 @@ $LOG_FILE = "C:\Teradici\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("admin_password", "$ADMIN_PASSWORD")
-$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
+$admin_password = & gcloud secrets versions access latest --secret=${admin_password_id} --format="get(payload.data)" |
+ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+
+$pcoip_registration_code = & gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | 
+ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+
+$ad_service_account_password = & gcloud secrets versions access latest --secret=${ad_service_account_password_id} --format="get(payload.data)" |
+ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 $global:restart = $false
 
@@ -121,7 +122,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $pcoip_registration_code
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -215,7 +216,7 @@ function Join-Domain {
     "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
 
     $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
-    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
+    $password = ConvertTo-SecureString $ad_service_account_password -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
     # Looping in case Domain Controller is not yet available
@@ -307,7 +308,7 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-net user Administrator $DATA."admin_password" /active:yes
+net user Administrator $admin_password /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 

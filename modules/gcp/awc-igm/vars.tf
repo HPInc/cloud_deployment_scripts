@@ -31,6 +31,11 @@ variable "awm_deployment_sa_file" {
   type        = string
 }
 
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON file"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Name of the domain to join"
   type        = string
@@ -60,8 +65,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }

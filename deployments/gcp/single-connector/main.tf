@@ -23,6 +23,66 @@ resource "random_id" "bucket-name" {
   byte_length = 3
 }
 
+resource "google_secret_manager_secret" "dc_admin_password" {
+  secret_id = "dc_admin_password"
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "dc_admin_password_value" {
+  secret = google_secret_manager_secret.dc_admin_password.id
+  secret_data = var.dc_admin_password
+}
+
+resource "google_secret_manager_secret" "safe_mode_admin_password" {
+  secret_id = "safe_mode_admin_password"
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "safe_mode_admin_password_value" {
+  secret = google_secret_manager_secret.safe_mode_admin_password.id
+  secret_data = var.safe_mode_admin_password
+}
+
+resource "google_secret_manager_secret" "ad_service_account_password" {
+  secret_id = "ad_service_account_password"
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "ad_service_account_password_value" {
+  secret = google_secret_manager_secret.ad_service_account_password.id
+  secret_data = var.ad_service_account_password
+}
+
+resource "google_secret_manager_secret" "pcoip_registration_code" {
+  secret_id = "pcoip_registration_code"
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "pcoip_registration_code_value" {
+  secret = google_secret_manager_secret.pcoip_registration_code.id
+  secret_data = var.pcoip_registration_code
+}
+
+resource "google_secret_manager_secret" "awm_deployment_sa_file" {
+  secret_id = "awm_deployment_sa_file"
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "awm_deployment_sa_file_value" {
+  secret = google_secret_manager_secret.awm_deployment_sa_file.id
+  secret_data = filebase64(var.awm_deployment_sa_file)
+}
+
 resource "google_storage_bucket" "scripts" {
   name          = local.bucket_name
   location      = var.gcp_region
@@ -83,19 +143,20 @@ module "dc" {
 
   prefix = var.prefix
 
-  pcoip_agent_install     = var.dc_pcoip_agent_install
-  pcoip_agent_version     = var.dc_pcoip_agent_version
-  pcoip_registration_code = var.pcoip_registration_code
-  teradici_download_token = var.teradici_download_token
+  pcoip_agent_install           = var.dc_pcoip_agent_install
+  pcoip_agent_version           = var.dc_pcoip_agent_version
+  pcoip_registration_code_id    = google_secret_manager_secret.pcoip_registration_code.secret_id
+  teradici_download_token       = var.teradici_download_token
 
-  gcp_service_account         = local.gcp_service_account
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  safe_mode_admin_password    = var.safe_mode_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
-  domain_users_list           = var.domain_users_list
-  ldaps_cert_filename         = local.ldaps_cert_filename
+  gcp_service_account            = local.gcp_service_account
+  domain_name                    = var.domain_name
+  admin_password                 = var.dc_admin_password
+  admin_password_id              = google_secret_manager_secret.dc_admin_password.secret_id
+  safe_mode_admin_password_id    = google_secret_manager_secret.safe_mode_admin_password.secret_id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
+  domain_users_list              = var.domain_users_list
+  ldaps_cert_filename            = local.ldaps_cert_filename
 
   bucket_name = google_storage_bucket.scripts.name
   gcp_zone    = var.gcp_zone
@@ -127,16 +188,17 @@ module "awc" {
   gcp_service_account       = local.gcp_service_account
   manager_url               = var.manager_url
 
-  domain_name                 = var.domain_name
-  domain_controller_ip        = module.dc.internal-ip
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
-  ldaps_cert_filename         = local.ldaps_cert_filename
-  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
-  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  domain_name                    = var.domain_name
+  domain_controller_ip           = module.dc.internal-ip
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
+  ldaps_cert_filename            = local.ldaps_cert_filename
+  computers_dn                   = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                       = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
   bucket_name            = google_storage_bucket.scripts.name
   awm_deployment_sa_file = local.awm_deployment_sa_file
+  awm_deployment_sa_file_id = google_secret_manager_secret.awm_deployment_sa_file.secret_id
 
   gcp_region_list = [var.gcp_region]
   subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
@@ -163,6 +225,11 @@ module "awc" {
   ops_setup_script     = local.ops_linux_setup_script
 
   awc_extra_install_flags = var.awc_extra_install_flags
+
+  depends_on = [ 
+  google_secret_manager_secret.ad_service_account_password,
+  google_secret_manager_secret.awm_deployment_sa_file
+  ]
 }
 
 module "win-gfx" {
@@ -172,14 +239,15 @@ module "win-gfx" {
 
   gcp_service_account = local.gcp_service_account
 
-  pcoip_registration_code = var.pcoip_registration_code
-  teradici_download_token = var.teradici_download_token
-  pcoip_agent_version     = var.win_gfx_pcoip_agent_version
+  
+  pcoip_registration_code_id = google_secret_manager_secret.pcoip_registration_code.secret_id
+  teradici_download_token    = var.teradici_download_token
+  pcoip_agent_version        = var.win_gfx_pcoip_agent_version
 
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  admin_password_id              = google_secret_manager_secret.dc_admin_password.secret_id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
 
   bucket_name      = google_storage_bucket.scripts.name
   zone_list        = [var.gcp_zone]
@@ -219,14 +287,14 @@ module "win-std" {
 
   gcp_service_account = local.gcp_service_account
 
-  pcoip_registration_code = var.pcoip_registration_code
-  teradici_download_token = var.teradici_download_token
-  pcoip_agent_version     = var.win_std_pcoip_agent_version
+  pcoip_registration_code_id = google_secret_manager_secret.pcoip_registration_code.secret_id
+  teradici_download_token    = var.teradici_download_token
+  pcoip_agent_version        = var.win_std_pcoip_agent_version
 
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  admin_password_id              = google_secret_manager_secret.dc_admin_password.secret_id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
 
   bucket_name      = google_storage_bucket.scripts.name
   zone_list        = [var.gcp_zone]
@@ -263,13 +331,13 @@ module "centos-gfx" {
 
   gcp_service_account = local.gcp_service_account
 
-  pcoip_registration_code = var.pcoip_registration_code
-  teradici_download_token = var.teradici_download_token
+  pcoip_registration_code_id = google_secret_manager_secret.pcoip_registration_code.secret_id
+  teradici_download_token    = var.teradici_download_token
 
-  domain_name                 = var.domain_name
-  domain_controller_ip        = module.dc.internal-ip
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  domain_controller_ip           = module.dc.internal-ip
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
 
   bucket_name      = google_storage_bucket.scripts.name
   zone_list        = [var.gcp_zone]
@@ -306,7 +374,10 @@ module "centos-gfx" {
   ws_admin_user             = var.centos_admin_user
   ws_admin_ssh_pub_key_file = var.centos_admin_ssh_pub_key_file
 
-  depends_on = [google_compute_router_nat.nat]
+  depends_on = [
+  google_compute_router_nat.nat,
+  google_secret_manager_secret.ad_service_account_password,
+  google_secret_manager_secret.pcoip_registration_code]
 }
 
 module "centos-std" {
@@ -316,13 +387,13 @@ module "centos-std" {
 
   gcp_service_account = local.gcp_service_account
 
-  pcoip_registration_code = var.pcoip_registration_code
-  teradici_download_token = var.teradici_download_token
+  pcoip_registration_code_id = google_secret_manager_secret.pcoip_registration_code.secret_id
+  teradici_download_token    = var.teradici_download_token
 
-  domain_name                 = var.domain_name
-  domain_controller_ip        = module.dc.internal-ip
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  domain_controller_ip           = module.dc.internal-ip
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
 
   bucket_name      = google_storage_bucket.scripts.name
   zone_list        = [var.gcp_zone]
@@ -357,5 +428,8 @@ module "centos-std" {
   ws_admin_user             = var.centos_admin_user
   ws_admin_ssh_pub_key_file = var.centos_admin_ssh_pub_key_file
 
-  depends_on = [google_compute_router_nat.nat]
+  depends_on = [
+  google_compute_router_nat.nat,
+  google_secret_manager_secret.ad_service_account_password,
+  google_secret_manager_secret.pcoip_registration_code]
 }

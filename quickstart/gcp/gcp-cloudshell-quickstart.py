@@ -31,7 +31,8 @@ REQUIRED_PACKAGES = {
 SA_ID    = 'anyware-manager'
 SA_ROLES = [
     'roles/editor',
-    'roles/logging.configWriter'
+    'roles/logging.configWriter',
+    'roles/secretmanager.admin'
 ]
 
 PROJECT_ID    = os.environ['GOOGLE_CLOUD_PROJECT']
@@ -44,6 +45,7 @@ REQUIRED_APIS = [
     'iap.googleapis.com',
     'logging.googleapis.com',
     'monitoring.googleapis.com',
+    'secretmanager.googleapis.com',
 ]
 
 iso_time        = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'

@@ -6,7 +6,6 @@
 #!/bin/bash
 
 ##### Template Variables #####
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
 AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
@@ -22,12 +21,14 @@ IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_s
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
 NVIDIA_DRIVER_URL=${nvidia_driver_url}
 OPS_SETUP_SCRIPT=${ops_setup_script}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 
 LOG_FILE="/var/log/teradici/provisioning.log"
-TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
+
+AD_SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret=${ad_service_account_password_id} --format="get(payload.data)" | base64 -d)
+PCOIP_REGISTRATION_CODE=$(gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | base64 -d)
 
 log() {
     local message="$1"

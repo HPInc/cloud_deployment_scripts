@@ -69,7 +69,7 @@ Although it is possible to create deployments in existing and currently in-use G
 #### Required permissions for the new service account used in Terraform deployment with a new GCP project:
 To initiate a Terraform deployment, users are required to create a new service account or attach the existing service account with the necessary permissions, as outlined in any of the following options.
 
-- Option 1: Create a new service account with __Editor__ and __Logs Configuration Writer__  permissions.
+- Option 1: Create a new service account with __Editor__ , __Secret Manager Admin__ and __Logs Configuration Writer__  permissions.
   This option provides the least secure approach as it grants broad permissions.
   
 - Option 2: Associate Service Account with Restricted Permissions using Predefined GCP Managed Roles
@@ -78,6 +78,7 @@ To initiate a Terraform deployment, users are required to create a new service a
     - DNS Administrator
     - Logs Configuration Writer
     - Monitoring Editor
+    - Secret Manager Admin
     - Service Account User
     - Storage Admin
 
@@ -87,7 +88,7 @@ To initiate a Terraform deployment, users are required to create a new service a
 Option 2 and Option 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the Predefined GCP-managed roles, ensuring limited access.
 
 Once the service account is created ,generate and download the credentials in JSON format. These credentials are needed by Anyware Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
-- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com  logging.googleapis.com monitoring.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
+- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com  logging.googleapis.com monitoring.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com secretmanager.googleapis.com`:
     - Cloud Deployment Manager V2
     - Cloud Logging
     - Cloud Monitoring
@@ -95,6 +96,7 @@ Once the service account is created ,generate and download the credentials in JS
     - Compute Engine
     - Google Cloud DNS
     - Identity-Aware Proxy (IAP)
+    - Secret Manager
 - disable the _Default logging bucket in the GCP console or via the command `gcloud logging sinks update _Default  --disabled`
 
 ### Anyware Manager as a Service Setup

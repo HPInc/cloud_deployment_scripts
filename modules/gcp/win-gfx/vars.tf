@@ -20,7 +20,7 @@ variable "instance_name" {
   default     = "gwin"
 }
 
-variable "pcoip_registration_code" {
+variable "pcoip_registration_code_id" {
   description = "PCoIP Registration code from Teradici"
   type        = string
   sensitive   = true
@@ -50,8 +50,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
@@ -131,8 +131,8 @@ variable "disk_image" {
   default     = "projects/windows-cloud/global/images/family/windows-2019"
 }
 
-variable "admin_password" {
-  description = "Password for the Administrator of the Workstation"
+variable "admin_password_id" {
+  description = "Secrets Manager ARN of Password for the Administrator of the Workstation"
   type        = string
 }
 

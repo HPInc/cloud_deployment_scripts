@@ -20,14 +20,20 @@ variable "domain_name" {
   type        = string
 }
 
+variable "admin_password_id" {
+  description = "Secrets Manager ARN for Password of the Administrator of the Domain Controller"
+  type        = string
+  sensitive   = true
+}
+
 variable "admin_password" {
   description = "Password for the Administrator of the Domain Controller"
   type        = string
   sensitive   = true
 }
 
-variable "safe_mode_admin_password" {
-  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
+variable "safe_mode_admin_password_id" {
+  description = "Secrets Manager ARN for Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
   sensitive   = true
 }
@@ -37,8 +43,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service account password"
   type        = string
   sensitive   = true
 }
@@ -113,8 +119,8 @@ variable "pcoip_agent_version" {
   default     = "latest"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code from Teradici"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code from Teradici"
   type        = string
   sensitive   = true
 }

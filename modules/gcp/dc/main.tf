@@ -20,7 +20,6 @@ locals {
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
   # Directories start with "C:..." on Windows; All other OSs use "/" for root.
   is_windows_host            = substr(pathexpand("~"), 0, 1) == "/" ? false : true
-  admin_password             = var.admin_password
 }
 
 resource "google_storage_bucket_object" "dc-sysprep-script" {
@@ -29,7 +28,7 @@ resource "google_storage_bucket_object" "dc-sysprep-script" {
   content = templatefile(
     "${path.module}/${local.dc_sysprep_script}.tmpl",
     {
-      admin_password   = var.admin_password,
+      admin_password_id   = var.admin_password_id,
     }
   )
 }
@@ -52,8 +51,8 @@ resource "google_storage_bucket_object" "dc-provisioning-script" {
       ops_setup_script           = var.ops_setup_script,
       pcoip_agent_install        = var.pcoip_agent_install,
       pcoip_agent_version        = var.pcoip_agent_version,
-      pcoip_registration_code    = var.pcoip_registration_code,
-      safe_mode_admin_password   = var.safe_mode_admin_password,
+      pcoip_registration_code_id    = var.pcoip_registration_code_id,
+      safe_mode_admin_password_id   = var.safe_mode_admin_password_id,
       teradici_download_token    = var.teradici_download_token,
       dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script,
     }
@@ -67,7 +66,7 @@ resource "google_storage_bucket_object" "dc-new-ad-accounts-script" {
     {
       domain_name      = var.domain_name,
       account_name     = var.ad_service_account_username,
-      account_password = var.ad_service_account_password,
+      account_password_id = var.ad_service_account_password_id,
       csv_file         = local.new_domain_users == 1 ? local.domain_users_list : "",
       bucket_name      = var.bucket_name,
       label_name       = local.label_name,

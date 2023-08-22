@@ -6,7 +6,6 @@
 #!/bin/bash
 
 ##### Template Variables #####
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
 AWC_EXTRA_INSTALL_FLAGS=${awc_extra_install_flags}
 AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
@@ -32,6 +31,11 @@ AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
 AWC_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
+
+AD_SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret=${ad_service_account_password_id} --format="get(payload.data)" | base64 -d)
+encodedValue=$(gcloud secrets versions access latest --secret=${awm_deployment_sa_file_id} --format="get(payload.data)" | base64 -d)
+decodedValue=$(echo "$encodedValue" | base64 -d)
+echo "$decodedValue" > "$AWM_DEPLOYMENT_SA_FILE"
 
 log() {
     local message="$1"

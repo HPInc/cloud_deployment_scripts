@@ -33,16 +33,16 @@ resource "google_storage_bucket_object" "win-std-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      admin_password              = var.admin_password,
-      ad_service_account_password = var.ad_service_account_password,
-      ad_service_account_username = var.ad_service_account_username,
-      bucket_name                 = var.bucket_name,
-      domain_name                 = var.domain_name,
-      gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
-      ops_setup_script            = var.ops_setup_script,
-      pcoip_agent_version         = var.pcoip_agent_version,
-      pcoip_registration_code     = var.pcoip_registration_code,
-      teradici_download_token     = var.teradici_download_token,
+      admin_password_id              = var.admin_password_id,
+      ad_service_account_password_id = var.ad_service_account_password_id,
+      ad_service_account_username    = var.ad_service_account_username,
+      bucket_name                    = var.bucket_name,
+      domain_name                    = var.domain_name,
+      gcp_ops_agent_enable           = var.gcp_ops_agent_enable,
+      ops_setup_script               = var.ops_setup_script,
+      pcoip_agent_version            = var.pcoip_agent_version,
+      pcoip_registration_code_id     = var.pcoip_registration_code_id
+      teradici_download_token        = var.teradici_download_token,
 
       idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization,
       idle_shutdown_enable                       = var.idle_shutdown_enable,

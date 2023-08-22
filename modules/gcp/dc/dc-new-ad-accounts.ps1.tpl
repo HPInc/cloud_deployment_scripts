@@ -19,8 +19,8 @@ $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instanc
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("account_password", "${account_password}")
+$account_password = & gcloud secrets versions access latest --secret=${account_password_id} --format="get(payload.data)" |
+ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 Start-Transcript -Path $LOG_FILE -Append
 
@@ -37,7 +37,7 @@ do {
             -UserPrincipalName "${account_name}@${domain_name}" `
             -Enabled $True `
             -PasswordNeverExpires $True `
-            -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force)
+            -AccountPassword (ConvertTo-SecureString $account_password -AsPlainText -Force)
         "--> Added AD Domain Admin User $account_name"
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {

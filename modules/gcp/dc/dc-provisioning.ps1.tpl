@@ -15,8 +15,6 @@ $LABEL_NAME                  = "${label_name}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
-$SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 $DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
 
@@ -34,9 +32,11 @@ $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
+$pcoip_registration_code = & gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | 
+ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+
+$safe_mode_admin_password = & gcloud secrets versions access latest --secret=${safe_mode_admin_password_id} --format="get(payload.data)" |
+ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -135,7 +135,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $pcoip_registration_code
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -226,7 +226,7 @@ Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 "Installing a new forest..."
 "================================================================"
 Install-ADDSForest -CreateDnsDelegation:$false `
-    -SafeModeAdministratorPassword (ConvertTo-SecureString $DATA."safe_mode_admin_password" -AsPlainText -Force) `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString $safe_mode_admin_password -AsPlainText -Force) `
     -DatabasePath $DatabasePath `
     -SysvolPath $SysvolPath `
     -DomainName $DomainName `

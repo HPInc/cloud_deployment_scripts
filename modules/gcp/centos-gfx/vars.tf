@@ -20,8 +20,8 @@ variable "instance_name" {
   default     = "gcent"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code"
   type        = string
   sensitive   = true
 }
@@ -55,8 +55,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
