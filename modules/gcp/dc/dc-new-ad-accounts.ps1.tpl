@@ -11,8 +11,6 @@ $BASE_DIR = "C:\Teradici"
 # Setup-CloudWatch will track this log file.
 $LOG_FILE = "$BASE_DIR\dc_new_ad_accounts.log"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
-
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
 
@@ -61,13 +59,6 @@ function Decrypt-Credentials {
 }
 
 Start-Transcript -Path $LOG_FILE -Append
-
-if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
-    Decrypt-Credentials
-}
 
 gcloud compute instances add-labels $instance_name --zone $zone_name --labels=${label_name}=step3of3_creating-new-ad-domain-admin-accounts
 

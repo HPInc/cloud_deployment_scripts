@@ -156,11 +156,6 @@ variable "external_pcoip_ip" {
   default     = ""
 }
 
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
-  default     = ""
-}
-
 variable "tls_key" {
   description = "TLS private key for the Connector"
   default     = ""

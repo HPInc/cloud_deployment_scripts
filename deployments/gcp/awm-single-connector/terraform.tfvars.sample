@@ -87,26 +87,6 @@ centos_std_instance_count = 0
 
 centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 
-###############
-#   Secrets   #
-###############
-# The secrets below may be supplied in 2 formats:
-#   1. plain text
-#   2. KMS encrypted, base64 encoded
-#
-# For option 1, leave "kms_cryptokey_id" commented out and enter the plaintext
-# passwords as strings in the variables below. Note that plaintext passwords
-# may show in Terraform logs and .tfstate files, appear unencrypted in the
-# storage bucket holding the provisioning scripts, as well as in the
-# provisioning scripts once downloaded by the VMs.
-#
-# For option 2, a user encrypts the secrets independent of these Terraform
-# scripts. Once the secrets are encrypted with a KMS key, set "kms_cryptokey_id"
-# to the KMS key used to encrypt the secrets, and enter the base64-encoded
-# ciphertext as strings in the variables below. The GCP service account
-# specified by "gcp_credentials_file" above must be in the same project and have
-# KMS decryptor permissions for this key.
-#
 # Note Windows passwords must be at least 7 characters long and meet complexity
 # requirements:
 # 1. Must not contain user's account name or display name
@@ -118,10 +98,6 @@ centos_admin_ssh_pub_key_file = "~/.ssh/id_rsa.pub"
 #    - unicode characters
 # See: https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-must-meet-complexity-requirements
 
-# Uncomment and enter the KMS key ID if using encryption.
-# kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
-
-# <-- Start of secrets section, do not edit this line. -->
 dc_admin_password           = "SecuRe_pwd1"
 safe_mode_admin_password    = "SecuRe_pwd2"
 ad_service_account_password = "SecuRe_pwd3"

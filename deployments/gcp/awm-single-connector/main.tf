@@ -92,7 +92,6 @@ module "dc" {
   teradici_download_token = var.teradici_download_token
 
   gcp_service_account         = local.gcp_service_account
-  kms_cryptokey_id            = var.kms_cryptokey_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
   safe_mode_admin_password    = var.safe_mode_admin_password
@@ -129,7 +128,6 @@ module "awm" {
   prefix = var.prefix
 
   gcp_service_account     = local.gcp_service_account
-  kms_cryptokey_id        = var.kms_cryptokey_id
   pcoip_registration_code = var.pcoip_registration_code
   awm_admin_password      = var.awm_admin_password
   awm_repo_channel        = var.awm_repo_channel
@@ -168,7 +166,6 @@ module "awc" {
 
   awc_flag_manager_insecure = true
   gcp_service_account       = local.gcp_service_account
-  kms_cryptokey_id          = var.kms_cryptokey_id
   manager_url               = "https://${module.awm.internal-ip}"
 
   domain_name                 = var.domain_name
@@ -216,7 +213,6 @@ module "win-gfx" {
   prefix = var.prefix
 
   gcp_service_account = local.gcp_service_account
-  kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -263,7 +259,6 @@ module "win-std" {
   prefix = var.prefix
 
   gcp_service_account = local.gcp_service_account
-  kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -308,7 +303,6 @@ module "centos-gfx" {
   prefix = var.prefix
 
   gcp_service_account = local.gcp_service_account
-  kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -362,7 +356,6 @@ module "centos-std" {
   prefix = var.prefix
 
   gcp_service_account = local.gcp_service_account
-  kms_cryptokey_id    = var.kms_cryptokey_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token

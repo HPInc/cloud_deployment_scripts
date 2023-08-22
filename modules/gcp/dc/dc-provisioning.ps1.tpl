@@ -10,7 +10,6 @@ $BASE_DIR                    = "C:\Teradici"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
-$KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $LABEL_NAME                  = "${label_name}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
@@ -25,7 +24,6 @@ $LOG_FILE = "$BASE_DIR\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -82,37 +80,6 @@ function Get-AuthToken {
     }
     catch {
         "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
-}
-
-function Decrypt-Credentials {
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting safe_mode_admin_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$SAFE_MODE_ADMIN_PASSWORD")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."safe_mode_admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-
-        "--> Decrypting pcoip_registration_code..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$PCOIP_REGISTRATION_CODE")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -237,13 +204,6 @@ if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
 } 
 
 "--> Script running as user '$(whoami)'."
-
-if ([string]::IsNullOrWhiteSpace("$KMS_CRYPTOKEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $KMS_CRYPTOKEY_ID for secrets."
-    Decrypt-Credentials
-}
 
 $DomainName = "$DOMAIN_NAME"
 $DomainMode = "7"

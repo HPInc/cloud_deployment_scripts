@@ -32,7 +32,6 @@ resource "google_storage_bucket_object" "awm-provisioning-script" {
       bucket_name             = var.bucket_name,
       gcp_ops_agent_enable    = var.gcp_ops_agent_enable,
       gcp_sa_file             = var.gcp_sa_file,
-      kms_cryptokey_id        = var.kms_cryptokey_id,
       ops_setup_script        = var.ops_setup_script,
       pcoip_registration_code = var.pcoip_registration_code,
       teradici_download_token = var.teradici_download_token,

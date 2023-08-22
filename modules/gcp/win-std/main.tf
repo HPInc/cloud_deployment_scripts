@@ -39,7 +39,6 @@ resource "google_storage_bucket_object" "win-std-provisioning-script" {
       bucket_name                 = var.bucket_name,
       domain_name                 = var.domain_name,
       gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
-      kms_cryptokey_id            = var.kms_cryptokey_id,
       ops_setup_script            = var.ops_setup_script,
       pcoip_agent_version         = var.pcoip_agent_version,
       pcoip_registration_code     = var.pcoip_registration_code,

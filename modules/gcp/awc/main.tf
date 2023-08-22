@@ -60,7 +60,6 @@ module "awc-regional" {
 
   awm_script                = local.awm_script
   awc_flag_manager_insecure = var.awc_flag_manager_insecure
-  kms_cryptokey_id          = var.kms_cryptokey_id
   manager_url               = var.manager_url
 
   domain_controller_ip        = var.domain_controller_ip

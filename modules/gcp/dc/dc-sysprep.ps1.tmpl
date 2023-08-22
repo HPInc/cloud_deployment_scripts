@@ -6,8 +6,6 @@
 $BASE_DIR = "C:\Teradici"
 $LOG_FILE = "$BASE_DIR\provisioning.log"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
-
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
 
@@ -28,41 +26,10 @@ function Get-AuthToken {
     }
 }
 
-function Decrypt-Credentials {
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting admin_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${admin_password}")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
-}
-
 Start-Transcript -path $LOG_FILE -append
 
 # Enforce TLS 1.2 as a precaution for deprecation of TLS prior versions
 # Adding TLS 1.2 for Invoke-RestMethod
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
-    Decrypt-Credentials
-}
 
 net user Administrator $DATA."admin_password" /active:yes

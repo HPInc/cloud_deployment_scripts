@@ -20,7 +20,7 @@ locals {
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
   # Directories start with "C:..." on Windows; All other OSs use "/" for root.
   is_windows_host            = substr(pathexpand("~"), 0, 1) == "/" ? false : true
-  admin_password             = var.kms_cryptokey_id == "" ? var.admin_password : data.google_kms_secret.decrypted_admin_password[0].plaintext
+  admin_password             = var.admin_password
 }
 
 resource "google_storage_bucket_object" "dc-sysprep-script" {
@@ -29,7 +29,6 @@ resource "google_storage_bucket_object" "dc-sysprep-script" {
   content = templatefile(
     "${path.module}/${local.dc_sysprep_script}.tmpl",
     {
-      kms_cryptokey_id = var.kms_cryptokey_id,
       admin_password   = var.admin_password,
     }
   )
@@ -48,7 +47,6 @@ resource "google_storage_bucket_object" "dc-provisioning-script" {
       bucket_name                = var.bucket_name,
       domain_name                = var.domain_name,
       gcp_ops_agent_enable       = var.gcp_ops_agent_enable,
-      kms_cryptokey_id           = var.kms_cryptokey_id,
       ldaps_cert_filename        = var.ldaps_cert_filename,
       label_name                 = local.label_name
       ops_setup_script           = var.ops_setup_script,
@@ -67,7 +65,6 @@ resource "google_storage_bucket_object" "dc-new-ad-accounts-script" {
   name   = local.dc_new_ad_accounts_script
   content = templatefile("${path.module}/${local.dc_new_ad_accounts_script}.tpl",
     {
-      kms_cryptokey_id = var.kms_cryptokey_id,
       domain_name      = var.domain_name,
       account_name     = var.ad_service_account_username,
       account_password = var.ad_service_account_password,
@@ -86,13 +83,6 @@ resource "google_storage_bucket_object" "domain_users_list" {
   bucket  = var.bucket_name
   name    = local.domain_users_list
   source  = var.domain_users_list
-}
-
-data "google_kms_secret" "decrypted_admin_password" {
-  count = var.kms_cryptokey_id == "" ? 0 : 1
-
-  crypto_key = var.kms_cryptokey_id
-  ciphertext = var.admin_password
 }
 
 resource "google_compute_instance" "dc" {

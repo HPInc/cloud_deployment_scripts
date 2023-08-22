@@ -153,11 +153,6 @@ variable "domain_users_list" {
   }
 }
 
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
-  default     = ""
-}
-
 variable "pcoip_registration_code" {
   description = "PCoIP Registration code"
   type        = string

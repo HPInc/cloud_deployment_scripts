@@ -1,14 +1,6 @@
 {
   "description": "SampleAnywareTerraformDeploymentPermissions",
   "includedPermissions": [
-    "cloudkms.cryptoKeyVersions.useToDecrypt",
-    "cloudkms.cryptoKeyVersions.useToEncrypt",
-    "cloudkms.cryptoKeys.create",
-    "cloudkms.cryptoKeys.get",
-    "cloudkms.cryptoKeys.list",
-    "cloudkms.keyRings.create",
-    "cloudkms.keyRings.get",
-    "cloudkms.keyRings.list",
     "compute.acceleratorTypes.list",
     "compute.addresses.create",
     "compute.addresses.createInternal",

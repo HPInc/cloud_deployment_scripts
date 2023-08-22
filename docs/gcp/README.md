@@ -12,9 +12,6 @@
     - [Anyware Manager as a Service Setup](#awm-as-a-service-setup)
     - [Customizing terraform.tfvars](#customizing-terraformtfvars)
       - [Workstation IdleShutDown](#workstation-idleshutdown)
-    - [(Optional) Encrypting Secrets](#optional-encrypting-secrets)
-      - [Encryption Using Python Script](#encryption-using-python-script)
-      - [Manual Encryption](#manual-encryption)
     - [Creating the deployment](#creating-the-deployment)
     - [Add Workstations in Anyware Manager](#add-workstations-in-awm)
     - [Start PCoIP Session](#start-pcoip-session)
@@ -72,11 +69,10 @@ Although it is possible to create deployments in existing and currently in-use G
 #### Required permissions for the new service account used in Terraform deployment with a new GCP project:
 To initiate a Terraform deployment, users are required to create a new service account or attach the existing service account with the necessary permissions, as outlined in any of the following options.
 
-- Option 1: Create a new service account with __Editor__, __Cloud KMS CryptoKey Encrypter/Decrypter__, and __Logs Configuration Writer__  permissions.
+- Option 1: Create a new service account with __Editor__ and __Logs Configuration Writer__  permissions.
   This option provides the least secure approach as it grants broad permissions.
   
 - Option 2: Associate Service Account with Restricted Permissions using Predefined GCP Managed Roles
-    - Cloud KMS CryptoKey Encrypter/Decrypter
     - Compute Admin
     - Deployment Manager Editor
     - DNS Administrator
@@ -91,9 +87,8 @@ To initiate a Terraform deployment, users are required to create a new service a
 Option 2 and Option 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the Predefined GCP-managed roles, ensuring limited access.
 
 Once the service account is created ,generate and download the credentials in JSON format. These credentials are needed by Anyware Manager to manage the deployment, such as creating workstations, monitoring workstation statuses, and providing power management features.  The credentials are also needed by the Terraform configuration to create the initial deployment.
-- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com cloudkms.googleapis.com logging.googleapis.com monitoring.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
+- enable the following APIs in the GCP console or via the command `gcloud services enable deploymentmanager.googleapis.com  logging.googleapis.com monitoring.googleapis.com cloudresourcemanager.googleapis.com compute.googleapis.com dns.googleapis.com iap.googleapis.com`:
     - Cloud Deployment Manager V2
-    - Cloud Key Management Service (KMS)
     - Cloud Logging
     - Cloud Monitoring
     - Cloud Resource Manager
@@ -101,7 +96,6 @@ Once the service account is created ,generate and download the credentials in JS
     - Google Cloud DNS
     - Identity-Aware Proxy (IAP)
 - disable the _Default logging bucket in the GCP console or via the command `gcloud logging sinks update _Default  --disabled`
-- (Optional) For better security, create a Google KMS key ring and crypto key to encrypt secrets. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
 
 ### Anyware Manager as a Service Setup
 
@@ -126,55 +120,6 @@ Save `terraform.tfvars.sample` as `terraform.tfvars` in the same directory, and 
 
 #### Workstation IdleShutDown
 Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `idle_shutdown_enable` (default: `true`), `idle_shutdown_minutes_idle_before_shutdown` (default: `240`), and `idle_shutdown_polling_interval_minutes` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/anyware_manager/22.09/admin_console/workstation_pools/#idle-shutdown-service).
-
-### (Optional) Encrypting Secrets
-`terraform.tfvars` variables include sensitive information such as Active Directory passwords, PCoIP registration key and the Anyware Manager Deployment Service Account credentials file. These secrets are stored in the local files `terraform.tfvars` and `terraform.tfstate`, and will also be uploaded as part of provisioning scripts to a Google Cloud Storage bucket.
-
-To enhance security, the Terraform configurations are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in `terraform.tfvars` before deploying. Secrets can be encrypted manually first before being entered into `terraform.tfvars`, or they can be encrypted using a Python script located under the tools directory.
-
-#### Encryption Using Python Script
-The easiest way to encrypt secrets is to use the kms_secrets_encryption.py Python script under the tools/ directory, which automates the KMS encryption process. 
-1. First, fill in all the variables in `terraform.tfvars`, including any sensitive information.
-2. Ensure the `kms_cryptokey_id` variable in `terraform.tfvars` is commented out, as this script will attempt to create the crypto key used to encrypt the secrets:
-   ```
-   # kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
-   ```
-3. Run the following command inside the tools directory:
-   ```
-   ./kms_secrets_encryption.py </path/to/terraform.tfvars>
-   ```
-
-The script will replace all the plaintext secrets in `terraform.tfvars` with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
-
-The script can also reverse the encryption by executing it with the '-d' flag. See script's documentation for details (--help).
-
-#### Manual Encryption
-Alernatively, the secrets can be manually encrypted. To encrypt secrets using the Google KMS crypto key created in the 'GCP Setup' section above, refer to https://cloud.google.com/kms/docs/encrypt-decrypt. Note that ciphertext must be base64 encoded before being used in `terraform.tfvars`.
-
-1. create a KMS key ring and crypto key. Please refer to https://cloud.google.com/kms/docs/creating-keys for instructions to create keys.
-2. in `terraform.tfvars`, ensure that the `kms_cryptokey_id` variable is uncommented and is set to the resource path of the KMS key used to encrypt the secrets:
-   ```
-   kms_cryptokey_id = "projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>"
-   ```
-3. run the following command in GCP Cloud Shell or a Linux shell with gcloud installed to encrypt a plaintext secret:
-   ```
-   echo -n <secret> | gcloud kms encrypt --location <location> --keyring <keyring_name> --key <key_name> --plaintext-file - --ciphertext-file - | base64
-   ```
-   Encrypt and replace the values of the variables in the secrets section in `terraform.tfvars` with the ciphertext generated. For example, `<ciphertext>` below should be replaced with the actual ciphertext generated - do not include < and >.
-   ```
-   dc_admin_password           = "<ciphertext>"
-   safe_mode_admin_password    = "<ciphertext>"
-   ad_service_account_password = "<ciphertext>"
-   pcoip_registration_code     = "<ciphertext>"
-   ```
-4. run the following command in GCP Cloud Shell or a Linux shell with gcloud installed to encrypt the Anyware Manager Deployment Service Account JSON credentials file:
-   ```
-   gcloud kms encrypt --location <location> --keyring <keyring-name> --key <key-name> --plaintext-file </path/to/awm-service-account.json> --ciphertext-file </path/to/awm-service-account.json.encrypted>"
-   ```
-   Replace the value of the `awm_deployment_sa_file` variable in `terraform.tfvars` with the absolute path to the encrypted file generated.
-   ```
-   awm_deployment_sa_file = "/path/to/awm-service-account.json.encrypted"
-   ```
 
 ### Creating the deployment
 With `terraform.tfvars` customized:

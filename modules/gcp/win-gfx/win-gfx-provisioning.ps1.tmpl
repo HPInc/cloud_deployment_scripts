@@ -14,7 +14,6 @@ $IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
-$KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
 $NVIDIA_DRIVER_FILENAME      = "${nvidia_driver_filename}"
 $NVIDIA_DRIVER_URL           = "${nvidia_driver_url}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
@@ -28,8 +27,6 @@ $NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
 
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-graphics-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-graphics_$PCOIP_AGENT_VERSION.exe"
-
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -90,47 +87,6 @@ function Setup-Ops {
                                                    "C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_server*.txt" `
                                                    "C:\Teradici\provisioning.log"
                                                    
-    }
-}
-
-function Decrypt-Credentials {
-    "################################################################"
-    "Decrypting credentials..."
-    "################################################################"
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting pcoip_registration_code..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$PCOIP_REGISTRATION_CODE")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-
-        "--> Decrypting admin_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$ADMIN_PASSWORD")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-
-        "--> Decrypting ad_service_account_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$AD_SERVICE_ACCOUNT_PASSWORD")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."ad_service_account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
     }
 }
 
@@ -414,13 +370,6 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Running as Administrator..."
 } else {
     "--> Not running as Administrator..."
-}
-
-if ([string]::IsNullOrWhiteSpace("$KMS_CRYPTOKEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $KMS_CRYPTOKEY_ID for secrets."
-    Decrypt-Credentials
 }
 
 net user Administrator $DATA."admin_password" /active:yes

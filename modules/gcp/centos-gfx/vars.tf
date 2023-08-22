@@ -181,11 +181,6 @@ variable "nvidia_driver_url" {
   default     = "https://storage.googleapis.com/nvidia-drivers-us-public/GRID/GRID13.1/NVIDIA-Linux-x86_64-470.82.01-grid.run"
 }
 
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
-  default     = ""
-}
-
 variable "ops_setup_script" {
   description = "The script that sets up the GCP Ops Agent"
   type        = string

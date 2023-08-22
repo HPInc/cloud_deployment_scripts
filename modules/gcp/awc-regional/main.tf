@@ -32,7 +32,6 @@ resource "google_storage_bucket_object" "awc-provisioning-script" {
       domain_name                 = var.domain_name,
       external_pcoip_ip           = var.external_pcoip_ip,
       gcp_ops_agent_enable        = var.gcp_ops_agent_enable,
-      kms_cryptokey_id            = var.kms_cryptokey_id,
       ldaps_cert_filename         = var.ldaps_cert_filename,
       manager_url                 = var.manager_url,
       ops_setup_script            = var.ops_setup_script,
