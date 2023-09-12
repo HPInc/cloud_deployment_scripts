@@ -1,4 +1,4 @@
-# © Copyright 2023 HP Development Company, L.P.
+# Copyright 2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -60,7 +60,7 @@ do {
             exit 1
         }
 
-        "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+        "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
         $Retry = $true
         Start-Sleep -Seconds $Interval
         $Elapsed += $Interval
@@ -70,28 +70,26 @@ do {
 # Service account needs to be in Domain Admins group for realm join to work on CentOS
 Add-ADGroupMember -Identity "Domain Admins" -Members "${ad_service_account_username}"
 
-"================================================================"
-"Creating new AD Domain Users from CSV file..."
-"================================================================"
-
 if ("${csv_file}" -ne "") {
+    "================================================================"
+    "Creating new AD Domain Users from CSV file..."
+    "================================================================"
+
     Write-Host " --> Downloading file from bucket..."
     # Download domain users list.
-    Set-Location -Path $BASE_DIR
-    Read-S3Object -BucketName ${bucket_name} -Key ${csv_file} -File ${csv_file}
+    Read-S3Object -BucketName ${bucket_name} -Key ${csv_file} -File "$BASE_DIR\${csv_file}"
 
     #Store the data from ADUsers.csv in the $ADUsers variable
-    $ADUsers = Import-csv ${csv_file}
+    $ADUsers = Import-csv "$BASE_DIR\${csv_file}"
 
     #Loop through each row containing user details in the CSV file
     foreach ($User in $ADUsers) {
         #Read user data from each field in each row and assign the data to a variable as below
-
         $Username 	= $User.username
         $Password 	= $User.password
         $Firstname 	= $User.firstname
         $Lastname 	= $User.lastname
-        $Isadmin    = $User.isadmin
+        $Isadmin        = $User.isadmin
 
         #Check to see if the user already exists in AD
         if (Get-ADUser -F {SamAccountName -eq $Username}) {
@@ -120,5 +118,8 @@ if ("${csv_file}" -ne "") {
             "--> Added AD User $Username..."
         }
     }
-    del ${csv_file}
+    del "$BASE_DIR\${csv_file}"
 }
+
+# Unregister the scheduled job
+schtasks /delete /tn NewADProvision /f

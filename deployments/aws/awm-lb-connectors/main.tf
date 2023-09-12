@@ -71,7 +71,6 @@ module "dc" {
   subnet      = aws_subnet.dc-subnet.id
   security_group_ids = concat(
     [aws_security_group.allow-internal.id],
-    [aws_security_group.allow-winrm.id],
     var.enable_rdp  ? [aws_security_group.allow-rdp[0].id]  : [],
     var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
   )

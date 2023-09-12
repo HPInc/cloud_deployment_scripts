@@ -22,7 +22,6 @@ $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
-# Setup-CloudWatch will track this log file.
 $LOG_FILE = "$BASE_DIR\provisioning.log"
 
 $AWS_SSM_URL       = "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe"
@@ -38,22 +37,22 @@ $DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
-    $Current_Attempt = 0
+  $Current_Attempt = 0
 
-    while ($true) {
-      $Current_Attempt++
-      $rc = $Action.Invoke()
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
 
-      if ($?) { return $rc }
+    if ($?) { return $rc }
 
-      if ($Current_Attempt -ge $Attempts) {
-          Write-Error "Failed after $Current_Attempt attempt(s)." -InformationAction Continue
-          Throw
-      }
-
-      Write-Information "Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
-      Start-Sleep -Seconds $Interval
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
     }
+
+    Write-Information "--> Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
 }
 
 function Setup-CloudWatch {
@@ -158,7 +157,7 @@ function PCoIP-Agent-Register {
                 exit 1
             }
 
-            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
             $Retry = $true
             Start-Sleep -Seconds $Interval
             $Elapsed += $Interval
@@ -193,18 +192,11 @@ function Schedule-AD-User-Creation {
     "--> Downloading $BUCKET_NAME\$DC_NEW_AD_ACCOUNTS_SCRIPT"
     Read-S3Object -BucketName $BUCKET_NAME -Key $DC_NEW_AD_ACCOUNTS_SCRIPT -File $DC_NEW_AD_ACCOUNTS_SCRIPT
 
+    $ScriptPath = "$BASE_DIR\$DC_NEW_AD_ACCOUNTS_SCRIPT"
+   
+    # Schedule the task to run on system startup to execute a PowerShell script located at the path provided by '$ScriptPath'.
     # Random delay to avoid conflicts at startup with other system startup scripts, ensure a greater chance of success.
-    $AtStartup = New-JobTrigger -AtStartup -RandomDelay 00:02:00
-    
-    # Define the script block for the scheduled job to pass script path
-    # To ensure that the variables $BASE_DIR,$DC_NEW_AD_ACCOUNTS_SCRIPT are resolved correctly to form the path.
-    $scriptBlock = {
-        param (
-            [string]$ScriptPath
-        )
-        Start-Process powershell "$ScriptPath" -NoNewWindow -PassThru -Wait
-    }
-    Register-ScheduledJob -Name NewADProvision -Trigger $AtStartup -ScriptBlock $scriptBlock -ArgumentList "$BASE_DIR\$DC_NEW_AD_ACCOUNTS_SCRIPT"
+    schtasks /create /tn NewADProvision /sc onstart /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -File '$ScriptPath'" /NP /DELAY 0002:00 /RU SYSTEM
 }
 
 Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader

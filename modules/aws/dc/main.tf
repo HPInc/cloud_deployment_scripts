@@ -28,7 +28,6 @@ data "aws_kms_secrets" "decrypted_secrets" {
   }
 }
 
-
 data "template_file" "user-data" {
   template = file("${path.module}/user-data.ps1.tmpl")
 
@@ -169,7 +168,7 @@ data "aws_iam_policy_document" "dc-policy-doc" {
         "ssmmessages:CreateControlChannel",
         "ssmmessages:CreateDataChannel",
         "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"]
+        "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
@@ -250,10 +249,10 @@ resource "null_resource" "wait_for_DC_to_initialize_windows" {
         Start-Sleep -Seconds 900
         Write-Host "The provisioning scripts for the DC should have completed within the last 15 minutes."
       EOT   
-}
+  }
 }
   
- resource "null_resource" "wait_for_DC_to_initialize_linux" {
+resource "null_resource" "wait_for_DC_to_initialize_linux" {
   count = local.is_windows_host ? 0 : 1
   depends_on = [ aws_instance.dc ]
   provisioner "local-exec" {
