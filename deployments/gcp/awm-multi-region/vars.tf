@@ -169,7 +169,7 @@ variable "awm_disk_size_gb" {
 
 variable "awm_disk_image" {
   description = "Disk image for the Anyware Manager"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230809"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230912"
 }
 
 variable "awm_admin_user" {
@@ -235,7 +235,7 @@ variable "awc_disk_size_gb" {
 
 variable "awc_disk_image" {
   description = "Disk image for the Anyware Connector"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230809"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230912"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -469,7 +469,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20230809"
+  default     = "projects/centos-cloud/global/images/centos-7-v20230912"
 }
 
 variable "centos_std_instance_count_list" {
@@ -494,7 +494,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20230809"
+  default     = "projects/centos-cloud/global/images/centos-7-v20230912"
 }
 
 variable "centos_admin_user" {
