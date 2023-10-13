@@ -66,7 +66,7 @@ resource "google_compute_firewall" "allow-internal" {
   )
 }
 
-rresource "google_compute_firewall" "allow-ssh" {
+resource "google_compute_firewall" "allow-ssh" {
   count  = var.enable_ssh ? 1 : 0
 
   name    = "${local.prefix}fw-allow-ssh"
