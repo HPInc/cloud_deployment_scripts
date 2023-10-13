@@ -150,7 +150,7 @@ function PCoIP-Agent-Register {
 
     cd 'C:\Program Files\Teradici\PCoIP Agent'
 
-    "Checking for existing PCoIP License..."
+    "--> Checking for existing PCoIP License..."
     & .\pcoip-validate-license.ps1
     if ( $LastExitCode -eq 0 ) {
         "--> Found valid license."
@@ -220,11 +220,12 @@ function Schedule-AD-User-Creation {
 
     $ScriptPath = "$BASE_DIR\$DC_NEW_AD_ACCOUNTS_SCRIPT"
    
+    # Schedule the task to run on system startup to execute a PowerShell script located at the path provided by '$ScriptPath'.
     # Random delay to avoid conflicts at startup with other system startup scripts, ensure a greater chance of success.
     schtasks /create /tn NewADProvision /sc onstart /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -File '$ScriptPath'" /NP /DELAY 0002:00 /RU SYSTEM
 }
 
-Start-Transcript -path $LOG_FILE -append
+Start-Transcript -Path $LOG_FILE -Append
 
 if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
     Setup-Ops
@@ -300,7 +301,7 @@ Remove-Item -Path $pemCert
 "================================================================"
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."
 "================================================================"
-sc.exe config ADWS start= delayed-auto 
+sc.exe config ADWS start= delayed-auto
 
 if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
     if (PCoIP-Agent-is-Installed) {

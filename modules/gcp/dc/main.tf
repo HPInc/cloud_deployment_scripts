@@ -41,38 +41,35 @@ resource "google_storage_bucket_object" "dc-provisioning-script" {
   name   = local.dc_provisioning_script
   content = templatefile(
     "${path.module}/${local.dc_provisioning_script}.tpl",
-
-  {
-    bucket_name                = var.bucket_name,
-    domain_name                = var.domain_name,
-    gcp_ops_agent_enable       = var.gcp_ops_agent_enable,
-    kms_cryptokey_id           = var.kms_cryptokey_id,
-    ldaps_cert_filename        = var.ldaps_cert_filename,
-    ops_setup_script           = var.ops_setup_script,
-    pcoip_agent_install        = var.pcoip_agent_install,
-    pcoip_agent_version        = var.pcoip_agent_version,
-    pcoip_registration_code    = var.pcoip_registration_code,
-    safe_mode_admin_password   = var.safe_mode_admin_password,
-    teradici_download_token    = var.teradici_download_token,
-    dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script,
-  }
-)
+    {
+      bucket_name                = var.bucket_name,
+      domain_name                = var.domain_name,
+      gcp_ops_agent_enable       = var.gcp_ops_agent_enable,
+      kms_cryptokey_id           = var.kms_cryptokey_id,
+      ldaps_cert_filename        = var.ldaps_cert_filename,
+      ops_setup_script           = var.ops_setup_script,
+      pcoip_agent_install        = var.pcoip_agent_install,
+      pcoip_agent_version        = var.pcoip_agent_version,
+      pcoip_registration_code    = var.pcoip_registration_code,
+      safe_mode_admin_password   = var.safe_mode_admin_password,
+      teradici_download_token    = var.teradici_download_token,
+      dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script,
+    }
+  )
 }
 
 resource "google_storage_bucket_object" "dc-new-ad-accounts-script" {
   bucket = var.bucket_name
   name   = local.dc_new_ad_accounts_script
   content = templatefile("${path.module}/${local.dc_new_ad_accounts_script}.tpl",
-
-  {
-    kms_cryptokey_id = var.kms_cryptokey_id,
-    host_name        = local.host_name,
-    domain_name      = var.domain_name,
-    account_name     = var.ad_service_account_username,
-    account_password = var.ad_service_account_password,
-    csv_file         = local.new_domain_users == 1 ? local.domain_users_list : "",
-    bucket_name      = var.bucket_name,
-  }
+    {
+      kms_cryptokey_id = var.kms_cryptokey_id,
+      domain_name      = var.domain_name,
+      account_name     = var.ad_service_account_username,
+      account_password = var.ad_service_account_password,
+      csv_file         = local.new_domain_users == 1 ? local.domain_users_list : "",
+      bucket_name      = var.bucket_name,
+    }
   )
 }
 

@@ -107,7 +107,6 @@ module "dc" {
   private_ip  = var.dc_private_ip
   network_tags = concat(
     [google_compute_firewall.allow-google-dns.name],
-    [google_compute_firewall.allow-winrm.name],
     var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
     var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
     var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
@@ -120,6 +119,8 @@ module "dc" {
   ops_setup_script     = local.ops_win_setup_script
 
   disk_image = var.dc_disk_image
+
+  depends_on = [google_compute_router_nat.nat]
 }
 
 module "awm" {

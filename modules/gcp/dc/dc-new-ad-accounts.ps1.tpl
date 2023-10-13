@@ -57,7 +57,7 @@ function Decrypt-Credentials {
     }
 }
 
-Start-Transcript -path $LOG_FILE -append
+Start-Transcript -Path $LOG_FILE -Append
 
 if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
     "--> Script is not using encryption for secrets."
@@ -78,6 +78,7 @@ do {
             -Enabled $True `
             -PasswordNeverExpires $True `
             -AccountPassword (ConvertTo-SecureString $DATA."account_password" -AsPlainText -Force)
+        "--> Added AD Domain Admin User $account_name"
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
         "--> $($_.Exception.Message)"
@@ -116,7 +117,8 @@ if ("${csv_file}" -ne "") {
         $Password 	= $User.password
         $Firstname 	= $User.firstname
         $Lastname 	= $User.lastname
-        $Isadmin    = $User.isadmin
+        $Isadmin        = $User.isadmin
+
         #Check to see if the user already exists in AD
         if (Get-ADUser -F {SamAccountName -eq $Username}) {
             #If user does exist, give a warning
@@ -124,6 +126,7 @@ if ("${csv_file}" -ne "") {
         }
         else {
             #User does not exist then proceed to create the new user account
+
             #Account will be created in the OU provided by the $OU variable read from the CSV file
             New-ADUser `
                 -SamAccountName $Username `
@@ -134,6 +137,7 @@ if ("${csv_file}" -ne "") {
                 -Enabled $True `
                 -DisplayName "$Lastname, $Firstname" `
                 -AccountPassword (convertto-securestring $Password -AsPlainText -Force) -ChangePasswordAtLogon $False
+
             if ($Isadmin -eq "true") {
                 Add-ADGroupMember `
                     -Identity "Domain Admins" `
@@ -141,8 +145,9 @@ if ("${csv_file}" -ne "") {
             }
             "--> Added AD User $Username..."
         }
-    }   
- del "$BASE_DIR\${csv_file}"
+    }
+    del "$BASE_DIR\${csv_file}"
 }
+
 # Unregister the scheduled job
-schtasks /delete /tn NewADProvision /f 
+schtasks /delete /tn NewADProvision /f
