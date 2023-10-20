@@ -105,12 +105,13 @@ module "dc" {
   gcp_zone    = var.gcp_zone
   subnet      = google_compute_subnetwork.dc-subnet.self_link
   private_ip  = var.dc_private_ip
-  network_tags = [
-    google_compute_firewall.allow-google-dns.name,
-    google_compute_firewall.allow-rdp.name,
-    google_compute_firewall.allow-winrm.name,
-    google_compute_firewall.allow-icmp.name,
-  ]
+  network_tags = concat(
+    [google_compute_firewall.allow-google-dns.name],
+    [google_compute_firewall.allow-winrm.name],
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
@@ -140,11 +141,12 @@ module "awm" {
   gcp_region = var.gcp_region
   gcp_zone   = var.gcp_zone
   subnet     = google_compute_subnetwork.awm-subnet.self_link
-  network_tags = [
-    google_compute_firewall.allow-ssh.name,
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-https.name,
-  ]
+  network_tags = concat(
+    [google_compute_firewall.allow-https.name],
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_ssh     ? [google_compute_firewall.allow-ssh[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [], 
+  )
 
   machine_type = var.awm_machine_type
   disk_size_gb = var.awm_disk_size_gb
@@ -181,11 +183,12 @@ module "awc" {
 
   gcp_region_list = [var.gcp_region]
   subnet_list     = [google_compute_subnetwork.awc-subnet.self_link]
-  network_tags = [
-    google_compute_firewall.allow-ssh.name,
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-pcoip.name,
-  ]
+  network_tags = concat(
+    [google_compute_firewall.allow-pcoip.name],
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_ssh     ? [google_compute_firewall.allow-ssh[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   instance_count_list = [var.awc_instance_count]
   machine_type        = var.awc_machine_type
@@ -233,10 +236,11 @@ module "win-gfx" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags = [
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-rdp.name,
-  ]
+  network_tags = concat(
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   instance_count_list = [var.win_gfx_instance_count]
   instance_name       = var.win_gfx_instance_name
@@ -279,10 +283,11 @@ module "win-std" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags = [
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-rdp.name,
-  ]
+  network_tags = concat(
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   instance_count_list = [var.win_std_instance_count]
   instance_name       = var.win_std_instance_name
@@ -327,10 +332,11 @@ module "centos-gfx" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags = [
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-ssh.name,
-  ]
+  network_tags = concat(
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_ssh     ? [google_compute_firewall.allow-ssh[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   instance_count_list = [var.centos_gfx_instance_count]
   instance_name       = var.centos_gfx_instance_name
@@ -380,10 +386,11 @@ module "centos-std" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  network_tags = [
-    google_compute_firewall.allow-icmp.name,
-    google_compute_firewall.allow-ssh.name,
-  ]
+  network_tags = concat(
+    var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
+    var.enable_ssh     ? [google_compute_firewall.allow-ssh[0].name]  : [],
+    var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
+  )
 
   instance_count_list = [var.centos_std_instance_count]
   instance_name       = var.centos_std_instance_name

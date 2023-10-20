@@ -14,15 +14,24 @@
 
 ---
 
-### Connecting to VMs Using SSH/RDP
-- Access to AWS instances through SSH/RDP is only possible if the variables enable_ssh/enable_rdp in the terraform.tfvars file are set to True.
-- To debug Linux VMs, SSH can be used to login to the machines for troubleshooting and viewing log files.
-- To debug Windows VMs, a RDP client such as Windows Remote Desktop on Windows or xfreerdp on Linux can be used to login to the machines for troubleshooting and viewing log files.
-- Workstation VMs are not exposed to the internet and do not have public IPs, a bastion host such as the DC or Connector can be used to access the Workstation VMs on the private network.
+### Accessing VMs
+- For troubleshooting deployments, access to the VMs is available for debugging and log file inspection.
+- By default, AWS VMs are accessible via AWS Systems Manager (SSM), whereas GCP VM instances can be accessed through the Identity-Aware Proxy (IAP).
 
-### Connecting to AWS Instances Using Session Manager
-- Session Manager is enabled by default on all AWS instances, allowing access to all virtual machines (VMs) via Session Manager, unless enable_ssm is set to false in terraform.tfvars
-- To access VM's through SSM, Please refer this link - https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html
+### Connecting to AWS VM Instances Using AWS Systems Manager (SSM)
+- SSM is enabled by default on all AWS VM instances, allowing access to all VM instances via AWS Systems Manager (SSM), unless `enable_ssm` is set to false in `terraform.tfvars`.
+- To access VM Instance's through SSM, please refer to this link - https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html
+
+### Connecting to GCP VM Instances using Identity-Aware Proxy (IAP)
+- IAP is enabled by default on all GCP VM instances, allowing access to all VM instances via Identity-Aware Proxy (IAP), unless `gcp_iap_enable` is set to false in `terraform.tfvars`.
+- To access VM Instance's through IAP, please refer to this link - https://cloud.google.com/iap/docs/using-tcp-forwarding
+
+### Alternative ways to connect to VMs
+- Should IAP or SSM be unavailable or intentionally disabled, SSH or RDP clients can be utilized for VM access.
+- Direct SSH/RDP access to AWS or GCP VM instances from the machine executing Terraform is contingent upon setting the `enable_ssh` or `enable_rdp` variables to true within the `terraform.tfvars` file.
+- Workstation VMs, not having public IPs, remain inaccessible from the internet. However, a bastion host—like the DC or Connector—provides a bridge to access Workstation VMs within the private network.
+- For public IP access to workstation VMs, set the `enable_workstation_public_ip` to true in the `terraform.tfvars` file.
+- Additionally, ensure the activation of SSH or RDP by setting the `enable_ssh` or `enable_rdp` variables respectively.
 
 ### Connecting to CentOS Workstations
 - One way to access CentOS Workstations is to use the Connector as a bastion host. Please refer to the log tables below for the corresponding <login-user> for each VM.

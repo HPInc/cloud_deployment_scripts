@@ -62,7 +62,29 @@ resource "google_compute_firewall" "allow-internal" {
   source_ranges = [var.dc_subnet_cidr]
 }
 
+# To allow IAP to connect to GCP VM instances
+resource "google_compute_firewall" "allow-iap" {
+  count  = var.gcp_iap_enable ? 1 : 0
+  
+  name    = "${local.prefix}fw-allow-iap"
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3389"]
+  }
+
+  target_tags   = ["${local.prefix}fw-allow-iap"]
+  source_ranges = local.iap_cidr
+}
+
 resource "google_compute_firewall" "allow-rdp" {
+  count  = var.enable_rdp ? 1 : 0
   name    = "${local.prefix}fw-allow-rdp"
   network = google_compute_network.vpc.self_link
 
@@ -76,7 +98,7 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([local.myip], var.allowed_admin_cidrs, (var.gcp_iap_enable ? local.iap_cidr : []))
+  source_ranges = concat([local.myip], var.allowed_admin_cidrs)
 }
 
 resource "google_compute_firewall" "allow-winrm" {
@@ -93,6 +115,7 @@ resource "google_compute_firewall" "allow-winrm" {
 }
 
 resource "google_compute_firewall" "allow-icmp" {
+  count  = var.enable_icmp ? 1 : 0
   name    = "${local.prefix}fw-allow-icmp"
   network = google_compute_network.vpc.self_link
 

@@ -20,6 +20,24 @@ variable "gcp_region" {
   default     = "us-west2"
 }
 
+variable "enable_ssh" {
+  description = "Flag to enable or disable the compute firewall on TCP 22 port on all Linux-based machines from allowed_admin_cidrs"
+  type        = bool
+  default     = false
+}
+
+variable "enable_icmp" {
+  description = "Flag to enable or disable the compute firewall for ICMP protocol on all workstations from allowed_admin_cidrs"
+  type        = bool
+  default     = false
+}
+
+variable "enable_rdp" {
+  description = "Flag to enable or disable the compute firewall on TCP/UDP 3389 Port on all Windows-based machines from allowed_admin_cidrs"
+  type        = bool
+  default     = false
+}
+
 variable "gcp_zone" {
   description = "GCP zone"
 
@@ -81,7 +99,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230913"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20231011"
 }
 
 variable "dc_admin_password" {
@@ -169,7 +187,7 @@ variable "awm_disk_size_gb" {
 
 variable "awm_disk_image" {
   description = "Disk image for the Anyware Manager"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230912"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20231010"
 }
 
 variable "awm_admin_user" {
@@ -235,7 +253,7 @@ variable "awc_disk_size_gb" {
 
 variable "awc_disk_image" {
   description = "Disk image for the Anyware Connector"
-  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20230912"
+  default     = "projects/rocky-linux-cloud/global/images/rocky-linux-8-v20231010"
 }
 
 # TODO: does this have to match the tag at the end of the SSH pub key?
@@ -399,7 +417,7 @@ variable "win_gfx_disk_size_gb" {
 
 variable "win_gfx_disk_image" {
   description = "Disk image for the Windows Graphics Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230913"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20231011"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -429,7 +447,7 @@ variable "win_std_disk_size_gb" {
 
 variable "win_std_disk_image" {
   description = "Disk image for the Windows Standard Workstation"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20230913"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20231011"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -469,7 +487,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20230912"
+  default     = "projects/centos-cloud/global/images/centos-7-v20231010"
 }
 
 variable "centos_std_instance_count_list" {
@@ -494,7 +512,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20230912"
+  default     = "projects/centos-cloud/global/images/centos-7-v20231010"
 }
 
 variable "centos_admin_user" {
@@ -523,7 +541,8 @@ variable "gcp_ops_agent_enable" {
 }
 
 variable "gcp_iap_enable" {
-  description = "Enable GCP IAP for connecting instances via IAP"
+  description = "Enables or Disables Access via GCP's IAP: If set to 'true', this option opens TCP ports 22 (SSH) and 3389 (RDP) in the compute firewall, specifically for traffic originating from GCP's IAP CIDR range. This allows administrators to access VMs using SSH or RDP through GCP's IAP TCP forwarding feature"
+  type        = bool
   default     = true
 }
 
