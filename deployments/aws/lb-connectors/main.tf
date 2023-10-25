@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -71,7 +71,6 @@ module "dc" {
   subnet      = aws_subnet.dc-subnet.id
   security_group_ids =concat(
     [aws_security_group.allow-internal.id],
-    [aws_security_group.allow-winrm.id],
     var.enable_rdp  ? [aws_security_group.allow-rdp[0].id]  : [],
     var.enable_icmp ? [aws_security_group.allow-icmp[0].id] : [],
   )

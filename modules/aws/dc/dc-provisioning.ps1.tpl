@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -6,11 +6,14 @@
 # Make sure this file has Windows line endings
 
 ##### Template Variables #####
+$ADMIN_PASSWORD              = "${admin_password}"
 $AWS_SSM_ENABLE              = "${aws_ssm_enable}"
+$BASE_DIR                    = "C:\Teradici"
 $BUCKET_NAME                 = "${bucket_name}"
 $CLOUDWATCH_ENABLE           = "${cloudwatch_enable}"
 $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
 $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
+$DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
 $DOMAIN_NAME                 = "${domain_name}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
@@ -19,7 +22,7 @@ $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
 $SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
-$LOG_FILE = "C:\Teradici\provisioning.log"
+$LOG_FILE = "$BASE_DIR\provisioning.log"
 
 $AWS_SSM_URL       = "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe"
 $AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
@@ -28,27 +31,28 @@ $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pc
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$DATA.Add("admin_password", "$ADMIN_PASSWORD")
 $DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
 $DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
-    $Current_Attempt = 0
+  $Current_Attempt = 0
 
-    while ($true) {
-      $Current_Attempt++
-      $rc = $Action.Invoke()
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
 
-      if ($?) { return $rc }
+    if ($?) { return $rc }
 
-      if ($Current_Attempt -ge $Attempts) {
-          Write-Error "Failed after $Current_Attempt attempt(s)." -InformationAction Continue
-          Throw
-      }
-
-      Write-Information "Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
-      Start-Sleep -Seconds $Interval
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
     }
+
+    Write-Information "--> Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
 }
 
 function Setup-CloudWatch {
@@ -56,12 +60,22 @@ function Setup-CloudWatch {
     "Setting Up AWS CloudWatch..."
     "################################################################"
     Read-S3Object -BucketName $BUCKET_NAME -Key $CLOUDWATCH_SETUP_SCRIPT -File $CLOUDWATCH_SETUP_SCRIPT
-    powershell .\$CLOUDWATCH_SETUP_SCRIPT C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
-                                            C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
+    powershell .\$CLOUDWATCH_SETUP_SCRIPT `
+        C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
+        $BASE_DIR\provisioning.log  "%Y%m%d%H%M%S" `
+        $BASE_DIR\dc_new_ad_accounts.log "%Y%m%d%H%M%S"
 }
 
 function Decrypt-Credentials {
     try {
+
+        "--> Decrypting admin_password..."
+        $ByteAry = [System.Convert]::FromBase64String("$ADMIN_PASSWORD")
+        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
+        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
+        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
+        $DATA."admin_password" = $StreamRead.ReadToEnd()
+
         "--> Decrypting safe_mode_admin_password..."
         $ByteAry = [System.Convert]::FromBase64String("$SAFE_MODE_ADMIN_PASSWORD")
         $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
@@ -92,7 +106,7 @@ function PCoIP-Agent-Install {
     "Installing PCoIP standard agent..."
     "################################################################"
 
-    $agentInstallerDLDirectory = "C:\Teradici"
+    $agentInstallerDLDirectory = "$BASE_DIR"
     $pcoipAgentInstallerUrl = $PCOIP_AGENT_LOCATION_URL + '/' + $PCOIP_AGENT_FILENAME
     $destFile = $agentInstallerDLDirectory + '\' + $PCOIP_AGENT_FILENAME
     $wc = New-Object System.Net.WebClient
@@ -143,7 +157,7 @@ function PCoIP-Agent-Register {
                 exit 1
             }
 
-            "Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
+            "--> Retrying in $Interval seconds... (Timeout in $($Timeout-$Elapsed) seconds)"
             $Retry = $true
             Start-Sleep -Seconds $Interval
             $Elapsed += $Interval
@@ -169,11 +183,41 @@ function Install-SSM {
     $global:restart = $true
 }
 
-Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+function Schedule-AD-User-Creation {
+    "################################################################"
+    "Downloading AD accounts set-up script..."
+    "################################################################"
+    
+    Set-Location -Path $BASE_DIR
+    "--> Downloading $BUCKET_NAME\$DC_NEW_AD_ACCOUNTS_SCRIPT"
+    Read-S3Object -BucketName $BUCKET_NAME -Key $DC_NEW_AD_ACCOUNTS_SCRIPT -File $DC_NEW_AD_ACCOUNTS_SCRIPT
 
-# SSM agent creates ssm-user account on the managed node when SSM agent starts, 
-# but this account isn't created automatically on Windows Server domain controller.  
-# To connect to domain controller using SSM, we create ssm-user for the SSM agent. 
+    $ScriptPath = "$BASE_DIR\$DC_NEW_AD_ACCOUNTS_SCRIPT"
+   
+    # Schedule the task to run on system startup to execute a PowerShell script located at the path provided by '$ScriptPath'.
+    # Random delay to avoid conflicts at startup with other system startup scripts, ensure a greater chance of success.
+    schtasks /create /tn NewADProvision /sc onstart /tr "powershell.exe -NoProfile -ExecutionPolicy Bypass -File '$ScriptPath'" /NP /DELAY 0002:00 /RU SYSTEM
+}
+
+Start-Transcript -Path $LOG_FILE -Append -IncludeInvocationHeader
+# Enforce TLS 1.2 for AWS deprecation of TLS prior versions from June,2023
+# https://aws.amazon.com/blogs/security/tls-1-2-required-for-aws-endpoints/
+# Adding TLS 1.2 for System.Net.WebClient class
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
+    "--> Script is not using encryption for secrets."
+} else {
+    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
+    Decrypt-Credentials
+}
+
+"--> Setting Administrator password..."
+net user Administrator $DATA."admin_password" /active:yes
+
+# SSM agent creates ssm-user account on the managed node when SSM agent starts,
+# but this account isn't created automatically on Windows Server domain controller.
+# To connect to domain controller using SSM, we create ssm-user for the SSM agent.
 # More info can be found at https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html
 
 if ([System.Convert]::ToBoolean("$AWS_SSM_ENABLE")) {
@@ -184,17 +228,10 @@ if ([System.Convert]::ToBoolean("$AWS_SSM_ENABLE")) {
     New-LocalUser -Name ssm-user -Description "local account for AWS Session Manager" -NoPassword
     "--> Assigning ssm-user to Administrators group"
     net localgroup "Administrators" "ssm-user" /add
-} 
+}
 
 if ([System.Convert]::ToBoolean("$CLOUDWATCH_ENABLE")) {
     Setup-CloudWatch
-} 
-
-if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
-    Decrypt-Credentials
 }
 
 $DomainName = "$DOMAIN_NAME"
@@ -243,8 +280,8 @@ Copy-Item -Path HKLM:\Software\Microsoft\SystemCertificates\My\Certificates\$thu
 "Uploading LDAPS Cert to Bucket..."
 "================================================================"
 # Save LDAPS Cert as a Base64 encoded DER certificate
-$derCert = "C:\Teradici\LdapsCert.der"
-$pemCert = "C:\Teradici\LdapsCert.pem"
+$derCert = "$BASE_DIR\LdapsCert.der"
+$pemCert = "$BASE_DIR\LdapsCert.pem"
 $myCertLoc = 'cert:\LocalMachine\My\' + $thumbprint
 Export-Certificate -Cert $myCertLoc -FilePath $derCert -Type CERT
 certutil -encode $derCert $pemCert
@@ -259,7 +296,7 @@ Remove-Item -Path $pemCert
 "================================================================"
 "Delaying Active Directory Web Service (ADWS) start to avoid 1202 error..."
 "================================================================"
-sc.exe config ADWS start= delayed-auto 
+sc.exe config ADWS start= delayed-auto
 
 if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
     if (PCoIP-Agent-is-Installed) {
@@ -274,10 +311,11 @@ if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
 }
 
 "================================================================"
-"Restarting computer after 60 sec..."
+"Provisioning AD accounts script upon restart..."
 "================================================================"
-# This sleep is to fix the the remote-exec provisioner error "read: connection reset by peer"
-# To avoid this error, we are adding a delay before restarting the computer to 
-# allow enough time for the remote-exec provisioner to complete its execution.
-Start-Sleep -Seconds 60 # Add a delay of 60 seconds
+# Adds a task trigger to execute the ad_accounts setup script 
+# post-restart which provisions admin users and domain users.
+Schedule-AD-User-Creation
+
+"--> Restart PC for Install-ADDSForest"
 Restart-Computer -Force

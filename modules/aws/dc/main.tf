@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,14 +9,14 @@ locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
 
   # Windows computer names must be <= 15 characters
-  host_name                  = substr("${local.prefix}vm-dc", 0, 15)
-  provisioning_file          = "C:/Temp/provisioning.ps1"
-  new_domain_admin_user_file = "C:/Temp/new_domain_admin_user.ps1"
-  new_domain_users_file      = "C:/Temp/new_domain_users.ps1"
-  domain_users_list_file     = "C:/Temp/domain_users_list.csv"
-  new_domain_users           = var.domain_users_list == "" ? 0 : 1
-  sysprep_script             = "dc-sysprep.ps1"
-  admin_password             = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
+  host_name                 = substr("${local.prefix}vm-dc", 0, 15)
+  dc_provisioning_script    = "dc-provisioning.ps1"
+  dc_new_ad_accounts_script = "dc-new-ad-accounts.ps1"
+  domain_users_list         = "domain_users_list.csv"
+  new_domain_users          = var.domain_users_list == "" ? 0 : 1
+  # Directories start with "C:..." on Windows; All other OSs use "/" for root.
+  is_windows_host           = substr(pathexpand("~"), 0, 1) == "/" ? false : true
+  admin_password            = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
 }
 
 data "aws_kms_secrets" "decrypted_secrets" {
@@ -28,66 +28,65 @@ data "aws_kms_secrets" "decrypted_secrets" {
   }
 }
 
-resource "aws_s3_object" "dc-sysprep-script" {
-  key    = local.sysprep_script
-  bucket = var.bucket_name
-  content = templatefile(
-    "${path.module}/${local.sysprep_script}.tmpl",
-    {
-      customer_master_key_id = var.customer_master_key_id
-      admin_password         = var.admin_password
-      hostname               = local.host_name
-    }
-  )
-}
-
 data "template_file" "user-data" {
   template = file("${path.module}/user-data.ps1.tmpl")
 
   vars = {
     bucket_name = var.bucket_name,
-    file_name   = local.sysprep_script,
+    file_name   = local.dc_provisioning_script
   }
 }
 
-data "template_file" "dc-provisioning-script" {
-  template = file("${path.module}/dc-provisioning.ps1.tpl")
-
-  vars = {
-    aws_ssm_enable           = var.aws_ssm_enable
-    bucket_name              = var.bucket_name
-    cloudwatch_enable        = var.cloudwatch_enable
-    cloudwatch_setup_script  = var.cloudwatch_setup_script
-    customer_master_key_id   = var.customer_master_key_id
-    domain_name              = var.domain_name
-    ldaps_cert_filename      = var.ldaps_cert_filename
-    pcoip_agent_install      = var.pcoip_agent_install
-    pcoip_agent_version      = var.pcoip_agent_version
-    pcoip_registration_code  = var.pcoip_registration_code
-    safe_mode_admin_password = var.safe_mode_admin_password
-    teradici_download_token  = var.teradici_download_token
-  }
+resource "aws_s3_object" "dc_provisioning_script" {
+  key    = local.dc_provisioning_script
+  bucket = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.dc_provisioning_script}.tpl",
+    {
+      admin_password             = var.admin_password
+      aws_ssm_enable             = var.aws_ssm_enable
+      bucket_name                = var.bucket_name
+      cloudwatch_enable          = var.cloudwatch_enable
+      cloudwatch_setup_script    = var.cloudwatch_setup_script
+      customer_master_key_id     = var.customer_master_key_id
+      domain_name                = var.domain_name
+      dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script
+      hostname                   = local.host_name
+      ldaps_cert_filename        = var.ldaps_cert_filename
+      pcoip_agent_install        = var.pcoip_agent_install
+      pcoip_agent_version        = var.pcoip_agent_version
+      pcoip_registration_code    = var.pcoip_registration_code
+      safe_mode_admin_password   = var.safe_mode_admin_password
+      teradici_download_token    = var.teradici_download_token
+    }
+  )
 }
 
-data "template_file" "new-domain-admin-user-script" {
-  template = file("${path.module}/new_domain_admin_user.ps1.tpl")
+resource "aws_s3_object" "domain_users_list" {
 
-  vars = {
-    customer_master_key_id = var.customer_master_key_id
-    host_name              = local.host_name
-    domain_name            = var.domain_name
-    account_name           = var.ad_service_account_username
-    account_password       = var.ad_service_account_password
-  }
+  count   = local.new_domain_users == 1 ? 1 : 0
+
+  key    = local.domain_users_list
+  bucket = var.bucket_name
+  source = var.domain_users_list
 }
 
-data "template_file" "new-domain-users-script" {
-  template = file("${path.module}/new_domain_users.ps1.tpl")
+resource "aws_s3_object" "dc_new_ad_accounts_script" {
+  key    = local.dc_new_ad_accounts_script
+  bucket = var.bucket_name
+  content = templatefile(
+    "${path.module}/${local.dc_new_ad_accounts_script}.tpl",
+    {
+      domain_name = var.domain_name
+      # admin users
+      ad_service_account_username  = var.ad_service_account_username
+      ad_service_account_password  = var.ad_service_account_password
+      customer_master_key_id       = var.customer_master_key_id
 
-  vars = {
-    domain_name = var.domain_name
-    csv_file    = local.domain_users_list_file
-  }
+      # domain users
+      csv_file = local.new_domain_users == 1 ? local.domain_users_list : ""
+      bucket_name            = var.bucket_name
+  })
 }
 
 # Need to do this to look up AMI ID, which is different for each region
@@ -132,7 +131,11 @@ data "aws_iam_policy_document" "dc-policy-doc" {
 
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${local.sysprep_script}"]
+    resources = [
+    "arn:aws:s3:::${var.bucket_name}/${local.dc_provisioning_script}", 
+    "arn:aws:s3:::${var.bucket_name}/${local.dc_new_ad_accounts_script}",
+    "arn:aws:s3:::${var.bucket_name}/${local.domain_users_list}",
+    ]
     effect    = "Allow"
   }
 
@@ -165,7 +168,7 @@ data "aws_iam_policy_document" "dc-policy-doc" {
         "ssmmessages:CreateControlChannel",
         "ssmmessages:CreateDataChannel",
         "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"]
+        "ssmmessages:OpenDataChannel"]
       resources = ["*"]
       effect    = "Allow"
     }
@@ -206,9 +209,15 @@ resource "time_sleep" "delay_destroy_log_group" {
 }
 
 resource "aws_instance" "dc" {
-  # wait 5 seconds before deleting the log group to account for delays in 
-  # Cloudwatch receiving the last messages before an EC2 instance is shut down
-  depends_on = [time_sleep.delay_destroy_log_group]
+  depends_on = [
+    aws_s3_object.dc_provisioning_script,
+    aws_s3_object.dc_new_ad_accounts_script,
+    aws_s3_object.domain_users_list,
+ 
+    # wait 5 seconds before deleting the log group to account for delays in
+    # Cloudwatch receiving the last messages before an EC2 instance is shut down
+    time_sleep.delay_destroy_log_group
+  ]
 
   ami           = data.aws_ami.ami.id
   instance_type = var.instance_type
@@ -218,8 +227,7 @@ resource "aws_instance" "dc" {
     volume_size = var.disk_size_gb
   }
 
-  subnet_id                   = var.subnet
-  associate_public_ip_address = true
+  subnet_id = var.subnet
 
   vpc_security_group_ids = var.security_group_ids
 
@@ -232,159 +240,25 @@ resource "aws_instance" "dc" {
   }
 }
 
-resource "null_resource" "upload-scripts" {
-  depends_on = [aws_instance.dc]
-
-  triggers = {
-    id = aws_instance.dc.id
-  }
-
-  /* Occasionally application of this resource may fail with an error along the
-   lines of "dial tcp <DC public IP>:5986: i/o timeout". A potential cause of
-   this is when the sysprep script has not quite finished running to set up
-   WinRM on the DC host in time for this step to connect. Increasing the timeout
-   from the default 5 minutes is intended to work around this scenario.
-*/
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = local.admin_password
-    host     = aws_instance.dc.public_ip
-    port     = 5986
-    https    = true
-    insecure = true
-    timeout  = "10m"
-  }
-
-  provisioner "file" {
-    content     = data.template_file.dc-provisioning-script.rendered
-    destination = local.provisioning_file
-  }
-
-  provisioner "file" {
-    content     = data.template_file.new-domain-admin-user-script.rendered
-    destination = local.new_domain_admin_user_file
-  }
-
-  provisioner "file" {
-    content     = data.template_file.new-domain-users-script.rendered
-    destination = local.new_domain_users_file
+resource "null_resource" "wait_for_DC_to_initialize_windows" {
+  count = local.is_windows_host ? 1 : 0
+  depends_on = [ aws_instance.dc ]
+  provisioner "local-exec" {
+    interpreter = ["PowerShell", "-Command"]
+    command = <<-EOT
+        Start-Sleep -Seconds 900
+        Write-Host "The provisioning scripts for the DC should have completed within the last 15 minutes."
+      EOT   
   }
 }
-
-resource "null_resource" "upload-domain-users-list" {
-  count = local.new_domain_users
-
-  depends_on = [aws_instance.dc]
-  triggers = {
-    id = aws_instance.dc.id
-  }
-
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = local.admin_password
-    host     = aws_instance.dc.public_ip
-    port     = 5986
-    https    = true
-    insecure = true
-  }
-
-  provisioner "file" {
-    source      = var.domain_users_list
-    destination = local.domain_users_list_file
-  }
-}
-
-resource "null_resource" "run-provisioning-script" {
-  depends_on = [null_resource.upload-scripts]
-  triggers = {
-    id = aws_instance.dc.id
-  }
-
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = local.admin_password
-    host     = aws_instance.dc.public_ip
-    port     = 5986
-    https    = true
-    insecure = true
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "powershell -file ${local.provisioning_file}",
-      "del ${replace(local.provisioning_file, "/", "\\")}",
-    ]
-  }
-}
-
-resource "time_sleep" "wait-for-reboot" {
-  depends_on = [null_resource.run-provisioning-script]
-  triggers = {
-    id = aws_instance.dc.id
-  }
-  create_duration = "15s"
-}
-
-resource "null_resource" "new-domain-admin-user" {
-  depends_on = [
-    null_resource.upload-scripts,
-    time_sleep.wait-for-reboot,
-  ]
-  triggers = {
-    id = aws_instance.dc.id
-  }
-
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = local.admin_password
-    host     = aws_instance.dc.public_ip
-    port     = 5986
-    https    = true
-    insecure = true
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "powershell -file ${local.new_domain_admin_user_file}",
-      "del ${replace(local.new_domain_admin_user_file, "/", "\\")}",
-    ]
-  }
-}
-
-resource "null_resource" "new-domain-user" {
-  count = local.new_domain_users
-
-  # Waits for new-domain-admin-user because that script waits for ADWS to be up
-  depends_on = [
-    null_resource.upload-domain-users-list,
-    null_resource.new-domain-admin-user,
-  ]
-
-  triggers = {
-    id = aws_instance.dc.id
-  }
-
-  connection {
-    type     = "winrm"
-    user     = "Administrator"
-    password = local.admin_password
-    host     = aws_instance.dc.public_ip
-    port     = 5986
-    https    = true
-    insecure = true
-  }
-
-  provisioner "remote-exec" {
-    # wait in case csv file is newly uploaded
-    inline = [
-      "powershell sleep 2",
-      "powershell -file ${local.new_domain_users_file}",
-      "del ${replace(local.new_domain_users_file, "/", "\\")}",
-      "del ${replace(local.domain_users_list_file, "/", "\\")}",
-    ]
+  
+resource "null_resource" "wait_for_DC_to_initialize_linux" {
+  count = local.is_windows_host ? 0 : 1
+  depends_on = [ aws_instance.dc ]
+  provisioner "local-exec" {
+    command = <<-EOT
+      sleep 900
+      echo "The provisioning scripts for the DC should have completed within the last 15 minutes."
+    EOT
   }
 }

@@ -121,7 +121,7 @@ resource "aws_route_table" "private" {
 
 resource "aws_route_table_association" "rt-dc" {
   subnet_id      = aws_subnet.dc-subnet.id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.private.id
 }
 
 resource "aws_route_table_association" "rt-awc" {
@@ -209,22 +209,6 @@ resource "aws_security_group" "allow-rdp" {
 
   tags = {
     Name = "${local.prefix}secgrp-allow-rdp"
-  }
-}
-
-resource "aws_security_group" "allow-winrm" {
-  name   = "${local.prefix}allow-winrm"
-  vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 5986
-    to_port     = 5986
-    cidr_blocks = local.allowed_admin_cidrs
-  }
-
-  tags = {
-    Name = "${local.prefix}secgrp-allow-winrm"
   }
 }
 
@@ -593,19 +577,6 @@ resource "aws_network_acl" "nacls-dc" {
     }
   }
 
-  # allow-winrm (upload-scripts)
-  dynamic "ingress" {
-    for_each = local.allowed_admin_cidrs
-
-    content {
-      rule_no    = 300 + ingress.key
-      protocol   = "tcp"
-      action     = "allow"
-      cidr_block = ingress.value
-      from_port  = 5986
-      to_port    = 5986
-    }
-  }
 
   # allow-icmp
   dynamic "ingress" {
