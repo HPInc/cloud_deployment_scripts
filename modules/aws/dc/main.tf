@@ -14,6 +14,9 @@ locals {
   dc_new_ad_accounts_script = "dc-new-ad-accounts.ps1"
   domain_users_list         = "domain_users_list.csv"
   new_domain_users          = var.domain_users_list == "" ? 0 : 1
+  tag_name                  = "Provisioning Status"
+  #Tag value to check if the DC provisioning is successful or not
+  final_status              = "DC Provisioning Completed"
   # Directories start with "C:..." on Windows; All other OSs use "/" for root.
   is_windows_host           = substr(pathexpand("~"), 0, 1) == "/" ? false : true
   admin_password            = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
@@ -51,7 +54,7 @@ resource "aws_s3_object" "dc_provisioning_script" {
       customer_master_key_id     = var.customer_master_key_id
       domain_name                = var.domain_name
       dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script
-      hostname                   = local.host_name
+      tag_name                   = local.tag_name
       ldaps_cert_filename        = var.ldaps_cert_filename
       pcoip_agent_install        = var.pcoip_agent_install
       pcoip_agent_version        = var.pcoip_agent_version
@@ -82,10 +85,12 @@ resource "aws_s3_object" "dc_new_ad_accounts_script" {
       ad_service_account_username  = var.ad_service_account_username
       ad_service_account_password  = var.ad_service_account_password
       customer_master_key_id       = var.customer_master_key_id
+      tag_name                     = local.tag_name
+      final_status                 = local.final_status
 
       # domain users
       csv_file = local.new_domain_users == 1 ? local.domain_users_list : ""
-      bucket_name            = var.bucket_name
+      bucket_name                       = var.bucket_name
   })
 }
 
@@ -124,7 +129,13 @@ data "aws_kms_key" "encryption-key" {
 
 data "aws_iam_policy_document" "dc-policy-doc" {
   statement {
-    actions   = ["ec2:DescribeTags"]
+  # Add permissions to allow retrieval of DC status using tags.
+    actions   = [
+      "ec2:DescribeTags",
+      "ec2:CreateTags",
+      "ec2:DeleteTags",
+      "ec2:DescribeInstances",
+    ]
     resources = ["*"]
     effect    = "Allow"
   }
@@ -241,24 +252,61 @@ resource "aws_instance" "dc" {
 }
 
 resource "null_resource" "wait_for_DC_to_initialize_windows" {
-  count = local.is_windows_host ? 1 : 0
+  count      = local.is_windows_host? 1 : 0
   depends_on = [ aws_instance.dc ]
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
     command = <<-EOT
-        Start-Sleep -Seconds 900
-        Write-Host "The provisioning scripts for the DC should have completed within the last 15 minutes."
-      EOT   
+      $startTime = Get-Date
+      $tagValue  = ""
+      $instanceId = "${aws_instance.dc.id}"
+      while ($tagValue -ne "${local.final_status}") {
+        $tagValue = $(aws ec2 describe-tags --region ${var.aws_region} --filters "Name=resource-id,Values=$instanceId" --query "Tags[?Key=='${local.tag_name}'].Value" --output text)  
+        if ([string]::IsNullOrEmpty($tagValue)) {
+          Write-Host "DC provisioning is starting"
+        } else { 
+          Write-Host "${local.tag_name}:$tagValue"
+        }
+        $elapsedTime = New-TimeSpan -Start $startTime -End (Get-Date)
+        if ($elapsedTime.TotalMinutes -ge 25) {
+          Write-Host "Timeout Error: The DC provisioning process has taken longer than 25 minutes. The DC might be provisioned successfully, 
+          but please review CloudWatch Logs for any errors or consider destroying the deployment with 'terraform destroy' and redeploying using 'terraform apply'"
+          break  # Exit the loop
+        }
+        Start-Sleep -Seconds 30
+      } 
+    EOT   
   }
 }
-  
+
 resource "null_resource" "wait_for_DC_to_initialize_linux" {
-  count = local.is_windows_host ? 0 : 1
+  count      = local.is_windows_host ? 0 : 1
   depends_on = [ aws_instance.dc ]
   provisioner "local-exec" {
     command = <<-EOT
-      sleep 900
-      echo "The provisioning scripts for the DC should have completed within the last 15 minutes."
+      startTime=$(date +"%s")
+      instanceId="${aws_instance.dc.id}"
+      $tagValue  = ""
+      while [ "$tagValue" != "${local.final_status}" ]; do
+        tagValue=$(aws ec2 describe-tags --region ${var.aws_region} --filters "Name=resource-id,Values=$instanceId" --query "Tags[?Key=='${local.tag_name}'].Value" --output text)
+        
+        if [ -z "$tagValue" ]; then
+          echo "DC provisioning is starting"
+        else
+          echo "${local.tag_name}:$tagValue"
+        fi
+        
+        elapsedTime=$(($(date +"%s") - startTime))
+        
+        if [ "$elapsedTime" -ge 1500 ]; then
+          echo "Timeout Error: The DC provisioning process has taken longer than 25 minutes. The DC might be provisioned successfully, 
+          but please review CloudWatch Logs for any errors or consider destroying the deployment with 'terraform destroy' and redeploying using 'terraform apply'"
+          break  # Exit the loop
+        fi
+
+        sleep 30
+      done
     EOT
   }
-}
+}  
+

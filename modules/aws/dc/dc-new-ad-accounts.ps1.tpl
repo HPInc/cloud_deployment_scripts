@@ -13,6 +13,7 @@ $LOG_FILE = "$BASE_DIR\dc_new_ad_accounts.log"
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("ad_service_account_password", "${ad_service_account_password}")
+$INSTANCEID=(Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id' -UseBasicParsing).Content
 
 function Decrypt-Credentials {
     try {
@@ -37,6 +38,8 @@ if ([string]::IsNullOrWhiteSpace("${customer_master_key_id}")) {
     "--> Script is using encryption key ${customer_master_key_id} for secrets."
     Decrypt-Credentials
 }
+
+New-EC2Tag -Resource $INSTANCEID -Tag @{Key="${tag_name}"; Value="Step 4/4 - Creating new AD Domain Admin accounts..."}
 
 "================================================================"
 "Creating new AD Domain Admin account ${ad_service_account_username}..."
@@ -78,6 +81,8 @@ if ("${csv_file}" -ne "") {
     Write-Host " --> Downloading file from bucket..."
     # Download domain users list.
     Read-S3Object -BucketName ${bucket_name} -Key ${csv_file} -File "$BASE_DIR\${csv_file}"
+    
+    New-EC2Tag -Resource $INSTANCEID -Tag @{Key="${tag_name}"; Value="Step 4/4 - Creating new AD Domain Users from CSV file..."}
 
     #Store the data from ADUsers.csv in the $ADUsers variable
     $ADUsers = Import-csv "$BASE_DIR\${csv_file}"
@@ -85,11 +90,11 @@ if ("${csv_file}" -ne "") {
     #Loop through each row containing user details in the CSV file
     foreach ($User in $ADUsers) {
         #Read user data from each field in each row and assign the data to a variable as below
-        $Username 	= $User.username
-        $Password 	= $User.password
-        $Firstname 	= $User.firstname
-        $Lastname 	= $User.lastname
-        $Isadmin        = $User.isadmin
+        $Username  = $User.username
+        $Password  = $User.password
+        $Firstname = $User.firstname
+        $Lastname  = $User.lastname
+        $Isadmin   = $User.isadmin
 
         #Check to see if the user already exists in AD
         if (Get-ADUser -F {SamAccountName -eq $Username}) {
@@ -123,3 +128,5 @@ if ("${csv_file}" -ne "") {
 
 # Unregister the scheduled job
 schtasks /delete /tn NewADProvision /f
+
+New-EC2Tag  -Resource $INSTANCEID -Tag @{Key="${tag_name}"; Value="${final_status}"}

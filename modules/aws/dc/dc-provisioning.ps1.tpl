@@ -16,6 +16,7 @@ $CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
 $DOMAIN_NAME                 = "${domain_name}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
+$TAG_NAME                    = "${tag_name}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
@@ -29,6 +30,8 @@ $AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
 
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
+
+$INSTANCEID=(Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id' -UseBasicParsing).Content
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("admin_password", "$ADMIN_PASSWORD")
@@ -221,6 +224,10 @@ net user Administrator $DATA."admin_password" /active:yes
 # More info can be found at https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-prerequisites.html
 
 if ([System.Convert]::ToBoolean("$AWS_SSM_ENABLE")) {
+
+    #setting up aws-tags to check the status of DC provisioning
+    New-EC2Tag -Resource $INSTANCEID -Tag @{Key="$TAG_NAME"; Value="Step 1/4 - Setting up AWS SSM..."}
+
     Install-SSM
     "================================================================"
     "Creating Local Account ssm-user For AWS Session Manager..."
@@ -231,6 +238,7 @@ if ([System.Convert]::ToBoolean("$AWS_SSM_ENABLE")) {
 }
 
 if ([System.Convert]::ToBoolean("$CLOUDWATCH_ENABLE")) {
+    New-EC2Tag -Resource $INSTANCEID -Tag @{Key="$TAG_NAME"; Value="Step 1/4 - Setting up Cloudwatch..."}
     Setup-CloudWatch
 }
 
@@ -241,6 +249,8 @@ $DatabasePath = "C:\Windows\NTDS"
 $SysvolPath = "C:\Windows\SYSVOL"
 $LogPath = "C:\Logs"
 
+New-EC2Tag -Resource $INSTANCEID -Tag @{Key="$TAG_NAME"; Value="Step 1/4 - Installing AD-Domain-Services..."}
+
 "================================================================"
 "Installing AD-Domain-Services..."
 "================================================================"
@@ -249,6 +259,7 @@ $LogPath = "C:\Logs"
 # and Computers and command-line tools such as dcdia.exe. No reboot required.
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
+New-EC2Tag -Resource $INSTANCEID -Tag @{Key="$TAG_NAME"; Value="Step 2/4 - Installing Forest and Configuring LDAPS..."}
 "================================================================"
 "Installing a new forest..."
 "================================================================"
@@ -316,6 +327,8 @@ if ([System.Convert]::ToBoolean("$PCOIP_AGENT_INSTALL")) {
 # Adds a task trigger to execute the ad_accounts setup script 
 # post-restart which provisions admin users and domain users.
 Schedule-AD-User-Creation
+
+New-EC2Tag -Resource $INSTANCEID -Tag @{Key="$TAG_NAME"; Value="Step 3/4 - Restarting the computer..."}
 
 "--> Restart PC for Install-ADDSForest"
 Restart-Computer -Force
