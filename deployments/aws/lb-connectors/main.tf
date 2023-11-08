@@ -58,7 +58,7 @@ module "dc" {
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
   aws_region              = var.aws_region
-  
+
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
   safe_mode_admin_password    = var.safe_mode_admin_password
