@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2021-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -133,19 +133,6 @@ resource "google_compute_firewall" "allow-rdp" {
   }
 
   target_tags   = ["${local.prefix}fw-allow-rdp"]
-  source_ranges = concat([local.myip], var.allowed_admin_cidrs)
-}
-
-resource "google_compute_firewall" "allow-winrm" {
-  name    = "${local.prefix}fw-allow-winrm"
-  network = google_compute_network.vpc.self_link
-
-  allow {
-    protocol = "tcp"
-    ports    = ["5986"]
-  }
-
-  target_tags   = ["${local.prefix}fw-allow-winrm"]
   source_ranges = concat([local.myip], var.allowed_admin_cidrs)
 }
 
@@ -306,5 +293,21 @@ resource "google_compute_router_nat" "nat" {
       name                    = subnetwork.value
       source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
     }
+  }
+}
+
+# Create a seperate NAT set-up for the DC due to its single-region configuration, 
+# unlike AWC and workstations, which operate in multiple regions.
+resource "google_compute_router_nat" "dc-nat" {
+  name                               = "${local.prefix}nat-dc"
+  router                             = google_compute_router.router[var.gcp_region].name
+  region                             = var.gcp_region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  min_ports_per_vm                   = 2048
+
+  subnetwork {
+    name                    = google_compute_subnetwork.dc-subnet.self_link
+    source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
   }
 }

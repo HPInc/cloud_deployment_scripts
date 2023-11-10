@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -137,19 +137,6 @@ resource "google_compute_firewall" "allow-rdp" {
   source_ranges = concat([local.myip], var.allowed_admin_cidrs)
 }
 
-resource "google_compute_firewall" "allow-winrm" {
-  name    = "${local.prefix}fw-allow-winrm"
-  network = google_compute_network.vpc.self_link
-
-  allow {
-    protocol = "tcp"
-    ports    = ["5986"]
-  }
-
-  target_tags   = ["${local.prefix}fw-allow-winrm"]
-  source_ranges = concat([local.myip], var.allowed_admin_cidrs)
-}
-
 resource "google_compute_firewall" "allow-icmp" {
   count  = var.enable_icmp ? 1 : 0
   name    = "${local.prefix}fw-allow-icmp"
@@ -254,10 +241,14 @@ resource "google_compute_address" "dc-internal-ip" {
 }
 
 resource "google_compute_router" "router" {
-  count = length(var.ws_region_list)
+  # don't use count with a list of regions here, as adding DC region which
+  # might already be one of the WS (workstation) regions.Doing so could 
+  # lead to unnecessary resource deletion and recreation, depending on 
+  # the order of regions.
+  for_each = local.all_region_set
 
-  name    = "${local.prefix}router-${var.ws_region_list[count.index]}"
-  region  = var.ws_region_list[count.index]
+  name    = "${local.prefix}router-${each.value}"
+  region  = each.value
   network = google_compute_network.vpc.self_link
 
   bgp {
@@ -266,17 +257,42 @@ resource "google_compute_router" "router" {
 }
 
 resource "google_compute_router_nat" "nat" {
-  count = length(var.ws_region_list)
+  for_each = local.all_region_set
 
-  name                               = "${local.prefix}nat-${var.ws_region_list[count.index]}"
-  router                             = google_compute_router.router[count.index].name
-  region                             = var.ws_region_list[count.index]
+  name                               = "${local.prefix}nat-${each.value}"
+  router                             = google_compute_router.router[each.value].name
+  region                             = each.value
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  min_ports_per_vm                   = 2048
+
+  dynamic "subnetwork" {
+    # List of ws-subnets in this region
+    for_each = matchkeys(
+      google_compute_subnetwork.ws-subnets[*].self_link,
+      google_compute_subnetwork.ws-subnets[*].region,
+      [each.value]
+    )
+
+    content {
+      name                    = subnetwork.value
+      source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
+    }
+  }
+}
+
+# Create a seperate NAT set-up for the DC due to its single-region configuration, 
+# unlike workstations, which operate in multiple regions.
+resource "google_compute_router_nat" "dc-nat" {
+  name                               = "${local.prefix}nat-dc"
+  router                             = google_compute_router.router[var.gcp_region].name
+  region                             = var.gcp_region
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   min_ports_per_vm                   = 2048
 
   subnetwork {
-    name                    = google_compute_subnetwork.ws-subnets[count.index].self_link
+    name                    = google_compute_subnetwork.dc-subnet.self_link
     source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
   }
 }
