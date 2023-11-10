@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -17,7 +17,6 @@ AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
-CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 IDLE_SHUTDOWN_CPU_UTILIZATION=${idle_shutdown_cpu_utilization}
@@ -85,26 +84,6 @@ setup_cloudwatch(){
             "/var/log/teradici/user-data.log"           "%b %d %H:%M:%S" \
             "/var/log/yum.log"                          "%b %d %H:%M:%S"
     fi
-}
-
-get_credentials() {
-    # Disable logging of secrets by wrapping the region with set +x and set -x
-    set +x
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]; then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: '$CUSTOMER_MASTER_KEY_ID'."
-
-        if [[ "$PCOIP_REGISTRATION_CODE" ]]; then
-            log "--> Decrypting pcoip_registration_code..."
-            PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$PCOIP_REGISTRATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
-        fi
-
-        log "--> Decrypting ad_service_account_password..."
-        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AD_SERVICE_ACCOUNT_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
-    fi
-    set -x
 }
 
 check_required_vars() {
@@ -389,8 +368,6 @@ if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
     setup_cloudwatch
 fi
-
-get_credentials
 
 check_required_vars
 

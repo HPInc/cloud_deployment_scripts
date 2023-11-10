@@ -432,11 +432,6 @@ variable "centos_std_ami_name" {
   default     = "CentOS Linux 7 x86_64 - 2211"
 }
 
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
-}
-
 variable "auto_logoff_enable" {
   description = "Enable auto log-off for Workstations"
   default     = true

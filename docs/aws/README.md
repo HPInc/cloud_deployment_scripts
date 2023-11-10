@@ -12,9 +12,6 @@
     - [Anyware Manager as a Service Setup](#awm-as-a-service-setup)
     - [Customizing terraform.tfvars](#customizing-terraformtfvars)
       - [Workstation IdleShutDown](#workstation-idleshutdown)
-    - [(Optional) Encrypting Secrets](#optional-encrypting-secrets)
-      - [Encryption Using Python Script](#encryption-using-python-script)
-      - [Manual Encryption](#manual-encryption)
     - [Creating the deployment](#creating-the-deployment)
     - [Add Workstations in Anyware Manager](#add-workstations-in-awm)
     - [Start PCoIP Session](#start-pcoip-session)
@@ -94,7 +91,7 @@ Options 2 and 3 are recommended for users who prefer a more granular approach, g
 
 - a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
 - for HP Anyware deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
-- for deployments using Anyware Manager as a Service, a Anyware Manager Deployment Service Account is needed. Please see the [Anyware Manager as a Service Setup])#awm-as-a-service-setup) section below.
+- for deployments using Anyware Manager as a Service, a Anyware Manager Deployment Service Account is needed. Please see the [Anyware Manager as a Service Setup](#awm-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.
 - if custom TLS key and certificates are required, the TLS key and certificate files are needed in PEM format.
 - Terraform v1.0 or higher must be installed. Please download Terraform from https://www.terraform.io/downloads.html
@@ -112,8 +109,6 @@ With a new AWS account:
 aws_access_key_id = <your_id>
 aws_secret_access_key = <your_key>
 ```
-- (Optional) For better security, create an AWS KMS Customer Managed Symmetric Customer Master Key (CMK) to encrypt secrets.  Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create CMKs.
-
 ### Anyware Manager as a Service Setup
 (for deployments using the Anyware Manager as a Service only)
 
@@ -136,69 +131,6 @@ Save `terraform.tfvars.sample` as `terraform.tfvars` in the same directory, and 
 
 #### Workstation IdleShutDown
 Workstations created by Terraform have IdleShutDown Agent enabled by default so that the remote workstation will shutdown when it is idle. The default settings can be changed by specifying the `idle_shutdown_enable` (default: `true`), `idle_shutdown_minutes_idle_before_shutdown` (default: `240`), and `idle_shutdown_polling_interval_minutes` (default: `15`) variables in `terraform.tfvars`. Learn more about IdleShutDown [here](https://www.teradici.com/web-help/anyware_manager/22.09/admin_console/workstation_pools/#idle-shutdown-service).
-
-### (Optional) Encrypting Secrets
-`terraform.tfvars` variables include sensitive information such as Active Directory passwords, PCoIP registration key and the Anyware Manager Deployment Service Account credentials file. These secrets are stored in the local files `terraform.tfvars` and `terraform.tfstate`, and will also be uploaded as part of provisioning scripts to an AWS S3 bucket.
-
-To enhance security, the Terraform configurations are designed to support both plaintext and KMS-encrypted secrets. Plaintext secrets requires no extra steps, but will be stored in plaintext in the above mentioned locations. It is recommended to encrypt the secrets in `terraform.tfvars` before deploying. Secrets can be encrypted manually first before being entered into `terraform.tfvars`, or they can be encrypted using a Python script located under the tools directory.
-
-#### Encryption Using Python Script
-The easiest way to encrypt secrets is to use the kms_secrets_encryption.py Python script under the tools/ directory, which automates the KMS encryption process.
-1. First, fill in all the variables in `terraform.tfvars`, including any sensitive information.
-2. Ensure the `customer_master_key_id` variable in `terraform.tfvars` is commented out, as this script will attempt to create the crypto key used to encrypt the secrets:
-   ```
-   # customer_master_key_id = "<key-id-uuid>"
-   ```
-3. Run the following command inside the tools directory:
-   ```
-   ./kms_secrets_encryption.py </path/to/terraform.tfvars>
-   ```
-
-The script will replace all plaintext secrets inside of `terraform.tfvars` with ciphertext. Any text files specified under the secrets section as a path will also be encrypted. 
-
-The script can also reverse the encryption by executing it with the '-d' flag. See script's documentation for details (--help).
-
-#### Manual Encryption
-Alternatively, the secrets can be manully encrypted. To encrypt secrets using the KMS CMK created in the 'AWS Setup' section above, refer to https://docs.aws.amazon.com/cli/latest/reference/kms/encrypt.html. Note that ciphertext must be base64 encoded before being used in `terraform.tfvars`.
-
-1. Create a KMS CMK. Please refer to https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html for instructions to create keys.
-2. In `terraform.tfvars`, ensure that the `customer_master_key_id` variable is uncommented and is set to the resource path of the KMS key used to encrypt the secrets:
-   ```
-   customer_master_key_id = "<key-id-uuid>"
-   ```
-3. Run the following command in a Linux shell with aws installed to encrypt a plaintext secret:
-   ```
-   aws kms encrypt --key-id <cmk-id> --plaintext <secret> --output text --query CiphertextBlob
-   ```
-   Encrypt and replace the values of the following variables in `terraform.tfvars` with the ciphertext generated. `<ciphertext`> should be replaced with the actual ciphertext generated - do not include < and >.
-   ```
-   dc_admin_password           = "<ciphertext>"
-   safe_mode_admin_password    = "<ciphertext>"
-   ad_service_account_password = "<ciphertext>"
-   pcoip_registration_code     = "<ciphertext>"
-   ```
-4. Run the following command in a Linux shell with aws installed to encrypt the Anyware Manager Deployment Service Account JSON credentials file:
-   ```
-    aws kms encrypt \
-        --key-id <key-id-uuid> \
-        --plaintext fileb://</path/to/awm-service-account.json> \
-        --output text \
-        --query CiphertextBlob | base64 -d > </path/to/awm-service-account.json.encrypted>
-   ```
-    Replace the value of the `awm_deployment_sa_file` variable in `terraform.tfvars` with the absolute path to the encrypted file generated.
-   ```
-   awm_deployment_sa_file = "/path/to/awm-service-account.json.encrypted"
-   ```
-
-The following command can be used to decrypt the ciphertext:
-   ```
-   aws kms decrypt --ciphertext-blob fileb://<(echo "<ciphertext>" | base64 -d) --output text --query Plaintext | base64 -d
-   ```
-
-The following command can be used to decrypt the encrypted Anyware Manager Deployment Service Account JSON credentials file:
-   ```
-   aws kms decrypt --ciphertext-blob fileb://</path/to/awm-service-account.json.encrypted> --output text --query Plaintext | base64 -d > </path/to/awm-service-account.json>
-   ```
 
 ### Creating the deployment
 With `terraform.tfvars` customized

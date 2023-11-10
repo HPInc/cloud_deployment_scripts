@@ -59,7 +59,6 @@ module "dc" {
   teradici_download_token = var.teradici_download_token
   aws_region              = var.aws_region
 
-  customer_master_key_id      = var.customer_master_key_id
   domain_name                 = var.domain_name
   admin_password              = var.dc_admin_password
   safe_mode_admin_password    = var.safe_mode_admin_password
@@ -94,7 +93,6 @@ module "awm" {
   prefix = var.prefix
 
   aws_region              = var.aws_region
-  customer_master_key_id  = var.customer_master_key_id
   pcoip_registration_code = var.pcoip_registration_code
   awm_admin_password      = var.awm_admin_password
   awm_repo_channel        = var.awm_repo_channel
@@ -218,7 +216,6 @@ module "awc" {
   awm_deployment_sa_file    = local.awm_deployment_sa_file
   aws_region                = var.aws_region
   awc_flag_manager_insecure = true
-  customer_master_key_id    = var.customer_master_key_id
   manager_url               = "https://${module.awm.internal-ip}"
 
   domain_name                 = var.domain_name
@@ -277,7 +274,6 @@ module "win-gfx" {
   prefix = var.prefix
 
   aws_region             = var.aws_region
-  customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -324,7 +320,6 @@ module "win-std" {
   prefix = var.prefix
 
   aws_region             = var.aws_region
-  customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -371,7 +366,6 @@ module "centos-gfx" {
   prefix = var.prefix
 
   aws_region             = var.aws_region
-  customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token
@@ -424,7 +418,6 @@ module "centos-std" {
   prefix = var.prefix
 
   aws_region             = var.aws_region
-  customer_master_key_id = var.customer_master_key_id
 
   pcoip_registration_code = var.pcoip_registration_code
   teradici_download_token = var.teradici_download_token

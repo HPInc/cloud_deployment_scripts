@@ -1,5 +1,5 @@
 /*
- * © Copyright 2022 HP Development Company, L.P.
+ * © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -168,11 +168,6 @@ variable "tls_cert" {
 
 variable "awc_extra_install_flags" {
   description = "Additional flags for installing Anyware Connector"
-  default     = ""
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
 }
 

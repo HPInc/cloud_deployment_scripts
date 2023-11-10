@@ -12,7 +12,6 @@ $BASE_DIR                    = "C:\Teradici"
 $BUCKET_NAME                 = "${bucket_name}"
 $CLOUDWATCH_ENABLE           = "${cloudwatch_enable}"
 $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
-$CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
 $DOMAIN_NAME                 = "${domain_name}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
@@ -67,36 +66,6 @@ function Setup-CloudWatch {
         C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_agent*.txt "%Y%m%d%H%M%S" `
         $BASE_DIR\provisioning.log  "%Y%m%d%H%M%S" `
         $BASE_DIR\dc_new_ad_accounts.log "%Y%m%d%H%M%S"
-}
-
-function Decrypt-Credentials {
-    try {
-
-        "--> Decrypting admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$ADMIN_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."admin_password" = $StreamRead.ReadToEnd()
-
-        "--> Decrypting safe_mode_admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$SAFE_MODE_ADMIN_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."safe_mode_admin_password" = $StreamRead.ReadToEnd()
-
-        "--> Decrypting pcoip_registration_code..."
-        $ByteAry = [System.Convert]::FromBase64String("$PCOIP_REGISTRATION_CODE")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
 }
 
 function PCoIP-Agent-is-Installed {

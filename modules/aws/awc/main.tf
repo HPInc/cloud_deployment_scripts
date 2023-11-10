@@ -1,5 +1,5 @@
 /*
- * © Copyright 2022 HP Development Company, L.P.
+ * © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -91,7 +91,6 @@ resource "aws_s3_object" "awc-provisioning-script" {
       cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
       computers_dn                = var.computers_dn,
-      customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       ldaps_cert_filename         = var.ldaps_cert_filename,
@@ -140,12 +139,6 @@ resource "aws_iam_role" "awc-role" {
 
   name               = "${local.prefix}awc_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
-}
-
-data "aws_kms_key" "encryption-key" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  key_id = var.customer_master_key_id
 }
 
 data "aws_iam_policy_document" "awc-policy-doc" {
@@ -219,16 +212,6 @@ data "aws_iam_policy_document" "awc-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

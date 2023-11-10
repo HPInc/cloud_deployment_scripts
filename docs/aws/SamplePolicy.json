@@ -30,12 +30,7 @@
                 "iam:PassRole",
                 "iam:PutRolePolicy",
                 "iam:RemoveRoleFromInstanceProfile",
-                "kms:CreateAlias",
-                "kms:CreateKey",
-                "kms:Decrypt"
                 "kms:DescribeKey",
-                "kms:Encrypt",
-                "kms:ListAliases",
                 "logs:CreateLogGroup",
                 "logs:DeleteLogGroup",
                 "logs:DescribeLogGroups",

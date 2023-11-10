@@ -19,16 +19,6 @@ locals {
   final_status              = "DC Provisioning Completed"
   # Directories start with "C:..." on Windows; All other OSs use "/" for root.
   is_windows_host           = substr(pathexpand("~"), 0, 1) == "/" ? false : true
-  admin_password            = var.customer_master_key_id == "" ? var.admin_password : data.aws_kms_secrets.decrypted_secrets[0].plaintext["admin_password"]
-}
-
-data "aws_kms_secrets" "decrypted_secrets" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  secret {
-    name    = "admin_password"
-    payload = var.admin_password
-  }
 }
 
 data "template_file" "user-data" {
@@ -51,7 +41,6 @@ resource "aws_s3_object" "dc_provisioning_script" {
       bucket_name                = var.bucket_name
       cloudwatch_enable          = var.cloudwatch_enable
       cloudwatch_setup_script    = var.cloudwatch_setup_script
-      customer_master_key_id     = var.customer_master_key_id
       domain_name                = var.domain_name
       dc_new_ad_accounts_script  = local.dc_new_ad_accounts_script
       tag_name                   = local.tag_name
@@ -84,7 +73,6 @@ resource "aws_s3_object" "dc_new_ad_accounts_script" {
       # admin users
       ad_service_account_username  = var.ad_service_account_username
       ad_service_account_password  = var.ad_service_account_password
-      customer_master_key_id       = var.customer_master_key_id
       tag_name                     = local.tag_name
       final_status                 = local.final_status
 
@@ -119,12 +107,6 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
 resource "aws_iam_role" "dc-role" {
   name               = "${local.prefix}dc_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
-}
-
-data "aws_kms_key" "encryption-key" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  key_id = var.customer_master_key_id
 }
 
 data "aws_iam_policy_document" "dc-policy-doc" {
@@ -181,16 +163,6 @@ data "aws_iam_policy_document" "dc-policy-doc" {
         "ssmmessages:OpenControlChannel",
         "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -126,11 +126,6 @@ variable "teradici_download_token" {
 variable "pcoip_agent_version" {
   description = "PCoIP Agent version to install"
   default     = "latest"
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
 }
 
 variable "idle_shutdown_enable" {

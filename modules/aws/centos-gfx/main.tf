@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,7 +30,6 @@ resource "aws_s3_object" "centos-gfx-provisioning-script" {
       bucket_name                 = var.bucket_name,
       cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
-      customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       nvidia_driver_url           = var.nvidia_driver_url,
@@ -80,12 +79,6 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   }
 }
 
-data "aws_kms_key" "encryption-key" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  key_id = var.customer_master_key_id
-}
-
 resource "aws_iam_role" "centos-gfx-role" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
@@ -131,16 +124,6 @@ data "aws_iam_policy_document" "centos-gfx-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

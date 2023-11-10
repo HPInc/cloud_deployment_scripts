@@ -1,4 +1,4 @@
-# © Copyright 2022 HP Development Company, L.P.
+# © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -17,7 +17,6 @@ AWM_SCRIPT=${awm_script}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
 COMPUTERS_DN=${computers_dn}
-CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 LDAPS_CERT_FILENAME=${ldaps_cert_filename}
@@ -134,24 +133,6 @@ get_credentials() {
           "aws s3 cp s3://$BUCKET_NAME/$AWM_DEPLOYMENT_SA_FILE $PROVISIONING_DIR" \
           "--> ERROR: Failed to download Anyware Manager deployment Service Account key from bucket $BUCKET_NAME."
 
-    # Disable logging of secrets by wrapping the region with set +x and set -x
-    set +x
-
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
-    then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
-
-        log "--> Decrypting AD service account password..."
-        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AD_SERVICE_ACCOUNT_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
-
-        log "--> Decrypting Anyware Manager Deployment Service Account JSON file..."
-        AWM_CREDENTIALS=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://"$PROVISIONING_DIR/$AWM_DEPLOYMENT_SA_FILE" --output text --query Plaintext | base64 -d)
-        echo $AWM_CREDENTIALS > $PROVISIONING_DIR/$AWM_DEPLOYMENT_SA_FILE
-    fi
-    set -x
 }
 
 get_connector_token() {
