@@ -575,3 +575,9 @@ variable "aws_ssm_enable" {
   description = "Enable AWS Session Manager integration for easier SSH/RDP admin access to EC2 instances"
   default     = true
 }
+
+variable "recovery_window_in_days" {
+  description = "Number of days that AWS Secrets Manager waits before it can delete the secret"
+  # This value can be 0 to force deletion without recovery (recommended for development) or range from 7 to 30 days.
+  default     = 0
+}
