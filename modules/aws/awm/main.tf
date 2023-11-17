@@ -25,18 +25,18 @@ resource "aws_s3_object" "awm-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      awm_admin_password       = var.awm_admin_password,
-      awm_aws_credentials_file = var.awm_aws_credentials_file,
-      awm_deployment_sa_file   = var.awm_deployment_sa_file,
-      awm_repo_channel         = var.awm_repo_channel,
-      awm_setup_script         = local.awm_setup_script,
-      aws_region               = var.aws_region,
-      aws_ssm_enable           = var.aws_ssm_enable,
-      bucket_name              = var.bucket_name,
-      cloudwatch_enable        = var.cloudwatch_enable,
-      cloudwatch_setup_script  = var.cloudwatch_setup_script,
-      pcoip_registration_code  = var.pcoip_registration_code,
-      teradici_download_token  = var.teradici_download_token,
+      awm_admin_password          = var.awm_admin_password,
+      awm_aws_credentials_file_id = var.awm_aws_credentials_file_id,
+      awm_deployment_sa_file_id   = var.awm_deployment_sa_file_id,
+      awm_repo_channel            = var.awm_repo_channel,
+      awm_setup_script            = local.awm_setup_script,
+      aws_region                  = var.aws_region,
+      aws_ssm_enable              = var.aws_ssm_enable,
+      bucket_name                 = var.bucket_name,
+      cloudwatch_enable           = var.cloudwatch_enable,
+      cloudwatch_setup_script     = var.cloudwatch_setup_script,
+      pcoip_registration_code_id  = var.pcoip_registration_code_id,
+      teradici_download_token     = var.teradici_download_token,
     }
   )
 }
@@ -118,14 +118,17 @@ data "aws_iam_policy_document" "awm-policy-doc" {
   }
 
   statement {
-    actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awm_aws_credentials_file}"]
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "${var.pcoip_registration_code_id}",
+      "${var.awm_aws_credentials_file_id}"
+    ]
     effect    = "Allow"
   }
 
   statement {
-    actions   = ["s3:PutObject"]
-    resources = ["arn:aws:s3:::${var.bucket_name}/${var.awm_deployment_sa_file}"]
+    actions   = ["secretsmanager:PutSecretValue"]
+    resources = ["${var.awm_deployment_sa_file_id}"]
     effect    = "Allow"
   }
 

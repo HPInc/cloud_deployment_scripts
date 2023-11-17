@@ -7,8 +7,10 @@
 
 ##### Template Variables #####
 AWM_ADMIN_PASSWORD=${awm_admin_password}
-AWM_AWS_CREDENTIALS_FILE=${awm_aws_credentials_file}
-AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_AWS_CREDENTIALS_FILE="awm-aws-credentials.ini"
+AWM_AWS_CREDENTIALS_FILE_ID=${awm_aws_credentials_file_id}
+AWM_DEPLOYMENT_SA_FILE_ID=${awm_deployment_sa_file_id}
+AWM_DEPLOYMENT_SA_FILE="awm-deployment-sa-key.json"
 AWM_SETUP_SCRIPT=${awm_setup_script}
 AWM_REPO_CHANNEL=${awm_repo_channel}
 AWS_REGION=${aws_region}
@@ -16,7 +18,7 @@ AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 LOG_FILE="/var/log/teradici/provisioning.log"
@@ -28,6 +30,9 @@ AWM_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/$AWM
 
 INSTALL_DIR="/root"
 cd $INSTALL_DIR
+
+PCOIP_REGISTRATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$PCOIP_REGISTRATION_CODE_ID" --query SecretString --output text)
+aws secretsmanager get-secret-value --secret-id "$AWM_AWS_CREDENTIALS_FILE_ID" --query SecretString --output text > "$INSTALL_DIR/$AWM_AWS_CREDENTIALS_FILE"
 
 log() {
     local message="$1"
@@ -104,13 +109,6 @@ get_credentials() {
     # Disable logging of secrets by wrapping the region with set +x and set -x
     set +x
 
-    if [ "$AWM_AWS_CREDENTIALS_FILE" ]
-    then
-        retry 720 `# 720 retries` \
-              10  `# 10s interval` \
-              "aws s3 cp s3://$BUCKET_NAME/$AWM_AWS_CREDENTIALS_FILE $INSTALL_DIR" \
-              "--> ERROR: Failed to download AWS credentials file from bucket $BUCKET_NAME."
-    fi
     AWM_GUI_ADMIN_PASSWORD=$AWM_ADMIN_PASSWORD
     set -x
 }
@@ -234,12 +232,12 @@ awm_setup() {
 }
 
 upload_dsa_key() {
-    log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
+    log "--> Uploading Deployment Service Account Key to secrets manager..."
 
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "aws s3 cp $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE s3://$BUCKET_NAME/" \
-          "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
+          "aws secretsmanager put-secret-value --secret-id $AWM_DEPLOYMENT_SA_FILE_ID --secret-string file://$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE" \
+          "--> ERROR: Failed to upload Deployment Service Account Key to secrets manager"
 
     if [ $? -ne 0 ]
     then
@@ -288,5 +286,7 @@ config_selinux
 install_awm
 awm_setup
 upload_dsa_key
+
+rm "$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE"
 
 log "--> Provisioning script completed successfully."
