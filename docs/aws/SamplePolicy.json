@@ -24,6 +24,7 @@
                 "iam:GetInstanceProfile",
                 "iam:GetRole",
                 "iam:GetRolePolicy",
+                "iam:GetUser",
                 "iam:ListAttachedRolePolicies",
                 "iam:ListInstanceProfilesForRole",
                 "iam:ListRolePolicies",
@@ -52,7 +53,9 @@
                 "sns:DeleteTopic",
                 "sns:GetTopicAttributes",
                 "sns:ListTopics",
-                "sns:SetTopicAttributes"
+                "sns:ListTagsForResource",
+                "sns:SetTopicAttributes",
+                "ssm:StartSession"
             ],
             "Resource": "*"
         }
