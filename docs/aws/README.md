@@ -59,7 +59,7 @@ To go to the AWS Quickstart directory, click [here](/quickstart/aws/)
       
 Options 2 and 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the group of AWS-managed roles, ensuring limited access.
  
-- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a PCoIP Registration Code is needed. Contact HP Anyware sales or purchase subscription here: https://www.teradici.com/solutions/subscriptions
 - the user must have Python installed. Please see [Download Python](https://www.python.org/downloads/) for instructions. 
 - the user must have AWS CLI installed and configured if running Quickstart script in local CLI. Please visit [AWS CLI Installation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [AWS CLI Configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for instructions.
 
@@ -89,7 +89,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
       
 Options 2 and 3 are recommended for users who prefer a more granular approach, granting only the necessary permissions for the Terraform deployment to minimize potential security risks. The custom policy imposes stricter restrictions when compared to the group of AWS-managed roles, ensuring limited access.
 
-- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a PCoIP Registration Code is needed. Contact HP Anyware sales or purchase subscription here: https://www.teradici.com/solutions/subscriptions
 - for HP Anyware deployments using PCoIP License Server, an activation code with PCoIP session licenses is needed.
 - for deployments using Anyware Manager as a Service, a Anyware Manager Deployment Service Account is needed. Please see the [Anyware Manager as a Service Setup](#awm-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup.md](/docs/ssh-key-pair-setup.md) for instructions.

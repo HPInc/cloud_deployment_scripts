@@ -10,7 +10,7 @@
         "accelerator": ""
     },
     "awc": {
-        "name": "Cloud Access Connector",
+        "name": "HP Anyware Connector",
         "spec": {
             "INSTANCES": 1,
             "CPUS": 2,

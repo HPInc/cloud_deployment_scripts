@@ -21,20 +21,20 @@
 ---
 
 ## Getting Started
-The Quickstart deployment allows the user to deploy a [single-connector](https://github.com/teradici/cloud_deployment_scripts/blob/master/docs/aws/README.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts. The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the AWS infrastructure such as Networking and Compute resources.
+The Quickstart deployment allows the user to deploy a [single-connector](https://github.com/HPInc/cloud_deployment_scripts/blob/master/docs/aws/deployments.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts. The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the AWS infrastructure such as Networking and Compute resources.
 
 The quickest way to create a reference deployment on AWS is to run the Quickstart Python script in the AWS CloudShell. This link will take you to the **us-west-2** cloudshell, but you can choose any other available region: https://us-west-2.console.aws.amazon.com/cloudshell/home?region=us-west-2. If your environment has the [Requirements](#requirements), you can run the script in your local CLI too. 
 
 ### Requirements
 - the user must have Administrator permissions in an AWS account
-- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a PCoIP Registration Code is needed. Contact HP Anyware sales or purchase subscription here: https://www.teradici.com/solutions/subscriptions
 - the user must have Git installed. Please see: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 - if the user is running from their local machine, they must have AWS CLI Version 2 installed (Please see: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and also the Python 3 installed (Please see: https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
 
 ### Accessing the AWS Quickstart Script
 Run the following commands to clone the Cloud Deployment Scripts repository.
 ```bash
-git clone https://github.com/teradici/cloud_deployment_scripts.git
+git clone https://github.com/HPInc/cloud_deployment_scripts.git
 ```
 
 ### AWS Setup
@@ -55,7 +55,7 @@ and you will be prompted to enter each parameter. You will also be prompted to c
 #### reg_code
 Enter your PCoIP Registration code.
 
-If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
+If you don't have one, visit [https://www.teradici.com/solutions/subscriptions](https://www.teradici.com/solutions/subscriptions)
 
 ### api_token
 Enter the Anyware Manager API token.
