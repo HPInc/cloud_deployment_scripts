@@ -6,13 +6,14 @@
 #!/bin/bash
 
 ##### Template Variables #####
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AD_SERVICE_ACCOUNT_PASSWORD_ID=${ad_service_account_password_id}
 AWS_REGION=${aws_region}
 AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 AWC_EXTRA_INSTALL_FLAGS=${awc_extra_install_flags}
-AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_DEPLOYMENT_SA_FILE="awm-deployment-sa-key.json"
+AWM_DEPLOYMENT_SA_FILE_ID=${awm_deployment_sa_file_id}
 AWM_SCRIPT=${awm_script}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
@@ -36,6 +37,7 @@ AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyw
 AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
 CONNECTOR_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 
+AD_SERVICE_ACCOUNT_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$AD_SERVICE_ACCOUNT_PASSWORD_ID" --query SecretString --output text)
 log() {
     local message="$1"
     echo "[$(date)] $message"
@@ -124,15 +126,19 @@ setup_cloudwatch(){
 }
 
 get_credentials() {
-    # In some cases, the Anyware Manager Deployment Service Account key is generated
-    # by a new Anyware Manager VM that is being created in parallel as the Anyware
-    # Connector. Loop until the file is found in the storage bucket.
+    set +x
+    retry 20 `# 20 retries`\
+          60 `# 60s interval` \
+          "Value=\$(aws secretsmanager get-secret-value --secret-id $AWM_DEPLOYMENT_SA_FILE_ID --query SecretString --output text)" \
+          "--> ERROR: Failed to download Deployment Service Account Key to secrets manager"
 
-    retry 120 `# 120 retries` \
-          60  `# 60s interval` \
-          "aws s3 cp s3://$BUCKET_NAME/$AWM_DEPLOYMENT_SA_FILE $PROVISIONING_DIR" \
-          "--> ERROR: Failed to download Anyware Manager deployment Service Account key from bucket $BUCKET_NAME."
-
+    if [ "$Value" != "" ]; then
+        echo "$Value" > "$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE"
+        set -x
+    else
+        log "--> ERROR: Failed to retrieve Anyware Manager deployment Service Account key. Exiting provisioning script..."
+        exit 1
+    fi
 }
 
 get_connector_token() {

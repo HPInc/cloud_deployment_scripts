@@ -11,12 +11,15 @@ AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
-LLS_ADMIN_PASSWORD=${lls_admin_password}
-LLS_ACTIVATION_CODE=${lls_activation_code}
+LLS_ACTIVATION_CODE_ID=${lls_activation_code_id}
+LLS_ADMIN_PASSWORD_ID=${lls_admin_password_id}
 LLS_LICENSE_COUNT=${lls_license_count}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+LLS_ADMIN_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$LLS_ADMIN_PASSWORD_ID" --query SecretString --output text)
+LLS_ACTIVATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$LLS_ACTIVATION_CODE_ID" --query SecretString --output text)
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 

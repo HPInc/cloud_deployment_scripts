@@ -26,12 +26,6 @@ module "shared-bucket" {
   prefix = var.prefix
 }
 
-resource "aws_s3_object" "awm-deployment-sa-file" {
-  bucket = module.shared-bucket.bucket.id
-  key    = local.awm_deployment_sa_file
-  source = var.awm_deployment_sa_file
-}
-
 resource "aws_s3_object" "cloudwatch-setup-rpm-script" {
   count = var.cloudwatch_enable ? 1 : 0
 
@@ -53,19 +47,19 @@ module "dc" {
 
   prefix = var.prefix
 
-  pcoip_agent_install     = var.dc_pcoip_agent_install
-  pcoip_agent_version     = var.dc_pcoip_agent_version
-  pcoip_registration_code = ""
-  teradici_download_token = var.teradici_download_token
-  aws_region              = var.aws_region
+  pcoip_agent_install            = var.dc_pcoip_agent_install
+  pcoip_agent_version            = var.dc_pcoip_agent_version
+  pcoip_registration_code_id     = aws_secretsmanager_secret.dummy_secret.id
+  teradici_download_token        = var.teradici_download_token
+  aws_region                     = var.aws_region
 
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  safe_mode_admin_password    = var.safe_mode_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
-  domain_users_list           = var.domain_users_list
-  ldaps_cert_filename         = local.ldaps_cert_filename
+  domain_name                    = var.domain_name
+  admin_password_id              = aws_secretsmanager_secret.admin_password.id
+  safe_mode_admin_password_id    = aws_secretsmanager_secret.safe_mode_admin_password.id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = aws_secretsmanager_secret.ad_service_account_password.id
+  domain_users_list              = var.domain_users_list
+  ldaps_cert_filename            = local.ldaps_cert_filename
 
   bucket_name = module.shared-bucket.bucket.id
   subnet      = aws_subnet.dc-subnet.id
@@ -93,8 +87,8 @@ module "ha-lls" {
   prefix = var.prefix
 
   aws_region              = var.aws_region
-  lls_admin_password      = var.lls_admin_password
-  lls_activation_code     = var.lls_activation_code
+  lls_admin_password_id   = aws_secretsmanager_secret.lls_admin_password.id
+  lls_activation_code_id  = aws_secretsmanager_secret.lls_activation_code.id
   lls_license_count       = var.lls_license_count
   teradici_download_token = var.teradici_download_token
 
@@ -218,18 +212,18 @@ module "awc" {
 
   prefix = var.prefix
 
-  awm_deployment_sa_file    = local.awm_deployment_sa_file
-  aws_region                = var.aws_region
-  awc_flag_manager_insecure = var.awc_flag_manager_insecure
-  manager_url               = var.manager_url
+  awm_deployment_sa_file_id     = aws_secretsmanager_secret.awm_deployment_sa_file.id
+  aws_region                    = var.aws_region
+  awc_flag_manager_insecure     = var.awc_flag_manager_insecure
+  manager_url                   = var.manager_url
 
-  domain_name                 = var.domain_name
-  domain_controller_ip        = module.dc.internal-ip
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
-  ldaps_cert_filename         = local.ldaps_cert_filename
-  computers_dn                = "dc=${replace(var.domain_name, ".", ",dc=")}"
-  users_dn                    = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  domain_name                    = var.domain_name
+  domain_controller_ip           = module.dc.internal-ip
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = aws_secretsmanager_secret.ad_service_account_password.id
+  ldaps_cert_filename            = local.ldaps_cert_filename
+  computers_dn                   = "dc=${replace(var.domain_name, ".", ",dc=")}"
+  users_dn                       = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
   lls_ip = var.lls_subnet_ips["haproxy_vip"]
 
@@ -282,14 +276,14 @@ module "win-gfx" {
 
   aws_region             = var.aws_region
 
-  pcoip_registration_code = ""
-  teradici_download_token = var.teradici_download_token
-  pcoip_agent_version     = var.win_gfx_pcoip_agent_version
+  pcoip_registration_code_id = aws_secretsmanager_secret.dummy_secret.id
+  teradici_download_token    = var.teradici_download_token
+  pcoip_agent_version        = var.win_gfx_pcoip_agent_version
 
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  admin_password_id              = aws_secretsmanager_secret.admin_password.id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = aws_secretsmanager_secret.ad_service_account_password.id
 
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
@@ -328,14 +322,14 @@ module "win-std" {
 
   aws_region             = var.aws_region
 
-  pcoip_registration_code = ""
-  teradici_download_token = var.teradici_download_token
-  pcoip_agent_version     = var.win_std_pcoip_agent_version
+  pcoip_registration_code_id = aws_secretsmanager_secret.dummy_secret.id
+  teradici_download_token    = var.teradici_download_token
+  pcoip_agent_version        = var.win_std_pcoip_agent_version
 
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  admin_password_id              = aws_secretsmanager_secret.admin_password.id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = aws_secretsmanager_secret.ad_service_account_password.id
 
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
@@ -374,13 +368,13 @@ module "centos-gfx" {
 
   aws_region             = var.aws_region
 
-  pcoip_registration_code = ""
-  teradici_download_token = var.teradici_download_token
+  pcoip_registration_code_id = aws_secretsmanager_secret.dummy_secret.id
+  teradici_download_token    = var.teradici_download_token
 
-  domain_name                 = var.domain_name
-  domain_controller_ip        = module.dc.internal-ip
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  domain_controller_ip           = module.dc.internal-ip
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = aws_secretsmanager_secret.ad_service_account_password.id
 
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id
@@ -426,13 +420,13 @@ module "centos-std" {
 
   aws_region             = var.aws_region
 
-  pcoip_registration_code = ""
-  teradici_download_token = var.teradici_download_token
+  pcoip_registration_code_id = aws_secretsmanager_secret.dummy_secret.id
+  teradici_download_token    = var.teradici_download_token
 
-  domain_name                 = var.domain_name
-  domain_controller_ip        = module.dc.internal-ip
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
+  domain_name                    = var.domain_name
+  domain_controller_ip           = module.dc.internal-ip
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = aws_secretsmanager_secret.ad_service_account_password.id
 
   bucket_name      = module.shared-bucket.bucket.id
   subnet           = aws_subnet.ws-subnet.id

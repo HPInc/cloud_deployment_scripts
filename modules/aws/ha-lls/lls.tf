@@ -23,8 +23,8 @@ resource "aws_s3_object" "lls-provisioning-script" {
       cloudwatch_setup_script = var.cloudwatch_setup_script,
       haproxy_backup_ip       = var.assigned_ips["haproxy_backup"],
       haproxy_master_ip       = var.assigned_ips["haproxy_master"],
-      lls_activation_code     = var.lls_activation_code,
-      lls_admin_password      = var.lls_admin_password,
+      lls_activation_code_id  = var.lls_activation_code_id,
+      lls_admin_password_id   = var.lls_admin_password_id,
       lls_backup_ip           = var.assigned_ips["lls_backup"],
       lls_license_count       = var.lls_license_count,
       lls_main_ip             = var.assigned_ips["lls_main"],
@@ -73,6 +73,15 @@ data "aws_iam_policy_document" "lls-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
     resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "${var.lls_admin_password_id}",
+      "${var.lls_activation_code_id}"
+    ]
     effect    = "Allow"
   }
 

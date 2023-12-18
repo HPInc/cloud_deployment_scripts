@@ -13,8 +13,8 @@ CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
 HAPROXY_BACKUP_IP=${haproxy_backup_ip}
 HAPROXY_MASTER_IP=${haproxy_master_ip}
-LLS_ACTIVATION_CODE=${lls_activation_code}
-LLS_ADMIN_PASSWORD=${lls_admin_password}
+LLS_ACTIVATION_CODE_ID=${lls_activation_code_id}
+LLS_ADMIN_PASSWORD_ID=${lls_admin_password_id}
 LLS_BACKUP_IP=${lls_backup_ip}
 LLS_LICENSE_COUNT=${lls_license_count}
 LLS_MAIN_IP=${lls_main_ip}
@@ -26,6 +26,9 @@ LLS_CONFIG_FILE="/opt/flexnetls/TERADICI/local-configuration.yaml"
 LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-license-server/cfg/setup/bash.rpm.sh"
 LOG_FILE="/var/log/teradici/provisioning.log"
 NCAT_PORT=7072
+
+LLS_ADMIN_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$LLS_ADMIN_PASSWORD_ID" --query SecretString --output text)
+LLS_ACTIVATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$LLS_ACTIVATION_CODE_ID" --query SecretString --output text)
 
 log() {
     echo "[$(date)] $1"

@@ -24,8 +24,8 @@ resource "aws_s3_object" "lls-provisioning-script" {
       bucket_name             = var.bucket_name,
       cloudwatch_enable       = var.cloudwatch_enable,
       cloudwatch_setup_script = var.cloudwatch_setup_script,
-      lls_activation_code     = var.lls_activation_code,
-      lls_admin_password      = var.lls_admin_password,
+      lls_activation_code_id  = var.lls_activation_code_id,
+      lls_admin_password_id   = var.lls_admin_password_id,
       lls_license_count       = var.lls_license_count,
       teradici_download_token = var.teradici_download_token,
     }
@@ -76,6 +76,16 @@ data "aws_iam_policy_document" "lls-policy-doc" {
     resources = ["arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}"]
     effect    = "Allow"
   }
+  
+  statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "${var.lls_admin_password_id}",
+      "${var.lls_activation_code_id}"
+    ]
+    effect    = "Allow"
+  }
+
 
   statement {
     actions   = ["s3:GetObject"]

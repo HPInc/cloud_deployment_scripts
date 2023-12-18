@@ -65,14 +65,14 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "lls_admin_password" {
-  description = "Administrative password for the Teradici License Server"
+variable "lls_admin_password_id" {
+  description = "Secrets Manager ARN for Administrative password for the Teradici License Server"
   default     = ""
   sensitive   = true
 }
 
-variable "lls_activation_code" {
-  description = "Activation Code for PCoIP session licenses"
+variable "lls_activation_code_id" {
+  description = "Secrets Manager ARN for Activation Code for PCoIP session licenses"
   default     = ""
   sensitive   = true
 }
