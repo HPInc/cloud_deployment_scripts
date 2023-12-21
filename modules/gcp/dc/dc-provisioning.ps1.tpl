@@ -12,6 +12,7 @@ $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
 $KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
+$LABEL_NAME                  = "${label_name}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
@@ -31,6 +32,9 @@ $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
 
 $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
 $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
+
+$zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
+$instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
@@ -228,6 +232,7 @@ function Schedule-AD-User-Creation {
 Start-Transcript -Path $LOG_FILE -Append
 
 if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
+    gcloud compute instances add-labels $instance_name --zone $zone_name --labels=$LABEL_NAME=step1of3_setting-up-gcp-ops-agent
     Setup-Ops
 } 
 
@@ -246,6 +251,8 @@ $ForestMode = "7"
 $DatabasePath = "C:\Windows\NTDS"
 $SysvolPath = "C:\Windows\SYSVOL"
 $LogPath = "C:\Logs"
+
+gcloud compute instances add-labels $instance_name --zone $zone_name --labels=$LABEL_NAME=step1of3_installing-domain-services
 
 "================================================================"
 "Installing AD-Domain-Services..."
@@ -327,6 +334,8 @@ Update-Instance-Metadata
 # Adds a task trigger to execute the ad_accounts setup script 
 # post-restart which provisions admin users and domain users.
 Schedule-AD-User-Creation
+
+gcloud compute instances add-labels $instance_name --zone $zone_name --labels=$LABEL_NAME=step2of3_restarting-the-computer
 
 "--> Restart PC for Install-ADDSForest"
 Restart-Computer -Force

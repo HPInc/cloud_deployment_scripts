@@ -19,6 +19,9 @@ $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
 $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
 $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
+$zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
+$instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
+
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("account_password", "${account_password}")
 
@@ -66,6 +69,8 @@ if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
     Decrypt-Credentials
 }
 
+gcloud compute instances add-labels $instance_name --zone $zone_name --labels=${label_name}=step3of3_creating-new-ad-domain-admin-accounts
+
 "================================================================"
 "Creating new AD Domain Admin account ${account_name}..."
 "================================================================"
@@ -102,6 +107,8 @@ if ("${csv_file}" -ne "") {
     "================================================================"
     "Creating new AD Domain Users from CSV file..."
     "================================================================"
+
+    gcloud compute instances add-labels $instance_name --zone $zone_name --labels=${label_name}=step3of3_creating-new-domain-users
 
     Write-Host " --> Downloading file from bucket..."
     # Download domain users list.
@@ -151,3 +158,5 @@ if ("${csv_file}" -ne "") {
 
 # Unregister the scheduled job
 schtasks /delete /tn NewADProvision /f
+
+gcloud compute instances add-labels $instance_name --zone $zone_name --labels=${label_name}=${final_status}

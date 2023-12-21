@@ -14,6 +14,9 @@ locals {
   dc_provisioning_script     = "dc-provisioning.ps1"
   dc_new_ad_accounts_script  = "dc-new-ad-accounts.ps1"
   domain_users_list          = "domain_users_list.csv"
+  #label value to check if the DC provisioning is successful or not
+  final_status               = "dc-provisioning-completed"
+  label_name                 = "provisioning_status"
   new_domain_users           = var.domain_users_list == "" ? 0 : 1
   # Directories start with "C:..." on Windows; All other OSs use "/" for root.
   is_windows_host            = substr(pathexpand("~"), 0, 1) == "/" ? false : true
@@ -47,6 +50,7 @@ resource "google_storage_bucket_object" "dc-provisioning-script" {
       gcp_ops_agent_enable       = var.gcp_ops_agent_enable,
       kms_cryptokey_id           = var.kms_cryptokey_id,
       ldaps_cert_filename        = var.ldaps_cert_filename,
+      label_name                 = local.label_name
       ops_setup_script           = var.ops_setup_script,
       pcoip_agent_install        = var.pcoip_agent_install,
       pcoip_agent_version        = var.pcoip_agent_version,
@@ -69,6 +73,9 @@ resource "google_storage_bucket_object" "dc-new-ad-accounts-script" {
       account_password = var.ad_service_account_password,
       csv_file         = local.new_domain_users == 1 ? local.domain_users_list : "",
       bucket_name      = var.bucket_name,
+      label_name       = local.label_name,
+      final_status     = local.final_status,
+
     }
   )
 }
@@ -123,14 +130,28 @@ resource "google_compute_instance" "dc" {
 }
 
 resource "null_resource" "wait_for_DC_to_initialize_windows" {
-  count = local.is_windows_host? 1 : 0
-  depends_on = [ google_compute_instance.dc ]
+  count = local.is_windows_host ? 1 : 0
+  depends_on = [google_compute_instance.dc]
   provisioner "local-exec" {
     interpreter = ["PowerShell", "-Command"]
     command = <<-EOT
-        Start-Sleep -Seconds 900
-        Write-Host "The provisioning scripts for the DC should have completed within the last 15 minutes."
-      EOT   
+      $labelValue = ""
+      $startTime = Get-Date
+      while ($labelValue -ne "${local.final_status}") {
+          $labelValue = gcloud compute instances describe ${local.host_name} --zone ${var.gcp_zone} --format='value(labels.${local.label_name})'
+          if ([string]::IsNullOrEmpty($labelValue)) {
+              Write-Host "DC provisioning is starting"
+          } else { 
+              Write-Host "${local.label_name}:$labelValue"
+          }
+          $elapsedTime = New-TimeSpan -Start $startTime -End (Get-Date)
+          if ($elapsedTime.TotalMinutes -ge 25) {
+              Write-Host "Timeout Error: The DC provisioning process has taken longer than 25 minutes. The DC might be provisioned successfully, but please review CloudWatch Logs for any errors or consider destroying the deployment with 'terraform destroy' and redeploying using 'terraform apply'"
+              break  # Exit the loop
+          }
+          Start-Sleep -Seconds 30
+      }
+    EOT
   }
 }
 
@@ -139,8 +160,25 @@ resource "null_resource" "wait_for_DC_to_initialize_linux" {
   depends_on = [google_compute_instance.dc]
   provisioner "local-exec" {
     command = <<-EOT
-      sleep 900
-      echo "The provisioning scripts for the DC should have completed within the last 15 minutes."
+      startTime=$(date +"%s")
+      labelValue=""
+      while [ "$labelValue" != "${local.final_status}" ]; do
+          labelValue=$(gcloud compute instances describe "${local.host_name}" --zone "${var.gcp_zone}" --format="value(labels.${local.label_name})")
+
+          if [ -z "$labelValue" ]; then
+              echo "DC provisioning is starting"
+          else
+              echo "Provisioning Status: $labelValue"
+          fi
+
+          elapsedTime=$(( $(date +"%s") - startTime ))
+
+          if [ "$elapsedTime" -ge 1500 ]; then
+              echo "Timeout Error: The DC provisioning process has taken longer than 25 minutes. The DC might be provisioned successfully, but please review CloudWatch Logs for any errors or consider destroying the deployment with 'terraform destroy' and redeploying using 'terraform apply'"
+              break
+          fi
+          sleep 30
+        done
     EOT
   }
 }
