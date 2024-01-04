@@ -7,8 +7,6 @@
 
 locals {
   prefix = var.prefix != "" ? "${var.prefix}-" : ""
-  # Name of Anyware Manager deployment service account key file in bucket
-  awm_deployment_sa_file = "awm-deployment-sa-key.json"
   admin_ssh_key_name     = "${local.prefix}${var.admin_ssh_key_name}"
 
   cloudwatch_setup_rpm_script = "cloudwatch_setup_rpm.sh"
