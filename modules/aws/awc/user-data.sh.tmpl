@@ -73,9 +73,26 @@ then
     aws s3 cp s3://${bucket_name}/${provisioning_script} .
     chmod +x ${provisioning_script}
     dos2unix ${provisioning_script}
+
+    # EditShare-specific
+    log "--> Downloading connector_log_manager.py from the bucket..."
+    aws s3 cp s3://${bucket_name}/${log_manager_script} .
+    chmod +x ${log_manager_script}
 fi
+
+# NOTE we may want to add this to crontab so we can more precisely control when it executes
+log "--> Creating cron job for log manager script..."
+cat > /etc/cron.weekly/connector_log_manager << EOF
+#!/bin/bash
+python3 /home/rocky/connector_log_manager.py
+EOF
+chmod +x /etc/cron.weekly/connector_log_manager
 
 log "--> Executing provisioning script..."
 . ${provisioning_script}
+
+# EditShare-specific; done after the aws provisioning script because that installs python3
+#log "--> Installing dryable module for log manager script..."
+#/usr/bin/pip3 install dryable
 
 log "--> $0 finished."

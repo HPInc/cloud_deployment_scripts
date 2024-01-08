@@ -10,6 +10,7 @@ locals {
 
   provisioning_script = "awc-provisioning.sh"
   awm_script          = "get-connector-token.py"
+  log_manager_script  = "connector_log_manager.py"
 
   instance_info_list = flatten(
     [for i in range(length(var.zone_list)) :
@@ -70,6 +71,13 @@ resource "aws_s3_object" "tls-cert" {
   source = var.tls_cert
 }
 
+# EditShare-specific
+resource "aws_s3_object" "log-manager-script" {
+  bucket = var.bucket_name
+  key    = local.log_manager_script
+  source = "${path.module}/../../../../editshare_deployments/modules/connector/scripts/${local.log_manager_script}"
+}
+
 resource "aws_s3_object" "awc-provisioning-script" {
   count = length(local.instance_info_list) == 0 ? 0 : 1
 
@@ -110,6 +118,7 @@ data "template_file" "user-data" {
   vars = {
     bucket_name         = var.bucket_name,
     provisioning_script = local.provisioning_script,
+    log_manager_script  = var.log_manager_script,
   }
 }
 
@@ -160,6 +169,7 @@ data "aws_iam_policy_document" "awc-policy-doc" {
     resources = [
       "arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}",
       "arn:aws:s3:::${var.bucket_name}/${local.awm_script}",
+      "arn:aws:s3:::${var.bucket_name}/${local.log_manager_script}",
       "arn:aws:s3:::${var.bucket_name}/${var.awm_deployment_sa_file}",
       "arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}",
       "arn:aws:s3:::${var.bucket_name}/${var.ldaps_cert_filename}",
@@ -283,6 +293,12 @@ resource "aws_instance" "awc" {
   root_block_device {
     volume_type = "gp2"
     volume_size = var.disk_size_gb
+    tags = merge(
+      {
+        Name = "vol-${var.prefix}-sda1-connector"
+      },
+      { Environment = "${var.prefix}" } # var.common_tags
+    )
   }
 
   associate_public_ip_address = true
@@ -294,6 +310,23 @@ resource "aws_instance" "awc" {
   iam_instance_profile = aws_iam_instance_profile.awc-instance-profile[0].name
 
   user_data = data.template_file.user-data.rendered
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to user_data, since we only use it when
+      # the node initializes and we do not want subsequent
+      # enhancements to user_data to cause the node to be replaced
+      user_data,
+      # Since the DC runs on a standard AWS Windows Server, it's possible that
+      # AWS will eventually age out the AMI used to initially deploy the DC,
+      # so we ignore AMI changes here
+      ami,
+      # if the ec2 instance_type is changed from the AWS Console, it will
+      # cause terraform to think the ebs_optimized field has changed and
+      # the instance will be replaced, so we ignore that field here
+      ebs_optimized,
+    ]
+  }
 
   tags = {
     Name = "${local.prefix}${var.host_name}-${count.index}"
