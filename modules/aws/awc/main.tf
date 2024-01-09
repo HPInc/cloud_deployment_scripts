@@ -294,10 +294,10 @@ resource "aws_instance" "awc" {
     volume_type = "gp2"
     volume_size = var.disk_size_gb
     tags = merge(
-      {
+      { 
         Name = "vol-${var.prefix}-sda1-connector"
       },
-      { Environment = "${var.prefix}" } # var.common_tags
+      {Environment = "${var.prefix}"} # var.common_tags
     )
   }
 
