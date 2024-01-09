@@ -91,8 +91,4 @@ chmod +x /etc/cron.weekly/connector_log_manager
 log "--> Executing provisioning script..."
 . ${provisioning_script}
 
-# EditShare-specific; done after the aws provisioning script because that installs python3
-#log "--> Installing dryable module for log manager script..."
-#/usr/bin/pip3 install dryable
-
 log "--> $0 finished."

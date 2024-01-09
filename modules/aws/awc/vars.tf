@@ -212,7 +212,7 @@ variable "win_std_instance_count" {
 }
 
 variable "log_manager_script" {
-  description = "Number of Windows Standard Workstations"
+  description = "Name of the log manager script; defaults to connector_log_manager.py"
   type        = string
   default     = "connector_log_manager.py"
 }
