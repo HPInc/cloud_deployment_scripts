@@ -211,8 +211,3 @@ variable "win_std_instance_count" {
   default     = 0
 }
 
-variable "log_manager_script" {
-  description = "Name of the log manager script; defaults to connector_log_manager.py"
-  type        = string
-  default     = "connector_log_manager.py"
-}

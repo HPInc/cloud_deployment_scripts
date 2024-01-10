@@ -10,6 +10,7 @@ locals {
 
   provisioning_script = "awc-provisioning.sh"
   awm_script          = "get-connector-token.py"
+  log_manager_script  = "connector_log_manager.py"
 
   instance_info_list = flatten(
     [for i in range(length(var.zone_list)) :
@@ -73,8 +74,8 @@ resource "aws_s3_object" "tls-cert" {
 # EditShare-specific
 resource "aws_s3_object" "log-manager-script" {
   bucket = var.bucket_name
-  key    = var.log_manager_script
-  source = "${path.module}/../../../../editshare_deployments/modules/connector/scripts/${var.log_manager_script}"
+  key    = local.log_manager_script
+  source = "${path.module}/../../../../editshare_deployments/modules/connector/scripts/${local.log_manager_script}"
 }
 
 resource "aws_s3_object" "awc-provisioning-script" {
@@ -117,7 +118,7 @@ data "template_file" "user-data" {
   vars = {
     bucket_name         = var.bucket_name,
     provisioning_script = local.provisioning_script,
-    log_manager_script  = var.log_manager_script,
+    log_manager_script  = local.log_manager_script,
   }
 }
 
@@ -168,7 +169,7 @@ data "aws_iam_policy_document" "awc-policy-doc" {
     resources = [
       "arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}",
       "arn:aws:s3:::${var.bucket_name}/${local.awm_script}",
-      "arn:aws:s3:::${var.bucket_name}/${var.log_manager_script}",
+      "arn:aws:s3:::${var.bucket_name}/${local.log_manager_script}",
       "arn:aws:s3:::${var.bucket_name}/${var.awm_deployment_sa_file}",
       "arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}",
       "arn:aws:s3:::${var.bucket_name}/${var.ldaps_cert_filename}",
