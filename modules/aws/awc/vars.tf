@@ -1,5 +1,5 @@
 /*
- * © Copyright 2022 HP Development Company, L.P.
+ * © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,8 +26,8 @@ variable "awc_flag_manager_insecure" {
   default     = false
 }
 
-variable "awm_deployment_sa_file" {
-  description = "Location of Anyware Manager Deployment Service Account JSON file"
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON file"
   type        = string
 }
 
@@ -60,8 +60,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
@@ -168,11 +168,6 @@ variable "tls_cert" {
 
 variable "awc_extra_install_flags" {
   description = "Additional flags for installing Anyware Connector"
-  default     = ""
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
   default     = ""
 }
 

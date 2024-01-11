@@ -41,7 +41,7 @@ The quickest way to create a reference deployment on GCP is to run the Quickstar
 
 Click on the button below to clone this repository in your GCP Cloud Shell and launch the tutorial. The tutorial can be found on the panel to the right once the GCP Cloud Shell opens. 
 
-[![Open in Google Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://ssh.cloud.google.com/cloudshell/open?cloudshell_git_repo=https://github.com/teradici/cloud_deployment_scripts&cloudshell_tutorial=quickstart/gcp/tutorial.md&show=terminal)
+[![Open in Google Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://ssh.cloud.google.com/cloudshell/open?cloudshell_git_repo=https://github.com/HPInc/cloud_deployment_scripts&cloudshell_tutorial=quickstart/gcp/tutorial.md&show=terminal)
 
 The following videos are also available to guide the viewer through the GCP Quickstart deployment process.
 - [Cloud Deployment Scripts Overview and Introduction](https://youtu.be/ZIwrdf6xRl4)
@@ -57,7 +57,7 @@ Before starting, consider watching [this video](https://www.youtube.com/watch?v=
 - the user must have owner permissions to a GCP project
 - ensure there is sufficient quota in the GCP project for the chosen number of workstations. Please check the quota here: https://console.cloud.google.com/iam-admin/quotas
 - ensure that the GPU virtual workstation for the graphics machines are available in the specified region and zone. Please check the availability here: https://cloud.google.com/compute/docs/gpus/gpu-regions-zones
-- a PCoIP Registration Code is needed. Contact Teradici sales or purchase subscription here: https://www.teradici.com/compare-plans
+- a PCoIP Registration Code is needed. Contact HP Anyware sales or purchase subscription here: https://www.teradici.com/solutions/subscriptions
 - for deployments using Anyware Manager as a Service, a Anyware Manager Deployment Service Account is needed. Please see the [Anyware Manager as a Service Setup](#awm-as-a-service-setup) section below.
 - an SSH private / public key pair is required for Terraform to log into Linux hosts. Please visit [ssh-key-pair-setup](/docs/ssh-key-pair-setup.md) for instructions.
 - if custom TLS key and certificates are required, the TLS key and certificate files are needed in PEM format.

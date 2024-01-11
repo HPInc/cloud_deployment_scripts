@@ -1,24 +1,23 @@
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 ##### Template Variables #####
-$ADMIN_PASSWORD              = "${admin_password}"
-$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
-$AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$ADMIN_PASSWORD_ID              = "${admin_password_id}"
+$AD_SERVICE_ACCOUNT_USERNAME    = "${ad_service_account_username}"
+$AD_SERVICE_ACCOUNT_PASSWORD_ID = "${ad_service_account_password_id}"
 $AWS_SSM_ENABLE              = "${aws_ssm_enable}"
 $BUCKET_NAME                 = "${bucket_name}"
 $CLOUDWATCH_ENABLE           = [System.Convert]::ToBoolean("${cloudwatch_enable}")
 $CLOUDWATCH_SETUP_SCRIPT     = "${cloudwatch_setup_script}"
-$CUSTOMER_MASTER_KEY_ID      = "${customer_master_key_id}"
 $DOMAIN_NAME                 = "${domain_name}"
 $IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
+$PCOIP_REGISTRATION_CODE_ID  = "${pcoip_registration_code_id}"
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
@@ -29,10 +28,14 @@ $AWS_SSM_INSTALLER = Split-Path $AWS_SSM_URL -leaf
 $PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("admin_password", "$ADMIN_PASSWORD")
-$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
+$secret= Get-SECSecretValue -SecretId "$ADMIN_PASSWORD_ID"
+$admin_password = $secret.SecretString
+    
+$secret_accountpassword= Get-SECSecretValue -SecretId "$AD_SERVICE_ACCOUNT_PASSWORD_ID"
+$ad_service_account_password = $secret_accountpassword.SecretString
+
+$secret_pcoip = Get-SECSecretValue -SecretId "$PCOIP_REGISTRATION_CODE_ID"
+$PCOIP_REGISTRATION_CODE = $secret_pcoip.SecretString
 
 $global:restart = $false
 
@@ -55,7 +58,7 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
       Start-Sleep -Seconds $Interval
     }
 }
-
+         
 function Setup-CloudWatch {
     "################################################################"
     "Setting Up AWS CloudWatch..."
@@ -66,40 +69,6 @@ function Setup-CloudWatch {
                                         C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_kmdod*.txt "%Y%m%d%H%M%S" `
                                         C:\ProgramData\Teradici\PCoIPAgent\logs\pcoip_server*.txt "%Y%m%d%H%M%S" `
                                         C:\Teradici\provisioning.log "%Y%m%d%H%M%S"
-}
-
-function Decrypt-Credentials {
-    "################################################################"
-    "Decrypting credentials..."
-    "################################################################"
-    try {
-        if ( -not [string]::IsNullOrEmpty("$PCOIP_REGISTRATION_CODE") ) {
-            "--> Decrypting pcoip_registration_code..."
-            $ByteAry = [System.Convert]::FromBase64String("$PCOIP_REGISTRATION_CODE")
-            $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-            $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-            $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-            $DATA."pcoip_registration_code" = $StreamRead.ReadToEnd()
-        }
-
-        "--> Decrypting admin_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$ADMIN_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."admin_password" = $StreamRead.ReadToEnd()
-
-        "--> Decrypting ad_service_account_password..."
-        $ByteAry = [System.Convert]::FromBase64String("$AD_SERVICE_ACCOUNT_PASSWORD")
-        $MemStream = New-Object System.IO.MemoryStream($ByteAry, 0, $ByteAry.Length)
-        $DecryptResp = Invoke-KMSDecrypt -CiphertextBlob $MemStream
-        $StreamRead = New-Object System.IO.StreamReader($DecryptResp.Plaintext)
-        $DATA."ad_service_account_password" = $StreamRead.ReadToEnd()
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
 }
 
 function PCoIP-Agent-is-Installed {
@@ -154,7 +123,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $pcoip_registration_code
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -247,7 +216,7 @@ function Join-Domain {
     "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
 
     $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
-    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
+    $password = ConvertTo-SecureString $ad_service_account_password -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
     # Read "Name" tag for hostname
@@ -368,14 +337,7 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-if ([string]::IsNullOrWhiteSpace("$CUSTOMER_MASTER_KEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $CUSTOMER_MASTER_KEY_ID for secrets."
-    Decrypt-Credentials
-}
-
-net user Administrator $DATA."admin_password" /active:yes
+net user Administrator $admin_password /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 

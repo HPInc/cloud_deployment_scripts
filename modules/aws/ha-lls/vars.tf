@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -80,14 +80,14 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "lls_admin_password" {
-  description = "Administrative password for the Teradici License Server"
+variable "lls_admin_password_id" {
+  description = "Secrets Manager ARN for Administrative password for the Teradici License Server"
   default     = ""
   sensitive   = true
 }
 
-variable "lls_activation_code" {
-  description = "Activation Code for PCoIP session licenses"
+variable "lls_activation_code_id" {
+  description = "Secrets Manager ARN for Activation Code for PCoIP session licenses"
   default     = ""
   sensitive   = true
 }
@@ -100,11 +100,6 @@ variable "lls_license_count" {
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
 }
 
 variable "assigned_ips" {

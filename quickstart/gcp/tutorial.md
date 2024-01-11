@@ -1,9 +1,9 @@
-# Cloud Access Connector Quickstart
+# HP Anyware Connector Quickstart
 
 ## Introduction
-The goal of this tutorial is to create the [single-connector](https://github.com/teradici/cloud_deployment_scripts/blob/master/docs/README-gcp.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
+The goal of this tutorial is to create the [single-connector](https://github.com/HPInc/cloud_deployment_scripts/blob/master/docs/gcp/deployments.md#single-connector) deployment in as few steps as possible by using Python and Terraform scripts.
 
-This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the Cloud Access Connector deployment.
+This tutorial will guide you in entering a few parameters in a configuration file before showing you how to run a Python script in the Cloud Shell to create the HP Anyware Connector deployment.
 
 The Python script is a wrapper script that sets up the environment required for running Terraform scripts, which actually creates the GCP infrastructure such as Networking and Compute resources.
 
@@ -31,7 +31,7 @@ Enter a prefix for your resource names (Maximum 5 characters. Default: quick)
 #### reg_code
 Enter your PCoIP Registration code.
 
-If you don't have one, visit [https://www.teradici.com/compare-plans](https://www.teradici.com/compare-plans)
+If you don't have one, visit [https://www.teradici.com/solutions/subscriptions](https://www.teradici.com/solutions/subscriptions)
 
 #### api_token
 Enter the Anyware Manager API token.
@@ -78,7 +78,7 @@ You can check the availability of the GPU Virtual Workstation for the graphics m
 
 ### Connect to a workstation
 
-1. from a PCoIP client, connect to the public IP Address of the Cloud Access Connector
+1. from a PCoIP client, connect to the public IP Address of the HP Anyware Connector
 2. sign in with the **Administrator** user credentials
 
 **Note:** When connecting to a workstation immediately after this script completes, the workstation (especially graphics ones) may still be setting up. You may see "Remote Desktop is restarting..." in the client. Please wait a few minutes or reconnect if it times out.

@@ -1,5 +1,5 @@
 /*
- * © Copyright 2022 HP Development Company, L.P.
+ * © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -78,20 +78,19 @@ resource "aws_s3_object" "awc-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      ad_service_account_password = var.ad_service_account_password,
+      ad_service_account_password_id = var.ad_service_account_password_id,
       ad_service_account_username = var.ad_service_account_username,
       awc_extra_install_flags     = var.awc_extra_install_flags,
       aws_region                  = var.aws_region,
       aws_ssm_enable              = var.aws_ssm_enable,
       bucket_name                 = var.bucket_name,
-      awm_deployment_sa_file      = var.awm_deployment_sa_file,
+      awm_deployment_sa_file_id   = var.awm_deployment_sa_file_id,
       awc_flag_manager_insecure   = var.awc_flag_manager_insecure ? "true" : "",
       awm_script                  = local.awm_script,
       manager_url                 = var.manager_url,
       cloudwatch_enable           = var.cloudwatch_enable,
       cloudwatch_setup_script     = var.cloudwatch_setup_script,
       computers_dn                = var.computers_dn,
-      customer_master_key_id      = var.customer_master_key_id,
       domain_controller_ip        = var.domain_controller_ip,
       domain_name                 = var.domain_name,
       ldaps_cert_filename         = var.ldaps_cert_filename,
@@ -142,12 +141,6 @@ resource "aws_iam_role" "awc-role" {
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
-data "aws_kms_key" "encryption-key" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  key_id = var.customer_master_key_id
-}
-
 data "aws_iam_policy_document" "awc-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
@@ -156,11 +149,19 @@ data "aws_iam_policy_document" "awc-policy-doc" {
   }
 
   statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "${var.ad_service_account_password_id}",
+      "${var.awm_deployment_sa_file_id}"
+    ]
+    effect    = "Allow"
+  }
+
+  statement {
     actions = ["s3:GetObject"]
     resources = [
       "arn:aws:s3:::${var.bucket_name}/${local.provisioning_script}",
       "arn:aws:s3:::${var.bucket_name}/${local.awm_script}",
-      "arn:aws:s3:::${var.bucket_name}/${var.awm_deployment_sa_file}",
       "arn:aws:s3:::${var.bucket_name}/${var.cloudwatch_setup_script}",
       "arn:aws:s3:::${var.bucket_name}/${var.ldaps_cert_filename}",
     ]
@@ -219,16 +220,6 @@ data "aws_iam_policy_document" "awc-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

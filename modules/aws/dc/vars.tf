@@ -15,14 +15,14 @@ variable "domain_name" {
   type        = string
 }
 
-variable "admin_password" {
-  description = "Password for the Administrator of the Domain Controller"
+variable "admin_password_id" {
+  description = "Secrets Manager ARN for the Administrator of the Domain Controller"
   type        = string
   sensitive   = true
 }
 
-variable "safe_mode_admin_password" {
-  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
+variable "safe_mode_admin_password_id" {
+  description = "Secrets Manager ARN for Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
   sensitive   = true
 }
@@ -32,8 +32,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service account password"
   type        = string
   sensitive   = true
 }
@@ -88,11 +88,6 @@ variable "ami_name" {
   default     = "Windows_Server-2019-English-Full-Base-*"
 }
 
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
-}
-
 variable "cloudwatch_setup_script" {
   description = "The script that sets up the AWS CloudWatch Logs agent"
   type        = string
@@ -113,8 +108,8 @@ variable "pcoip_agent_version" {
   default     = "latest"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code from Teradici"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code from Teradici"
   type        = string
   sensitive   = true
 }
@@ -127,4 +122,9 @@ variable "cloudwatch_enable" {
 variable "aws_ssm_enable" {
   description = "Enable AWS Session Manager integration for easier SSH/RDP admin access to EC2 instances"
   default     = true
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  default     = "us-west-1"
 }

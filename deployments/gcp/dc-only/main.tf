@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2021;  © Copyright 2021-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -96,7 +96,6 @@ module "dc" {
   private_ip  = var.dc_private_ip
   network_tags = concat(
     [google_compute_firewall.allow-dns.name],
-    [google_compute_firewall.allow-winrm.name],
     [google_compute_firewall.allow-pcoip.name],
     var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
     var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
@@ -109,4 +108,6 @@ module "dc" {
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
   disk_image   = var.dc_disk_image
+
+  depends_on = [google_compute_router_nat.nat]
 }

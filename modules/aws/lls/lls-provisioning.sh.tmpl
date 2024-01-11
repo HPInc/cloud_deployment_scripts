@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -11,13 +11,15 @@ AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
-CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
-LLS_ADMIN_PASSWORD=${lls_admin_password}
-LLS_ACTIVATION_CODE=${lls_activation_code}
+LLS_ACTIVATION_CODE_ID=${lls_activation_code_id}
+LLS_ADMIN_PASSWORD_ID=${lls_admin_password_id}
 LLS_LICENSE_COUNT=${lls_license_count}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+LLS_ADMIN_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$LLS_ADMIN_PASSWORD_ID" --query SecretString --output text)
+LLS_ACTIVATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$LLS_ACTIVATION_CODE_ID" --query SecretString --output text)
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 
@@ -71,25 +73,6 @@ setup_cloudwatch(){
             "/var/log/messages"                 "%b %d %H:%M:%S" \
             "/var/log/teradici/user-data.log"   "%a %b %d %H:%M:%S %Z %Y"
     fi
-}
-
-get_credentials() {
-    # Disable logging of secrets by wrapping the region with set +x and set -x
-    set +x
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]
-    then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: $CUSTOMER_MASTER_KEY_ID"
-
-        log "--> Decrypting LLS Administrator Password..."
-        LLS_ADMIN_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$LLS_ADMIN_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
-
-        log "--> Decrypting LLS Activation Code..."
-        LLS_ACTIVATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$LLS_ACTIVATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
-    fi
-    set -x
 }
 
 check_required_vars() {
@@ -150,8 +133,6 @@ if [[ "$AWS_SSM_ENABLE" == "true" ]]
 then
     setup_ssm
 fi
-
-get_credentials
 
 check_required_vars
 

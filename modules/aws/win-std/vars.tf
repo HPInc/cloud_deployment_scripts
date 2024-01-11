@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,8 +20,8 @@ variable "instance_name" {
   default     = "swin"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code from Teradici"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code from Teradici"
   type        = string
   sensitive   = true
 }
@@ -50,8 +50,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
@@ -101,8 +101,8 @@ variable "ami_name" {
   default     = "Windows_Server-2019-English-Full-Base-*"
 }
 
-variable "admin_password" {
-  description = "Password for the Administrator of the Workstation"
+variable "admin_password_id" {
+  description = "Secrets Manager ARN for Password of the Administrator of the Workstation"
   type        = string
 }
 
@@ -114,11 +114,6 @@ variable "teradici_download_token" {
 variable "pcoip_agent_version" {
   description = "PCoIP Agent version to install"
   default     = "latest"
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
 }
 
 variable "idle_shutdown_enable" {

@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2019-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -101,19 +101,6 @@ resource "google_compute_firewall" "allow-rdp" {
   source_ranges = concat([local.myip], var.allowed_admin_cidrs)
 }
 
-resource "google_compute_firewall" "allow-winrm" {
-  name    = "${local.prefix}fw-allow-winrm"
-  network = google_compute_network.vpc.self_link
-
-  allow {
-    protocol = "tcp"
-    ports    = ["5986"]
-  }
-
-  target_tags   = ["${local.prefix}fw-allow-winrm"]
-  source_ranges = concat([local.myip], var.allowed_admin_cidrs)
-}
-
 resource "google_compute_firewall" "allow-icmp" {
   count  = var.enable_icmp ? 1 : 0
   name    = "${local.prefix}fw-allow-icmp"
@@ -176,4 +163,28 @@ resource "google_compute_address" "dc-internal-ip" {
   subnetwork   = google_compute_subnetwork.dc-subnet.self_link
   address_type = "INTERNAL"
   address      = var.dc_private_ip
+}
+
+resource "google_compute_router" "router" {
+  name    = "${local.prefix}router"
+  region  = var.gcp_region
+  network = google_compute_network.vpc.self_link
+
+  bgp {
+    asn = 65000
+  }
+}
+
+resource "google_compute_router_nat" "nat" {
+  name                               = "${local.prefix}nat"
+  router                             = google_compute_router.router.name
+  region                             = var.gcp_region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  min_ports_per_vm                   = 2048
+
+  subnetwork {
+    name                    = google_compute_subnetwork.dc-subnet.self_link
+    source_ip_ranges_to_nat = ["PRIMARY_IP_RANGE"]
+  }
 }

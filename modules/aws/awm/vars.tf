@@ -15,19 +15,14 @@ variable "prefix" {
   default     = ""
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code"
   type        = string
   sensitive   = true
 }
 
 variable "bucket_name" {
   description = "Name of bucket to retrieve provisioning script."
-  type        = string
-}
-
-variable "awm_deployment_sa_file" {
-  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
@@ -77,8 +72,13 @@ variable "admin_ssh_key_name" {
   type        = string
 }
 
-variable "awm_aws_credentials_file" {
-  description = "Name of AWS credentials file for Anyware Manager in bucket"
+variable "awm_aws_credentials_file_id" {
+  description = "Secrets Manager ARN for AWS credentials file for Anyware Manager in bucket"
+  type        = string
+}
+
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON file"
   type        = string
 }
 
@@ -96,11 +96,6 @@ variable "teradici_download_token" {
 variable "awm_repo_channel" {
   description = "Anyware Manager repo in Anyware Manager repository channel"
   default     = "anyware-manager"
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
 }
 
 variable "cloudwatch_setup_script" {

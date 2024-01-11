@@ -73,6 +73,12 @@ variable "allowed_client_cidrs" {
   }
 }
 
+variable "recovery_window_in_days" {
+  description = "Number of days that AWS Secrets Manager waits before it can delete the secret"
+  # This value can be 0 to force deletion without recovery (recommended for development) or range from 7 to 30 days.
+  default     = 0
+}
+
 variable "vpc_name" {
   description = "Name for VPC containing the HP Anyware deployment"
   default     = "vpc-anyware"
@@ -110,7 +116,7 @@ variable "dc_ami_owner" {
 
 variable "dc_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.10.11"
+  default     = "Windows_Server-2019-English-Full-Base-2023.12.13"
 }
 
 variable "dc_pcoip_agent_install" {
@@ -394,7 +400,7 @@ variable "win_gfx_ami_owner" {
 
 variable "win_gfx_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.10.11"
+  default     = "Windows_Server-2019-English-Full-Base-2023.12.13"
 }
 
 variable "win_gfx_pcoip_agent_version" {
@@ -429,7 +435,7 @@ variable "win_std_ami_owner" {
 
 variable "win_std_ami_name" {
   description = "Name of the Windows AMI to create workstation from"
-  default     = "Windows_Server-2019-English-Full-Base-2023.10.11"
+  default     = "Windows_Server-2019-English-Full-Base-2023.12.13"
 }
 
 variable "win_std_pcoip_agent_version" {
@@ -497,11 +503,6 @@ variable "centos_std_ami_owner" {
 variable "centos_std_ami_name" {
   description = "Name of the CentOS AMI to create workstation from"
   default     = "CentOS Linux 7 x86_64 - 2211"
-}
-
-variable "customer_master_key_id" {
-  description = "The ID of the AWS KMS Customer Master Key used to decrypt secrets"
-  default     = ""
 }
 
 variable "auto_logoff_enable" {

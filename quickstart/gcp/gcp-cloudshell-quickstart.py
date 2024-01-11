@@ -547,7 +547,7 @@ if __name__ == '__main__':
     Next steps:
 
     - Connect to a workstation:
-    1. from a PCoIP client, connect to the Cloud Access Connector at {awc_public_ip}
+    1. from a PCoIP client, connect to the HP Anyware Connector at {awc_public_ip}
     2. sign in with the "{ENTITLE_USER}" user credentials
     3. When connecting to a workstation immediately after this script completes,
         the workstation (especially graphics ones) may still be setting up. You may

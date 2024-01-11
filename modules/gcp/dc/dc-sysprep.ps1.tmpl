@@ -1,9 +1,10 @@
-# Copyright (c) 2019 Teradici Corporation
+# Copyright Teradici Corporation 2019;  © Copyright 2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-$LOG_FILE = "C:\Teradici\provisioning.log"
+$BASE_DIR = "C:\Teradici"
+$LOG_FILE = "$BASE_DIR\provisioning.log"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
 
@@ -65,5 +66,3 @@ if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
 }
 
 net user Administrator $DATA."admin_password" /active:yes
-Enable-PSRemoting -Force
-winrm set winrm/config/service/auth '@{Basic="true"}'

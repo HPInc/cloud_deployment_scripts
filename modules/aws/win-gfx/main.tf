@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -24,20 +24,19 @@ resource "aws_s3_object" "win-gfx-provisioning-script" {
   content = templatefile(
     "${path.module}/${local.provisioning_script}.tmpl",
     {
-      admin_password              = var.admin_password,
-      ad_service_account_password = var.ad_service_account_password,
-      ad_service_account_username = var.ad_service_account_username,
-      aws_ssm_enable              = var.aws_ssm_enable,
-      bucket_name                 = var.bucket_name,
-      cloudwatch_enable           = var.cloudwatch_enable,
-      cloudwatch_setup_script     = var.cloudwatch_setup_script,
-      customer_master_key_id      = var.customer_master_key_id,
-      domain_name                 = var.domain_name,
-      nvidia_driver_filename      = var.nvidia_driver_filename,
-      nvidia_driver_url           = var.nvidia_driver_url,
-      pcoip_agent_version         = var.pcoip_agent_version,
-      pcoip_registration_code     = var.pcoip_registration_code,
-      teradici_download_token     = var.teradici_download_token,
+      admin_password_id              = var.admin_password_id
+      ad_service_account_password_id = var.ad_service_account_password_id
+      ad_service_account_username    = var.ad_service_account_username,
+      aws_ssm_enable                 = var.aws_ssm_enable,
+      bucket_name                    = var.bucket_name,
+      cloudwatch_enable              = var.cloudwatch_enable,
+      cloudwatch_setup_script        = var.cloudwatch_setup_script,
+      domain_name                    = var.domain_name,
+      nvidia_driver_filename         = var.nvidia_driver_filename,
+      nvidia_driver_url              = var.nvidia_driver_url,
+      pcoip_agent_version            = var.pcoip_agent_version,
+      pcoip_registration_code_id     = var.pcoip_registration_code_id
+      teradici_download_token        = var.teradici_download_token,
 
       idle_shutdown_cpu_utilization              = var.idle_shutdown_cpu_utilization,
       idle_shutdown_enable                       = var.idle_shutdown_enable,
@@ -85,16 +84,20 @@ resource "aws_iam_role" "win-gfx-role" {
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
-data "aws_kms_key" "encryption-key" {
-  count = var.customer_master_key_id == "" ? 0 : 1
-
-  key_id = var.customer_master_key_id
-}
-
 data "aws_iam_policy_document" "win-gfx-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
     resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [
+      "${var.pcoip_registration_code_id}",
+      "${var.ad_service_account_password_id}",
+      "${var.admin_password_id}"
+    ]
     effect    = "Allow"
   }
 
@@ -129,16 +132,6 @@ data "aws_iam_policy_document" "win-gfx-policy-doc" {
         "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"]
       resources = ["*"]
-      effect    = "Allow"
-    }
-  }
-
-  dynamic "statement" {
-    for_each = data.aws_kms_key.encryption-key
-    iterator = i
-    content {
-      actions   = ["kms:Decrypt"]
-      resources = [i.value.arn]
       effect    = "Allow"
     }
   }

@@ -1,11 +1,12 @@
 /*
- * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022-2023 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 locals {
+  all_region_set = setunion(var.ws_region_list)
   prefix      = var.prefix != "" ? "${var.prefix}-" : ""
   bucket_name = "${local.prefix}pcoip-scripts-${random_id.bucket-name.hex}"
   # Name of Anyware Manager deployment service account key file in bucket
@@ -104,7 +105,6 @@ module "dc" {
   private_ip  = var.dc_private_ip
   network_tags = concat(
     [google_compute_firewall.allow-google-dns.name],
-    [google_compute_firewall.allow-winrm.name],
     var.enable_icmp    ? [google_compute_firewall.allow-icmp[0].name] : [],
     var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
     var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
@@ -116,6 +116,8 @@ module "dc" {
   machine_type = var.dc_machine_type
   disk_size_gb = var.dc_disk_size_gb
   disk_image   = var.dc_disk_image
+
+  depends_on = [google_compute_router_nat.dc-nat]
 }
 
 module "awc-igm" {

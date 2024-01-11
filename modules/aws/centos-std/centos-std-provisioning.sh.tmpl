@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 ##### Template Variables #####
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AD_SERVICE_ACCOUNT_PASSWORD_ID=${ad_service_account_password_id}
 AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
 AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
 AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=${auto_logoff_minutes_idle_before_logoff}
@@ -17,14 +17,13 @@ AWS_SSM_ENABLE=${aws_ssm_enable}
 BUCKET_NAME=${bucket_name}
 CLOUDWATCH_ENABLE=${cloudwatch_enable}
 CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
-CUSTOMER_MASTER_KEY_ID=${customer_master_key_id}
 DOMAIN_CONTROLLER_IP=${domain_controller_ip}
 DOMAIN_NAME=${domain_name}
 IDLE_SHUTDOWN_CPU_UTILIZATION=${idle_shutdown_cpu_utilization}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
 IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
@@ -33,6 +32,8 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_IP="http://169.254.169.254"
 TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
+AD_SERVICE_ACCOUNT_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$AD_SERVICE_ACCOUNT_PASSWORD_ID" --query SecretString --output text)
+PCOIP_REGISTRATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$PCOIP_REGISTRATION_CODE_ID" --query SecretString --output text)
 log() {
     local message="$1"
     echo "[$(date)] $message"
@@ -85,26 +86,6 @@ setup_cloudwatch(){
             "/var/log/teradici/user-data.log"           "%b %d %H:%M:%S" \
             "/var/log/yum.log"                          "%b %d %H:%M:%S"
     fi
-}
-
-get_credentials() {
-    # Disable logging of secrets by wrapping the region with set +x and set -x
-    set +x
-    if [[ -z "$CUSTOMER_MASTER_KEY_ID" ]]; then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: '$CUSTOMER_MASTER_KEY_ID'."
-
-        if [[ "$PCOIP_REGISTRATION_CODE" ]]; then
-            log "--> Decrypting pcoip_registration_code..."
-            PCOIP_REGISTRATION_CODE=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$PCOIP_REGISTRATION_CODE" | base64 -d) --output text --query Plaintext | base64 -d)
-        fi
-
-        log "--> Decrypting ad_service_account_password..."
-        AD_SERVICE_ACCOUNT_PASSWORD=$(aws kms decrypt --region $AWS_REGION --ciphertext-blob fileb://<(echo "$AD_SERVICE_ACCOUNT_PASSWORD" | base64 -d) --output text --query Plaintext | base64 -d)
-    fi
-    set -x
 }
 
 check_required_vars() {
@@ -389,8 +370,6 @@ if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
 then
     setup_cloudwatch
 fi
-
-get_credentials
 
 check_required_vars
 
