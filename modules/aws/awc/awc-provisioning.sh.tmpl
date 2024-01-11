@@ -77,6 +77,10 @@ install_prereqs() {
         log "--> ERROR: Failed to install prerequisites. Exiting provisioning script..."
         exit 1
     fi
+
+    # EditShare-specific
+    log "--> Installing dryable module..."
+    sudo pip3 install dryable
 }
 
 install_socat() {

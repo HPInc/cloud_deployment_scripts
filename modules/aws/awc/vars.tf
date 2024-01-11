@@ -210,3 +210,4 @@ variable "win_std_instance_count" {
   description = "Number of Windows Standard Workstations"
   default     = 0
 }
+
