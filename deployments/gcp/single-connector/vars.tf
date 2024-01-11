@@ -425,7 +425,7 @@ variable "centos_gfx_disk_size_gb" {
 
 variable "centos_gfx_disk_image" {
   description = "Disk image for the CentOS Graphics Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20231212"
+  default     = "projects/centos-cloud/global/images/centos-7-v20240110"
 }
 
 variable "centos_std_instance_count" {
@@ -450,7 +450,7 @@ variable "centos_std_disk_size_gb" {
 
 variable "centos_std_disk_image" {
   description = "Disk image for the CentOS Standard Workstation"
-  default     = "projects/centos-cloud/global/images/centos-7-v20231212"
+  default     = "projects/centos-cloud/global/images/centos-7-v20240110"
 }
 
 variable "centos_admin_user" {
