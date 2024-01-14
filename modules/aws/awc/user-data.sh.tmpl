@@ -84,7 +84,7 @@ fi
 log "--> Creating cron job for log manager script..."
 cat > /etc/cron.weekly/connector_log_manager << EOF
 #!/bin/bash
-python3 /home/rocky/connector_log_manager.py
+python3 /root/connector_log_manager.py
 EOF
 chmod +x /etc/cron.weekly/connector_log_manager
 
