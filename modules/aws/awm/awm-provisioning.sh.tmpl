@@ -78,6 +78,10 @@ install_prereqs() {
         log "--> ERROR: Failed to install Python modules. Exiting provisioning script..."
         exit 1
     fi
+
+    # EditShare-specific
+    log "--> Installing dryable module..."
+    sudo pip3 install dryable
 }
 
 setup_cloudwatch(){

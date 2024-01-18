@@ -22,6 +22,14 @@ resource "aws_s3_bucket" "scripts" {
   }
 }
 
+# EditShare specific
+resource "aws_s3_bucket_versioning" "scripts_versioning" {
+  bucket = aws_s3_bucket.scripts.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_s3_bucket_lifecycle_configuration" "scripts-lifecycle" {
   bucket = aws_s3_bucket.scripts.bucket
   # AWS Foundational Security Best Practices v1.0.0
@@ -154,6 +162,6 @@ resource "aws_s3_bucket_ownership_controls" "scripts" {
 
 resource "aws_s3_bucket_acl" "scripts" {
   depends_on = [aws_s3_bucket_ownership_controls.scripts]
-  bucket = aws_s3_bucket.scripts.id
-  acl    = "private"
+  bucket     = aws_s3_bucket.scripts.id
+  acl        = "private"
 }

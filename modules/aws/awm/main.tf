@@ -11,6 +11,7 @@ locals {
   enable_public_ip    = var.enable_public_ip ? [true] : []
   awm_setup_script    = "awm-setup.py"
   provisioning_script = "awm-provisioning.sh"
+  backup_script       = "backup_anyware_manager.py"
 }
 
 resource "aws_s3_object" "awm-setup-script" {
@@ -42,12 +43,31 @@ resource "aws_s3_object" "awm-provisioning-script" {
   )
 }
 
+# EditShare-specific
+resource "aws_s3_object" "awm-backup-script" {
+  bucket = var.bucket_name
+  key    = local.backup_script
+  content = templatefile(
+    "${path.module}/../../../../editshare_deployments/modules/manager/scripts/${local.backup_script}.tmpl",
+    {
+      bucket_name = var.bucket_name,
+    }
+  )
+}
+
+# EditShare specific; pre-create the 'backups' folder where backup files for the Manager will go
+resource "aws_s3_object" "backups-folder" {
+  bucket = var.bucket_name
+  key    = "backups/"
+}
+
 data "template_file" "user-data" {
   template = file("${path.module}/user-data.sh.tmpl")
 
   vars = {
     bucket_name         = var.bucket_name,
     provisioning_script = local.provisioning_script,
+    backup_script       = local.backup_script,
   }
 }
 
@@ -136,6 +156,27 @@ data "aws_iam_policy_document" "awm-policy-doc" {
     effect    = "Allow"
   }
 
+  # EditShare specific
+  statement {
+    actions   = ["s3:GetObject", "s3:PutObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/backups/manager-data-backup.tar.gz.enc"]
+    effect    = "Allow"
+  }
+
+  # EditShare specific
+  statement {
+    actions   = ["s3:GetObject", "s3:PutObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/backups/backup.key"]
+    effect    = "Allow"
+  }
+
+  # EditShare specific
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/backup_anyware_manager.py"]
+    effect    = "Allow"
+  }
+
   # add minimal permissions to allow users to connect to instances using Session Manager
   dynamic "statement" {
     for_each = var.aws_ssm_enable ? [1] : []
@@ -205,7 +246,7 @@ resource "aws_instance" "awm" {
       {
         Name = "vol-${var.prefix}-sda1-manager"
       },
-      {Environment = "${var.prefix}"} # var.common_tags
+      { Environment = "${var.prefix}" } # var.common_tags
     )
   }
 

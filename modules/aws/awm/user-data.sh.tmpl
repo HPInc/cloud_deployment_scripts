@@ -73,7 +73,21 @@ then
     aws s3 cp s3://${bucket_name}/${provisioning_script} .
     chmod +x ${provisioning_script}
     dos2unix ${provisioning_script}
+
+    # EditShare-specific
+    log "--> Downloading backup_anyware_manager.py from the bucket..."
+    aws s3 cp s3://${bucket_name}/${backup_script} .
+    chmod +x ${backup_script}
 fi
+
+# EditShare-specific
+# NOTE we may want to add this to crontab so we can more precisely control when it executes
+log "--> Creating cron job for manager backup script..."
+cat > /etc/cron.daily/backup_anyware_manager << EOF
+#!/bin/bash
+python3 /root/backup_anyware_manager.py
+EOF
+chmod +x /etc/cron.daily/backup_anyware_manager
 
 log "--> Executing provisioning script..."
 . ${provisioning_script}
