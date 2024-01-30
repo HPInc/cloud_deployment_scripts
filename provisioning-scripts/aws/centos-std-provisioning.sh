@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2021;  © Copyright 2022-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -30,7 +30,7 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_IP="http://169.254.169.254"
-TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
     local message="$1"

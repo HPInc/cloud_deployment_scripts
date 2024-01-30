@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -23,7 +23,7 @@ LLS_ACTIVATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$LLS_ACTI
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 
-LLS_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-license-server/cfg/setup/bash.rpm.sh"
+LLS_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-license-server/cfg/setup/bash.rpm.sh"
 
 log() {
     local message="$1"

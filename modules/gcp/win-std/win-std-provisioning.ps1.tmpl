@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2022-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -22,7 +22,7 @@ $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
-$PCOIP_AGENT_LOCATION_URL = "https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
+$PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
 $DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
