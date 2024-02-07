@@ -386,6 +386,9 @@ configure_awc() {
         exit 1
     fi
 
+    # This command explicitly sets the external PCoIP IP address since sometimes there's an issue with it retrieiving its own IP address via the PCoIP IP Anyware Manager API.
+    /usr/local/bin/anyware-connector configure --external-pcoip-ip=$(curl -s http://checkip.amazonaws.com)
+
     log "--> Successfully configured Anyware Connector."
 }
 
