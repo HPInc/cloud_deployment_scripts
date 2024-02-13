@@ -294,10 +294,10 @@ resource "aws_instance" "awc" {
     volume_type = "gp2"
     volume_size = var.disk_size_gb
     tags = merge(
-      { 
+      {
         Name = "vol-${var.prefix}-sda1-connector"
       },
-      {Environment = "${var.prefix}"} # var.common_tags
+      var.common_tags
     )
   }
 
@@ -328,9 +328,12 @@ resource "aws_instance" "awc" {
     ]
   }
 
-  tags = {
-    Name = "${local.prefix}${var.host_name}-${count.index}"
-  }
+  tags = merge(
+    {
+      Name = "${local.prefix}${var.host_name}-${count.index}"
+    },
+    var.common_tags
+  )
 }
 
 resource "aws_cloudwatch_dashboard" "awc" {

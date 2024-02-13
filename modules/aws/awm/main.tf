@@ -246,7 +246,7 @@ resource "aws_instance" "awm" {
       {
         Name = "vol-${var.prefix}-sda1-manager"
       },
-      { Environment = "${var.prefix}" } # var.common_tags
+      var.common_tags
     )
   }
 
@@ -277,7 +277,10 @@ resource "aws_instance" "awm" {
     ]
   }
 
-  tags = {
-    Name = "${local.prefix}${var.host_name}"
-  }
+  tags = merge(
+    {
+      Name = "${local.prefix}${var.host_name}"
+    },
+    var.common_tags
+  )
 }
