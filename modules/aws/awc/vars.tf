@@ -211,3 +211,9 @@ variable "win_std_instance_count" {
   default     = 0
 }
 
+# EditShare-specific
+variable "common_tags" {
+  description = "Common Tags to use for all resources"
+  type        = map(any)
+  default     = {}
+}
