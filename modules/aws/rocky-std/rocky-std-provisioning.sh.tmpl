@@ -1,0 +1,421 @@
+#!/bin/bash
+
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2024 HP Development Company, L.P.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+##### Template Variables #####
+AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AD_SERVICE_ACCOUNT_PASSWORD_ID=${ad_service_account_password_id}
+AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
+AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
+AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=${auto_logoff_minutes_idle_before_logoff}
+AUTO_LOGOFF_POLLING_INTERVAL_MINUTES=${auto_logoff_polling_interval_minutes}
+AWS_REGION=${aws_region}
+AWS_SSM_ENABLE=${aws_ssm_enable}
+BUCKET_NAME=${bucket_name}
+CLOUDWATCH_ENABLE=${cloudwatch_enable}
+CLOUDWATCH_SETUP_SCRIPT=${cloudwatch_setup_script}
+DOMAIN_CONTROLLER_IP=${domain_controller_ip}
+DOMAIN_NAME=${domain_name}
+IDLE_SHUTDOWN_CPU_UTILIZATION=${idle_shutdown_cpu_utilization}
+IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
+IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
+IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
+TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
+
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+LOG_FILE="/var/log/teradici/provisioning.log"
+METADATA_IP="http://169.254.169.254"
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
+
+AD_SERVICE_ACCOUNT_PASSWORD=$(aws secretsmanager get-secret-value --secret-id "$AD_SERVICE_ACCOUNT_PASSWORD_ID" --query SecretString --output text)
+PCOIP_REGISTRATION_CODE=$(aws secretsmanager get-secret-value --secret-id "$PCOIP_REGISTRATION_CODE_ID" --query SecretString --output text)
+log() {
+    local message="$1"
+    echo "[$(date)] $message"
+}
+
+# Try command until zero exit status or exit(1) when non-zero status after max tries
+retry() {
+    local retry="$1"         # number of retries
+    local retry_delay="$2"   # delay between each retry, in seconds
+    local shell_command="$3" # the shell command to run
+    local err_message="$4"   # the message to show when the shell command was not successful
+
+    local retry_num=0
+    until eval $shell_command
+    do
+        local rc=$?
+        local retry_remain=$((retry-retry_num))
+
+        if [ $retry_remain -eq 0 ]
+        then
+            log $error_message
+            return $rc
+        fi
+
+        log "$err_message Retrying in $retry_delay seconds... ($retry_remain retries remaining...)"
+
+        retry_num=$((retry_num+1))
+        sleep $retry_delay
+    done
+}
+
+setup_cloudwatch(){
+    if [[ ! -f "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log" ]]
+    then
+        log "--> Setting up AWS CloudWatch Logs..."
+
+        retry 3 `# 3 retries` \
+              5 `# 5s interval` \
+              "aws s3 cp s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT ." \
+              "--> ERROR: Failed to download CloudWatch setup script from s3://$BUCKET_NAME/$CLOUDWATCH_SETUP_SCRIPT."
+        chmod +x $CLOUDWATCH_SETUP_SCRIPT
+        dos2unix $CLOUDWATCH_SETUP_SCRIPT
+
+        . $CLOUDWATCH_SETUP_SCRIPT $AWS_REGION \
+            $LOG_FILE                                   "%b %d %H:%M:%S" \
+            "/var/log/messages"                         "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/agent.log"            "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/server*.log"          "%b %d %H:%M:%S" \
+            "/var/log/pcoip-agent/session-launcher.log" "%b %d %H:%M:%S" \
+            "/var/log/teradici/user-data.log"           "%b %d %H:%M:%S" \
+            "/var/log/yum.log"                          "%b %d %H:%M:%S"
+    fi
+}
+
+check_required_vars() {
+    # not checking PCoIP registration code because there won't be any if users use LLS
+    set +x
+    if [[ -z "$AD_SERVICE_ACCOUNT_PASSWORD" ]]; then
+        log "--> ERROR: Missing Active Directory Service Account Password."
+        missing_vars="true"
+    fi
+
+    set -x
+
+    if [[ "$missing_vars" == "true" ]]; then
+        log "--> Exiting..."
+        exit 1
+    fi
+}
+
+# Update the hostname to match this instance's "Name" Tag
+update_hostname() {
+    TOKEN=`curl -X PUT "$METADATA_IP/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60"`
+    ID=`curl $METADATA_IP/latest/meta-data/instance-id -H "X-aws-ec2-metadata-token: $TOKEN"`
+    REGION=`curl $METADATA_IP/latest/dynamic/instance-identity/document/ -H "X-aws-ec2-metadata-token: $TOKEN" | jq -r .region`
+    NEW_HOSTNAME=`aws ec2 describe-tags --region $REGION --filters "Name=resource-id,Values=$ID" "Name=key,Values=Name" --output json | jq -r .Tags[0].Value`
+
+    sudo hostnamectl set-hostname $NEW_HOSTNAME.$DOMAIN_NAME
+}
+
+exit_and_restart() {
+    log "--> Rebooting..."
+    (sleep 1; reboot -p) &
+    exit
+}
+
+install_pcoip_agent() {
+    log "--> Getting Teradici PCoIP agent repo..."
+    curl --retry 3 --retry-delay 5 -u "token:$TERADICI_DOWNLOAD_TOKEN" -1sLf $TERADICI_REPO_SETUP_SCRIPT_URL | bash
+    if [ $? -ne 0 ]; then
+        log "--> ERROR: Failed to install PCoIP agent repo."
+        exit 1
+    fi
+    log "--> PCoIP agent repo installed successfully."
+
+    log "--> Installing USB dependencies..."
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum install -y usb-vhci" \
+            "--> Warning: Failed to install usb-vhci."
+
+    log "--> Installing EPEL repository..."
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum install -y epel-release" \
+            "--> Warning: Failed to install epel-release."
+
+    log "--> Installing PCoIP standard agent..."
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum -y install pcoip-agent-standard" \
+            "--> ERROR: Failed to download PCoIP agent."
+    if [ $? -eq 1 ]; then
+        exit 1
+    fi
+    log "--> PCoIP agent installed successfully."
+}
+
+register_pcoip_agent() {
+    log "--> Registering PCoIP agent license..."
+
+    retry   10 `# 10 retries` \
+            10 `# 10s interval` \
+            "/usr/sbin/pcoip-register-host --registration-code="$PCOIP_REGISTRATION_CODE" && break" \
+            "--> ERROR: Failed to register PCoIP agent."
+    
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    log "--> PCoIP agent registered successfully."
+}
+
+install_auto_logoff() {
+    # Auto logoff tool terminates a user session after the PCoIP session has been terminated. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/anyware_manager/22.09/admin_console/workstation_pools/#auto-log-off-service
+
+    log "--> Installing PCoIP agent auto-logoff..."
+    retry   3 `# 3 retries` \
+            5 `# 5s interval` \
+            "yum install -y pcoip-agent-autologoff" \
+            "--> ERROR: Failed to download PCoIP agent auto-logoff."
+
+    log "--> Setting Minumim Idle time to $AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF minutes..."
+    sed -i "s/Environment=\"MinutesIdleBeforeLogOff=\(.*\)\"/Environment=\"MinutesIdleBeforeLogOff=$AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF\"/g" /etc/systemd/system/pcoip-agent-autologoff.service.d/override.conf
+
+    log "--> Setting CPU Utilization limit to $AUTO_LOGOFF_CPU_UTILIZATION%..."
+    sed -i "s/Environment=\"CPUUtilizationLimit=\(.*\)\"/Environment=\"CPUUtilizationLimit=$AUTO_LOGOFF_CPU_UTILIZATION\"/g" /etc/systemd/system/pcoip-agent-autologoff.service.d/override.conf
+
+    log "--> Setting CPU polling interval to $AUTO_LOGOFF_POLLING_INTERVAL_MINUTES minutes..."
+    sed -i "s/OnUnitActiveSec=\(.*\)min/OnUnitActiveSec=$${AUTO_LOGOFF_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/pcoip-agent-autologoff.timer.d/override.conf
+
+    /opt/teradici/pcoip-agent-autologoff/pcoip-agent-autologoff-mgmt --enable
+}
+
+install_idle_shutdown() {
+    # Idle shutdown service power off the workstations when they are considered idle. Please see the documentation for more details:
+    # https://www.teradici.com/web-help/anyware_manager/22.09/admin_console/workstation_pools/#idle-shutdown-service
+
+    log "--> Installing idle shutdown..."
+    mkdir /tmp/idleShutdown
+
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "curl https://raw.githubusercontent.com/HPInc/Anyware-Idle-Shutdown/master/remote-workstations/new-agent-vm/Install-Idle-Shutdown.sh --output /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh" \
+          "--> ERROR: Failed to download Install-Idle-Shutdown.sh."
+
+    awk '{ sub("\r$", ""); print }' /tmp/idleShutdown/Install-Idle-Shutdown-raw.sh > /tmp/idleShutdown/Install-Idle-Shutdown.sh && chmod +x /tmp/idleShutdown/Install-Idle-Shutdown.sh
+
+    log "--> Setting auto shutdown idle timer to $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN minutes..."
+    INSTALL_OPTS="--idle-timer $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN"
+    if [[ "$IDLE_SHUTDOWN_ENABLE" == "false" ]]; then
+        INSTALL_OPTS="$INSTALL_OPTS --disabled"
+    fi
+
+    retry 3 `# 3 retries` \
+          5 `# 5s interval` \
+          "/tmp/idleShutdown/Install-Idle-Shutdown.sh $INSTALL_OPTS" \
+          "--> ERROR: Failed to install idle shutdown."
+
+    if [[ $? -ne 0 ]]; then
+        log "--> Exiting provisioning script due to an error."
+        exit 1
+    fi
+
+    log "--> Setting CPU polling interval to $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES minutes..."
+    sed -i "s/OnUnitActiveSec=\(.*\)min/OnUnitActiveSec=$${IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES}min/g" /etc/systemd/system/CAMIdleShutdown.timer.d/CAMIdleShutdown.conf
+
+    log "--> Setting CPU utilization to $IDLE_SHUTDOWN_CPU_UTILIZATION%..."
+    sed -i "s/Environment=\"CPUUtilizationLimit=\(.*\)\"/Environment=\"CPUUtilizationLimit=$IDLE_SHUTDOWN_CPU_UTILIZATION\"/g" /etc/systemd/system/CAMIdleShutdown.service.d/CAMIdleShutdown.conf
+
+    systemctl daemon-reload
+}
+
+# Join domain
+join_domain() {
+    local dns_record_file="dns_record"
+    if [[ ! -f "$dns_record_file" ]]
+    then
+        log "--> DOMAIN NAME: $DOMAIN_NAME"
+        log "--> USERNAME: $AD_SERVICE_ACCOUNT_USERNAME"
+        log "--> DOMAIN CONTROLLER: $DOMAIN_CONTROLLER_IP"
+
+        # default hostname has the form ip-10-0-0-1.us-west-1.compute.internal,
+        # get the first part of it
+        VM_NAME=$(echo $(hostname) | sed -n 's/\(^[^.]*\).*/\1/p')
+
+        # Wait for AD service account to be set up
+        yum -y install openldap-clients
+        log "--> Waiting for AD account $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME to be available..."
+        set +x
+        until ldapwhoami -H ldap://$DOMAIN_CONTROLLER_IP -D $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME -w "$AD_SERVICE_ACCOUNT_PASSWORD" -o nettimeout=1 > /dev/null 2>&1
+        do
+            log "--> $AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME not available yet, retrying in 10 seconds..."
+            sleep 10
+        done
+        set -x
+
+        # Join domain
+        log "--> Installing required packages to join domain..."
+        yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python-utils
+
+        log "--> Joining the domain '$DOMAIN_NAME'..."
+        local retries=10
+        local domain_upper=$(echo "$DOMAIN_NAME" | tr '[:lower:]' '[:upper:]')
+
+        set +x
+        while true
+        do
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="$AD_SERVICE_ACCOUNT_USERNAME@$domain_upper" "$DOMAIN_NAME" --verbose >&2
+
+            if [[ $? -eq 0 ]]
+            then
+                log "--> Successfully joined domain '$DOMAIN_NAME'."
+                break
+            fi
+
+            if [ $retries -eq 0 ]
+            then
+                log "--> ERROR: Failed to join domain '$DOMAIN_NAME'."
+                return 106
+            fi
+
+            log "--> ERROR: Failed to join domain '$DOMAIN_NAME'. $retries retries remaining..."
+            retries=$((retries-1))
+            sleep 60
+        done
+        set -x
+
+        domainname "$VM_NAME.$DOMAIN_NAME"
+        echo "%$DOMAIN_NAME\\\\Domain\\ Admins ALL=(ALL) ALL" > /etc/sudoers.d/sudoers
+
+        log "--> Registering with DNS..."
+        local ip_address=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
+        set +x
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "$AD_SERVICE_ACCOUNT_USERNAME"@"$domain_upper"
+        set -x
+        touch "$dns_record_file"
+        echo "server $DOMAIN_CONTROLLER_IP" > "$dns_record_file"
+        echo "update add $VM_NAME.$DOMAIN_NAME 600 a $ip_address" >> "$dns_record_file"
+        echo "send" >> "$dns_record_file"
+        nsupdate -g "$dns_record_file" > /var/sky
+
+        log "--> Configuring settings..."
+        # Added a workaround (ad_gpo_map_permit = +pcoip-session) based on the Release Notes for Standard Agent for Linux 23.12.2, addressing Linux session start failures with SSSD (Error 94517)
+        sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute\nad_gpo_map_permit = +pcoip-session' /etc/sssd/sssd.conf
+        sed -c -i "s/\\(use_fully_qualified_names *= *\\).*/\\1False/" /etc/sssd/sssd.conf
+        sed -c -i "s/\\(fallback_homedir *= *\\).*/\\1\\/home\\/%u/" /etc/sssd/sssd.conf
+
+        # sssd.conf configuration is required first before enabling sssd
+        log "--> Restarting messagebus service..."
+        if ! (systemctl restart messagebus)
+        then
+            log "--> ERROR: Failed to restart messagebus service."
+            return 106
+        fi
+
+        log "--> Enabling and starting sssd service..."
+        if ! (systemctl enable sssd --now)
+        then
+            log "--> ERROR: Failed to start sssd service."
+            return 106
+        fi
+    fi
+}
+
+# Open up firewall for PCoIP Agent. By default eth0 is in firewall zone "public"
+update_firewall() {
+    log "--> Adding 'pcoip-agent' service to public firewall zone..."
+    firewall-offline-cmd --zone=public --add-service=pcoip-agent
+    systemctl enable firewalld
+    systemctl start firewalld
+}
+
+setup_ssm() {
+    yum install -y https://s3.$AWS_REGION.amazonaws.com/amazon-ssm-$AWS_REGION/latest/linux_amd64/amazon-ssm-agent.rpm
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+
+    # According to https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent-technical-details.html#ssm-user-account, 
+    # the ssm agent supposed to create ssm-user account with root permissions, but the ssm agent occasionally doesn't assign ssm-user
+    # with root permissions in centos vms and it results in ssm-user not able to use sudo commands, so we assign root permissions to 
+    # ssm-users by creating /etc/sudoers.d/ssm-agent-users and add ssm-user to it as a workaround, please see the following link for more info:
+    # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-ssm-user-permissions.html#ssm-user-permissions-linux
+    cat << EOF > /etc/sudoers.d/ssm-agent-users
+# User rules for ssm-user
+ssm-user ALL=(ALL) NOPASSWD:ALL
+EOF
+}
+
+if (rpm -q pcoip-agent-standard); then
+    exit
+fi
+
+if [[ ! -f "$LOG_FILE" ]]
+then
+    mkdir -p "$(dirname $LOG_FILE)"
+    touch "$LOG_FILE"
+    chmod +644 "$LOG_FILE"
+fi
+
+# Print all executed commands to the terminal
+set -x
+
+# Redirect stdout and stderr to the log file
+exec &>>$LOG_FILE
+
+log "$(date) Running $0 as $(whoami)..."
+
+# EPEL needed for GraphicsMagick-c++, required by PCoIP Agent
+yum -y install epel-release
+yum -y update
+yum install -y awscli jq
+
+if [[ "$CLOUDWATCH_ENABLE" == "true" ]]
+then
+    setup_cloudwatch
+fi
+
+check_required_vars
+
+update_hostname
+
+# Install GNOME and set it as the desktop
+log "--> Installing Linux GUI..."
+yum -y groupinstall "Server with GUI" "Graphical Administration Tools"
+# yum -y groupinstall "Server with GUI"
+
+log "--> Setting default to graphical target..."
+systemctl set-default graphical.target
+
+join_domain
+
+if (rpm -q pcoip-agent-standard)
+then
+    log "--> pcoip-agent-standard is already installed."
+else
+    install_pcoip_agent
+fi
+
+set +x
+if [[ -z "$PCOIP_REGISTRATION_CODE" ]]
+then
+    log "--> No PCoIP Registration Code provided. Skipping PCoIP agent registration..."
+else
+    register_pcoip_agent
+fi
+set -x
+
+update_firewall
+
+if [[ "$AWS_SSM_ENABLE" == "true" ]]
+then
+    setup_ssm
+fi
+
+if [[ "$AUTO_LOGOFF_ENABLE" == "true" ]]
+then
+    install_auto_logoff
+fi
+
+install_idle_shutdown
+
+log "--> Installation is complete!"
+
+exit_and_restart
