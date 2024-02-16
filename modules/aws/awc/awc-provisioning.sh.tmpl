@@ -1,4 +1,4 @@
-# © Copyright 2022-2023 HP Development Company, L.P.
+# © Copyright 2022-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -33,7 +33,7 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
 
 AWC_BIN_PATH="/usr/local/bin/anyware-connector"
-AWC_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager/cfg/setup/bash.rpm.sh"
+AWC_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/anyware-manager/cfg/setup/bash.rpm.sh"
 AWC_INSTALL_LOG="/var/log/teradici/awc-install.log"
 CONNECTOR_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 
@@ -385,6 +385,9 @@ configure_awc() {
         log "--> Exiting provisioning script due to an error."
         exit 1
     fi
+
+    # This command explicitly sets the external PCoIP IP address since sometimes there's an issue with it retrieiving its own IP address via the PCoIP IP Anyware Manager API.
+    /usr/local/bin/anyware-connector configure --external-pcoip-ip=$(curl -s http://checkip.amazonaws.com)
 
     log "--> Successfully configured Anyware Connector."
 }

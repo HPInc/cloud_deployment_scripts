@@ -1,4 +1,4 @@
-# Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
+# Copyright Teradici Corporation 2019-2021;  © Copyright 2022-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -31,7 +31,7 @@ LOG_FILE="/var/log/teradici/provisioning.log"
 METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
 METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
 DECRYPT_URI="https://cloudkms.googleapis.com/v1/$KMS_CRYPTOKEY_ID:decrypt"
-TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.teradici.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
+TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
     local message="$1"
