@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Teradici Corporation
+# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -36,7 +36,7 @@ then
 
     if [[ ! $(which aws) ]]
     then
-        # Install AWS CLI directly since it might not be in some Yum Repo (eg. CentOS 8)
+        # Install AWS CLI directly since it might not be in some Yum Repo (eg. Rocky 8)
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
         unzip awscliv2.zip
         ./aws/install

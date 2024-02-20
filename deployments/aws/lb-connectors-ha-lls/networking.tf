@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021; © Copyright 2021-2023 HP Development Company, L.P
+ * Copyright Teradici Corporation 2020-2021; © Copyright 2021-2024 HP Development Company, L.P
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -748,7 +748,7 @@ resource "aws_network_acl" "nacls-ws" {
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [aws_subnet.ws-subnet.id]
 
-  # allow-ssh for centos
+  # allow-ssh for rocky
   dynamic "ingress" {
     for_each = var.enable_ssh ? local.allowed_admin_cidrs : []
 
