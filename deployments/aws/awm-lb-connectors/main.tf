@@ -248,8 +248,8 @@ module "awc" {
 
   rocky_gfx_instance_count = var.rocky_gfx_instance_count
   rocky_std_instance_count = var.rocky_std_instance_count
-  win_gfx_instance_count    = var.win_gfx_instance_count
-  win_std_instance_count    = var.win_std_instance_count
+  win_gfx_instance_count   = var.win_gfx_instance_count
+  win_std_instance_count   = var.win_std_instance_count
 }
 
 resource "aws_lb_target_group_attachment" "awc-tg-attachment" {

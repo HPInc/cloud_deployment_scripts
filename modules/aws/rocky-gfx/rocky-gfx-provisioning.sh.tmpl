@@ -340,6 +340,7 @@ join_domain() {
     local dns_record_file="dns_record"
     local domain_upper=$(echo "$DOMAIN_NAME" | tr '[:lower:]' '[:upper:]')
     local ip_address=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
+    
     if [[ ! -f "$dns_record_file" ]]
     then
         log "--> DOMAIN NAME: $DOMAIN_NAME"
