@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -46,7 +46,7 @@ variable "az_id_exclude_list" {
 }
 
 # NetBIOS name is limited to 15 characters. 10 characters are reserved for workstation type
-# and number of instance. e.g. -scent-999. So the max length for prefix is 5 characters.
+# and number of instance. e.g. -srock-999. So the max length for prefix is 5 characters.
 variable "prefix" {
   description = "Prefix to add to name of new resources. Must be <= 5 characters."
   default     = ""
@@ -370,66 +370,66 @@ variable "win_std_pcoip_agent_version" {
   default     = "latest"
 }
 
-variable "centos_gfx_instance_count" {
-  description = "Number of CentOS Graphics Workstations"
+variable "rocky_gfx_instance_count" {
+  description = "Number of Rocky Linux 8 Graphics Workstations"
   default     = 0
 }
 
-variable "centos_gfx_instance_name" {
-  description = "Name for CentOS Graphics Workstations"
-  default     = "gcent"
+variable "rocky_gfx_instance_name" {
+  description = "Name for Rocky Linux 8 Graphics Workstations"
+  default     = "grock"
 }
 
 # G4s are Tesla T4s
 # G3s are M60
-variable "centos_gfx_instance_type" {
-  description = "Instance type for the CentOS Graphics Workstations"
+variable "rocky_gfx_instance_type" {
+  description = "Instance type for the Rocky Linux 8 Graphics Workstations"
   default     = "g4dn.xlarge"
 }
 
-variable "centos_gfx_disk_size_gb" {
-  description = "Disk size (GB) of the CentOS Graphics Workstations"
+variable "rocky_gfx_disk_size_gb" {
+  description = "Disk size (GB) of the Rocky Linux 8 Graphics Workstations"
   default     = "50"
 }
 
-variable "centos_gfx_ami_owner" {
-  description = "Owner of AMI for the CentOS Graphics Workstations"
-  default     = "125523088429"
+variable "rocky_gfx_ami_owner" {
+  description = "Owner of AMI for the Rocky Linux 8 Graphics Workstations"
+  default     = "792107900819"
 }
 
-variable "centos_gfx_ami_name" {
-  description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS Linux 7 x86_64 - 2211"
+variable "rocky_gfx_ami_name" {
+  description = "Name of the Rocky Linux 8 AMI to create workstation from"
+  default     = "Rocky-8-EC2-Base-8.8-20230518.0.x86_64"
 }
 
-variable "centos_std_instance_count" {
-  description = "Number of CentOS Standard Workstations"
+variable "rocky_std_instance_count" {
+  description = "Number of Rocky Linux 8 Standard Workstations"
   default     = 0
 }
 
-variable "centos_std_instance_name" {
-  description = "Name for CentOS Standard Workstations"
-  default     = "scent"
+variable "rocky_std_instance_name" {
+  description = "Name for Rocky Linux 8 Standard Workstations"
+  default     = "srock"
 }
 
-variable "centos_std_instance_type" {
-  description = "Instance type for the CentOS Standard Workstations"
+variable "rocky_std_instance_type" {
+  description = "Instance type for the Rocky Linux 8 Standard Workstations"
   default     = "t3.xlarge"
 }
 
-variable "centos_std_disk_size_gb" {
-  description = "Disk size (GB) of the CentOS Standard Workstations"
+variable "rocky_std_disk_size_gb" {
+  description = "Disk size (GB) of the Rocky Linux 8 Standard Workstations"
   default     = "50"
 }
 
-variable "centos_std_ami_owner" {
-  description = "Owner of AMI for the CentOS Standard Workstations"
-  default     = "125523088429"
+variable "rocky_std_ami_owner" {
+  description = "Owner of AMI for the Rocky Linux 8 Standard Workstations"
+  default     = "792107900819"
 }
 
-variable "centos_std_ami_name" {
-  description = "Name of the CentOS AMI to create workstation from"
-  default     = "CentOS Linux 7 x86_64 - 2211"
+variable "rocky_std_ami_name" {
+  description = "Name of the Rocky Linux 8 AMI to create workstation from"
+  default     = "Rocky-8-EC2-Base-8.8-20230518.0.x86_64"
 }
 
 

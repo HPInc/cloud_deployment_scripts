@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
+ * © Copyright 2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,7 +17,7 @@ variable "prefix" {
 
 variable "instance_name" {
   description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
-  default     = "gcent"
+  default     = "grock"
 }
 
 variable "pcoip_registration_code_id" {
@@ -82,7 +82,7 @@ variable "enable_public_ip" {
 }
 
 variable "instance_count" {
-  description = "Number of CentOS Graphics Workstations to deploy"
+  description = "Number of Rocky Graphics Workstations to deploy"
   default     = 1
 }
 
@@ -98,12 +98,12 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the Workstation"
-  default     = "125523088429"
+  default     = "792107900819"
 }
 
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  default     = "CentOS 7*x86_64"
+  default     = "Rocky-8-ec2*x86_64*"
 }
 
 variable "admin_ssh_key_name" {
@@ -118,7 +118,7 @@ variable "teradici_download_token" {
 
 variable "nvidia_driver_url" {
   description = "URL of NVIDIA GRID driver"
-  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-14.1/NVIDIA-Linux-x86_64-510.73.08-grid-aws.run"
+  default     = "https://s3.amazonaws.com/ec2-linux-nvidia-drivers/grid-16.0/NVIDIA-Linux-x86_64-535.54.03-grid-aws.run"
 }
 
 variable "auto_logoff_enable" {

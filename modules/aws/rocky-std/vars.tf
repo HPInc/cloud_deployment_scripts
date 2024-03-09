@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
+ * © Copyright 2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,7 +17,7 @@ variable "prefix" {
 
 variable "instance_name" {
   description = "Basename of hostname of the workstation. Hostname will be <prefix>-<name>-<number>. Lower case only."
-  default     = "scent"
+  default     = "srock"
 }
 
 variable "pcoip_registration_code_id" {
@@ -82,7 +82,7 @@ variable "enable_public_ip" {
 }
 
 variable "instance_count" {
-  description = "Number of CentOS Standard Workstations to deploy"
+  description = "Number of Rocky Standard Workstations to deploy"
   default     = 1
 }
 
@@ -98,12 +98,12 @@ variable "disk_size_gb" {
 
 variable "ami_owner" {
   description = "Owner of AMI for the Workstation"
-  default     = "125523088429"
+  default     = "792107900819"
 }
 
 variable "ami_name" {
   description = "Name of the AMI to create Workstation from"
-  default     = "CentOS 7*x86_64"
+  default     = "Rocky-8-ec2*x86_64*"
 }
 
 variable "admin_ssh_key_name" {

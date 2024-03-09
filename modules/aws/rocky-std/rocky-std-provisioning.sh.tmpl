@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Teradici Corporation 2020-2021;  © Copyright 2022-2024 HP Development Company, L.P.
+# © Copyright 2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -230,6 +230,9 @@ install_idle_shutdown() {
 # Join domain
 join_domain() {
     local dns_record_file="dns_record"
+    local domain_upper=$(echo "$DOMAIN_NAME" | tr '[:lower:]' '[:upper:]')
+    local ip_address=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
+    
     if [[ ! -f "$dns_record_file" ]]
     then
         log "--> DOMAIN NAME: $DOMAIN_NAME"
@@ -253,7 +256,7 @@ join_domain() {
 
         # Join domain
         log "--> Installing required packages to join domain..."
-        yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python
+        yum -y install sssd realmd oddjob oddjob-mkhomedir adcli samba-common samba-common-tools krb5-workstation openldap-clients policycoreutils-python-utils
 
         log "--> Joining the domain '$DOMAIN_NAME'..."
         local retries=10
@@ -261,7 +264,9 @@ join_domain() {
         set +x
         while true
         do
-            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="$AD_SERVICE_ACCOUNT_USERNAME@$DOMAIN_NAME" "$DOMAIN_NAME" --verbose >&2
+            # Realm join with upper-case domain name fix the problem of "Failed to join the domain"
+            # By convention, domain name should be upper-case letters. https://web.mit.edu/kerberos/krb5-1.12/doc/admin/realm_config.html#realm-name
+            echo "$AD_SERVICE_ACCOUNT_PASSWORD" | realm join --user="$AD_SERVICE_ACCOUNT_USERNAME@$domain_upper" "$DOMAIN_NAME" --verbose >&2
 
             if [[ $? -eq 0 ]]
             then
@@ -285,19 +290,20 @@ join_domain() {
         echo "%$DOMAIN_NAME\\\\Domain\\ Admins ALL=(ALL) ALL" > /etc/sudoers.d/sudoers
 
         log "--> Registering with DNS..."
-        DOMAIN_UPPER=$(echo "$DOMAIN_NAME" | tr '[:lower:]' '[:upper:]')
-        IP_ADDRESS=$(hostname -I | grep -Eo '10.([0-9]*\.){2}[0-9]*')
         set +x
-        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "$AD_SERVICE_ACCOUNT_USERNAME"@"$DOMAIN_UPPER"
+        echo "$AD_SERVICE_ACCOUNT_PASSWORD" | kinit "$AD_SERVICE_ACCOUNT_USERNAME"@"$domain_upper"
         set -x
         touch "$dns_record_file"
         echo "server $DOMAIN_CONTROLLER_IP" > "$dns_record_file"
-        echo "update add $VM_NAME.$DOMAIN_NAME 600 a $IP_ADDRESS" >> "$dns_record_file"
+        echo "update add $VM_NAME.$DOMAIN_NAME 600 a $ip_address" >> "$dns_record_file"
         echo "send" >> "$dns_record_file"
-        nsupdate -g "$dns_record_file" > /var/sky
+        nsupdate -g "$dns_record_file"
 
         log "--> Configuring settings..."
-        sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute' /etc/sssd/sssd.conf
+        # ad_gpo_map_permit = +pcoip-session is a workaround to fix Linux session start failures with SSSD based on: 
+        # - Release Notes for Standard Agent for Linux 23.12.2, error 94517
+        # - https://docs.teradici.com/knowledge/error-6405-pcoip-agent-failed-to-launch-the-remote-session 
+        sed -i '$ a\dyndns_update = True\ndyndns_ttl = 3600\ndyndns_refresh_interval = 43200\ndyndns_update_ptr = True\nldap_user_principal = nosuchattribute\nad_gpo_map_permit = +pcoip-session' /etc/sssd/sssd.conf
         sed -c -i "s/\\(use_fully_qualified_names *= *\\).*/\\1False/" /etc/sssd/sssd.conf
         sed -c -i "s/\\(fallback_homedir *= *\\).*/\\1\\/home\\/%u/" /etc/sssd/sssd.conf
 
@@ -333,7 +339,7 @@ setup_ssm() {
 
     # According to https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent-technical-details.html#ssm-user-account, 
     # the ssm agent supposed to create ssm-user account with root permissions, but the ssm agent occasionally doesn't assign ssm-user
-    # with root permissions in centos vms and it results in ssm-user not able to use sudo commands, so we assign root permissions to 
+    # with root permissions in Rocky vms and it results in ssm-user not able to use sudo commands, so we assign root permissions to 
     # ssm-users by creating /etc/sudoers.d/ssm-agent-users and add ssm-user to it as a workaround, please see the following link for more info:
     # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-ssm-user-permissions.html#ssm-user-permissions-linux
     cat << EOF > /etc/sudoers.d/ssm-agent-users
@@ -377,7 +383,7 @@ update_hostname
 
 # Install GNOME and set it as the desktop
 log "--> Installing Linux GUI..."
-yum -y groupinstall "GNOME Desktop" "Graphical Administration Tools"
+yum -y groupinstall "Server with GUI" "Graphical Administration Tools"
 # yum -y groupinstall "Server with GUI"
 
 log "--> Setting default to graphical target..."

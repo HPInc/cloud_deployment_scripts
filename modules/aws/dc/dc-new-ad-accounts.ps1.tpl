@@ -1,4 +1,4 @@
-# Copyright 2023 HP Development Company, L.P.
+# Copyright 2023-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -48,7 +48,7 @@ do {
     }
 } while ($Retry)
 
-# Service account needs to be in Domain Admins group for realm join to work on CentOS
+# Service account needs to be in Domain Admins group for realm join to work on Rocky
 Add-ADGroupMember -Identity "Domain Admins" -Members "${ad_service_account_username}"
 
 if ("${csv_file}" -ne "") {

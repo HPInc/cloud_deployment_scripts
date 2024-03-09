@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
+ * © Copyright 2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,10 +12,10 @@ locals {
   # where xyz is number of instances (0-999)
   host_name = substr("${local.prefix}${var.instance_name}", 0, 11)
 
-  provisioning_script = "centos-std-provisioning.sh"
+  provisioning_script = "rocky-std-provisioning.sh"
 }
 
-resource "aws_s3_object" "centos-std-provisioning-script" {
+resource "aws_s3_object" "rocky-std-provisioning-script" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
   key    = local.provisioning_script
@@ -78,14 +78,14 @@ data "aws_iam_policy_document" "instance-assume-role-policy-doc" {
   }
 }
 
-resource "aws_iam_role" "centos-std-role" {
+resource "aws_iam_role" "rocky-std-role" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name               = "${local.prefix}centos_std_role"
+  name               = "${local.prefix}rocky_std_role"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy-doc.json
 }
 
-data "aws_iam_policy_document" "centos-std-policy-doc" {
+data "aws_iam_policy_document" "rocky-std-policy-doc" {
   statement {
     actions   = ["ec2:DescribeTags"]
     resources = ["*"]
@@ -137,19 +137,19 @@ data "aws_iam_policy_document" "centos-std-policy-doc" {
   }
 }
 
-resource "aws_iam_role_policy" "centos-std-role-policy" {
+resource "aws_iam_role_policy" "rocky-std-role-policy" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name   = "${local.prefix}centos_std_role_policy"
-  role   = aws_iam_role.centos-std-role[0].id
-  policy = data.aws_iam_policy_document.centos-std-policy-doc.json
+  name   = "${local.prefix}rocky_std_role_policy"
+  role   = aws_iam_role.rocky-std-role[0].id
+  policy = data.aws_iam_policy_document.rocky-std-policy-doc.json
 }
 
-resource "aws_iam_instance_profile" "centos-std-instance-profile" {
+resource "aws_iam_instance_profile" "rocky-std-instance-profile" {
   count = tonumber(var.instance_count) == 0 ? 0 : 1
 
-  name = "${local.prefix}centos_std_instance_profile"
-  role = aws_iam_role.centos-std-role[0].name
+  name = "${local.prefix}rocky_std_instance_profile"
+  role = aws_iam_role.rocky-std-role[0].name
 }
 
 resource "aws_cloudwatch_log_group" "instance-log-group" {
@@ -164,7 +164,7 @@ resource "time_sleep" "delay_destroy_log_group" {
   destroy_duration = "5s"
 }
 
-resource "aws_instance" "centos-std" {
+resource "aws_instance" "rocky-std" {
   # wait 5 seconds before deleting the log group to account for delays in 
   # Cloudwatch receiving the last messages before an EC2 instance is shut down
   depends_on = [time_sleep.delay_destroy_log_group]
@@ -186,7 +186,7 @@ resource "aws_instance" "centos-std" {
 
   key_name = var.admin_ssh_key_name
 
-  iam_instance_profile = aws_iam_instance_profile.centos-std-instance-profile[0].name
+  iam_instance_profile = aws_iam_instance_profile.rocky-std-instance-profile[0].name
 
   user_data = data.template_file.user-data.rendered
 
@@ -213,7 +213,7 @@ resource "aws_cloudwatch_dashboard" "main" {
                 "region": "${var.aws_region}",
                 "title": "CPU Utilization (%)",
                 "metrics": [
-                    [ "AWS/EC2", "CPUUtilization", "InstanceId", "${aws_instance.centos-std[count.index].id}"]
+                    [ "AWS/EC2", "CPUUtilization", "InstanceId", "${aws_instance.rocky-std[count.index].id}"]
                 ],
                 "view": "timeSeries",
                 "stat": "Average",

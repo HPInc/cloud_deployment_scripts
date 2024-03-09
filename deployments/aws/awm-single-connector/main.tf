@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -166,10 +166,10 @@ module "awc" {
   cloudwatch_enable       = var.cloudwatch_enable
   cloudwatch_setup_script = local.cloudwatch_setup_rpm_script
 
-  centos_gfx_instance_count = var.centos_gfx_instance_count
-  centos_std_instance_count = var.centos_std_instance_count
-  win_gfx_instance_count    = var.win_gfx_instance_count
-  win_std_instance_count    = var.win_std_instance_count
+  rocky_gfx_instance_count = var.rocky_gfx_instance_count
+  rocky_std_instance_count = var.rocky_std_instance_count
+  win_gfx_instance_count   = var.win_gfx_instance_count
+  win_std_instance_count   = var.win_std_instance_count
 }
 
 module "win-gfx" {
@@ -264,8 +264,8 @@ module "win-std" {
   depends_on = [aws_nat_gateway.nat]
 }
 
-module "centos-gfx" {
-  source = "../../../modules/aws/centos-gfx"
+module "rocky-gfx" {
+  source = "../../../modules/aws/rocky-gfx"
 
   prefix = var.prefix
 
@@ -298,13 +298,13 @@ module "centos-gfx" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  instance_count = var.centos_gfx_instance_count
-  instance_name  = var.centos_gfx_instance_name
-  instance_type  = var.centos_gfx_instance_type
-  disk_size_gb   = var.centos_gfx_disk_size_gb
+  instance_count = var.rocky_gfx_instance_count
+  instance_name  = var.rocky_gfx_instance_name
+  instance_type  = var.rocky_gfx_instance_type
+  disk_size_gb   = var.rocky_gfx_disk_size_gb
 
-  ami_owner = var.centos_gfx_ami_owner
-  ami_name  = var.centos_gfx_ami_name
+  ami_owner = var.rocky_gfx_ami_owner
+  ami_name  = var.rocky_gfx_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 
@@ -316,8 +316,8 @@ module "centos-gfx" {
   depends_on = [aws_nat_gateway.nat]
 }
 
-module "centos-std" {
-  source = "../../../modules/aws/centos-std"
+module "rocky-std" {
+  source = "../../../modules/aws/rocky-std"
 
   prefix = var.prefix
 
@@ -350,13 +350,13 @@ module "centos-std" {
   idle_shutdown_minutes_idle_before_shutdown = var.idle_shutdown_minutes_idle_before_shutdown
   idle_shutdown_polling_interval_minutes     = var.idle_shutdown_polling_interval_minutes
 
-  instance_count = var.centos_std_instance_count
-  instance_name  = var.centos_std_instance_name
-  instance_type  = var.centos_std_instance_type
-  disk_size_gb   = var.centos_std_disk_size_gb
+  instance_count = var.rocky_std_instance_count
+  instance_name  = var.rocky_std_instance_name
+  instance_type  = var.rocky_std_instance_type
+  disk_size_gb   = var.rocky_std_disk_size_gb
 
-  ami_owner = var.centos_std_ami_owner
-  ami_name  = var.centos_std_ami_name
+  ami_owner = var.rocky_std_ami_owner
+  ami_name  = var.rocky_std_ami_name
 
   admin_ssh_key_name = local.admin_ssh_key_name
 

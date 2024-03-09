@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright Teradici Corporation 2021;  © Copyright 2023 HP Development Company, L.P.
+# Copyright Teradici Corporation 2021;  © Copyright 2023-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -57,7 +57,7 @@ ROLE_POLICY_DOCUMENT = os.path.join(QUICKSTART_PATH, 'awm-power-manage-role-poli
 AWS_USER_POLICY_ARN  = "arn:aws:iam::aws:policy/AdministratorAccess"
 
 # Types of workstations
-WS_TYPES = ['scent', 'gcent', 'swin', 'gwin']
+WS_TYPES = ['srock', 'grock', 'swin', 'gwin']
 
 def ensure_requirements():
     ensure_required_packages()
@@ -345,8 +345,8 @@ if __name__ == '__main__':
         'admin_ssh_pub_key_file':         SSH_KEY_PATH + '.pub',
         'win_gfx_instance_count':         cfg_data.get('gwin'),
         'win_std_instance_count':         cfg_data.get('swin'),
-        'centos_gfx_instance_count':      cfg_data.get('gcent'),
-        'centos_std_instance_count':      cfg_data.get('scent'),
+        'rocky_gfx_instance_count':       cfg_data.get('grock'),
+        'rocky_std_instance_count':       cfg_data.get('srock'),
         'pcoip_registration_code':        cfg_data.get('reg_code'),
         'awm_deployment_sa_file':         AWM_DEPLOYMENT_SA_KEY_PATH,
         'prefix':                         PREFIX,
