@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Teradici Corporation; © Copyright 2023 HP Development Company, L.P.
+ * Copyright (c) 2020 Teradici Corporation; © Copyright 2023-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,6 +26,7 @@ resource "google_storage_bucket_object" "awm-provisioning-script" {
     "${path.module}/${local.provisioning_script}.tmpl",
     {
       awm_deployment_sa_file     = var.awm_deployment_sa_file,
+      awm_deployment_sa_file_id  = var.awm_deployment_sa_file_id,
       awm_admin_password_id      = var.awm_admin_password_id,
       awm_repo_channel           = var.awm_repo_channel,
       awm_setup_script           = local.awm_setup_script,

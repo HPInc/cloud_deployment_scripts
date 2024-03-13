@@ -7,6 +7,7 @@
 
 ##### Template Variables #####
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AD_SERVICE_ACCOUNT_PASSWORD_ID=${ad_service_account_password_id}
 AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
 AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
 AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=${auto_logoff_minutes_idle_before_logoff}
@@ -21,13 +22,10 @@ IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_s
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
 OPS_SETUP_SCRIPT=${ops_setup_script}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
-
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 
 LOG_FILE="/var/log/teradici/provisioning.log"
 TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
-
-AD_SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret=${ad_service_account_password_id} --format="get(payload.data)" | base64 -d)
-PCOIP_REGISTRATION_CODE=$(gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | base64 -d)
 
 log() {
     local message="$1"
@@ -81,6 +79,20 @@ setup_ops() {
             "/var/log/pcoip-agent/session-launcher.log" \
             "/var/log/yum.log"
     fi
+}
+
+get_credentials() {
+    set +x
+    retry 20 `# 20 retries`\
+          30 `# 30s interval` \
+          "AD_SERVICE_ACCOUNT_PASSWORD=\$(gcloud secrets versions access latest --secret=$AD_SERVICE_ACCOUNT_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download AD Service Account Password from Secret Manager"
+    
+    retry 20 `# 20 retries`\
+          30 `# 30s interval` \
+          "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download AD Service Account Password from Secret Manager"
+    set -x
 }
 
 check_required_vars() {
@@ -335,6 +347,8 @@ if [[ "$GCP_OPS_AGENT_ENABLE" == "true" ]]
 then
     setup_ops
 fi
+
+get_credentials
 
 check_required_vars
 

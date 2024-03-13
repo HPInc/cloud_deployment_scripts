@@ -5,8 +5,9 @@
 
 $BASE_DIR = "C:\Teradici"
 $LOG_FILE = "$BASE_DIR\provisioning.log"
+$ADMIN_PASSWORD_ID = "${admin_password_id}"
 
-$admin_password = & gcloud secrets versions access latest --secret=${admin_password_id} --format="get(payload.data)" |
+$ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
 ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 Start-Transcript -path $LOG_FILE -append
@@ -15,4 +16,4 @@ Start-Transcript -path $LOG_FILE -append
 # Adding TLS 1.2 for Invoke-RestMethod
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-net user Administrator $admin_password /active:yes
+net user Administrator $ADMIN_PASSWORD /active:yes

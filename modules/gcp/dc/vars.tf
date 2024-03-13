@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,12 +22,6 @@ variable "domain_name" {
 
 variable "admin_password_id" {
   description = "Secrets Manager ARN for Password of the Administrator of the Domain Controller"
-  type        = string
-  sensitive   = true
-}
-
-variable "admin_password" {
-  description = "Password for the Administrator of the Domain Controller"
   type        = string
   sensitive   = true
 }

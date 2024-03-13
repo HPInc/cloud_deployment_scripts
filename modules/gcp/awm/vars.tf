@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -27,7 +27,12 @@ variable "bucket_name" {
 }
 
 variable "awm_deployment_sa_file" {
-  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
+  description = "Location of Anyware Manager Deployment Service Account JSON file"
+  type        = string
+}
+
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON file"
   type        = string
 }
 
@@ -95,12 +100,6 @@ variable "awm_admin_user" {
 variable "awm_admin_ssh_pub_key_file" {
   description = "SSH public key for the Anyware Manager Administrator"
   type        = string
-}
-
-variable "awm_admin_password" {
-  description = "Password for the Administrator of Anyware Manager"
-  type        = string
-  sensitive   = true
 }
 
 variable "awm_admin_password_id" {

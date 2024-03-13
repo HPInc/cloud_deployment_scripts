@@ -5,6 +5,8 @@
 
 ##### Template Variables #####
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$AD_SERVICE_ACCOUNT_PASSWORD_ID = "${ad_service_account_password_id}"
+$ADMIN_PASSWORD_ID              = "${admin_password_id}"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
@@ -12,22 +14,22 @@ $IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
-$OPS_SETUP_SCRIPT            = "${ops_setup_script}"
-$PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
-
+$OPS_SETUP_SCRIPT               = "${ops_setup_script}"
+$PCOIP_AGENT_VERSION            = "${pcoip_agent_version}"
+$PCOIP_REGISTRATION_CODE_ID     = "${pcoip_registration_code_id}"
+$TERADICI_DOWNLOAD_TOKEN        = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$admin_password = & gcloud secrets versions access latest --secret=${admin_password_id} --format="get(payload.data)" |
+$admin_password = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
 ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
-$pcoip_registration_code = & gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | 
+$pcoip_registration_code = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
 ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
-$ad_service_account_password = & gcloud secrets versions access latest --secret=${ad_service_account_password_id} --format="get(payload.data)" |
+$ad_service_account_password = & gcloud secrets versions access latest --secret=$AD_SERVICE_ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
 ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 $global:restart = $false
@@ -297,7 +299,7 @@ Start-Transcript -path $LOG_FILE -append
 
 if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
     Setup-Ops
-} 
+}
 
 "--> Script running as user '$(whoami)'."
 

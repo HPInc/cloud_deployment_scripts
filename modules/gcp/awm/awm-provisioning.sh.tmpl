@@ -6,15 +6,18 @@
 #!/bin/bash
 
 ##### Template Variables #####
+AWM_ADMIN_PASSWORD_ID=${awm_admin_password_id}
 AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_DEPLOYMENT_SA_FILE_ID=${awm_deployment_sa_file_id}
 AWM_REPO_CHANNEL=${awm_repo_channel}
 AWM_SETUP_SCRIPT=${awm_setup_script}
 BUCKET_NAME=${bucket_name}
 GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
 GCP_SA_FILE=${gcp_sa_file}
+GCP_SA_FILE_ID=${gcp_sa_file_id}
 OPS_SETUP_SCRIPT=${ops_setup_script}
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
-
 LOG_FILE="/var/log/teradici/provisioning.log"
 
 INSTALL_DIR="/root"
@@ -23,12 +26,6 @@ AWM_DEPLOYMENT_NAME="terraform-deployment"
 AWM_INSTALL_LOG="/var/log/teradici/awm-install.log"
 AWM_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/$AWM_REPO_CHANNEL/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
-
-PCOIP_REGISTRATION_CODE=$(gcloud secrets versions access latest --secret=${pcoip_registration_code_id} --format="get(payload.data)" | base64 -d)
-AWM_ADMIN_PASSWORD=$(gcloud secrets versions access latest --secret=${awm_admin_password_id} --format="get(payload.data)" | base64 -d)
-encodedValue=$(gcloud secrets versions access latest --secret=${gcp_sa_file_id} --format="get(payload.data)" | base64 -d)
-decodedValue=$(echo "$encodedValue" | base64 -d)
-echo "$decodedValue" > "$GCP_SA_FILE"
 
 log() {
     local message="$1"
@@ -86,6 +83,25 @@ setup_ops() {
     fi
 }
 
+get_credentials() {
+    set +x
+    retry 20 `# 20 retries`\
+          30 `# 30s interval` \
+          "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download PCOIP Registration Code from Secret Manager"
+
+    retry 20 `# 20 retries`\
+          30 `# 30s interval` \
+          "AWM_ADMIN_PASSWORD=\$(gcloud secrets versions access latest --secret=$AWM_ADMIN_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download AWM Admin Passowrd from Secret Manager"
+    
+    retry 10 `# 10 retries`\
+          30 `# 30s interval` \
+          "\$(gcloud secrets versions access latest --secret=$GCP_SA_FILE_ID > $INSTALL_DIR/$GCP_SA_FILE)" \
+          "--> ERROR: Failed to download GCP credentials file from Secret Manager"
+    set -x
+}
+
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
     dnf update -y
@@ -106,16 +122,6 @@ install_prereqs() {
     fi
 }
 
-get_credentials() {
-    if [ "$GCP_SA_FILE" ]
-    then
-        retry 720 `# 720 retries` \
-              10  `# 10s interval` \
-              "gsutil cp gs://$BUCKET_NAME/$GCP_SA_FILE $INSTALL_DIR" \
-              "--> ERROR: Failed to download GCP Service Account key from bucket $BUCKET_NAME."
-    fi
-}
-
 check_required_vars() {
     set +x
     
@@ -128,6 +134,11 @@ check_required_vars() {
     if [[ -z "$AWM_ADMIN_PASSWORD" ]]
     then
         log "--> ERROR: Missing Anyware Manager Administrator Password."
+        missing_vars="true"
+    fi
+
+    if [[ ! -s $INSTALL_DIR/$GCP_SA_FILE ]]; then 
+        log "--> ERROR: Missing AWM Deployment Service Account Key from Secret Manager."
         missing_vars="true"
     fi
     set -x
@@ -231,18 +242,20 @@ awm_setup() {
 }
 
 upload_dsa_key() {
-    log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
+    log "--> Uploading Deployment Service Account Key to Secret Manager..."
 
+    set +x
     retry 5 `# 5 retries`\
           5 `# 5s interval` \
-          "gsutil cp $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE gs://$BUCKET_NAME/" \
-          "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
+          "gcloud secrets versions add $AWM_DEPLOYMENT_SA_FILE_ID --data-file=$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE" \
+          "--> ERROR: Failed to upload Deployment Service Account Key to Secret Manager"
 
     if [ $? -ne 0 ]
     then
         log "--> Exiting provisioning script due to an error."
         exit 1
     fi
+    set -x
 }
 
 

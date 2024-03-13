@@ -1,4 +1,4 @@
-# Copyright 2023 HP Development Company, L.P.
+# Copyright 2023-2024 HP Development Company, L.P.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -10,6 +10,7 @@ $Elapsed = 0
 $BASE_DIR = "C:\Teradici"
 # Setup-CloudWatch will track this log file.
 $LOG_FILE = "$BASE_DIR\dc_new_ad_accounts.log"
+$ACCOUNT_PASSWORD_ID = "${account_password_id}"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -19,7 +20,7 @@ $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instanc
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
 
-$account_password = & gcloud secrets versions access latest --secret=${account_password_id} --format="get(payload.data)" |
+$account_password = & gcloud secrets versions access latest --secret=$ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
 ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 Start-Transcript -Path $LOG_FILE -Append
