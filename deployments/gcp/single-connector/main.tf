@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2021;  © Copyright 2021-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -23,77 +23,11 @@ resource "random_id" "bucket-name" {
   byte_length = 3
 }
 
-resource "google_secret_manager_secret" "dc_admin_password" {
-  secret_id = "dc_admin_password"
-  replication {
-    automatic = true
-  }
-}
-
-resource "google_secret_manager_secret_version" "dc_admin_password_value" {
-  secret = google_secret_manager_secret.dc_admin_password.id
-  secret_data = var.dc_admin_password
-}
-
-resource "google_secret_manager_secret" "safe_mode_admin_password" {
-  secret_id = "safe_mode_admin_password"
-  replication {
-    automatic = true
-  }
-}
-
-resource "google_secret_manager_secret_version" "safe_mode_admin_password_value" {
-  secret = google_secret_manager_secret.safe_mode_admin_password.id
-  secret_data = var.safe_mode_admin_password
-}
-
-resource "google_secret_manager_secret" "ad_service_account_password" {
-  secret_id = "ad_service_account_password"
-  replication {
-    automatic = true
-  }
-}
-
-resource "google_secret_manager_secret_version" "ad_service_account_password_value" {
-  secret = google_secret_manager_secret.ad_service_account_password.id
-  secret_data = var.ad_service_account_password
-}
-
-resource "google_secret_manager_secret" "pcoip_registration_code" {
-  secret_id = "pcoip_registration_code"
-  replication {
-    automatic = true
-  }
-}
-
-resource "google_secret_manager_secret_version" "pcoip_registration_code_value" {
-  secret = google_secret_manager_secret.pcoip_registration_code.id
-  secret_data = var.pcoip_registration_code
-}
-
-resource "google_secret_manager_secret" "awm_deployment_sa_file" {
-  secret_id = "awm_deployment_sa_file"
-  replication {
-    automatic = true
-  }
-}
-
-resource "google_secret_manager_secret_version" "awm_deployment_sa_file_value" {
-  secret = google_secret_manager_secret.awm_deployment_sa_file.id
-  secret_data = filebase64(var.awm_deployment_sa_file)
-}
-
 resource "google_storage_bucket" "scripts" {
   name          = local.bucket_name
   location      = var.gcp_region
   storage_class = "REGIONAL"
   force_destroy = true
-}
-
-resource "google_storage_bucket_object" "awm-deployment-sa-file" {
-  bucket = google_storage_bucket.scripts.name
-  name   = local.awm_deployment_sa_file
-  source = var.awm_deployment_sa_file
 }
 
 resource "google_storage_bucket_object" "ops-setup-linux-script" {
@@ -150,7 +84,6 @@ module "dc" {
 
   gcp_service_account            = local.gcp_service_account
   domain_name                    = var.domain_name
-  admin_password                 = var.dc_admin_password
   admin_password_id              = google_secret_manager_secret.dc_admin_password.secret_id
   safe_mode_admin_password_id    = google_secret_manager_secret.safe_mode_admin_password.secret_id
   ad_service_account_username    = var.ad_service_account_username
@@ -196,8 +129,8 @@ module "awc" {
   computers_dn                   = "dc=${replace(var.domain_name, ".", ",dc=")}"
   users_dn                       = "dc=${replace(var.domain_name, ".", ",dc=")}"
 
-  bucket_name            = google_storage_bucket.scripts.name
-  awm_deployment_sa_file = local.awm_deployment_sa_file
+  bucket_name               = google_storage_bucket.scripts.name
+  awm_deployment_sa_file    = local.awm_deployment_sa_file
   awm_deployment_sa_file_id = google_secret_manager_secret.awm_deployment_sa_file.secret_id
 
   gcp_region_list = [var.gcp_region]
@@ -225,11 +158,6 @@ module "awc" {
   ops_setup_script     = local.ops_linux_setup_script
 
   awc_extra_install_flags = var.awc_extra_install_flags
-
-  depends_on = [ 
-  google_secret_manager_secret.ad_service_account_password,
-  google_secret_manager_secret.awm_deployment_sa_file
-  ]
 }
 
 module "win-gfx" {
@@ -238,7 +166,6 @@ module "win-gfx" {
   prefix = var.prefix
 
   gcp_service_account = local.gcp_service_account
-
   
   pcoip_registration_code_id = google_secret_manager_secret.pcoip_registration_code.secret_id
   teradici_download_token    = var.teradici_download_token
@@ -264,7 +191,6 @@ module "win-gfx" {
     var.enable_rdp     ? [google_compute_firewall.allow-rdp[0].name]  : [],
     var.gcp_iap_enable ? [google_compute_firewall.allow-iap[0].name]  : [],
   )
-
 
   instance_count_list = [var.win_gfx_instance_count]
   instance_name       = var.win_gfx_instance_name
@@ -374,10 +300,7 @@ module "centos-gfx" {
   ws_admin_user             = var.centos_admin_user
   ws_admin_ssh_pub_key_file = var.centos_admin_ssh_pub_key_file
 
-  depends_on = [
-  google_compute_router_nat.nat,
-  google_secret_manager_secret.ad_service_account_password,
-  google_secret_manager_secret.pcoip_registration_code]
+  depends_on = [google_compute_router_nat.nat]
 }
 
 module "centos-std" {
@@ -428,8 +351,5 @@ module "centos-std" {
   ws_admin_user             = var.centos_admin_user
   ws_admin_ssh_pub_key_file = var.centos_admin_ssh_pub_key_file
 
-  depends_on = [
-  google_compute_router_nat.nat,
-  google_secret_manager_secret.ad_service_account_password,
-  google_secret_manager_secret.pcoip_registration_code]
+  depends_on = [google_compute_router_nat.nat]
 }
