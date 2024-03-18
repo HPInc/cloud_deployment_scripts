@@ -65,5 +65,7 @@ resource "google_secret_manager_secret" "awm_deployment_sa_file" {
 
 resource "google_secret_manager_secret_version" "awm_deployment_sa_file_value" {
   secret = google_secret_manager_secret.awm_deployment_sa_file.id
-  secret_data = file(var.awm_deployment_sa_file)
+
+  # Encoded to base64 to accommodate potential change of the credentials file to binary or other non-JSON format
+  secret_data = filebase64(var.awm_deployment_sa_file)
 }

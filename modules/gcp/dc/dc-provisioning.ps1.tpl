@@ -16,9 +16,11 @@ $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
 $PCOIP_REGISTRATION_CODE_ID  = "${pcoip_registration_code_id}"
+$PCOIP_REGISTRATION_CODE     = $null
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 $DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
 $SAFE_MODE_ADMIN_PASSWORD_ID = "${safe_mode_admin_password_id}"
+$SAFE_MODE_ADMIN_PASSWORD    = $null
 $LOG_FILE = "$BASE_DIR\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
@@ -32,12 +34,6 @@ $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
-
-$pcoip_registration_code = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
-ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-
-$safe_mode_admin_password = & gcloud secrets versions access latest --secret=$SAFE_MODE_ADMIN_PASSWORD_ID --format="get(payload.data)" |
-ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -72,6 +68,18 @@ function Setup-Ops {
                                                      "$BASE_DIR\provisioning.log"
                                                     
     }
+}
+
+function get_credentials(){
+  Retry -Action {
+    $script:PCOIP_REGISTRATION_CODE = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 60 -Attempts 120
+
+  Retry -Action {
+    $script:SAFE_MODE_ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$SAFE_MODE_ADMIN_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 60 -Attempts 120
 }
 
 function Get-AuthToken {
@@ -136,7 +144,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $pcoip_registration_code
+        & .\pcoip-register-host.ps1 -RegistrationCode $PCOIP_REGISTRATION_CODE
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -216,6 +224,11 @@ $LogPath = "C:\Logs"
 gcloud compute instances add-labels $instance_name --zone $zone_name --labels=$LABEL_NAME=step1of3_installing-domain-services
 
 "================================================================"
+"Get credentials from Secret Manager..."
+"================================================================"
+get_credentials
+
+"================================================================"
 "Installing AD-Domain-Services..."
 "================================================================"
 # Installs the AD DS server role and installs the AD DS and AD LDS server
@@ -227,7 +240,7 @@ Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 "Installing a new forest..."
 "================================================================"
 Install-ADDSForest -CreateDnsDelegation:$false `
-    -SafeModeAdministratorPassword (ConvertTo-SecureString $safe_mode_admin_password -AsPlainText -Force) `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString $SAFE_MODE_ADMIN_PASSWORD -AsPlainText -Force) `
     -DatabasePath $DatabasePath `
     -SysvolPath $SysvolPath `
     -DomainName $DomainName `

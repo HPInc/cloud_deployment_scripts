@@ -6,11 +6,41 @@
 $BASE_DIR = "C:\Teradici"
 $LOG_FILE = "$BASE_DIR\provisioning.log"
 $ADMIN_PASSWORD_ID = "${admin_password_id}"
+$ADMIN_PASSWORD    = $null
 
-$ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
-ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
+
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
+
+    if ($?) { return $rc }
+
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
+    }
+
+    Write-Information "--> Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
+}
+
+function get_credentials(){
+  Retry -Action {
+    $script:ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 60 -Attempts 120
+}
 
 Start-Transcript -path $LOG_FILE -append
+
+"================================================================"
+"Get credentials from Secret Manager..."
+"================================================================"
+get_credentials
 
 # Enforce TLS 1.2 as a precaution for deprecation of TLS prior versions
 # Adding TLS 1.2 for Invoke-RestMethod

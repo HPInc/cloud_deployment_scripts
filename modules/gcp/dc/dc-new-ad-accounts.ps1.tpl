@@ -11,6 +11,7 @@ $BASE_DIR = "C:\Teradici"
 # Setup-CloudWatch will track this log file.
 $LOG_FILE = "$BASE_DIR\dc_new_ad_accounts.log"
 $ACCOUNT_PASSWORD_ID = "${account_password_id}"
+$ACCOUNT_PASSWORD    = $null
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -20,12 +21,41 @@ $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instanc
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
 
-$account_password = & gcloud secrets versions access latest --secret=$ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
-ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
+
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
+
+    if ($?) { return $rc }
+
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
+    }
+
+    Write-Information "--> Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
+}
+
+function get_credentials(){
+  Retry -Action {
+    $script:ACCOUNT_PASSWORD = & gcloud secrets versions access latest --secret=$ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 60 -Attempts 120
+}
 
 Start-Transcript -Path $LOG_FILE -Append
 
 gcloud compute instances add-labels $instance_name --zone $zone_name --labels=${label_name}=step3of3_creating-new-ad-domain-admin-accounts
+
+"================================================================"
+"Get credentials from Secret Manager..."
+"================================================================"
+get_credentials
 
 "================================================================"
 "Creating new AD Domain Admin account ${account_name}..."
@@ -38,7 +68,7 @@ do {
             -UserPrincipalName "${account_name}@${domain_name}" `
             -Enabled $True `
             -PasswordNeverExpires $True `
-            -AccountPassword (ConvertTo-SecureString $account_password -AsPlainText -Force)
+            -AccountPassword (ConvertTo-SecureString $ACCOUNT_PASSWORD -AsPlainText -Force)
         "--> Added AD Domain Admin User $account_name"
     }
     Catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {

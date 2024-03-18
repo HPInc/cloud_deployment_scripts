@@ -19,6 +19,7 @@ OPS_SETUP_SCRIPT=${ops_setup_script}
 PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
 LOG_FILE="/var/log/teradici/provisioning.log"
+TEMP_BASE64_AWM_SA_FILE="temp_base64_awm_deployment_sa_file.txt"
 
 INSTALL_DIR="/root"
 AWM_DEPLOYMENT_KEY_NAME="terraform-key"
@@ -85,20 +86,28 @@ setup_ops() {
 
 get_credentials() {
     set +x
-    retry 20 `# 20 retries`\
-          30 `# 30s interval` \
+    retry 120 `# 120 retries`\
+          60 `# 60s interval` \
           "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
           "--> ERROR: Failed to download PCOIP Registration Code from Secret Manager"
 
-    retry 20 `# 20 retries`\
-          30 `# 30s interval` \
+    retry 120 `# 120 retries`\
+          60 `# 60s interval` \
           "AWM_ADMIN_PASSWORD=\$(gcloud secrets versions access latest --secret=$AWM_ADMIN_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
           "--> ERROR: Failed to download AWM Admin Passowrd from Secret Manager"
-    
-    retry 10 `# 10 retries`\
-          30 `# 30s interval` \
-          "\$(gcloud secrets versions access latest --secret=$GCP_SA_FILE_ID > $INSTALL_DIR/$GCP_SA_FILE)" \
+
+    retry 120 `# 120 retries`\
+          60 `# 60s interval` \
+          "gcp_sa_file_value_encoded=\$(gcloud secrets versions access latest --secret=$GCP_SA_FILE_ID)" \
           "--> ERROR: Failed to download GCP credentials file from Secret Manager"
+
+    if [ "$gcp_sa_file_value_encoded" != "" ]; then
+        gcp_sa_file_value_decoded=$(echo "$gcp_sa_file_value_encoded" | base64 -d)
+        echo "$gcp_sa_file_value_decoded" > "$INSTALL_DIR/$GCP_SA_FILE"
+    else
+        log "--> ERROR: Failed to retrieve GCP credentials file. Exiting provisioning script..."
+        exit 1
+    fi
     set -x
 }
 
@@ -245,9 +254,13 @@ upload_dsa_key() {
     log "--> Uploading Deployment Service Account Key to Secret Manager..."
 
     set +x
-    retry 5 `# 5 retries`\
-          5 `# 5s interval` \
-          "gcloud secrets versions add $AWM_DEPLOYMENT_SA_FILE_ID --data-file=$INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE" \
+
+    # Encoded to base64 to accommodate potential change of the credentials file to binary or other non-JSON format
+    base64 $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE > $INSTALL_DIR/$TEMP_BASE64_AWM_SA_FILE
+
+    retry 120 `# 120 retries`\
+          60 `# 60s interval` \
+          "gcloud secrets versions add $AWM_DEPLOYMENT_SA_FILE_ID --data-file=$INSTALL_DIR/$TEMP_BASE64_AWM_SA_FILE" \
           "--> ERROR: Failed to upload Deployment Service Account Key to Secret Manager"
 
     if [ $? -ne 0 ]
@@ -255,6 +268,8 @@ upload_dsa_key() {
         log "--> Exiting provisioning script due to an error."
         exit 1
     fi
+
+    rm $INSTALL_DIR/$TEMP_BASE64_AWM_SA_FILE
     set -x
 }
 
