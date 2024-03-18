@@ -28,12 +28,6 @@ $NVIDIA_DIR = "C:\Program Files\NVIDIA Corporation\NVSMI"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-graphics-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-graphics_$PCOIP_AGENT_VERSION.exe"
 
-$METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$METADATA_HEADERS.Add("Metadata-Flavor", "Google")
-
-$METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
-$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
-
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
 $DATA.Add("admin_password", "$ADMIN_PASSWORD  ")
@@ -59,17 +53,6 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
     Write-Information "--> Attempt $Current_Attempt failed. Retrying in $Interval seconds..." -InformationAction Continue
     Start-Sleep -Seconds $Interval
   }
-}
-
-function Get-AuthToken {
-    try {
-        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
-        return $response."access_token"
-    }
-    catch {
-        "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
 }
 
 function Setup-Ops {

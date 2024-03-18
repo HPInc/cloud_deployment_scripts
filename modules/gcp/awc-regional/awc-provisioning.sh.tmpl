@@ -33,9 +33,6 @@ AWC_TOKEN_FILE=$PROVISIONING_DIR/connector_token
 LOG_FILE="/var/log/teradici/provisioning.log"
 PROVISIONING_DIR="/root"
 
-METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
-METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
-
 log() {
     local message="$1"
     echo "[$(date)] $message"

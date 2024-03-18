@@ -15,48 +15,12 @@ $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
 
 $METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
-$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
 
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("account_password", "${account_password}")
-
-function Get-AuthToken {
-    try {
-        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
-        return $response."access_token"
-    }
-    catch {
-        "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
-}
-
-function Decrypt-Credentials {
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting account_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${account_password}")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
-}
 
 Start-Transcript -Path $LOG_FILE -Append
 

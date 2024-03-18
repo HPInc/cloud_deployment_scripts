@@ -26,9 +26,6 @@ AWM_INSTALL_LOG="/var/log/teradici/awm-install.log"
 AWM_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/$AWM_REPO_CHANNEL/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
 
-METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
-METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
-
 log() {
     local message="$1"
     echo "[$(date)] $message"

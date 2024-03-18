@@ -6,25 +6,8 @@
 $BASE_DIR = "C:\Teradici"
 $LOG_FILE = "$BASE_DIR\provisioning.log"
 
-$METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$METADATA_HEADERS.Add("Metadata-Flavor", "Google")
-
-$METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
-$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
-
 $DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $DATA.Add("admin_password", "${admin_password}")
-
-function Get-AuthToken {
-    try {
-        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
-        return $response."access_token"
-    }
-    catch {
-        "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
-}
 
 Start-Transcript -path $LOG_FILE -append
 
