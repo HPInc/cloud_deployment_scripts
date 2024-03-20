@@ -45,7 +45,7 @@ function get_credentials(){
   Retry -Action {
     $script:ACCOUNT_PASSWORD = & gcloud secrets versions access latest --secret=$ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
     ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  } -Interval 60 -Attempts 120
+  } -Interval 30 -Attempts 20
 }
 
 Start-Transcript -Path $LOG_FILE -Append

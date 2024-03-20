@@ -86,18 +86,18 @@ setup_ops() {
 
 get_credentials() {
     set +x
-    retry 120 `# 120 retries`\
-          60 `# 60s interval` \
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
           "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
           "--> ERROR: Failed to download PCOIP Registration Code from Secret Manager"
 
-    retry 120 `# 120 retries`\
-          60 `# 60s interval` \
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
           "AWM_ADMIN_PASSWORD=\$(gcloud secrets versions access latest --secret=$AWM_ADMIN_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
           "--> ERROR: Failed to download AWM Admin Passowrd from Secret Manager"
 
-    retry 120 `# 120 retries`\
-          60 `# 60s interval` \
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
           "gcp_sa_file_value_encoded=\$(gcloud secrets versions access latest --secret=$GCP_SA_FILE_ID)" \
           "--> ERROR: Failed to download GCP credentials file from Secret Manager"
 

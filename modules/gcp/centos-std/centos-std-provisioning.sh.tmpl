@@ -83,13 +83,13 @@ setup_ops() {
 
 get_credentials() {
     set +x
-    retry 120 `# 120 retries`\
-          60 `# 60s interval` \
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
           "AD_SERVICE_ACCOUNT_PASSWORD=\$(gcloud secrets versions access latest --secret=$AD_SERVICE_ACCOUNT_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
           "--> ERROR: Failed to download AD Service Account Password from Secret Manager"
     
-    retry 120 `# 120 retries`\
-          60 `# 60s interval` \
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
           "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
           "--> ERROR: Failed to download AD Service Account Password from Secret Manager"
     set -x

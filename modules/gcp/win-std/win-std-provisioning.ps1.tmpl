@@ -70,17 +70,17 @@ function get_credentials(){
   Retry -Action {
     $script:ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
     ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }   
-  } -Interval 60 -Attempts 120
+  } -Interval 30 -Attempts 20
 
   Retry -Action {
     $script:PCOIP_REGISTRATION_CODE = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
     ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  } -Interval 60 -Attempts 120
+  } -Interval 30 -Attempts 20
 
   Retry -Action {
     $script:AD_SERVICE_ACCOUNT_PASSWORD = & gcloud secrets versions access latest --secret=$AD_SERVICE_ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
     ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  } -Interval 60 -Attempts 120
+  } -Interval 30 -Attempts 20
 }
 
 function PCoIP-Agent-is-Installed {

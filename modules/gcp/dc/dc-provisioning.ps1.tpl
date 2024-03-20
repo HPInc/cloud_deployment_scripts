@@ -74,12 +74,12 @@ function get_credentials(){
   Retry -Action {
     $script:PCOIP_REGISTRATION_CODE = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
     ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  } -Interval 60 -Attempts 120
+  } -Interval 30 -Attempts 20
 
   Retry -Action {
     $script:SAFE_MODE_ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$SAFE_MODE_ADMIN_PASSWORD_ID --format="get(payload.data)" |
     ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-  } -Interval 60 -Attempts 120
+  } -Interval 30 -Attempts 20
 }
 
 function Get-AuthToken {
