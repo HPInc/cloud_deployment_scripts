@@ -162,6 +162,12 @@ Cloud Logging and Cloud Monitoring are enabled by default to provide better trou
 
 When enabled, Ops Agent will be installed and configured on each instance to upload and stream logs that can be used for troubleshooting. Please visit the [Troubleshooting](/docs/troubleshooting.md) page for a list of logs that would upload to Cloud Logging. The selected logs can be found in `Logs Explorer` in the Cloud Logging navigation pane. 
 
+Note that a new user-defined log bucket is created for each deployment. To view logs in the `Logs Explorer`, user needs to have the `roles/logging.viewAccessor` role. When deploying for the first time, user might need to refine the scope of the log in the `Logs Explorer` page. To do so, follow the steps below. 
+1. Navigate to the `Logs Explorer` page and click `Refine scope` at the top of the page
+2. Select `Scope by storage`
+3. Select the `_AllLogs` view of the user-defined log bucket (bucket name should be similar to `PREFIX-logging-bucket`)
+4. Click Apply
+
 #### GCP Cloud Monitoring
 
 When enabled, Terraform will create log-based metrics, one overall dashboard for the deployment, one dashboard for each Anyware Connector, and one dashboard for each workstation. Each log-based metric contains queries that fetch the log messages and data from the log file that were uploaded to Cloud Logging. The log-based metrics are used in widgets of dashboards to identify how the log messages and data are shown in the graph or table. The dashboards can be found in `Dashboard` in the Cloud Monitoring navigation pane.
@@ -202,6 +208,8 @@ Cloud Monitoring applys for `single-connector`, `awm-single-connector`, `nlb-mul
 IAP is a service that provides a single point of control for managing user access to web applications and cloud resources. For more information on IAP, please visit https://cloud.google.com/iap
 
 When IAP is enabled, Terraform adds IP range `35.235.240.0/20` to firewall rules. This range contains all IP addresses that IAP uses for TCP forwarding. IAP allows Administrators to establish SSH and RDP connections even when an instance doesn't have a public IP address. (Optional) Download IAP Desktop by following instructions at https://github.com/GoogleCloudPlatform/iap-desktop
+
+Note that to connect to a VM instance from IAP Desktop, user needs the IAP-Secured Tunnel User (roles/iap.tunnelResourceAccessor) role.
 
 IAP is enabled by default to allow Administrators to connect to instances easily. It can be disabled by adding `gcp_iap_enable = false` to `terraform.tfvars` before running `terraform apply`. 
 
