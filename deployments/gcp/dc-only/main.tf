@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2021;  © Copyright 2021-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2021;  © Copyright 2021-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -75,20 +75,19 @@ module "dc" {
 
   prefix = var.prefix
 
-  pcoip_agent_install     = var.dc_pcoip_agent_install
-  pcoip_agent_version     = var.dc_pcoip_agent_version
-  pcoip_registration_code = var.pcoip_registration_code
-  teradici_download_token = var.teradici_download_token
+  pcoip_agent_install        = var.dc_pcoip_agent_install
+  pcoip_agent_version        = var.dc_pcoip_agent_version
+  pcoip_registration_code_id = google_secret_manager_secret.pcoip_registration_code.secret_id
+  teradici_download_token    = var.teradici_download_token
 
-  gcp_service_account         = local.gcp_service_account
-  kms_cryptokey_id            = var.kms_cryptokey_id
-  domain_name                 = var.domain_name
-  admin_password              = var.dc_admin_password
-  safe_mode_admin_password    = var.safe_mode_admin_password
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
-  domain_users_list           = var.domain_users_list
-  ldaps_cert_filename         = local.ldaps_cert_filename
+  gcp_service_account            = local.gcp_service_account
+  domain_name                    = var.domain_name
+  admin_password_id              = google_secret_manager_secret.dc_admin_password.secret_id
+  safe_mode_admin_password_id    = google_secret_manager_secret.safe_mode_admin_password.secret_id
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = google_secret_manager_secret.ad_service_account_password.secret_id
+  domain_users_list              = var.domain_users_list
+  ldaps_cert_filename            = local.ldaps_cert_filename
 
   bucket_name = google_storage_bucket.scripts.name
   gcp_zone    = var.gcp_zone

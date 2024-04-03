@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2019-2021;  © Copyright 2022 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2019-2021;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,14 +20,14 @@ variable "domain_name" {
   type        = string
 }
 
-variable "admin_password" {
-  description = "Password for the Administrator of the Domain Controller"
+variable "admin_password_id" {
+  description = "Secrets Manager ARN for Password of the Administrator of the Domain Controller"
   type        = string
   sensitive   = true
 }
 
-variable "safe_mode_admin_password" {
-  description = "Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
+variable "safe_mode_admin_password_id" {
+  description = "Secrets Manager ARN for Safe Mode Admin Password (Directory Service Restore Mode - DSRM)"
   type        = string
   sensitive   = true
 }
@@ -37,8 +37,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service account password"
   type        = string
   sensitive   = true
 }
@@ -98,11 +98,6 @@ variable "disk_image" {
   default     = "projects/windows-cloud/global/images/family/windows-2019"
 }
 
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
-  default     = ""
-}
-
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
@@ -118,8 +113,8 @@ variable "pcoip_agent_version" {
   default     = "latest"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code from Teradici"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code from Teradici"
   type        = string
   sensitive   = true
 }

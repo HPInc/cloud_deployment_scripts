@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020-2022;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,8 +15,8 @@ variable "prefix" {
   default     = ""
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code"
   type        = string
   sensitive   = true
 }
@@ -27,12 +27,22 @@ variable "bucket_name" {
 }
 
 variable "awm_deployment_sa_file" {
-  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
+  description = "Location of Anyware Manager Deployment Service Account JSON file"
+  type        = string
+}
+
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON file"
   type        = string
 }
 
 variable "gcp_sa_file" {
   description = "Filename of GCP Service Account JSON key in bucket (Optional)"
+  default     = ""
+}
+
+variable "gcp_sa_file_id" {
+  description = "Secrets Manager ARN for GCP Service Account JSON key in bucket (Optional)"
   default     = ""
 }
 
@@ -92,8 +102,8 @@ variable "awm_admin_ssh_pub_key_file" {
   type        = string
 }
 
-variable "awm_admin_password" {
-  description = "Password for the Administrator of Anyware Manager"
+variable "awm_admin_password_id" {
+  description = "Secrets Manager ARN of Password for the Administrator of Anyware Manager"
   type        = string
   sensitive   = true
 }
@@ -101,11 +111,6 @@ variable "awm_admin_password" {
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
-}
-
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
-  default     = ""
 }
 
 variable "ops_setup_script" {

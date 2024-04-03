@@ -25,21 +25,19 @@ import interactive
 REQUIRED_PACKAGES = {
     'google-api-python-client': None,
     'grpc-google-iam-v1': None,
-    'google-cloud-kms': "2.0.0"
 }
 
 # Service Account ID of the service account to create
 SA_ID    = 'anyware-manager'
 SA_ROLES = [
     'roles/editor',
-    'roles/cloudkms.cryptoKeyEncrypterDecrypter',
-    'roles/logging.configWriter'
+    'roles/logging.configWriter',
+    'roles/secretmanager.admin'
 ]
 
 PROJECT_ID    = os.environ['GOOGLE_CLOUD_PROJECT']
 REQUIRED_APIS = [
     'deploymentmanager.googleapis.com',
-    'cloudkms.googleapis.com',
     'cloudresourcemanager.googleapis.com',
     'compute.googleapis.com',
     'dns.googleapis.com',
@@ -47,6 +45,7 @@ REQUIRED_APIS = [
     'iap.googleapis.com',
     'logging.googleapis.com',
     'monitoring.googleapis.com',
+    'secretmanager.googleapis.com',
 ]
 
 iso_time        = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(':','').replace('-','') + 'Z'
@@ -145,7 +144,6 @@ def import_modules():
     # Global calls for import statements are required to avoid module not found error
     import_required_packages = '''\
     import googleapiclient.discovery
-    from google.cloud import kms
     from google.api_core import exceptions as google_exc
     '''
 
@@ -414,53 +412,10 @@ if __name__ == '__main__':
 
     print('Anyware Manager setup complete.\n')
 
-    print('Encrypting secrets...')
-    days90 = 7776000
-
-    kms_client = kms.KeyManagementServiceClient()
-
-    parent = f"projects/{PROJECT_ID}/locations/{cfg_data.get('gcp_region')}"
-    key_ring_id = 'cloud_deployment_scripts'
-    key_ring_init = {}
-
-    try:
-        key_ring = kms_client.create_key_ring(request={'parent': parent, 'key_ring_id': key_ring_id, 'key_ring': key_ring_init})
-        print(f'Created Key Ring {key_ring.name}')
-    except google_exc.AlreadyExists:
-        print(f'Key Ring {key_ring_id} already exists. Using it...')
-
-    parent = kms_client.key_ring_path(PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id)
-    crypto_key_id = 'quickstart_key'
-    crypto_key_init = {
-        'purpose': kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT,
-        'rotation_period': {'seconds': days90},
-        'next_rotation_time': {'seconds': int(time.time()) + days90},
-    }
-
-    try:
-        crypto_key = kms_client.create_crypto_key(request={'parent': parent, 'crypto_key_id': crypto_key_id, 'crypto_key': crypto_key_init})
-        print(f'Created Crypto Key {crypto_key.name}')
-    except google_exc.AlreadyExists:
-        print(f'Crypto Key {crypto_key_id} already exists. Using it...')
-
-    key_name = kms_client.crypto_key_path(PROJECT_ID, cfg_data.get('gcp_region'), key_ring_id, crypto_key_id)
-
-    def kms_encode(key, text, base64_encoded=False):
-        encrypted = kms_client.encrypt(request={'name': key, 'plaintext': text.encode('utf-8')})
-
-        if base64_encoded:
-            return base64.b64encode(encrypted.ciphertext).decode('utf-8')
-        return encrypted.ciphertext
-
-    cfg_data['ad_password'] = kms_encode(key_name, cfg_data.get('ad_password'), True)
-    cfg_data['reg_code'] = kms_encode(key_name, cfg_data.get('reg_code'), True)
-    awm_deployment_key_encrypted = kms_encode(key_name, json.dumps(awm_deployment_key))
-
-    print('Done encrypting secrets.')
-
     print('Creating Anyware Manager Deployment Service Account Key...')
     with open(AWM_DEPLOYMENT_SA_KEY_PATH, 'wb+') as keyfile:
-        keyfile.write(awm_deployment_key_encrypted)
+        json_data = json.dumps(awm_deployment_key).encode('utf-8')
+        keyfile.write(json_data)
 
     print('  Key written to ' + AWM_DEPLOYMENT_SA_KEY_PATH)
 
@@ -471,7 +426,6 @@ if __name__ == '__main__':
         'gcp_credentials_file':           cwd + GCP_SA_KEY_PATH,
         'gcp_region':                     cfg_data.get('gcp_region'),
         'gcp_zone':                       cfg_data.get('gcp_zone'),
-        'kms_cryptokey_id':               key_name,
         'dc_admin_password':              cfg_data.get('ad_password'),
         'safe_mode_admin_password':       cfg_data.get('ad_password'),
         'ad_service_account_password':    cfg_data.get('ad_password'),
