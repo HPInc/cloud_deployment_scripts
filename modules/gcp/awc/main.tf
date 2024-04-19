@@ -55,21 +55,21 @@ module "awc-regional" {
   gcp_region     = var.gcp_region_list[count.index]
   instance_count = var.instance_count_list[count.index]
 
-  bucket_name            = var.bucket_name
-  awm_deployment_sa_file = var.awm_deployment_sa_file
+  bucket_name               = var.bucket_name
+  awm_deployment_sa_file    = var.awm_deployment_sa_file
+  awm_deployment_sa_file_id = var.awm_deployment_sa_file_id
 
   awm_script                = local.awm_script
   awc_flag_manager_insecure = var.awc_flag_manager_insecure
-  kms_cryptokey_id          = var.kms_cryptokey_id
   manager_url               = var.manager_url
 
-  domain_controller_ip        = var.domain_controller_ip
-  domain_name                 = var.domain_name
-  ad_service_account_username = var.ad_service_account_username
-  ad_service_account_password = var.ad_service_account_password
-  ldaps_cert_filename         = var.ldaps_cert_filename
-  computers_dn                = var.computers_dn
-  users_dn                    = var.users_dn
+  domain_controller_ip           = var.domain_controller_ip
+  domain_name                    = var.domain_name
+  ad_service_account_username    = var.ad_service_account_username
+  ad_service_account_password_id = var.ad_service_account_password_id
+  ldaps_cert_filename            = var.ldaps_cert_filename
+  computers_dn                   = var.computers_dn
+  users_dn                       = var.users_dn
 
   tls_key_filename  = local.tls_key_filename
   tls_cert_filename = local.tls_cert_filename

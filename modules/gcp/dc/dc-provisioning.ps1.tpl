@@ -10,22 +10,21 @@ $BASE_DIR                    = "C:\Teradici"
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
-$KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
 $LDAPS_CERT_FILENAME         = "${ldaps_cert_filename}"
 $LABEL_NAME                  = "${label_name}"
 $OPS_SETUP_SCRIPT            = "${ops_setup_script}"
 $PCOIP_AGENT_INSTALL         = "${pcoip_agent_install}"
 $PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
-$SAFE_MODE_ADMIN_PASSWORD    = "${safe_mode_admin_password}"
+$PCOIP_REGISTRATION_CODE_ID  = "${pcoip_registration_code_id}"
+$PCOIP_REGISTRATION_CODE     = $null
 $TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
 $DC_NEW_AD_ACCOUNTS_SCRIPT   = "${dc_new_ad_accounts_script}"
-
+$SAFE_MODE_ADMIN_PASSWORD_ID = "${safe_mode_admin_password_id}"
+$SAFE_MODE_ADMIN_PASSWORD    = $null
 $LOG_FILE = "$BASE_DIR\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
 
 $METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $METADATA_HEADERS.Add("Metadata-Flavor", "Google")
@@ -35,10 +34,6 @@ $METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
 
 $zone_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/zone
 $instance_name = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_BASE_URI/name
-
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("safe_mode_admin_password", "$SAFE_MODE_ADMIN_PASSWORD")
 
 # Retry function, defaults to trying for 5 minutes with 10 seconds intervals
 function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
@@ -75,6 +70,18 @@ function Setup-Ops {
     }
 }
 
+function get_credentials(){
+  Retry -Action {
+    $script:PCOIP_REGISTRATION_CODE = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 30 -Attempts 20
+
+  Retry -Action {
+    $script:SAFE_MODE_ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$SAFE_MODE_ADMIN_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 30 -Attempts 20
+}
+
 function Get-AuthToken {
     try {
         $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
@@ -82,37 +89,6 @@ function Get-AuthToken {
     }
     catch {
         "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
-}
-
-function Decrypt-Credentials {
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting safe_mode_admin_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$SAFE_MODE_ADMIN_PASSWORD")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."safe_mode_admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-
-        "--> Decrypting pcoip_registration_code..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$PCOIP_REGISTRATION_CODE")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
         return $false
     }
 }
@@ -168,7 +144,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $PCOIP_REGISTRATION_CODE
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -238,13 +214,6 @@ if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
 
 "--> Script running as user '$(whoami)'."
 
-if ([string]::IsNullOrWhiteSpace("$KMS_CRYPTOKEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $KMS_CRYPTOKEY_ID for secrets."
-    Decrypt-Credentials
-}
-
 $DomainName = "$DOMAIN_NAME"
 $DomainMode = "7"
 $ForestMode = "7"
@@ -253,6 +222,11 @@ $SysvolPath = "C:\Windows\SYSVOL"
 $LogPath = "C:\Logs"
 
 gcloud compute instances add-labels $instance_name --zone $zone_name --labels=$LABEL_NAME=step1of3_installing-domain-services
+
+"================================================================"
+"Get credentials from Secret Manager..."
+"================================================================"
+get_credentials
 
 "================================================================"
 "Installing AD-Domain-Services..."
@@ -266,7 +240,7 @@ Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 "Installing a new forest..."
 "================================================================"
 Install-ADDSForest -CreateDnsDelegation:$false `
-    -SafeModeAdministratorPassword (ConvertTo-SecureString $DATA."safe_mode_admin_password" -AsPlainText -Force) `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString $SAFE_MODE_ADMIN_PASSWORD -AsPlainText -Force) `
     -DatabasePath $DatabasePath `
     -SysvolPath $SysvolPath `
     -DomainName $DomainName `

@@ -27,7 +27,12 @@ variable "awc_flag_manager_insecure" {
 }
 
 variable "awm_deployment_sa_file" {
-  description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
+  description = "Filename of Anyware Manager Deployment Service Account JSON key"
+  type        = string
+}
+
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON key"
   type        = string
 }
 
@@ -60,8 +65,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
@@ -159,11 +164,6 @@ variable "awc_extra_install_flags" {
 variable "teradici_download_token" {
   description = "Token used to download from Teradici"
   default     = "yj39yHtgj68Uv2Qf"
-}
-
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
-  default     = ""
 }
 
 variable "awm_script" {

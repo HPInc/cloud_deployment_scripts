@@ -1,5 +1,5 @@
 /*
- * © Copyright 2022-2023 HP Development Company, L.P.
+ * © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -31,11 +31,11 @@ locals {
   )
 
   workstation_log_groups = join("",
-    [for i in range(var.centos_gfx_instance_count) :
-      "SOURCE '${local.prefix}gcent-${i}' | "
+    [for i in range(var.rocky_gfx_instance_count) :
+      "SOURCE '${local.prefix}grock-${i}' | "
     ],
-    [for i in range(var.centos_std_instance_count) :
-      "SOURCE '${local.prefix}scent-${i}' | "
+    [for i in range(var.rocky_std_instance_count) :
+      "SOURCE '${local.prefix}srock-${i}' | "
     ],
     [for i in range(var.win_gfx_instance_count) :
       "SOURCE '${local.prefix}gwin-${i}' | "

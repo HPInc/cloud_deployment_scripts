@@ -2,7 +2,7 @@
 
 ## Table of Contents
 1. [Connecting to VMs Using SSH/RDP](#connecting-to-vms-using-ssh/rdp)
-    1. [Connecting to CentOS Workstations](#connecting-to-centos-workstations)
+    1. [Connecting to Rocky Workstations](#connecting-to-rocky-workstations)
     2. [Connecting to Windows Workstations](#connecting-to-windows-workstations)
 2. [VM Log Locations](#vm-log-locations)
     1. [Amazon Web Services](#amazon-web-services)
@@ -33,19 +33,19 @@
 - For public IP access to workstation VMs, set the `enable_workstation_public_ip` to true in the `terraform.tfvars` file.
 - Additionally, ensure the activation of SSH or RDP by setting the `enable_ssh` or `enable_rdp` variables respectively.
 
-### Connecting to CentOS Workstations
-- One way to access CentOS Workstations is to use the Connector as a bastion host. Please refer to the log tables below for the corresponding <login-user> for each VM.
+### Connecting to Rocky Workstations
+- One way to access Rocky Workstations is to use the Connector as a bastion host. Please refer to the log tables below for the corresponding <login-user> for each VM.
 - Use the -i flag to provide SSH with the private key that pairs with the public keys specified in terraform.tfvars.
-- For GCP, enter the private key path that pairs with awc_admin_ssh_pub_key_file for the Connector or centos_admin_ssh_pub_key_file for CentOS Workstations.
-- For AWS, enter the private key path that pairs with admin_ssh_pub_key_file for the Connector and CentOS Workstations.
+- For GCP, enter the private key path that pairs with awc_admin_ssh_pub_key_file for the Connector or rocky_admin_ssh_pub_key_file for Rocky Workstations.
+- For AWS, enter the private key path that pairs with admin_ssh_pub_key_file for the Connector and Rocky Workstations.
 
 Execute the following command to first SSH into the Connector:
 
 ```ssh -A -i </path/to/ssh-private-key> <login-user>@<awc-public-ip>```
 
-From inside the Connector, execute the following command to SSH into the CentOS Workstation:
+From inside the Connector, execute the following command to SSH into the Rocky Workstation:
 
-```ssh <login-user>@<centos-internal-ip>```
+```ssh <login-user>@<rocky-internal-ip>```
 
 ### Connecting to Windows Workstations
 One way to access Windows Workstations is to use the Domain Controller as a bastion host. Use the following credentials to connect to the DC using a RDP client:
@@ -82,13 +82,13 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/anyware-manager/install.log        | (duplicate log from awm-install.log )                       |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
-| centos-gfx       | centos        | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| rocky-gfx        | rocky         | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |
 |                  |               | /var/log/nvidia-installer.log               | Detailed log for NVIDIA driver installation                 |
-| centos-std       | centos        | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| rocky-std        | rocky         | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/teradici/user-data.log             | Detailed output of user-data script                         |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
@@ -125,12 +125,12 @@ Password: <dc_admin_password_set_in_terraform.tfvars>
 |                  |               | /var/log/teradici/awm-install.log           | Detailed log for Anyware Manager installation               |
 |                  |               | /var/log/cloud-init-output.log              | Console output log from cloud-init                          |
 |                  |               | /var/log/anyware-manager/install.log        | (duplicate log from awm-install.log )                       |
-| centos-gfx       | anyware_admin | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| rocky-gfx        | anyware_admin | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |
 |                  |               | /var/log/nvidia-installer.log               | Detailed log for NVIDIA driver installation                 |
-| centos-std       | anyware_admin | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
+| rocky-std        | anyware_admin | /var/log/messages.log                       | Combined detailed system log for startup and provisioning   |
 |                  |               | /var/log/teradici/provisioning.log          | Detailed log for Bash provisioning script                   |
 |                  |               | /var/log/yum.log                            | Yum log file (duplicate log from messages.log)              |
 |                  |               | /var/log/pcoip-agent/agent.log              | PCoIP agent log file                                        |

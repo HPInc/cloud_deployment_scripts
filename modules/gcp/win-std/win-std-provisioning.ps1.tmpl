@@ -4,9 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 ##### Template Variables #####
-$ADMIN_PASSWORD              = "${admin_password}"
-$AD_SERVICE_ACCOUNT_PASSWORD = "${ad_service_account_password}"
 $AD_SERVICE_ACCOUNT_USERNAME = "${ad_service_account_username}"
+$AD_SERVICE_ACCOUNT_PASSWORD_ID = "${ad_service_account_password_id}"
+$AD_SERVICE_ACCOUNT_PASSWORD    = $null
+$ADMIN_PASSWORD_ID              = "${admin_password_id}"
+$ADMIN_PASSWORD                 = $null
 $BUCKET_NAME                 = "${bucket_name}"
 $DOMAIN_NAME                 = "${domain_name}"
 $GCP_OPS_AGENT_ENABLE        = "${gcp_ops_agent_enable}"
@@ -14,29 +16,15 @@ $IDLE_SHUTDOWN_CPU_UTILIZATION              = "${idle_shutdown_cpu_utilization}"
 $IDLE_SHUTDOWN_ENABLE                       = [System.Convert]::ToBoolean("${idle_shutdown_enable}")
 $IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN = "${idle_shutdown_minutes_idle_before_shutdown}"
 $IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES     = "${idle_shutdown_polling_interval_minutes}"
-$KMS_CRYPTOKEY_ID            = "${kms_cryptokey_id}"
-$OPS_SETUP_SCRIPT            = "${ops_setup_script}"
-$PCOIP_AGENT_VERSION         = "${pcoip_agent_version}"
-$PCOIP_REGISTRATION_CODE     = "${pcoip_registration_code}"
-$TERADICI_DOWNLOAD_TOKEN     = "${teradici_download_token}"
-
+$OPS_SETUP_SCRIPT               = "${ops_setup_script}"
+$PCOIP_AGENT_VERSION            = "${pcoip_agent_version}"
+$PCOIP_REGISTRATION_CODE_ID     = "${pcoip_registration_code_id}"
+$PCOIP_REGISTRATION_CODE        = $null
+$TERADICI_DOWNLOAD_TOKEN        = "${teradici_download_token}"
 
 $LOG_FILE = "C:\Teradici\provisioning.log"
 $PCOIP_AGENT_LOCATION_URL = "https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/raw/names/pcoip-agent-standard-exe/versions/$PCOIP_AGENT_VERSION"
 $PCOIP_AGENT_FILENAME     = "pcoip-agent-standard_$PCOIP_AGENT_VERSION.exe"
-
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/$${KMS_CRYPTOKEY_ID}:decrypt"
-
-$METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$METADATA_HEADERS.Add("Metadata-Flavor", "Google")
-
-$METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
-$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
-
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("pcoip_registration_code", "$PCOIP_REGISTRATION_CODE")
-$DATA.Add("admin_password", "$ADMIN_PASSWORD")
-$DATA.Add("ad_service_account_password", "$AD_SERVICE_ACCOUNT_PASSWORD")
 
 $global:restart = $false
 
@@ -60,17 +48,6 @@ function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
   }
 }
 
-function Get-AuthToken {
-    try {
-        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
-        return $response."access_token"
-    }
-    catch {
-        "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
-}
-
 function Setup-Ops {
     "################################################################"
     "Running Ops Agent setup script from gs://$BUCKET_NAME/$OPS_SETUP_SCRIPT "
@@ -89,45 +66,21 @@ function Setup-Ops {
     }
 }
 
-function Decrypt-Credentials {
-    "################################################################"
-    "Decrypting credentials..."
-    "################################################################"
-    $token = Get-AuthToken
+function get_credentials(){
+  Retry -Action {
+    $script:ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }   
+  } -Interval 30 -Attempts 20
 
-    if(!($token)) {
-        return $false
-    }
+  Retry -Action {
+    $script:PCOIP_REGISTRATION_CODE = & gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format="get(payload.data)" | 
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 30 -Attempts 20
 
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting pcoip_registration_code..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$PCOIP_REGISTRATION_CODE")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."pcoip_registration_code" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-
-        "--> Decrypting admin_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$ADMIN_PASSWORD")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-
-        "--> Decrypting ad_service_account_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "$AD_SERVICE_ACCOUNT_PASSWORD")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."ad_service_account_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
+  Retry -Action {
+    $script:AD_SERVICE_ACCOUNT_PASSWORD = & gcloud secrets versions access latest --secret=$AD_SERVICE_ACCOUNT_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 30 -Attempts 20
 }
 
 function PCoIP-Agent-is-Installed {
@@ -182,7 +135,7 @@ function PCoIP-Agent-Register {
 
     do {
         $Retry = $false
-        & .\pcoip-register-host.ps1 -RegistrationCode $DATA."pcoip_registration_code"
+        & .\pcoip-register-host.ps1 -RegistrationCode $PCOIP_REGISTRATION_CODE
         # the script already produces error message
 
         if ( $LastExitCode -ne 0 ) {
@@ -276,7 +229,7 @@ function Join-Domain {
     "--> Computer not part of a domain. Joining $DOMAIN_NAME..."
 
     $username = "$AD_SERVICE_ACCOUNT_USERNAME" + "@" + "$DOMAIN_NAME"
-    $password = ConvertTo-SecureString $DATA."ad_service_account_password" -AsPlainText -Force
+    $password = ConvertTo-SecureString $AD_SERVICE_ACCOUNT_PASSWORD -AsPlainText -Force
     $cred = New-Object System.Management.Automation.PSCredential ($username, $password)
 
     # Looping in case Domain Controller is not yet available
@@ -357,7 +310,12 @@ Start-Transcript -path $LOG_FILE -append
 
 if ([System.Convert]::ToBoolean("$GCP_OPS_AGENT_ENABLE")) {
     Setup-Ops
-} 
+}
+
+"================================================================"
+"Get credentials from Secret Manager..."
+"================================================================"
+get_credentials
 
 "--> Script running as user '$(whoami)'."
 
@@ -368,14 +326,7 @@ if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     "--> Not running as Administrator..."
 }
 
-if ([string]::IsNullOrWhiteSpace("$KMS_CRYPTOKEY_ID")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key $KMS_CRYPTOKEY_ID for secrets."
-    Decrypt-Credentials
-}
-
-net user Administrator $DATA."admin_password" /active:yes
+net user Administrator $ADMIN_PASSWORD /active:yes
 
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 

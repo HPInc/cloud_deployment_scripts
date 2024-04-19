@@ -60,8 +60,8 @@ A Anyware Connector is created and registers itself with Anyware Manager as a Se
 Domain-joined workstations are optionally created, specified by the following parameters:
 - `win_gfx_instance_count`:    Windows Graphics workstation
 - `win_std_instance_count`:    Windows Standard workstation
-- `centos_gfx_instance_count`: CentOS Graphics workstation
-- `centos_std_instance_count`: CentOS Standard workstation
+- `rocky_gfx_instance_count`:  Rocky Graphics workstation
+- `rocky_std_instance_count`:  Rocky Standard workstation
 
 These workstations are automatically domain-joined and have the PCoIP Agent installed.  For graphics workstations, NVidia graphics driver is also installed.
 

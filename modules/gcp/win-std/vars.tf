@@ -20,8 +20,8 @@ variable "instance_name" {
   default     = "swin"
 }
 
-variable "pcoip_registration_code" {
-  description = "PCoIP Registration code from Teradici"
+variable "pcoip_registration_code_id" {
+  description = "Secrets Manager ARN for PCoIP Registration code from Teradici"
   type        = string
   sensitive   = true
 }
@@ -50,8 +50,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
@@ -121,7 +121,7 @@ variable "disk_image" {
   default     = "projects/windows-cloud/global/images/family/windows-2019"
 }
 
-variable "admin_password" {
+variable "admin_password_id" {
   description = "Password for the Administrator of the Workstation"
   type        = string
 }
@@ -134,11 +134,6 @@ variable "teradici_download_token" {
 variable "pcoip_agent_version" {
   description = "PCoIP Agent version to install"
   default     = "latest"
-}
-
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
-  default     = ""
 }
 
 variable "ops_setup_script" {

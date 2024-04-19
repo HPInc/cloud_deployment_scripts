@@ -87,7 +87,7 @@ variable "dc_disk_size_gb" {
 
 variable "dc_disk_image" {
   description = "Disk image for the Domain Controller"
-  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20240214"
+  default     = "projects/windows-cloud/global/images/windows-server-2019-dc-v20240415"
 }
 
 variable "dc_admin_password" {
@@ -151,11 +151,6 @@ variable "domain_users_list" {
     condition     = var.domain_users_list == "" ? true : fileexists(var.domain_users_list)
     error_message = "The domain_users_list file specified does not exist. Please check the file path."
   }
-}
-
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets"
-  default     = ""
 }
 
 variable "pcoip_registration_code" {

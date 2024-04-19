@@ -6,8 +6,8 @@
 #!/bin/bash
 
 ##### Template Variables #####
-AD_SERVICE_ACCOUNT_PASSWORD=${ad_service_account_password}
 AD_SERVICE_ACCOUNT_USERNAME=${ad_service_account_username}
+AD_SERVICE_ACCOUNT_PASSWORD_ID=${ad_service_account_password_id}
 AUTO_LOGOFF_CPU_UTILIZATION=${auto_logoff_cpu_utilization}
 AUTO_LOGOFF_ENABLE=${auto_logoff_enable}
 AUTO_LOGOFF_MINUTES_IDLE_BEFORE_LOGOFF=${auto_logoff_minutes_idle_before_logoff}
@@ -20,18 +20,12 @@ IDLE_SHUTDOWN_CPU_UTILIZATION=${idle_shutdown_cpu_utilization}
 IDLE_SHUTDOWN_ENABLE=${idle_shutdown_enable}
 IDLE_SHUTDOWN_MINUTES_IDLE_BEFORE_SHUTDOWN=${idle_shutdown_minutes_idle_before_shutdown}
 IDLE_SHUTDOWN_POLLING_INTERVAL_MINUTES=${idle_shutdown_polling_interval_minutes}
-KMS_CRYPTOKEY_ID=${kms_cryptokey_id}
 NVIDIA_DRIVER_URL=${nvidia_driver_url}
 OPS_SETUP_SCRIPT=${ops_setup_script}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
-
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 
 LOG_FILE="/var/log/teradici/provisioning.log"
-
-METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
-METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
-DECRYPT_URI="https://cloudkms.googleapis.com/v1/$KMS_CRYPTOKEY_ID:decrypt"
 TERADICI_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/pcoip-agent/cfg/setup/bash.rpm.sh"
 
 log() {
@@ -90,26 +84,17 @@ setup_ops() {
 }
 
 get_credentials() {
-    if [[ -z "$KMS_CRYPTOKEY_ID" ]]; then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: $KMS_CRYPTOKEY_ID"
-
-        # Gets access token attribute of response json object
-        token=$(curl "$METADATA_AUTH_URI" -H "Metadata-Flavor: Google" | python -c "import sys, json; print json.load(sys.stdin)['access_token']")
-
-        # Gets data using access token and decodes it
-        log "--> Decrypting pcoip_registration_code..."
-        data=$(echo "{ \"ciphertext\": \"$PCOIP_REGISTRATION_CODE\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
-        PCOIP_REGISTRATION_CODE=$(echo "$b64_data" | base64 --decode)
-
-        log "--> Decrypting ad_service_account_password..."
-        data=$(echo "{ \"ciphertext\": \"$AD_SERVICE_ACCOUNT_PASSWORD\" }")
-        b64_data=$(curl -X POST -d "$data" "$DECRYPT_URI" -H "Authorization: Bearer $token" -H "Content-type: application/json" | python -c "import sys, json; print json.load(sys.stdin)['plaintext']")
-        AD_SERVICE_ACCOUNT_PASSWORD=$(echo "$b64_data" | base64 --decode)
-    fi
+    set +x
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
+          "AD_SERVICE_ACCOUNT_PASSWORD=\$(gcloud secrets versions access latest --secret=$AD_SERVICE_ACCOUNT_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download AD Service Account Password from Secret Manager"
+    
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
+          "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download AD Service Account Password from Secret Manager"
+    set -x
 }
 
 check_required_vars() {

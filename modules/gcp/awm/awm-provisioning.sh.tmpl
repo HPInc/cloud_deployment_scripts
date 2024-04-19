@@ -6,19 +6,20 @@
 #!/bin/bash
 
 ##### Template Variables #####
-AWM_ADMIN_PASSWORD=${awm_admin_password}
+AWM_ADMIN_PASSWORD_ID=${awm_admin_password_id}
 AWM_DEPLOYMENT_SA_FILE=${awm_deployment_sa_file}
+AWM_DEPLOYMENT_SA_FILE_ID=${awm_deployment_sa_file_id}
 AWM_REPO_CHANNEL=${awm_repo_channel}
 AWM_SETUP_SCRIPT=${awm_setup_script}
 BUCKET_NAME=${bucket_name}
 GCP_OPS_AGENT_ENABLE=${gcp_ops_agent_enable}
 GCP_SA_FILE=${gcp_sa_file}
-KMS_CRYPTOKEY_ID=${kms_cryptokey_id}
+GCP_SA_FILE_ID=${gcp_sa_file_id}
 OPS_SETUP_SCRIPT=${ops_setup_script}
-PCOIP_REGISTRATION_CODE=${pcoip_registration_code}
+PCOIP_REGISTRATION_CODE_ID=${pcoip_registration_code_id}
 TERADICI_DOWNLOAD_TOKEN=${teradici_download_token}
-
 LOG_FILE="/var/log/teradici/provisioning.log"
+TEMP_BASE64_AWM_SA_FILE="temp_base64_awm_deployment_sa_file.txt"
 
 INSTALL_DIR="/root"
 AWM_DEPLOYMENT_KEY_NAME="terraform-key"
@@ -26,9 +27,6 @@ AWM_DEPLOYMENT_NAME="terraform-deployment"
 AWM_INSTALL_LOG="/var/log/teradici/awm-install.log"
 AWM_REPO_SETUP_SCRIPT_URL="https://dl.anyware.hp.com/$TERADICI_DOWNLOAD_TOKEN/$AWM_REPO_CHANNEL/cfg/setup/bash.rpm.sh"
 cd $INSTALL_DIR
-
-METADATA_BASE_URI="http://metadata.google.internal/computeMetadata/v1/instance"
-METADATA_AUTH_URI="$METADATA_BASE_URI/service-accounts/default/token"
 
 log() {
     local message="$1"
@@ -86,6 +84,33 @@ setup_ops() {
     fi
 }
 
+get_credentials() {
+    set +x
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
+          "PCOIP_REGISTRATION_CODE=\$(gcloud secrets versions access latest --secret=$PCOIP_REGISTRATION_CODE_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download PCOIP Registration Code from Secret Manager"
+
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
+          "AWM_ADMIN_PASSWORD=\$(gcloud secrets versions access latest --secret=$AWM_ADMIN_PASSWORD_ID --format=\"get(payload.data)\" | base64 -d)" \
+          "--> ERROR: Failed to download AWM Admin Passowrd from Secret Manager"
+
+    retry 20 `# 20 retries` \
+          30 `# 30s interval` \
+          "gcp_sa_file_value_encoded=\$(gcloud secrets versions access latest --secret=$GCP_SA_FILE_ID)" \
+          "--> ERROR: Failed to download GCP credentials file from Secret Manager"
+
+    if [ "$gcp_sa_file_value_encoded" != "" ]; then
+        gcp_sa_file_value_decoded=$(echo "$gcp_sa_file_value_encoded" | base64 -d)
+        echo "$gcp_sa_file_value_decoded" > "$INSTALL_DIR/$GCP_SA_FILE"
+    else
+        log "--> ERROR: Failed to retrieve GCP credentials file. Exiting provisioning script..."
+        exit 1
+    fi
+    set -x
+}
+
 install_prereqs() {
     log "--> Installing dos2unix, python3..."
     dnf update -y
@@ -106,45 +131,6 @@ install_prereqs() {
     fi
 }
 
-get_credentials() {
-    if [ "$GCP_SA_FILE" ]
-    then
-        retry 720 `# 720 retries` \
-              10  `# 10s interval` \
-              "gsutil cp gs://$BUCKET_NAME/$GCP_SA_FILE $INSTALL_DIR" \
-              "--> ERROR: Failed to download GCP Service Account key from bucket $BUCKET_NAME."
-    fi
-
-    # Disable logging of secrets by wrapping the region with set +x and set -x
-    set +x
-
-    if [[ -z "$KMS_CRYPTOKEY_ID" ]]; then
-        log "--> Script is not using encryption for secrets."
-
-    else
-        log "--> Script is using encryption key: $KMS_CRYPTOKEY_ID"
-
-        # Gets key informations needed for decode from kms_cryptokey_id
-        # kms_cryptokey_id: projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>
-        local kms_location="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f4)"
-        local kms_keyring="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f6)"
-        local kms_key="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f8)"
-
-        log "--> Decrypting Anyware Manager Administrator password..."
-        AWM_ADMIN_PASSWORD=$(echo -n $AWM_ADMIN_PASSWORD | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
-
-        log "--> Decrypting PCoIP registration code..."
-        PCOIP_REGISTRATION_CODE=$(echo -n $PCOIP_REGISTRATION_CODE | base64 --decode | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file -)
-
-        if [ "$GCP_SA_FILE" ]
-        then
-            log "--> Decrypting GCP Service Account key file..."
-            cat $INSTALL_DIR/$GCP_SA_FILE | gcloud kms decrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --ciphertext-file - --plaintext-file $INSTALL_DIR/$GCP_SA_FILE
-        fi
-    fi
-    set -x
-}
-
 check_required_vars() {
     set +x
     
@@ -157,6 +143,11 @@ check_required_vars() {
     if [[ -z "$AWM_ADMIN_PASSWORD" ]]
     then
         log "--> ERROR: Missing Anyware Manager Administrator Password."
+        missing_vars="true"
+    fi
+
+    if [[ ! -s $INSTALL_DIR/$GCP_SA_FILE ]]; then 
+        log "--> ERROR: Missing AWM Deployment Service Account Key from Secret Manager."
         missing_vars="true"
     fi
     set -x
@@ -260,29 +251,26 @@ awm_setup() {
 }
 
 upload_dsa_key() {
-    if [[ "$KMS_CRYPTOKEY_ID" ]]
-    then
-        log "--> Encrypting Deployment Service Account key with $KMS_CRYPTOKEY_ID"
+    log "--> Uploading Deployment Service Account Key to Secret Manager..."
 
-        local kms_location="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f4)"
-        local kms_keyring="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f6)"
-        local kms_key="$(echo $KMS_CRYPTOKEY_ID | cut -d'/' -f8)"
+    set +x
 
-        cat $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE | gcloud kms encrypt --key "$kms_key" --keyring "$kms_keyring" --location "$kms_location" --plaintext-file - --ciphertext-file $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE
-    fi
+    # Encoded to base64 to accommodate potential change of the credentials file to binary or other non-JSON format
+    base64 $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE > $INSTALL_DIR/$TEMP_BASE64_AWM_SA_FILE
 
-    log "--> Uploading Deployment Service Account Key to bucket $BUCKET_NAME..."
-
-    retry 5 `# 5 retries`\
-          5 `# 5s interval` \
-          "gsutil cp $INSTALL_DIR/$AWM_DEPLOYMENT_SA_FILE gs://$BUCKET_NAME/" \
-          "--> ERROR: Failed to upload Deployment Service Account Key to bucket $BUCKET_NAME"
+    retry 120 `# 120 retries`\
+          60 `# 60s interval` \
+          "gcloud secrets versions add $AWM_DEPLOYMENT_SA_FILE_ID --data-file=$INSTALL_DIR/$TEMP_BASE64_AWM_SA_FILE" \
+          "--> ERROR: Failed to upload Deployment Service Account Key to Secret Manager"
 
     if [ $? -ne 0 ]
     then
         log "--> Exiting provisioning script due to an error."
         exit 1
     fi
+
+    rm $INSTALL_DIR/$TEMP_BASE64_AWM_SA_FILE
+    set -x
 }
 
 

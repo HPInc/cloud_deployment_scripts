@@ -1,5 +1,5 @@
 /*
- * Copyright Teradici Corporation 2020;  © Copyright 2022-2023 HP Development Company, L.P.
+ * Copyright Teradici Corporation 2020;  © Copyright 2022-2024 HP Development Company, L.P.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,18 +37,18 @@ output "win-std-public-ip" {
   value = module.win-std.public-ip
 }
 
-output "centos-gfx-internal-ip" {
-  value = module.centos-gfx.internal-ip
+output "rocky-gfx-internal-ip" {
+  value = module.rocky-gfx.internal-ip
 }
 
-output "centos-gfx-public-ip" {
-  value = module.centos-gfx.public-ip
+output "rocky-gfx-public-ip" {
+  value = module.rocky-gfx.public-ip
 }
 
-output "centos-std-internal-ip" {
-  value = module.centos-std.internal-ip
+output "rocky-std-internal-ip" {
+  value = module.rocky-std.internal-ip
 }
 
-output "centos-std-public-ip" {
-  value = module.centos-std.public-ip
+output "rocky-std-public-ip" {
+  value = module.rocky-std.public-ip
 }

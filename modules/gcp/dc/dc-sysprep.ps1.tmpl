@@ -5,64 +5,45 @@
 
 $BASE_DIR = "C:\Teradici"
 $LOG_FILE = "$BASE_DIR\provisioning.log"
+$ADMIN_PASSWORD_ID = "${admin_password_id}"
+$ADMIN_PASSWORD    = $null
 
-$DECRYPT_URI = "https://cloudkms.googleapis.com/v1/${kms_cryptokey_id}:decrypt"
+# Retry function, defaults to trying for 5 minutes with 10 seconds intervals
+function Retry([scriptblock]$Action, $Interval = 10, $Attempts = 30) {
+  $Current_Attempt = 0
 
-$METADATA_HEADERS = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$METADATA_HEADERS.Add("Metadata-Flavor", "Google")
+  while ($true) {
+    $Current_Attempt++
+    $rc = $Action.Invoke()
 
-$METADATA_BASE_URI = "http://metadata.google.internal/computeMetadata/v1/instance"
-$METADATA_AUTH_URI = "$($METADATA_BASE_URI)/service-accounts/default/token"
+    if ($?) { return $rc }
 
-$DATA = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$DATA.Add("admin_password", "${admin_password}")
-
-function Get-AuthToken {
-    try {
-        $response = Invoke-RestMethod -Method "Get" -Headers $METADATA_HEADERS -Uri $METADATA_AUTH_URI
-        return $response."access_token"
+    if ($Current_Attempt -ge $Attempts) {
+        Write-Error "--> ERROR: Failed after $Current_Attempt attempt(s)." -InformationAction Continue
+        Throw
     }
-    catch {
-        "--> ERROR: Failed to fetch auth token: $_"
-        return $false
-    }
+
+    Write-Information "--> Attempt $Current_Attempt failed. Retry in $Interval seconds..." -InformationAction Continue
+    Start-Sleep -Seconds $Interval
+  }
 }
 
-function Decrypt-Credentials {
-    $token = Get-AuthToken
-
-    if(!($token)) {
-        return $false
-    }
-
-    $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-    $headers.Add("Authorization", "Bearer $($token)")
-
-    try {
-        "--> Decrypting admin_password..."
-        $resource = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource.Add("ciphertext", "${admin_password}")
-        $response = Invoke-RestMethod -Method "Post" -Headers $headers -Uri $DECRYPT_URI -Body $resource
-        $credsB64 = $response."plaintext"
-        $DATA."admin_password" = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($credsB64))
-    }
-    catch {
-        "--> ERROR: Failed to decrypt credentials: $_"
-        return $false
-    }
+function get_credentials(){
+  Retry -Action {
+    $script:ADMIN_PASSWORD = & gcloud secrets versions access latest --secret=$ADMIN_PASSWORD_ID --format="get(payload.data)" |
+    ForEach-Object { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+  } -Interval 30 -Attempts 20
 }
 
 Start-Transcript -path $LOG_FILE -append
+
+"================================================================"
+"Get credentials from Secret Manager..."
+"================================================================"
+get_credentials
 
 # Enforce TLS 1.2 as a precaution for deprecation of TLS prior versions
 # Adding TLS 1.2 for Invoke-RestMethod
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-if ([string]::IsNullOrWhiteSpace("${kms_cryptokey_id}")) {
-    "--> Script is not using encryption for secrets."
-} else {
-    "--> Script is using encryption key ${kms_cryptokey_id} for secrets."
-    Decrypt-Credentials
-}
-
-net user Administrator $DATA."admin_password" /active:yes
+net user Administrator $ADMIN_PASSWORD /active:yes

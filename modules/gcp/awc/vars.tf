@@ -55,8 +55,8 @@ variable "ad_service_account_username" {
   type        = string
 }
 
-variable "ad_service_account_password" {
-  description = "Active Directory Service Account password"
+variable "ad_service_account_password_id" {
+  description = "Secrets Manager ARN for Active Directory Service Account password"
   type        = string
   sensitive   = true
 }
@@ -83,6 +83,11 @@ variable "bucket_name" {
 
 variable "awm_deployment_sa_file" {
   description = "Filename of Anyware Manager Deployment Service Account JSON key in bucket"
+  type        = string
+}
+
+variable "awm_deployment_sa_file_id" {
+  description = "Secrets Manager ARN for Anyware Manager Deployment Service Account JSON key in bucket"
   type        = string
 }
 
@@ -178,11 +183,6 @@ variable "tls_cert" {
 
 variable "awc_extra_install_flags" {
   description = "Additional flags for installing AWC"
-  default     = ""
-}
-
-variable "kms_cryptokey_id" {
-  description = "Resource ID of the KMS cryptographic key used to decrypt secrets, in the form of 'projects/<project-id>/locations/<location>/keyRings/<keyring-name>/cryptoKeys/<key-name>'"
   default     = ""
 }
 

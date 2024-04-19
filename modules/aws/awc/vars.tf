@@ -186,13 +186,13 @@ variable "aws_ssm_enable" {
   default     = true
 }
 
-variable "centos_gfx_instance_count" {
-  description = "Number of CentOS Graphics Workstations"
+variable "rocky_gfx_instance_count" {
+  description = "Number of Rocky Linux 8 Graphics Workstations"
   default     = 0
 }
 
-variable "centos_std_instance_count" {
-  description = "Number of CentOS Standard Workstations"
+variable "rocky_std_instance_count" {
+  description = "Number of Rocky Linux 8 Standard Workstations"
   default     = 0
 }
 

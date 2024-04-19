@@ -70,8 +70,8 @@ Enter the number of workstations to create.
 
 Parameter | Description
 --- | ---
-scent | Standard CentOS 7 Workstation
-gcent | CentOS 7 with NVIDIA T4 G4dn Virtual Workstation GPU
+srock | Standard Rocky Linux 8 Workstation
+grock | Rocky Linux 8 with NVIDIA T4 G4dn Virtual Workstation GPU
 swin | Windows Server 2019 Workstation
 gwin | Windows Server 2019 with NVIDIA T4 G4dn Virtual Workstation GPU
 
