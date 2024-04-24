@@ -80,6 +80,12 @@ then
     chmod +x ${log_manager_script}
 fi
 
+# EditShare-specific: enable weekly jobs
+log "--> Creating cron job for running weekly scripts..."
+cat > /etc/cron.d/2weekly << EOF
+22 4 * * 0 root run-parts /etc/cron.weekly
+EOF
+
 # NOTE we may want to add this to crontab so we can more precisely control when it executes
 log "--> Creating cron job for log manager script..."
 cat > /etc/cron.weekly/connector_log_manager << EOF
@@ -92,3 +98,4 @@ log "--> Executing provisioning script..."
 . ${provisioning_script}
 
 log "--> $0 finished."
+
