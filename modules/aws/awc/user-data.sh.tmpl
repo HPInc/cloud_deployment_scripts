@@ -83,6 +83,10 @@ fi
 # EditShare-specific: enable weekly jobs
 log "--> Creating cron job for running weekly scripts..."
 cat > /etc/cron.d/2weekly << EOF
+# Run the weekly jobs
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
 22 4 * * 0 root run-parts /etc/cron.weekly
 EOF
 
@@ -94,8 +98,13 @@ python3 /root/connector_log_manager.py
 EOF
 chmod +x /etc/cron.weekly/connector_log_manager
 
+# EditShare-specific: enable weekly jobs
+log "--> Restarting crond service..."
+systemctl restart crond
+
 log "--> Executing provisioning script..."
 . ${provisioning_script}
 
 log "--> $0 finished."
+
 
