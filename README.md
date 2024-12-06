@@ -1,6 +1,8 @@
+***Important Notice: This repository is no longer maintained. For the latest HP Anyware solutions, please visit https://anyware.hp.com***
+
 # HP Anyware
 
-Hp Anyware delivers a highly responsive remote desktop experience with color-accurate, lossless and distortion-free graphics – even for high frame rate 4K/UHD graphics workloads. This is exactly why artists, editors, producers, architects, and designers all trust HP Anyware to provide the resolution, sound, and color fidelity they need to create and work from anywhere. The immersive, feature-rich experience that HP Anyware delivers is the reason why we won an Engineering Emmy in 2020.
+HP Anyware delivers a highly responsive remote desktop experience with color-accurate, lossless and distortion-free graphics – even for high frame rate 4K/UHD graphics workloads. This is exactly why artists, editors, producers, architects, and designers all trust HP Anyware to provide the resolution, sound, and color fidelity they need to create and work from anywhere. The immersive, feature-rich experience that HP Anyware delivers is the reason why we won an Engineering Emmy in 2020.
 
 Based on our secure PCoIP® (PC-over-IP) protocol that connects over 15 million endpoints around the globe, HP Anyware makes all the magic happen for Windows, Linux and macOS (coming soon) desktops and applications through three core software components:
 
@@ -8,7 +10,7 @@ Based on our secure PCoIP® (PC-over-IP) protocol that connects over 15 million 
 - **Anyware Manager** to secure, broker, and provision HP Anyware connections
 - **PCoIP Clients** to enable any PCoIP Zero Client, PCoIP-Enabled Thin Client, PC, Mac, laptop, or tablet to access their remote desktops, fixed or mobile workstations from anywhere
 
-For more details, please visit https://teradici.com.
+For more details, please visit https://anyware.hp.com.
 
 This repository contains a collection of Terraform configurations for demonstrating how to deploy Anyware Manager and Anyware Connectors in a user's cloud environment. __Note: These configurations are suitable for creating reference deployments for demonstration, evaluation, or development purposes. The infrastructure created may not meet the reliability, availability, or security requirements of your organization.__
 
